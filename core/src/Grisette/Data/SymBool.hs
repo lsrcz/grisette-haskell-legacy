@@ -1,17 +1,21 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
 module Grisette.Data.SymBool where
 
 import Grisette.Prim.Bool
 import Grisette.Prim.InternedTerm
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.PrimWrapper
+import Grisette.Control.Monad.Union.Mergeable
+import GHC.Generics
 
 newtype SymBool = SymBool (Term Bool) deriving Eq
 
 instance Show SymBool where
   show (SymBool t) = pformat t
 
-instance GeneralGEq SymBool SymBool where
+instance SEq SymBool SymBool where
   (SymBool l) ==~ (SymBool r) = SymBool $ eqterm l r
 
 instance LogicalOp SymBool where
@@ -19,10 +23,15 @@ instance LogicalOp SymBool where
   (SymBool l) &&~ (SymBool r) = SymBool $ andb l r
   nots (SymBool v) = SymBool $ notb v
 
+instance ITEOp SymBool SymBool where
+  ites (SymBool c) (SymBool t) (SymBool f) = SymBool $ iteterm c t f
+
 instance SymBoolOp SymBool
 
 instance PrimWrapper SymBool Bool where
   conc = SymBool . concTerm
+  concView (SymBool (BoolConcTerm t)) = Just t
+  concView _ = Nothing
   symb = SymBool . symbTerm
 
 concBool :: Bool -> SymBool
@@ -30,3 +39,13 @@ concBool = conc
 
 symbBool :: String -> SymBool
 symbBool = symb
+
+instance Mergeable SymBool SymBool where
+  mergeStrategy = SimpleStrategy ites
+
+data X
+  = X1 SymBool
+  | X2 SymBool SymBool
+  deriving (Show, Generic)
+
+instance Mergeable SymBool X

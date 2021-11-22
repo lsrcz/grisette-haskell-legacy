@@ -14,6 +14,8 @@ dependencies:
 - intern
 - hashable
 - mtl
+- MemoTrie
+- generic-deriving
 
 library:
   source-dirs: src

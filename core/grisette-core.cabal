@@ -23,6 +23,14 @@ source-repository head
 
 library
   exposed-modules:
+      Grisette.Control.Monad.Union
+      Grisette.Control.Monad.Union.ApplicativeMerge
+      Grisette.Control.Monad.Union.FunctorMerge
+      Grisette.Control.Monad.Union.Mergeable
+      Grisette.Control.Monad.Union.MonadMerge
+      Grisette.Control.Monad.Union.MonadUnion
+      Grisette.Control.Monad.Union.UnionOp
+      Grisette.Control.Monad.UnionM
       Grisette.Data.Class.Bool
       Grisette.Data.Class.PrimWrapper
       Grisette.Data.SymBool
@@ -36,7 +44,9 @@ library
       src
   ghc-options: -Wall -ferror-spans
   build-depends:
-      base >4.7 && <5
+      MemoTrie
+    , base >4.7 && <5
+    , generic-deriving
     , hashable
     , intern
     , mtl
