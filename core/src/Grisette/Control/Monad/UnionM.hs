@@ -14,6 +14,7 @@ import Grisette.Control.Monad.Union.MonadMerge
 import Grisette.Control.Monad.Union.MonadUnion
 import Grisette.Control.Monad.Union.UnionOp
 import Grisette.Data.Class.Bool
+import Data.Functor.Classes
 
 data UnionMBase bool a where
   UAny :: UnionBase bool a -> UnionMBase bool a
@@ -22,6 +23,10 @@ data UnionMBase bool a where
 instance (Show a, Show bool) => (Show (UnionMBase bool a)) where
   show (UAny u) = "UAny(" ++ show u ++ ")"
   show (UMrg u) = "UMrg(" ++ show u ++ ")"
+
+instance (Show bool) => Show1 (UnionMBase bool) where
+  liftShowsPrec sp sl i (UAny u) s = "UAny(" ++ liftShowsPrec sp sl i u s ++ ")"
+  liftShowsPrec sp sl i (UMrg u) s = "UMrg(" ++ liftShowsPrec sp sl i u s ++ ")"
 
 underlyingUnion :: UnionMBase bool a -> UnionBase bool a
 underlyingUnion (UAny a) = a
@@ -69,10 +74,8 @@ instance SymBoolOp bool => MergeableContainer bool (UnionMBase bool) where
   merge u@(UAny _) = u >>= \x -> mrgSingle x
   merge u = u
 
-instance (SymBoolOp bool, Mergeable bool a) => Mergeable bool (UnionMBase bool a) where
-  mergeStrategy = SimpleStrategy mrgGuard
-
-instance (SymBoolOp bool) => Mergeable1 bool (UnionMBase bool)
+instance (SymBoolOp bool) => Mergeable1 bool (UnionMBase bool) where
+  mergeStrategy1 = SimpleStrategy mrgIf
 
 instance (SymBoolOp bool) => FunctorMerge bool (UnionMBase bool) where
   mrgFmap f fa = fa >>= mrgReturn . f
@@ -91,3 +94,11 @@ instance (SymBoolOp bool) => MonadMerge bool (UnionMBase bool) where
 
 instance (SymBoolOp bool) => MonadUnion bool (UnionMBase bool) where
   mrgIf = mrgGuard
+
+instance (SymBoolOp bool, SEq bool a, Mergeable bool bool) => SEq bool (UnionMBase bool a) where
+  x ==~ y = case (do
+    x1 <- x
+    y1 <- y
+    mrgReturn $ x1 ==~ y1) of
+      UMrg (Single v) -> v
+      _ -> error "Should not happen"

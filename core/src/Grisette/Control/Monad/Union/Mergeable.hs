@@ -11,6 +11,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
+{-# LANGUAGE KindSignatures #-}
 
 module Grisette.Control.Monad.Union.Mergeable where
 
@@ -94,7 +95,7 @@ guardWithStrategy strategy@(OrderedStrategy idxFun substrategy) cond ifTrue ifFa
 guardWithStrategy NoStrategy cond ifTrue ifFalse = GuardU cond ifTrue ifFalse
 guardWithStrategy _ _ _ _ = error "Invariant violated"
 
-class Mergeable bool a | a -> bool where
+class Mergeable bool a where
   mergeStrategy :: MergeStrategy bool a
   default mergeStrategy :: (Generic a, Mergeable' bool (Rep a)) => MergeStrategy bool a
   mergeStrategy = wrapMergeStrategy mergeStrategy' to from
@@ -103,7 +104,7 @@ class UnionOp bool u => UnionMOp bool u | u -> bool where
   mrgSingle :: (Mergeable bool a) => a -> u a
   mrgGuard :: (Mergeable bool a) => bool -> u a -> u a -> u a
 
-class Mergeable1 bool u | u -> bool where
+class Mergeable1 bool (u :: * -> *) where
   mergeStrategy1 :: (Mergeable bool a) => MergeStrategy bool (u a)
   default mergeStrategy1 :: (Mergeable bool (u a)) => MergeStrategy bool (u a)
   mergeStrategy1 = mergeStrategy

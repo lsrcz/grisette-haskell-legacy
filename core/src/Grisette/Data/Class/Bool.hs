@@ -7,6 +7,7 @@
 {-# LANGUAGE DefaultSignatures #-}
 module Grisette.Data.Class.Bool (
   SEq(..),
+  SEq'(..),
   (/=~),
   LogicalOp(..),
   SymBoolOp,
@@ -18,6 +19,9 @@ import Generics.Deriving
 class (SymBoolOp bool) => SEq' bool f  where
   (==~~) :: f a -> f a -> bool
   infix 4 ==~~
+
+instance (SymBoolOp bool) => SEq' bool U1 where
+  _ ==~~ _ = conc True
 
 instance (SymBoolOp bool) => SEq' bool V1 where
   _ ==~~ _ = conc True
@@ -36,7 +40,7 @@ instance (SymBoolOp bool, SEq' bool a, SEq' bool b) => SEq' bool (a :+: b) where
 instance (SymBoolOp bool, SEq' bool a, SEq' bool b) => SEq' bool (a :*: b) where
   (a1 :*: b1) ==~~ (a2 :*: b2) = (a1 ==~~ a2) &&~ (b1 ==~~ b2)
 
-class (SymBoolOp bool) => SEq bool a | a -> bool where
+class (SymBoolOp bool) => SEq bool a where
   (==~) :: a -> a -> bool
   infix 4 ==~
   default (==~) :: (Generic a, SEq' bool (Rep a)) => a -> a -> bool

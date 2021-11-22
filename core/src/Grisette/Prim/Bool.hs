@@ -102,6 +102,7 @@ neterm :: (SupportedPrim a) => Term a -> Term a -> Term Bool
 neterm l r = notb $ eqterm l r
 
 instance SupportedPrim a => BinaryOp Eqv a a Bool where
+  partialEvalBinary _ l@ConcTerm{} r@ConcTerm{} = concTerm $ l == r
   partialEvalBinary _ (NotTerm lv) (BoolTerm r)
     | lv == r = falseTerm
   partialEvalBinary _ (BoolTerm l) (NotTerm rv)

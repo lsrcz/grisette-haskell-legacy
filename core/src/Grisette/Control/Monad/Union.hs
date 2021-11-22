@@ -3,6 +3,7 @@
 module Grisette.Control.Monad.Union where
 import Grisette.Control.Monad.Union.UnionOp
 import Grisette.Data.Class.Bool
+import Data.Functor.Classes
 
 data UnionBase b a
   = Single a
@@ -19,3 +20,8 @@ instance SymBoolOp bool => UnionOp bool (UnionBase bool) where
   leftMost (Single a) = a
   leftMost (Guard a _ _ _) = a
 
+instance (Show b) => Show1 (UnionBase b) where
+  liftShowsPrec sp _ i (Single a) s =
+    "Single(" ++ sp i a ")" ++ s
+  liftShowsPrec sp sl i (Guard _ cond t f) s =
+    "Guard(" ++ showsPrec i cond (liftShowsPrec sp sl i t (liftShowsPrec sp sl i f ")")) ++ s

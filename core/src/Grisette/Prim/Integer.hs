@@ -215,3 +215,51 @@ instance BinaryOp TimesI Integer Integer Integer where
 
 pattern TimesITerm :: Term Integer -> Term Integer -> Term a
 pattern TimesITerm l r <- BinaryTermPatt TimesI l r
+
+-- div
+data DivI = DivI deriving Show
+
+divi :: Term Integer -> Term Integer -> Term Integer
+divi = partialEvalBinary DivI
+
+instance BinaryPartialStrategy DivI Integer Integer Integer where
+  extractora = integerConcTermView
+  extractorb = integerConcTermView
+  allConstantHandler i j
+    | j /= 0 = Just $ concTerm $ i `div` j
+  allConstantHandler _ _ = Nothing
+  leftConstantHandler _ _ = Nothing
+  rightConstantHandler i 1 = Just i
+  rightConstantHandler _ _ = Nothing
+  nonBinaryConstantHandler _ _ = Nothing
+
+instance BinaryOp DivI Integer Integer Integer where
+  partialEvalBinary _ l r = binaryUnfoldOnce (binaryPartial @DivI) (constructBinary DivI) l r
+  pformatBinary l r = "(/I " ++ pformat l ++ " " ++ pformat r ++ ")"
+
+pattern DivITerm :: Term Integer -> Term Integer -> Term a
+pattern DivITerm l r <- BinaryTermPatt DivI l r
+
+-- mod
+data ModI = ModI deriving Show
+
+modi :: Term Integer -> Term Integer -> Term Integer
+modi = partialEvalBinary ModI
+
+instance BinaryPartialStrategy ModI Integer Integer Integer where
+  extractora = integerConcTermView
+  extractorb = integerConcTermView
+  allConstantHandler i j
+    | j /= 0 = Just $ concTerm $ i `mod` j
+  allConstantHandler _ _ = Nothing
+  leftConstantHandler _ _ = Nothing
+  rightConstantHandler i 1 = Just i
+  rightConstantHandler _ _ = Nothing
+  nonBinaryConstantHandler _ _ = Nothing
+
+instance BinaryOp ModI Integer Integer Integer where
+  partialEvalBinary _ l r = binaryUnfoldOnce (binaryPartial @ModI) (constructBinary ModI) l r
+  pformatBinary l r = "(%I " ++ pformat l ++ " " ++ pformat r ++ ")"
+
+pattern ModITerm :: Term Integer -> Term Integer -> Term a
+pattern ModITerm l r <- BinaryTermPatt ModI l r
