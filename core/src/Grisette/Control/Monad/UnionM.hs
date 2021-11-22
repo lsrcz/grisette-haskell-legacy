@@ -7,14 +7,11 @@
 module Grisette.Control.Monad.UnionM where
 
 import Grisette.Control.Monad.Union
-import Grisette.Control.Monad.Union.ApplicativeMerge
-import Grisette.Control.Monad.Union.FunctorMerge
 import Grisette.Control.Monad.Union.Mergeable
-import Grisette.Control.Monad.Union.MonadMerge
-import Grisette.Control.Monad.Union.MonadUnion
 import Grisette.Control.Monad.Union.UnionOp
 import Grisette.Data.Class.Bool
 import Data.Functor.Classes
+import Grisette.Control.Monad
 
 data UnionMBase bool a where
   UAny :: UnionBase bool a -> UnionMBase bool a
@@ -48,13 +45,8 @@ instance SymBoolOp bool => UnionOp bool (UnionMBase bool) where
 
 instance SymBoolOp bool => UnionMOp bool (UnionMBase bool) where
   mrgSingle = UMrg . single
-  mrgGuard cond ifTrue ifFalse =
-    UMrg $
-      guardWithStrategy
-        mergeStrategy
-        cond
-        (underlyingUnion $ merge @bool ifTrue)
-        (underlyingUnion $ merge @bool ifFalse)
+  mrgGuard cond l r =
+    merge @bool $ guard cond l r
 
 instance (SymBoolOp bool) => Functor (UnionMBase bool) where
   fmap f fa = fa >>= return . f
@@ -63,37 +55,26 @@ instance (SymBoolOp bool) => Applicative (UnionMBase bool) where
   pure = single
   f <*> a = f >>= (\xf -> a >>= (return . xf))
 
+bindUnion :: SymBoolOp bool => UnionBase bool a -> (a -> UnionMBase bool b) -> UnionMBase bool b
+bindUnion (Single a') f' = f' a'
+bindUnion (Guard _ cond ifTrue ifFalse) f' =
+  guard cond (bindUnion ifTrue f') (bindUnion ifFalse f')
+
 instance (SymBoolOp bool) => Monad (UnionMBase bool) where
   a >>= f = bindUnion (underlyingUnion a) f
-    where
-      bindUnion (Single a') f' = f' a'
-      bindUnion (Guard _ cond ifTrue ifFalse) f' =
-        guard cond (bindUnion ifTrue f') (bindUnion ifFalse f')
 
-instance SymBoolOp bool => MergeableContainer bool (UnionMBase bool) where
-  merge u@(UAny _) = u >>= \x -> mrgSingle x
-  merge u = u
+instance (SymBoolOp bool, Mergeable bool a) => Mergeable bool (UnionMBase bool a) where
+  mergeStrategy = SimpleStrategy $ \cond t f -> guard cond t f >>= mrgReturn
+
+instance (SymBoolOp bool, Mergeable bool a) => SimpleMergeable bool (UnionMBase bool a) where
+  merge u = u >>= mrgSingle
+  mrgIf = mrgGuard
 
 instance (SymBoolOp bool) => Mergeable1 bool (UnionMBase bool) where
-  mergeStrategy1 = SimpleStrategy mrgIf
+  withMergeable v = v
 
-instance (SymBoolOp bool) => FunctorMerge bool (UnionMBase bool) where
-  mrgFmap f fa = fa >>= mrgReturn . f
-
-instance (SymBoolOp bool) => ApplicativeMerge bool (UnionMBase bool) where
-  mrgPure = mrgSingle
-  f <*>~ a = f >>= (\xf -> a >>= (mrgReturn . xf))
-
-instance (SymBoolOp bool) => MonadMerge bool (UnionMBase bool) where
-  mrgReturn = mrgSingle
-  a >>=~ f = bindUnion (underlyingUnion a) f
-    where
-      bindUnion (Single a') f' = merge $ f' a'
-      bindUnion (Guard _ cond ifTrue ifFalse) f' =
-        guard cond (bindUnion ifTrue f) (bindUnion ifFalse f')
-
-instance (SymBoolOp bool) => MonadUnion bool (UnionMBase bool) where
-  mrgIf = mrgGuard
+instance SymBoolOp bool => SimpleMergeable1 bool (UnionMBase bool) where
+  withSimpleMergeable v = v
 
 instance (SymBoolOp bool, SEq bool a, Mergeable bool bool) => SEq bool (UnionMBase bool a) where
   x ==~ y = case (do

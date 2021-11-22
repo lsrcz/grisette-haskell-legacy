@@ -6,9 +6,9 @@ module Grisette.Data.Class.Int where
 
 import Grisette.Data.Class.Error
 import Control.Monad.Except
-import Grisette.Control.Monad.Union.MonadUnion
 import Grisette.Data.Class.Bool
 import Grisette.Data.StringError
+import Grisette.Control.Monad.Union.Mergeable
 
 class LinearArithOp a where
   (+~) :: a -> a -> a
@@ -27,15 +27,15 @@ instance TransformError ArithError StringError where
   transformError DivByZeroError = StringError "DivByZero"
 
 class SignedDivMod bool a where
-  divs :: (MonadError e uf, MonadUnion bool uf, TransformError ArithError e) => a -> a -> uf a
-  mods :: (MonadError e uf, MonadUnion bool uf, TransformError ArithError e) => a -> a -> uf a
+  divs :: (MonadError e uf, Monad uf, SimpleMergeable1 bool uf, TransformError ArithError e) => a -> a -> uf a
+  mods :: (MonadError e uf, Monad uf, SimpleMergeable1 bool uf, TransformError ArithError e) => a -> a -> uf a
 
 class UnsignedDivMod bool a where
-  udivs :: (MonadError e uf, MonadUnion bool uf, TransformError ArithError e) => a -> a -> uf a
-  umods :: (MonadError e uf, MonadUnion bool uf, TransformError ArithError e) => a -> a -> uf a
+  udivs :: (MonadError e uf, Monad uf, SimpleMergeable1 bool uf, TransformError ArithError e) => a -> a -> uf a
+  umods :: (MonadError e uf, Monad uf, SimpleMergeable1 bool uf, TransformError ArithError e) => a -> a -> uf a
 
 class SignedQuotRem bool a where
-  quots :: (MonadError e uf, MonadUnion bool uf, TransformError ArithError e) => a -> a -> uf a
-  rems :: (MonadError e uf, MonadUnion bool uf, TransformError ArithError e) => a -> a -> uf a
+  quots :: (MonadError e uf, Monad uf, SimpleMergeable1 bool uf, TransformError ArithError e) => a -> a -> uf a
+  rems :: (MonadError e uf, Monad uf, SimpleMergeable1 bool uf, TransformError ArithError e) => a -> a -> uf a
 
 class (LinearArithOp a, TimesOp a, SEq bool a) => IntOp bool a where

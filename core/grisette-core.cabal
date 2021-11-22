@@ -23,13 +23,10 @@ source-repository head
 
 library
   exposed-modules:
+      Grisette.Control.Monad
       Grisette.Control.Monad.Trans
       Grisette.Control.Monad.Union
-      Grisette.Control.Monad.Union.ApplicativeMerge
-      Grisette.Control.Monad.Union.FunctorMerge
       Grisette.Control.Monad.Union.Mergeable
-      Grisette.Control.Monad.Union.MonadMerge
-      Grisette.Control.Monad.Union.MonadUnion
       Grisette.Control.Monad.Union.UnionOp
       Grisette.Control.Monad.UnionM
       Grisette.Data.Class.Bool
@@ -39,12 +36,6 @@ library
       Grisette.Data.StringError
       Grisette.Data.SymBool
       Grisette.Data.SymInt
-      Grisette.Orphan.Coroutine
-      Grisette.Orphan.Either
-      Grisette.Orphan.ExceptT
-      Grisette.Orphan.Function
-      Grisette.Orphan.Maybe
-      Grisette.Orphan.MaybeT
       Grisette.Prim.Bool
       Grisette.Prim.Helpers
       Grisette.Prim.Integer

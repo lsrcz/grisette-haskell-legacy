@@ -5,6 +5,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Grisette.Data.Class.Bool (
   SEq(..),
   SEq'(..),
@@ -15,6 +16,8 @@ module Grisette.Data.Class.Bool (
 )where
 import Grisette.Data.Class.PrimWrapper
 import Generics.Deriving
+import Control.Monad.Except
+import Control.Monad.Trans.Maybe
 
 class (SymBoolOp bool) => SEq' bool f  where
   (==~~) :: f a -> f a -> bool
@@ -68,3 +71,12 @@ class ITEOp b v where
 
 class (SEq b b, Eq b, LogicalOp b, PrimWrapper b Bool, ITEOp b b) => SymBoolOp b where
 
+instance (SymBoolOp bool, SEq bool a) => SEq bool (Maybe a)
+
+instance (SymBoolOp bool, SEq bool e, SEq bool a) => SEq bool (Either e a)
+
+instance (SymBoolOp bool, SEq bool (m (Either e a))) => SEq bool (ExceptT e m a) where
+  (ExceptT a) ==~ (ExceptT b) = a ==~ b
+
+instance (SymBoolOp bool, SEq bool (m (Maybe a))) => SEq bool (MaybeT m a) where
+  (MaybeT a) ==~ (MaybeT b) = a ==~ b

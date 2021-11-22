@@ -1,9 +1,9 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Grisette.Data.SymInt where
 
 import Grisette.Control.Monad.Union.Mergeable
-import Grisette.Control.Monad.Union.MonadUnion
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Error
 import Grisette.Data.Class.Int
@@ -13,7 +13,7 @@ import Grisette.Prim.Bool
 import Grisette.Prim.Integer
 import Grisette.Prim.InternedTerm
 import Control.Monad.Except
-import Grisette.Control.Monad.Union.MonadMerge
+import Grisette.Control.Monad
 
 newtype SymInteger = SymInteger (Term Integer) deriving (Eq)
 
@@ -43,9 +43,13 @@ instance ITEOp SymBool SymInteger where
 instance Mergeable SymBool SymInteger where
   mergeStrategy = SimpleStrategy ites
 
+instance SimpleMergeable SymBool SymInteger where
+  merge v = v
+  mrgIf = ites
+
 instance SignedDivMod SymBool SymInteger where
-  divs (SymInteger l) rs@(SymInteger r) =
-    mrgIf (rs ==~ conc 0) (throwError $ transformError DivByZeroError) (mrgReturn $ SymInteger $ divi l r)
-  mods (SymInteger l) rs@(SymInteger r) =
-    mrgIf (rs ==~ conc 0) (throwError $ transformError DivByZeroError) (mrgReturn $ SymInteger $ modi l r)
+  divs (SymInteger l) rs@(SymInteger r) = withSimpleMergeable' @SymBool $
+    mrgIf @SymBool (rs ==~ conc 0) (throwError $ transformError DivByZeroError) (mrgReturn $ SymInteger $ divi l r)
+  mods (SymInteger l) rs@(SymInteger r) = withSimpleMergeable' @SymBool $
+    mrgIf @SymBool (rs ==~ conc 0) (throwError $ transformError DivByZeroError) (mrgReturn $ SymInteger $ modi l r)
 

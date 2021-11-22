@@ -8,7 +8,6 @@ import Grisette.Prim.InternedTerm
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.PrimWrapper
 import Grisette.Control.Monad.Union.Mergeable
-import GHC.Generics
 
 newtype SymBool = SymBool (Term Bool) deriving Eq
 
@@ -43,9 +42,6 @@ symbBool = symb
 instance Mergeable SymBool SymBool where
   mergeStrategy = SimpleStrategy ites
 
-data X
-  = X1 SymBool
-  | X2 SymBool SymBool
-  deriving (Show, Generic)
-
-instance Mergeable SymBool X
+instance SimpleMergeable SymBool SymBool where
+  merge v = v
+  mrgIf = ites
