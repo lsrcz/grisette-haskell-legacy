@@ -21,7 +21,6 @@ instance (SymBoolOp bool, MonadUnion bool m, Mergeable bool a) => Mergeable bool
   mergeStrategy = SimpleStrategy $ \cond (MaybeT t) (MaybeT f) -> MaybeT $ mrgIf cond t f
 
 instance (SymBoolOp bool, MonadUnion bool m) => Mergeable1 bool (MaybeT m) where
-  mergeStrategy1 = mergeStrategy
 
 instance (SymBoolOp bool, MonadUnion bool m) => MergeableContainer bool (MaybeT m) where
   merge (MaybeT v) = MaybeT $ merge v

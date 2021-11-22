@@ -12,14 +12,29 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE TypeFamilies #-}
 
-module Grisette.Control.Monad.Union.Mergeable where
+module Grisette.Control.Monad.Union.Mergeable (
+  MergeStrategy(..),
+  wrapMergeStrategy,
+  guardWithStrategy,
+  UnionMOp(..),
+  Mergeable1(..),
+  MergeableContainer(..),
+  Mergeable(..),
+) where
 
 import Data.Typeable
 import Generics.Deriving
 import Grisette.Control.Monad.Union.UnionOp
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.PrimWrapper
+import Data.Reflection
+import Data.Proxy
+import Data.Constraint
+import Data.Constraint.Unsafe
 
 data MergeStrategy bool a where
   SimpleStrategy :: (bool -> a -> a -> a) -> MergeStrategy bool a
@@ -108,6 +123,9 @@ class Mergeable1 bool (u :: * -> *) where
   mergeStrategy1 :: (Mergeable bool a) => MergeStrategy bool (u a)
   default mergeStrategy1 :: (Mergeable bool (u a)) => MergeStrategy bool (u a)
   mergeStrategy1 = mergeStrategy
+
+instance {-# OVERLAPPABLE #-} (Mergeable1 bool u, Mergeable bool a) => Mergeable bool (u a) where
+  mergeStrategy = mergeStrategy1
 
 class (Mergeable1 bool u) => MergeableContainer bool u | u -> bool where
   merge :: (Mergeable bool a) => u a -> u a

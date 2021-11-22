@@ -17,6 +17,9 @@ dependencies:
 - transformers
 - MemoTrie
 - generic-deriving
+- monad-coroutine
+- reflection
+- constraints
 
 library:
   source-dirs: src

@@ -20,7 +20,6 @@ instance (SymBoolOp bool, MonadUnion bool m, Mergeable bool e, Mergeable bool a)
   mergeStrategy = SimpleStrategy $ \cond (ExceptT t) (ExceptT f) -> ExceptT $ mrgIf cond t f
 
 instance (SymBoolOp bool, MonadUnion bool m, Mergeable bool e) => Mergeable1 bool (ExceptT e m) where
-  mergeStrategy1 = mergeStrategy
 
 instance (SymBoolOp bool, MonadUnion bool m, Mergeable bool e) => MergeableContainer bool (ExceptT e m) where
   merge (ExceptT v) = ExceptT $ merge v

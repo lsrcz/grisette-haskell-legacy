@@ -39,8 +39,10 @@ library
       Grisette.Data.StringError
       Grisette.Data.SymBool
       Grisette.Data.SymInt
+      Grisette.Orphan.Coroutine
       Grisette.Orphan.Either
       Grisette.Orphan.ExceptT
+      Grisette.Orphan.Function
       Grisette.Orphan.Maybe
       Grisette.Orphan.MaybeT
       Grisette.Prim.Bool
@@ -55,9 +57,12 @@ library
   build-depends:
       MemoTrie
     , base >4.7 && <5
+    , constraints
     , generic-deriving
     , hashable
     , intern
+    , monad-coroutine
     , mtl
+    , reflection
     , transformers
   default-language: Haskell2010
