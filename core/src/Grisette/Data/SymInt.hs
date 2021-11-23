@@ -3,6 +3,8 @@
 
 module Grisette.Data.SymInt where
 
+import Control.Monad.Except
+import Grisette.Control.Monad
 import Grisette.Control.Monad.Union.Mergeable
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Error
@@ -12,8 +14,6 @@ import Grisette.Data.SymBool
 import Grisette.Prim.Bool
 import Grisette.Prim.Integer
 import Grisette.Prim.InternedTerm
-import Control.Monad.Except
-import Grisette.Control.Monad
 
 newtype SymInteger = SymInteger (Term Integer) deriving (Eq)
 
@@ -48,8 +48,15 @@ instance SimpleMergeable SymBool SymInteger where
   mrgIf = ites
 
 instance SignedDivMod SymBool SymInteger where
-  divs (SymInteger l) rs@(SymInteger r) = withSimpleMergeable' @SymBool $
-    mrgIf @SymBool (rs ==~ conc 0) (throwError $ transformError DivByZeroError) (mrgReturn $ SymInteger $ divi l r)
-  mods (SymInteger l) rs@(SymInteger r) = withSimpleMergeable' @SymBool $
-    mrgIf @SymBool (rs ==~ conc 0) (throwError $ transformError DivByZeroError) (mrgReturn $ SymInteger $ modi l r)
-
+  divs (SymInteger l) rs@(SymInteger r) =
+    withSimpleMergeable' @SymBool $
+      mrgIf @SymBool
+        (rs ==~ conc 0)
+        (throwError $ transformError DivByZeroError)
+        (mrgReturn @SymBool $ SymInteger $ divi l r)
+  mods (SymInteger l) rs@(SymInteger r) =
+    withSimpleMergeable' @SymBool $
+      mrgIf @SymBool
+        (rs ==~ conc 0)
+        (throwError $ transformError DivByZeroError)
+        (mrgReturn @SymBool $ SymInteger $ modi l r)

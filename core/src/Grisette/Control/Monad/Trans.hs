@@ -1,10 +1,16 @@
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
+
 module Grisette.Control.Monad.Trans where
+
 import Control.Monad.Trans
 import Grisette.Control.Monad.Union.Mergeable
 
-mrgLift :: forall t bool m a. (MonadTrans t, SimpleMergeable1 bool (t m), Monad m, Mergeable bool a) => m a -> t m a
-mrgLift = withSimpleMergeable @bool @(t m) @a $ merge @bool . lift
+mrgLift ::
+  forall bool t m a.
+  (StrongSimpleMergeable1 bool (t m), MonadTrans t, Monad m, Mergeable bool a) =>
+  m a ->
+  t m a
+mrgLift = withStrongSimpleMergeable @bool @(t m) @a $ merge @bool . lift

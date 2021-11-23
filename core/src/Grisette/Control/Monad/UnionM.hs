@@ -6,12 +6,12 @@
 
 module Grisette.Control.Monad.UnionM where
 
+import Data.Functor.Classes
+import Grisette.Control.Monad
 import Grisette.Control.Monad.Union
 import Grisette.Control.Monad.Union.Mergeable
 import Grisette.Control.Monad.Union.UnionOp
 import Grisette.Data.Class.Bool
-import Data.Functor.Classes
-import Grisette.Control.Monad
 
 data UnionMBase bool a where
   UAny :: UnionBase bool a -> UnionMBase bool a
@@ -64,7 +64,7 @@ instance (SymBoolOp bool) => Monad (UnionMBase bool) where
   a >>= f = bindUnion (underlyingUnion a) f
 
 instance (SymBoolOp bool, Mergeable bool a) => Mergeable bool (UnionMBase bool a) where
-  mergeStrategy = SimpleStrategy $ \cond t f -> guard cond t f >>= mrgReturn
+  mergeStrategy = SimpleStrategy $ \cond t f -> guard cond t f >>= mrgReturn @bool
 
 instance (SymBoolOp bool, Mergeable bool a) => SimpleMergeable bool (UnionMBase bool a) where
   merge u = u >>= mrgSingle
@@ -76,10 +76,14 @@ instance (SymBoolOp bool) => Mergeable1 bool (UnionMBase bool) where
 instance SymBoolOp bool => SimpleMergeable1 bool (UnionMBase bool) where
   withSimpleMergeable v = v
 
+instance SymBoolOp bool => StrongSimpleMergeable1 bool (UnionMBase bool) where
+  withStrongSimpleMergeable v = v
+
 instance (SymBoolOp bool, SEq bool a, Mergeable bool bool) => SEq bool (UnionMBase bool a) where
-  x ==~ y = case (do
-    x1 <- x
-    y1 <- y
-    mrgReturn $ x1 ==~ y1) of
-      UMrg (Single v) -> v
-      _ -> error "Should not happen"
+  x ==~ y = case ( do
+                     x1 <- x
+                     y1 <- y
+                     mrgReturn @bool $ x1 ==~ y1
+                 ) of
+    UMrg (Single v) -> v
+    _ -> error "Should not happen"

@@ -1,11 +1,14 @@
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
+
 module Grisette.Control.Monad where
-import Grisette.Control.Monad.Union.Mergeable 
 
-mrgReturn :: forall bool m a. (SimpleMergeable1 bool m, Mergeable bool a, Monad m) => a -> m a
-mrgReturn v = withSimpleMergeable' @bool $ merge @bool . return $ v
+import Grisette.Control.Monad.Union.Mergeable
 
-(>>=~) :: forall bool m a b. (SimpleMergeable1 bool m, Mergeable bool b, Monad m) => m a -> (a -> m b) -> m b
-a >>=~ f = withSimpleMergeable' @bool $ merge @bool $ a >>= f
+mrgReturn :: forall bool m a. (StrongSimpleMergeable1 bool m, Mergeable bool a, Monad m) => a -> m a
+mrgReturn v = withStrongSimpleMergeable' @bool $ merge @bool . return $ v
+
+(>>=~) :: forall bool m a b. (StrongSimpleMergeable1 bool m, Mergeable bool b, Monad m) => m a -> (a -> m b) -> m b
+a >>=~ f = withStrongSimpleMergeable' @bool $ merge @bool $ a >>= f
