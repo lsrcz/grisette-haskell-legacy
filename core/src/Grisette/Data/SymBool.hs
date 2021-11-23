@@ -43,5 +43,4 @@ instance Mergeable SymBool SymBool where
   mergeStrategy = SimpleStrategy ites
 
 instance SimpleMergeable SymBool SymBool where
-  merge v = v
   mrgIf = ites

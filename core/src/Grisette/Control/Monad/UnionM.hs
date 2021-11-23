@@ -43,11 +43,6 @@ instance SymBoolOp bool => UnionOp bool (UnionMBase bool) where
     Nothing -> Nothing
   leftMost = leftMost . underlyingUnion
 
-instance SymBoolOp bool => UnionMOp bool (UnionMBase bool) where
-  mrgSingle = UMrg . single
-  mrgGuard cond l r =
-    merge @bool $ guard cond l r
-
 instance (SymBoolOp bool) => Functor (UnionMBase bool) where
   fmap f fa = fa >>= return . f
 
@@ -67,23 +62,23 @@ instance (SymBoolOp bool, Mergeable bool a) => Mergeable bool (UnionMBase bool a
   mergeStrategy = SimpleStrategy $ \cond t f -> guard cond t f >>= mrgReturn @bool
 
 instance (SymBoolOp bool, Mergeable bool a) => SimpleMergeable bool (UnionMBase bool a) where
-  merge u = u >>= mrgSingle
   mrgIf = mrgGuard
 
 instance (SymBoolOp bool) => Mergeable1 bool (UnionMBase bool) where
-  withMergeable v = v
 
 instance SymBoolOp bool => SimpleMergeable1 bool (UnionMBase bool) where
-  withSimpleMergeable v = v
 
-instance SymBoolOp bool => StrongSimpleMergeable1 bool (UnionMBase bool) where
-  withStrongSimpleMergeable v = v
+instance SymBoolOp bool => UnionMOp bool (UnionMBase bool) where
+  merge u = u >>= mrgSingle
+  mrgSingle = UMrg . single
+  mrgGuard cond l r =
+    merge $ guard cond l r
 
 instance (SymBoolOp bool, SEq bool a, Mergeable bool bool) => SEq bool (UnionMBase bool a) where
   x ==~ y = case ( do
                      x1 <- x
                      y1 <- y
-                     mrgReturn @bool $ x1 ==~ y1
+                     mrgReturn $ x1 ==~ y1
                  ) of
     UMrg (Single v) -> v
     _ -> error "Should not happen"

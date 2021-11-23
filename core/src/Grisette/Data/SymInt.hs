@@ -44,19 +44,18 @@ instance Mergeable SymBool SymInteger where
   mergeStrategy = SimpleStrategy ites
 
 instance SimpleMergeable SymBool SymInteger where
-  merge v = v
   mrgIf = ites
 
 instance SignedDivMod SymBool SymInteger where
   divs (SymInteger l) rs@(SymInteger r) =
-    withSimpleMergeable' @SymBool $
-      mrgIf @SymBool
+    withSimpleMergeableU $
+      mrgIf
         (rs ==~ conc 0)
         (throwError $ transformError DivByZeroError)
-        (mrgReturn @SymBool $ SymInteger $ divi l r)
+        (mrgReturn $ SymInteger $ divi l r)
   mods (SymInteger l) rs@(SymInteger r) =
-    withSimpleMergeable' @SymBool $
-      mrgIf @SymBool
+    withSimpleMergeableU $
+      mrgIf
         (rs ==~ conc 0)
         (throwError $ transformError DivByZeroError)
-        (mrgReturn @SymBool $ SymInteger $ modi l r)
+        (mrgReturn $ SymInteger $ modi l r)
