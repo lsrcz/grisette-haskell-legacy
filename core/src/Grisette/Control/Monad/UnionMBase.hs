@@ -3,6 +3,10 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE BangPatterns #-}
+{-# OPTIONS_GHC -fno-cse #-}
+-- {-# OPTIONS_GHC -fno-full-laziness #-}
 
 module Grisette.Control.Monad.UnionMBase
   ( UnionMBase,
@@ -17,31 +21,37 @@ import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.UnionOp
 import Grisette.Data.UnionBase
+import Data.IORef
+import GHC.IO
 
 data UnionMBase bool a where
-  UAny :: UnionBase bool a -> UnionMBase bool a
+  UAny :: IORef (Either (UnionBase bool a) (UnionMBase bool a)) -> UnionBase bool a -> UnionMBase bool a
   UMrg :: (Mergeable bool a) => UnionBase bool a -> UnionMBase bool a
 
+freshUAny :: UnionBase bool a -> UnionMBase bool a
+freshUAny v = UAny (unsafeDupablePerformIO $ newIORef $ Left v) v
+{-# NOINLINE freshUAny #-}
+
 instance (Show a, Show bool) => (Show (UnionMBase bool a)) where
-  show (UAny u) = "UAny(" ++ show u ++ ")"
+  show (UAny _ u) = "UAny(" ++ show u ++ ")"
   show (UMrg u) = "UMrg(" ++ show u ++ ")"
 
 instance (Show bool) => Show1 (UnionMBase bool) where
-  liftShowsPrec sp sl i (UAny u) s = "UAny(" ++ liftShowsPrec sp sl i u s ++ ")"
+  liftShowsPrec sp sl i (UAny _ u) s = "UAny(" ++ liftShowsPrec sp sl i u s ++ ")"
   liftShowsPrec sp sl i (UMrg u) s = "UMrg(" ++ liftShowsPrec sp sl i u s ++ ")"
 
 underlyingUnion :: UnionMBase bool a -> UnionBase bool a
-underlyingUnion (UAny a) = a
+underlyingUnion (UAny _ a) = a
 underlyingUnion (UMrg a) = a
 
 instance SymBoolOp bool => UnionOp bool (UnionMBase bool) where
-  single = UAny . single
-  guard cond (UAny a) (UAny b) = UAny $ guard cond a b
-  guard cond (UMrg a) (UAny b) = UMrg $ guardWithStrategy mergeStrategy cond a b
+  single v = (freshUAny . single) v
+  guard cond (UAny _ a) (UAny _ b) = freshUAny $ guard cond a b
+  guard cond (UMrg a) (UAny _ b) = UMrg $ guardWithStrategy mergeStrategy cond a b
   guard cond a (UMrg b) = UMrg $ guardWithStrategy mergeStrategy cond (underlyingUnion a) b
   singleView = singleView . underlyingUnion
-  guardView (UAny u) = case guardView u of
-    Just (c, t, f) -> Just (c, UAny t, UAny f)
+  guardView (UAny _ u) = case guardView u of
+    Just (c, t, f) -> Just (c, freshUAny t, freshUAny f)
     Nothing -> Nothing
   guardView (UMrg u) = case guardView u of
     Just (c, t, f) -> Just (c, UMrg t, UMrg f)
@@ -74,7 +84,12 @@ instance (SymBoolOp bool) => Mergeable1 bool (UnionMBase bool)
 instance SymBoolOp bool => SimpleMergeable1 bool (UnionMBase bool)
 
 instance SymBoolOp bool => UnionMOp bool (UnionMBase bool) where
-  merge u = u >>= mrgSingle
+  merge m@(UMrg _) = m
+  merge m@(UAny ref _) = unsafeDupablePerformIO $ atomicModifyIORef' ref $ \case
+    x@(Right r) -> (x, r)
+    Left _ -> (Right r, r)
+      where !r = m >>= mrgSingle
+  {-# NOINLINE merge #-}
   mrgSingle = UMrg . single
   mrgGuard cond l r =
     merge $ guard cond l r
