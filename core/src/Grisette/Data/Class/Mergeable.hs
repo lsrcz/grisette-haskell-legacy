@@ -18,7 +18,6 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Grisette.Data.Class.Mergeable
   ( MergeStrategy (..),
@@ -41,6 +40,7 @@ import Grisette.Data.Class.Bool
 import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.UnionOp
 import Grisette.Data.Class.Utils.CConst
+import Grisette.Data.Class.OrphanGeneric ()
 
 data MergeStrategy bool a where
   SimpleStrategy :: (bool -> a -> a -> a) -> MergeStrategy bool a
@@ -194,6 +194,13 @@ instance (Mergeable' bool a, Mergeable' bool b) => Mergeable' bool (a :*: b) whe
 
 -- instances
 
+-- Bool
+instance (SymBoolOp bool) => Mergeable bool Bool
+
+-- Integer
+instance (SymBoolOp bool) => Mergeable bool Integer where
+  mergeStrategy = OrderedStrategy id $ \_ -> SimpleStrategy $ \_ t _ -> t
+
 -- ()
 instance (SymBoolOp bool) => Mergeable bool ()
 
@@ -234,16 +241,12 @@ instance (SymBoolOp bool, Mergeable bool b) => Mergeable bool (a -> b) where
 instance (SymBoolOp bool) => Mergeable1 bool ((->) a)
 
 -- MaybeT
-deriving instance Generic (MaybeT m a)
-
 instance (SymBoolOp bool, Mergeable1 bool m, Mergeable bool a) => Mergeable bool (MaybeT m a) where
   mergeStrategy = withMergeable @bool @m @(Maybe a) $ wrapMergeStrategy mergeStrategy MaybeT runMaybeT
 
 instance (SymBoolOp bool, Mergeable1 bool m) => Mergeable1 bool (MaybeT m)
 
 -- ExceptT
-deriving instance (Functor m) => Generic1 (ExceptT e m)
-
 instance
   (SymBoolOp bool, Mergeable1 bool m, Mergeable bool e, Mergeable bool a) =>
   Mergeable bool (ExceptT e m a)
@@ -253,8 +256,6 @@ instance
 instance (SymBoolOp bool, Mergeable1 bool m, Mergeable bool e, Functor m) => Mergeable1 bool (ExceptT e m)
 
 -- Coroutine
-deriving instance Generic (Coroutine sus m a)
-
 instance
   (SymBoolOp bool, Mergeable1 bool m, Mergeable bool a, Mergeable1 bool sus) =>
   Mergeable bool (Coroutine sus m a)
@@ -266,19 +267,13 @@ instance
 
 instance (SymBoolOp bool, Mergeable1 bool m, Mergeable1 bool sus) => Mergeable1 bool (Coroutine sus m)
 
-deriving instance Generic (Yield x y)
-
 instance (SymBoolOp bool, Mergeable bool x, Mergeable bool y) => Mergeable bool (Yield x y)
 
 instance (SymBoolOp bool, Mergeable bool x) => Mergeable1 bool (Yield x)
 
-deriving instance Generic (Await x y)
-
 instance (SymBoolOp bool, Mergeable bool x, Mergeable bool y) => Mergeable bool (Await x y)
 
 instance (SymBoolOp bool, Mergeable bool x) => Mergeable1 bool (Await x)
-
-deriving instance Generic (Request req res x)
 
 instance
   (SymBoolOp bool, Mergeable bool req, Mergeable bool res, Mergeable bool x) =>
