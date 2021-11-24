@@ -75,12 +75,23 @@ class ITEOp b v where
 
 class (SEq b b, Eq b, LogicalOp b, PrimWrapper b Bool, ITEOp b b) => SymBoolOp b
 
+-- Bool
+instance (SymBoolOp bool) => SEq bool Bool
+
+-- Integer
+instance (SymBoolOp bool) => SEq bool Integer where
+  l ==~ r = conc $ l == r
+
+-- Maybe
 instance (SymBoolOp bool, SEq bool a) => SEq bool (Maybe a)
 
+-- Either
 instance (SymBoolOp bool, SEq bool e, SEq bool a) => SEq bool (Either e a)
 
+-- ExceptT
 instance (SymBoolOp bool, SEq bool (m (Either e a))) => SEq bool (ExceptT e m a) where
   (ExceptT a) ==~ (ExceptT b) = a ==~ b
 
+-- MaybeT
 instance (SymBoolOp bool, SEq bool (m (Maybe a))) => SEq bool (MaybeT m a) where
   (MaybeT a) ==~ (MaybeT b) = a ==~ b
