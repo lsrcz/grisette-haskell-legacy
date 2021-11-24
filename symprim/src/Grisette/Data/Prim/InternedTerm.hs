@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -10,6 +11,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# OPTIONS_GHC -fno-cse #-}
 
 module Grisette.Data.Prim.InternedTerm
   ( UnaryOp (..),
@@ -28,10 +30,14 @@ module Grisette.Data.Prim.InternedTerm
   )
 where
 
+import Data.Dynamic
 import Data.Function (on)
+import Data.HashMap.Strict as M
 import Data.Hashable (Hashable (hashWithSalt))
+import Data.IORef (IORef, atomicModifyIORef', newIORef)
 import Data.Interned
 import Data.Typeable
+import GHC.IO (unsafeDupablePerformIO)
 
 class (SupportedPrim arg, SupportedPrim t) => UnaryOp tag arg t | tag arg -> t where
   partialEvalUnary :: (Typeable tag, Typeable t) => tag -> Term arg -> Term t
@@ -80,7 +86,7 @@ data Term t where
 
 instance Show (Term ty) where
   show (ConcTerm i v) = "ConcTerm{id=" ++ show i ++ ", v=" ++ show v ++ "}"
-  show (SymbTerm i name) = "ShowTerm{id=" ++ show i ++ ", name=" ++ show name ++ "}"
+  show (SymbTerm i name) = "ShowTerm{id=" ++ show i ++ ", name=" ++ show name ++ ", type=" ++ show (typeRep (Proxy @ty)) ++ "}"
   show (UnaryTerm i tag arg) = "Unary{id=" ++ show i ++ ", tag=" ++ show tag ++ ", arg=" ++ show arg ++ "}"
   show (BinaryTerm i tag arg1 arg2) =
     "Unary{id=" ++ show i ++ ", tag=" ++ show tag ++ ", arg1=" ++ show arg1
@@ -113,10 +119,26 @@ data UTerm t where
     Term arg3 ->
     UTerm t
 
-class (Typeable t) => SupportedPrim t where
+newDynamicCache :: forall a. (Interned a, Typeable a) => Dynamic
+newDynamicCache = toDyn $ mkCache @a
+
+termCacheCell :: IORef (M.HashMap TypeRep Dynamic)
+termCacheCell = unsafeDupablePerformIO $ newIORef empty
+{-# NOINLINE termCacheCell #-}
+
+typeMemoizedCache :: forall a. (Interned a, Typeable a) => Cache a
+typeMemoizedCache = unsafeDupablePerformIO $
+  atomicModifyIORef' termCacheCell $ \m ->
+    case M.lookup (typeRep (Proxy @a)) m of
+      Just d -> (m, fromDyn d undefined)
+      Nothing -> (M.insert (typeRep (Proxy @a)) r m, fromDyn r undefined)
+        where
+          !r = (newDynamicCache @a)
+{-# NOINLINE typeMemoizedCache #-}
+
+class (Typeable t, Hashable t, Eq t) => SupportedPrim t where
   termCache :: Cache (Term t)
-  termCache = mkCache
-  {-# NOINLINE termCache #-}
+  termCache = typeMemoizedCache
   pformatConc :: t -> String
   default pformatConc :: (Show t) => t -> String
   pformatConc = show
@@ -128,27 +150,27 @@ instance (SupportedPrim t) => Interned (Term t) where
   data Description (Term t) where
     DConcTerm :: (Typeable t, Hashable t, Eq t, Show t) => t -> Description (Term t)
     DSymbTerm :: (Typeable t) => String -> Description (Term t)
-    DUnaryTerm :: (UnaryOp tag arg t, Typeable tag, Typeable t, Show tag) => tag -> Id -> Description (Term t)
+    DUnaryTerm :: (UnaryOp tag arg t, Typeable tag, Typeable t, Show tag) => tag -> (TypeRep, Id) -> Description (Term t)
     DBinaryTerm ::
       (BinaryOp tag arg1 arg2 t, Typeable tag, Typeable t, Show tag) =>
       tag ->
-      Id ->
-      Id ->
+      (TypeRep, Id) ->
+      (TypeRep, Id) ->
       Description (Term t)
     DTernaryTerm ::
       (TernaryOp tag arg1 arg2 arg3 t, Typeable tag, Typeable t, Show tag) =>
       tag ->
-      Id ->
-      Id ->
-      Id ->
+      (TypeRep, Id) ->
+      (TypeRep, Id) ->
+      (TypeRep, Id) ->
       Description (Term t)
   describe (UConcTerm v) = DConcTerm v
   describe ((USymbTerm name) :: UTerm t) = DSymbTerm @t name
-  describe ((UUnaryTerm (tag :: tagt) (tm :: Term arg)) :: UTerm t) = DUnaryTerm @tagt @arg @t tag (identity tm)
+  describe ((UUnaryTerm (tag :: tagt) (tm :: Term arg)) :: UTerm t) = DUnaryTerm @tagt @arg @t tag (typeRep (Proxy @arg), identity tm)
   describe ((UBinaryTerm (tag :: tagt) (tm1 :: Term arg1) (tm2 :: Term arg2)) :: UTerm t) =
-    DBinaryTerm @tagt @arg1 @arg2 @t tag (identity tm1) (identity tm2)
+    DBinaryTerm @tagt @arg1 @arg2 @t tag (typeRep (Proxy @arg1), identity tm1) (typeRep (Proxy @arg2), identity tm2)
   describe ((UTernaryTerm (tag :: tagt) (tm1 :: Term arg1) (tm2 :: Term arg2) (tm3 :: Term arg3)) :: UTerm t) =
-    DTernaryTerm @tagt @arg1 @arg2 @arg3 @t tag (identity tm1) (identity tm2) (identity tm3)
+    DTernaryTerm @tagt @arg1 @arg2 @arg3 @t tag (typeRep (Proxy @arg1), identity tm1) (typeRep (Proxy @arg2), identity tm2) (typeRep (Proxy @arg3), identity tm3)
   identify i = go
     where
       go (UConcTerm v) = ConcTerm i v
@@ -245,3 +267,16 @@ concTerm t = intern $ UConcTerm t
 
 symbTerm :: (SupportedPrim t, Typeable t) => String -> Term t
 symbTerm t = intern $ USymbTerm t
+
+{-
+To prove that we are doing interning correctly, we ensured that:
+1. For two terms with the same type t, if sub term has different type, the id must not be identical.
+2. For two terms with the same type t, identical id means that same term. This could be proved by induction
+  a. (Base case) concrete nodes (trivial)
+  b. (Base case) symbolic nodes (trivial)
+  c. (Induction) unary node. If the ids are identical, the sub-terms must have the same type (by 1).
+     By the induction hypothesis, the sub-terms must be identical, then the proof is trivial.
+  d. ...
+  e. ...
+QED
+-}
