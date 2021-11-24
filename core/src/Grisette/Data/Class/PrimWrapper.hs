@@ -12,7 +12,8 @@ where
 class PrimWrapper t c | t -> c where
   conc :: c -> t
   concView :: t -> Maybe c
-  symb :: String -> t
+  ssymb :: String -> t
+  isymb :: Int -> String -> t
 
 pattern Conc :: PrimWrapper t c => c -> t
 pattern Conc c <-

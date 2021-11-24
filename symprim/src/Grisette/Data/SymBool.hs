@@ -4,8 +4,6 @@
 
 module Grisette.Data.SymBool
   ( SymBool (..),
-    concBool,
-    symbBool,
   )
 where
 
@@ -39,13 +37,8 @@ instance PrimWrapper SymBool Bool where
   conc = SymBool . concTerm
   concView (SymBool (BoolConcTerm t)) = Just t
   concView _ = Nothing
-  symb = SymBool . symbTerm
-
-concBool :: Bool -> SymBool
-concBool = conc
-
-symbBool :: String -> SymBool
-symbBool = symb
+  ssymb = SymBool . ssymbTerm
+  isymb i str = SymBool $ isymbTerm i str
 
 instance Mergeable SymBool SymBool where
   mergeStrategy = SimpleStrategy ites

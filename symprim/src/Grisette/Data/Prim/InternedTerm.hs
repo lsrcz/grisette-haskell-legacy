@@ -12,6 +12,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -fno-cse #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Grisette.Data.Prim.InternedTerm
   ( UnaryOp (..),
@@ -27,6 +28,8 @@ module Grisette.Data.Prim.InternedTerm
     constructTernary,
     concTerm,
     symbTerm,
+    ssymbTerm,
+    isymbTerm,
   )
 where
 
@@ -38,6 +41,7 @@ import Data.IORef (IORef, atomicModifyIORef', newIORef)
 import Data.Interned
 import Data.Typeable
 import GHC.IO (unsafeDupablePerformIO)
+import GHC.Generics
 
 class (SupportedPrim arg, SupportedPrim t) => UnaryOp tag arg t | tag arg -> t where
   partialEvalUnary :: (Typeable tag, Typeable t) => tag -> Term arg -> Term t
@@ -59,9 +63,20 @@ class
   partialEvalTernary :: (Typeable tag, Typeable t) => tag -> Term arg1 -> Term arg2 -> Term arg3 -> Term t
   pformatTernary :: Term arg1 -> Term arg2 -> Term arg3 -> String
 
+data Symbol
+  = SimpleSymbol String
+  | IndexedSymbol Int String
+  deriving (Eq, Ord, Generic)
+
+instance Show Symbol where
+  show (SimpleSymbol str) = str
+  show (IndexedSymbol i str) = str ++ "@" ++ show i
+
+instance Hashable Symbol
+
 data Term t where
   ConcTerm :: (Typeable t, Hashable t, Eq t, Show t) => {-# UNPACK #-} !Id -> !t -> Term t
-  SymbTerm :: (Typeable t) => {-# UNPACK #-} !Id -> !String -> Term t
+  SymbTerm :: (Typeable t) => {-# UNPACK #-} !Id -> !Symbol -> Term t
   UnaryTerm ::
     (UnaryOp tag arg t, Typeable tag, Typeable t, Show tag) =>
     {-# UNPACK #-} !Id ->
@@ -86,7 +101,10 @@ data Term t where
 
 instance Show (Term ty) where
   show (ConcTerm i v) = "ConcTerm{id=" ++ show i ++ ", v=" ++ show v ++ "}"
-  show (SymbTerm i name) = "ShowTerm{id=" ++ show i ++ ", name=" ++ show name ++ ", type=" ++ show (typeRep (Proxy @ty)) ++ "}"
+  show (SymbTerm i name) =
+    "SymbTerm{id=" ++ show i ++ ", name=" ++ show name ++ ", type="
+      ++ show (typeRep (Proxy @ty))
+      ++ "}"
   show (UnaryTerm i tag arg) = "Unary{id=" ++ show i ++ ", tag=" ++ show tag ++ ", arg=" ++ show arg ++ "}"
   show (BinaryTerm i tag arg1 arg2) =
     "Unary{id=" ++ show i ++ ", tag=" ++ show tag ++ ", arg1=" ++ show arg1
@@ -103,7 +121,7 @@ instance Show (Term ty) where
 
 data UTerm t where
   UConcTerm :: (Typeable t, Hashable t, Eq t, Show t) => t -> UTerm t
-  USymbTerm :: (Typeable t) => String -> UTerm t
+  USymbTerm :: (Typeable t) => Symbol -> UTerm t
   UUnaryTerm :: (UnaryOp tag arg t, Typeable tag, Typeable t, Show tag) => tag -> Term arg -> UTerm t
   UBinaryTerm ::
     (BinaryOp tag arg1 arg2 t, Typeable tag, Typeable t, Show tag) =>
@@ -142,14 +160,14 @@ class (Typeable t, Hashable t, Eq t) => SupportedPrim t where
   pformatConc :: t -> String
   default pformatConc :: (Show t) => t -> String
   pformatConc = show
-  pformatSymb :: String -> String
-  pformatSymb = id
+  pformatSymb :: Symbol -> String
+  pformatSymb = show
 
 instance (SupportedPrim t) => Interned (Term t) where
   type Uninterned (Term t) = UTerm t
   data Description (Term t) where
     DConcTerm :: (Typeable t, Hashable t, Eq t, Show t) => t -> Description (Term t)
-    DSymbTerm :: (Typeable t) => String -> Description (Term t)
+    DSymbTerm :: (Typeable t) => Symbol -> Description (Term t)
     DUnaryTerm :: (UnaryOp tag arg t, Typeable tag, Typeable t, Show tag) => tag -> (TypeRep, Id) -> Description (Term t)
     DBinaryTerm ::
       (BinaryOp tag arg1 arg2 t, Typeable tag, Typeable t, Show tag) =>
@@ -265,8 +283,14 @@ constructTernary tag tm1 tm2 tm3 = intern $ UTernaryTerm tag tm1 tm2 tm3
 concTerm :: (SupportedPrim t, Typeable t, Hashable t, Eq t, Show t) => t -> Term t
 concTerm t = intern $ UConcTerm t
 
-symbTerm :: (SupportedPrim t, Typeable t) => String -> Term t
+symbTerm :: (SupportedPrim t, Typeable t) => Symbol -> Term t
 symbTerm t = intern $ USymbTerm t
+
+ssymbTerm :: (SupportedPrim t, Typeable t) => String -> Term t
+ssymbTerm = symbTerm . SimpleSymbol
+
+isymbTerm :: (SupportedPrim t, Typeable t) => Int -> String -> Term t
+isymbTerm idx str = symbTerm $ IndexedSymbol idx str
 
 {-
 To prove that we are doing interning correctly, we ensured that:

@@ -6,7 +6,7 @@ import Interpreter
 
 p1 :: [Stmt]
 p1 =
-  [ ValueStmt $ mrgSingle $ Ops $ VarExpr $ symb "a"
+  [ ValueStmt $ mrgSingle $ Ops $ VarExpr $ ssymb "a"
   ]
 
 p2 :: [Stmt]
@@ -19,9 +19,9 @@ p2 =
 
 p3 :: [Stmt]
 p3 =
-  [ DefineStmt (symb "a") $
-      mrgSingle $ Lit $ BoolLit $ symb "b",
-    ValueStmt $ mrgSingle $ Ops $ VarExpr $ symb "c"
+  [ DefineStmt (ssymb "a") $
+      mrgSingle $ Lit $ BoolLit $ ssymb "b",
+    ValueStmt $ mrgSingle $ Ops $ VarExpr $ ssymb "c"
   ]
 
 main :: IO ()

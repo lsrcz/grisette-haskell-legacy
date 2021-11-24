@@ -3,8 +3,6 @@
 
 module Grisette.Data.SymInteger
   ( SymInteger (..),
-    concInteger,
-    symbInteger,
   )
 where
 
@@ -24,12 +22,6 @@ import Grisette.Data.Class.ToSym
 
 newtype SymInteger = SymInteger (Term Integer) deriving (Eq)
 
-concInteger :: Integer -> SymInteger
-concInteger = conc
-
-symbInteger :: String -> SymInteger
-symbInteger = symb
-
 instance Show SymInteger where
   show (SymInteger t) = pformat t
 
@@ -48,7 +40,8 @@ instance PrimWrapper SymInteger Integer where
   conc = SymInteger . concTerm
   concView (SymInteger (IntegerConcTerm t)) = Just t
   concView _ = Nothing
-  symb = SymInteger . symbTerm
+  ssymb = SymInteger . ssymbTerm
+  isymb i str = SymInteger $ isymbTerm i str
 
 instance ITEOp SymBool SymInteger where
   ites (SymBool c) (SymInteger t) (SymInteger f) = SymInteger $ iteterm c t f
