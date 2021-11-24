@@ -15,6 +15,7 @@ dependencies:
 - intern
 - hashable
 - mtl
+- unordered-containers
 
 library:
   source-dirs: src

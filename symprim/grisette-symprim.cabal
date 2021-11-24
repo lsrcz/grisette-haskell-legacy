@@ -24,13 +24,17 @@ source-repository head
 library
   exposed-modules:
       Grisette.Control.Monad.UnionM
+      Grisette.Data.Class.FiniteFunction
+      Grisette.Data.Class.Integer
       Grisette.Data.Prim.Bool
       Grisette.Data.Prim.Helpers
       Grisette.Data.Prim.Integer
       Grisette.Data.Prim.InternedTerm
+      Grisette.Data.Prim.TabularFunc
       Grisette.Data.StringError
       Grisette.Data.SymBool
       Grisette.Data.SymInteger
+      Grisette.Data.TabularFunc
       Grisette.Data.Union
   other-modules:
       Paths_grisette_symprim
@@ -43,4 +47,5 @@ library
     , hashable
     , intern
     , mtl
+    , unordered-containers
   default-language: Haskell2010

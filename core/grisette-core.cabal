@@ -28,7 +28,6 @@ library
       Grisette.Control.Monad.UnionMBase
       Grisette.Data.Class.Bool
       Grisette.Data.Class.Error
-      Grisette.Data.Class.Integer
       Grisette.Data.Class.Mergeable
       Grisette.Data.Class.PrimWrapper
       Grisette.Data.Class.SimpleMergeable
