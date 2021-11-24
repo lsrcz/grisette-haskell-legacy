@@ -62,6 +62,16 @@ wrapMergeStrategy NoStrategy _ _ = NoStrategy
 guardWithStrategy :: (UnionOp bool u) => MergeStrategy bool a -> bool -> u a -> u a -> u a
 guardWithStrategy _ (Conc True) t _ = t
 guardWithStrategy _ (Conc False) _ f = f
+guardWithStrategy strategy cond (GuardU condTrue tt _) f
+  | cond == condTrue = guardWithStrategy strategy cond tt f
+guardWithStrategy strategy cond (GuardU condTrue _ ft) f
+  | nots cond == condTrue || cond == nots condTrue = guardWithStrategy strategy cond ft f
+
+guardWithStrategy strategy cond t (GuardU condFalse _ ff)
+  | cond == condFalse = guardWithStrategy strategy cond t ff
+guardWithStrategy strategy cond t (GuardU condTrue tf _)
+  | nots cond == condTrue || cond == nots condTrue = guardWithStrategy strategy cond t tf
+
 guardWithStrategy (SimpleStrategy m) cond (SingleU l) (SingleU r) = SingleU $ m cond l r
 guardWithStrategy strategy@(OrderedStrategy idxFun substrategy) cond ifTrue ifFalse = case (ifTrue, ifFalse) of
   (SingleU _, SingleU _) -> ssGuard cond ifTrue ifFalse
@@ -73,15 +83,15 @@ guardWithStrategy strategy@(OrderedStrategy idxFun substrategy) cond ifTrue ifFa
     ssGuard cond' ifTrue' ifFalse'
       | idxt < idxf = GuardU cond' ifTrue' ifFalse'
       | idxt == idxf = guardWithStrategy (substrategy idxt) cond' ifTrue' ifFalse'
-      | otherwise = GuardU (nots cond') ifFalse' ifTrue'
+      | otherwise = guardWithStrategy strategy (nots cond') ifFalse' ifTrue'
       where
         idxt = idxFun $ leftMost ifTrue'
         idxf = idxFun $ leftMost ifFalse'
     sgGuard cond' ifTrue' ifFalse'@(GuardU condf ft ff)
       | idxft == idxff = ssGuard cond' ifTrue' ifFalse'
       | idxt < idxft = GuardU cond' ifTrue' ifFalse'
-      | idxt == idxft = GuardU (cond' ||~ condf) (guardWithStrategy (substrategy idxt) cond' ifTrue' ft) ff
-      | otherwise = GuardU (nots cond' &&~ condf) ft (guardWithStrategy strategy cond' ifTrue' ff)
+      | idxt == idxft = guardWithStrategy strategy (cond' ||~ condf) (guardWithStrategy (substrategy idxt) cond' ifTrue' ft) ff
+      | otherwise = guardWithStrategy strategy (nots cond' &&~ condf) ft (guardWithStrategy strategy cond' ifTrue' ff)
       where
         idxft = idxFun $ leftMost ft
         idxff = idxFun $ leftMost ff
@@ -89,9 +99,9 @@ guardWithStrategy strategy@(OrderedStrategy idxFun substrategy) cond ifTrue ifFa
     sgGuard _ _ _ = undefined
     gsGuard cond' ifTrue'@(GuardU condt tt tf) ifFalse'
       | idxtt == idxtf = ssGuard cond' ifTrue' ifFalse'
-      | idxtt < idxf = GuardU (cond' &&~ condt) ifTrue $ guardWithStrategy strategy cond' tf ifFalse'
-      | idxtt == idxf = GuardU (nots cond' ||~ condt) (guardWithStrategy (substrategy idxf) cond' tt ifFalse') tf
-      | otherwise = GuardU (nots cond') ifFalse' ifTrue'
+      | idxtt < idxf = guardWithStrategy strategy (cond' &&~ condt) ifTrue $ guardWithStrategy strategy cond' tf ifFalse'
+      | idxtt == idxf = guardWithStrategy strategy  (nots cond' ||~ condt) (guardWithStrategy (substrategy idxf) cond' tt ifFalse') tf
+      | otherwise = guardWithStrategy strategy (nots cond') ifFalse' ifTrue'
       where
         idxtt = idxFun $ leftMost tt
         idxtf = idxFun $ leftMost tf
@@ -100,13 +110,13 @@ guardWithStrategy strategy@(OrderedStrategy idxFun substrategy) cond ifTrue ifFa
     ggGuard cond' ifTrue'@(GuardU condt tt tf) ifFalse'@(GuardU condf ft ff)
       | idxtt == idxtf = sgGuard cond' ifTrue' ifFalse'
       | idxft == idxff = gsGuard cond' ifTrue' ifFalse'
-      | idxtt < idxft = GuardU (cond' &&~ condt) tt $ guardWithStrategy strategy cond' tf ifFalse'
+      | idxtt < idxft = guardWithStrategy strategy (cond' &&~ condt) tt $ guardWithStrategy strategy cond' tf ifFalse'
       | idxtt == idxft =
         let newCond = ites cond' condt condf
             newIfTrue = guardWithStrategy (substrategy idxtt) cond' tt ft
             newIfFalse = guardWithStrategy strategy cond' tf ff
-         in GuardU newCond newIfTrue newIfFalse
-      | otherwise = GuardU (nots cond' &&~ condf) ft $ guardWithStrategy strategy cond' ifTrue' ff
+         in guardWithStrategy strategy newCond newIfTrue newIfFalse
+      | otherwise = guardWithStrategy strategy (nots cond' &&~ condf) ft $ guardWithStrategy strategy cond' ifTrue' ff
       where
         idxtt = idxFun $ leftMost tt
         idxtf = idxFun $ leftMost tf
