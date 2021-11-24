@@ -172,6 +172,14 @@ instance (SupportedPrim t) => Eq (Description (Term t)) where
     case eqT @tagl @tagr of
       Just _ -> li == ri
       Nothing -> False
+  DBinaryTerm (_ :: tagl) li1 li2 == DBinaryTerm (_ :: tagr) ri1 ri2 =
+    case eqT @tagl @tagr of
+      Just _ -> li1 == ri1 && li2 == ri2
+      Nothing -> False
+  DTernaryTerm (_ :: tagl) li1 li2 li3 == DTernaryTerm (_ :: tagr) ri1 ri2 ri3 =
+    case eqT @tagl @tagr of
+      Just _ -> li1 == ri1 && li2 == ri2 && li3 == ri3
+      Nothing -> False
   _ == _ = False
 
 instance (SupportedPrim t) => Hashable (Description (Term t)) where
@@ -179,9 +187,9 @@ instance (SupportedPrim t) => Hashable (Description (Term t)) where
   hashWithSalt s (DSymbTerm name) = s `hashWithSalt` (1 :: Int) `hashWithSalt` name
   hashWithSalt s (DUnaryTerm tag id1) = s `hashWithSalt` (2 :: Int) `hashWithSalt` typeOf tag `hashWithSalt` id1
   hashWithSalt s (DBinaryTerm tag id1 id2) =
-    s `hashWithSalt` (2 :: Int) `hashWithSalt` typeOf tag `hashWithSalt` id1 `hashWithSalt` id2
+    s `hashWithSalt` (3 :: Int) `hashWithSalt` typeOf tag `hashWithSalt` id1 `hashWithSalt` id2
   hashWithSalt s (DTernaryTerm tag id1 id2 id3) =
-    s `hashWithSalt` (2 :: Int) `hashWithSalt` typeOf tag `hashWithSalt` id1 `hashWithSalt` id2 `hashWithSalt` id3
+    s `hashWithSalt` (4 :: Int) `hashWithSalt` typeOf tag `hashWithSalt` id1 `hashWithSalt` id2 `hashWithSalt` id3
 
 instance (SupportedPrim t) => Eq (Term t) where
   (==) = (==) `on` identity
