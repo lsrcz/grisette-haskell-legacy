@@ -23,6 +23,7 @@ source-repository head
 
 library
   exposed-modules:
+      Grisette.Control.Monad.UnionM
       Grisette.Data.Prim.Bool
       Grisette.Data.Prim.Helpers
       Grisette.Data.Prim.Integer
@@ -30,6 +31,7 @@ library
       Grisette.Data.StringError
       Grisette.Data.SymBool
       Grisette.Data.SymInteger
+      Grisette.Data.Union
   other-modules:
       Paths_grisette_symprim
   hs-source-dirs:
