@@ -25,6 +25,7 @@ import Data.IORef
 import GHC.IO
 import Grisette.Data.Class.ToSym
 import Grisette.Data.Functor (mrgFmap)
+import Control.Monad.Identity (Identity(..))
 
 data UnionMBase bool a where
   UAny :: IORef (Either (UnionBase bool a) (UnionMBase bool a)) -> UnionBase bool a -> UnionMBase bool a
@@ -110,3 +111,6 @@ instance {-# OVERLAPPABLE #-} (SymBoolOp bool, ToSym a b, Mergeable bool b) => T
 
 instance {-# OVERLAPPING #-} (SymBoolOp bool, ToSym a b, Mergeable bool b) => ToSym (UnionMBase bool a) (UnionMBase bool b) where
   toSym = mrgFmap toSym
+
+instance {-# OVERLAPPING #-} (SymBoolOp bool, ToSym a b, Mergeable bool b) => ToSym (Identity a) (UnionMBase bool b) where
+  toSym (Identity x) = toSym x

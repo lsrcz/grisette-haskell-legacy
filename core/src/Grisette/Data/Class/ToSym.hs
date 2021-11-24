@@ -69,22 +69,22 @@ instance (ToSym a b, ToSym c d) => ToSym (d -> a) (c -> b) where
   toSym f = toSym . f . toSym
 
 -- MaybeT
-instance (ToSym (m (Maybe a)) (m (Maybe b))) => 
-  ToSym (MaybeT m a) (MaybeT m b) where
+instance (ToSym (m1 (Maybe a)) (m2 (Maybe b))) => 
+  ToSym (MaybeT m1 a) (MaybeT m2 b) where
     toSym (MaybeT v) = MaybeT $ toSym v
 
 -- ExceptT
-instance (ToSym (m (Either e1 a)) (m (Either e2 b))) => 
-  ToSym (ExceptT e1 m a) (ExceptT e2 m b) where
+instance (ToSym (m1 (Either e1 a)) (m2 (Either e2 b))) => 
+  ToSym (ExceptT e1 m1 a) (ExceptT e2 m2 b) where
     toSym (ExceptT v) = ExceptT $ toSym v
 
 -- Coroutine
-instance (ToSym (m (Either (sus (Coroutine sus m a)) a)) (m (Either (sus (Coroutine sus m b)) b))) =>
- ToSym (Coroutine sus m a) (Coroutine sus m b) where
+instance (ToSym (m1 (Either (sus (Coroutine sus m1 a)) a)) (m2 (Either (sus (Coroutine sus m2 b)) b))) =>
+ ToSym (Coroutine sus m1 a) (Coroutine sus m2 b) where
    toSym (Coroutine a) = Coroutine $ toSym a
   
 -- StateT
-instance (ToSym (s1 -> m (a1, s1)) (s2 -> m (a2, s2))) => ToSym (StateT s1 m a1) (StateT s2 m a2) where
+instance (ToSym (s1 -> m1 (a1, s1)) (s2 -> m2 (a2, s2))) => ToSym (StateT s1 m1 a1) (StateT s2 m2 a2) where
   toSym (StateT f1) = StateT $ toSym f1
 
 
