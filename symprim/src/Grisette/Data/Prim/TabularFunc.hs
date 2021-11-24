@@ -10,15 +10,22 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Grisette.Data.Prim.TabularFunc where
+module Grisette.Data.Prim.TabularFunc
+  ( pattern TabularFuncConcTerm,
+    pattern TabularFuncTerm,
+    ApplyF (..),
+    applyf,
+    pattern ApplyFTerm,
+  )
+where
 
 import Data.Data
+import Data.Hashable
 import Grisette.Data.Class.FiniteFunction
+import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.Helpers
 import Grisette.Data.Prim.InternedTerm
 import Grisette.Data.TabularFunc
-import Data.Hashable
-import Grisette.Data.Prim.Bool
 
 instance
   (Show a, Show b, Typeable a, Typeable b, SupportedPrim a, SupportedPrim b, Eq a, Eq b, Hashable a, Hashable b) =>
@@ -49,7 +56,7 @@ instance (Show a, Show b, SupportedPrim a, SupportedPrim b) => BinaryPartialStra
   leftConstantHandler (TabularFunc f d) a = Just $ go f
     where
       go [] = concTerm d
-      go ((x,y):xs) = iteterm (eqterm a (concTerm x)) (concTerm y) (go xs)
+      go ((x, y) : xs) = iteterm (eqterm a (concTerm x)) (concTerm y) (go xs)
   rightConstantHandler _ _ = Nothing
   nonBinaryConstantHandler _ _ = Nothing
 
@@ -59,3 +66,6 @@ instance (Show a, Show b, SupportedPrim a, SupportedPrim b) => BinaryOp ApplyF (
 
 applyf :: (Show a, Show b, SupportedPrim a, SupportedPrim b) => Term (a =-> b) -> Term a -> Term b
 applyf = partialEvalBinary ApplyF
+
+pattern ApplyFTerm :: (Typeable a, Typeable b) => Term (a =-> b) -> Term b -> Term c
+pattern ApplyFTerm l r <- BinaryTermPatt ApplyF l r

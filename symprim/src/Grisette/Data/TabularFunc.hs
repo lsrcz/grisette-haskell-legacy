@@ -1,9 +1,10 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE ExplicitNamespaces #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Grisette.Data.TabularFunc where
+module Grisette.Data.TabularFunc (type (=->) (..)) where
 
 import Data.Hashable
 import GHC.Generics
