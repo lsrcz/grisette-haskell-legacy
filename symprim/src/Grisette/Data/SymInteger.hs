@@ -1,24 +1,25 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeApplications #-}
 
-module Grisette.Data.SymInteger (
-  SymInteger(..),
-  concInteger,
-  symbInteger,
-) where
+module Grisette.Data.SymInteger
+  ( SymInteger (..),
+    concInteger,
+    symbInteger,
+  )
+where
 
 import Control.Monad.Except
 import Grisette.Control.Monad
-import Grisette.Data.Class.Mergeable
-import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Error
 import Grisette.Data.Class.Integer
+import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.PrimWrapper
-import Grisette.Data.SymBool
+import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.Integer
 import Grisette.Data.Prim.InternedTerm
+import Grisette.Data.SymBool
 
 newtype SymInteger = SymInteger (Term Integer) deriving (Eq)
 
@@ -59,14 +60,14 @@ instance SimpleMergeable SymBool SymInteger where
 
 instance SignedDivMod SymBool SymInteger where
   divs (SymInteger l) rs@(SymInteger r) =
-    withSimpleMergeableU $
-      mrgIf
+    withSimpleMergeableU @SymBool $
+      mrgIf @SymBool
         (rs ==~ conc 0)
         (throwError $ transformError DivByZeroError)
         (mrgReturn $ SymInteger $ divi l r)
   mods (SymInteger l) rs@(SymInteger r) =
-    withSimpleMergeableU $
-      mrgIf
+    withSimpleMergeableU @SymBool $
+      mrgIf @SymBool
         (rs ==~ conc 0)
         (throwError $ transformError DivByZeroError)
         (mrgReturn $ SymInteger $ modi l r)

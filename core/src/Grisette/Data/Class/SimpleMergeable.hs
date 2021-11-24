@@ -28,7 +28,7 @@ import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.Utils.CConst
 
-class Mergeable bool a => SimpleMergeable bool a | a -> bool where
+class Mergeable bool a => SimpleMergeable bool a where
   mrgIf :: bool -> a -> a -> a
 
 class (Mergeable1 bool u) => SimpleMergeable1 bool u where
@@ -64,6 +64,9 @@ withUnionMSimpleMergeable v = unCConst $ withUnionMSimpleMergeableT @bool @u @a 
 
 withUnionMSimpleMergeableU :: forall bool u a. (UnionMOp bool u, Mergeable bool a) => (SimpleMergeable bool (u a) => u a) -> u a
 withUnionMSimpleMergeableU = withUnionMSimpleMergeable @bool @u @a
+
+instance (SymBoolOp bool) => SimpleMergeable bool () where
+  mrgIf _ t _ = t
 
 instance (SymBoolOp bool, SimpleMergeable bool a, SimpleMergeable bool b) => SimpleMergeable bool (a, b) where
   mrgIf cond (a1, b1) (a2, b2) = (mrgIf cond a1 a2, mrgIf cond b1 b2)

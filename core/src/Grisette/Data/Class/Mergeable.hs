@@ -184,6 +184,9 @@ instance (Mergeable' bool a, Mergeable' bool b) => Mergeable' bool (a :*: b) whe
 
 -- instances
 
+-- ()
+instance (SymBoolOp bool) => Mergeable bool ()
+
 -- Either
 instance (SymBoolOp bool, Mergeable bool e, Mergeable bool a) => Mergeable bool (Either e a)
 
@@ -193,6 +196,14 @@ instance (SymBoolOp bool, Mergeable bool e) => Mergeable1 bool (Either e)
 instance (SymBoolOp bool, Mergeable bool a) => Mergeable bool (Maybe a)
 
 instance (SymBoolOp bool) => Mergeable1 bool Maybe
+
+-- List
+instance (SymBoolOp bool, Mergeable bool a) => Mergeable bool [a] where
+  --mergeStrategy = OrderedStrategy length $ \_ -> case mergeStrategy of
+  --  SimpleStrategy m -> SimpleStrategy $ \cond t f -> zipWith (m cond) t f
+  --  _ -> NoStrategy -- in the future we may change this
+
+instance (SymBoolOp bool) => Mergeable1 bool [] where
 
 -- (,)
 instance (SymBoolOp bool, Mergeable bool a, Mergeable bool b) => Mergeable bool (a, b)
