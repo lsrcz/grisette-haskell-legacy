@@ -3,14 +3,18 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 
-module Grisette.Control.Monad.Trans where
+module Grisette.Control.Monad.Trans
+  ( mrgLift,
+  )
+where
 
 import Control.Monad.Trans
-import Grisette.Control.Monad.Union.Mergeable
+import Grisette.Data.Class.Mergeable
+import Grisette.Data.Class.SimpleMergeable
 
 mrgLift ::
   forall bool t m a.
   (UnionMOp bool (t m), MonadTrans t, Monad m, Mergeable bool a) =>
   m a ->
   t m a
-mrgLift = withUnionMSimpleMergeableU . merge . lift 
+mrgLift = withUnionMSimpleMergeableU . merge . lift

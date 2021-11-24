@@ -3,9 +3,14 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 
-module Grisette.Control.Monad where
+module Grisette.Control.Monad
+  ( mrgReturn,
+    (>>=~),
+  )
+where
 
-import Grisette.Control.Monad.Union.Mergeable
+import Grisette.Data.Class.Mergeable
+import Grisette.Data.Class.SimpleMergeable
 
 mrgReturn :: forall bool m a. (UnionMOp bool m, Mergeable bool a, Monad m) => a -> m a
 mrgReturn = withUnionMSimpleMergeableU . merge . return

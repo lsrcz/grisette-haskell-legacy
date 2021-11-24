@@ -1,15 +1,15 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE DefaultSignatures #-}
-{-# LANGUAGE GADTs #-}
 
-module Grisette.Prim.Helpers
+module Grisette.Data.Prim.Helpers
   ( pattern UnaryTermPatt,
     pattern BinaryTermPatt,
     pattern TernaryTermPatt,
@@ -20,16 +20,16 @@ module Grisette.Prim.Helpers
     TotalRuleBinary,
     totalize,
     totalize2,
-    UnaryPartialStrategy(..),
+    UnaryPartialStrategy (..),
     unaryPartial,
-    BinaryCommPartialStrategy(..),
-    BinaryPartialStrategy(..),
-    binaryPartial
+    BinaryCommPartialStrategy (..),
+    BinaryPartialStrategy (..),
+    binaryPartial,
   )
 where
 
 import Data.Typeable
-import Grisette.Prim.InternedTerm
+import Grisette.Data.Prim.InternedTerm
 
 unaryTermView :: forall a b tag. (Typeable tag, Typeable b) => Term a -> Maybe (tag, Term b)
 unaryTermView (UnaryTerm _ (tag :: tagt) t1) =
@@ -88,11 +88,10 @@ totalize2 partial fallback a b =
     Just c -> c
     Nothing -> fallback a b
 
-
 class UnaryPartialStrategy tag a b | tag a -> b where
   extractor :: Term a -> Maybe a
-  constantHandler :: a -> Maybe(Term b)
-  nonConstantHandler :: Term a -> Maybe(Term b)
+  constantHandler :: a -> Maybe (Term b)
+  nonConstantHandler :: Term a -> Maybe (Term b)
 
 unaryPartial :: forall tag a b. (UnaryPartialStrategy tag a b) => PartialRuleUnary a b
 unaryPartial a = case extractor @tag @a @b a of
@@ -100,19 +99,19 @@ unaryPartial a = case extractor @tag @a @b a of
   Just a' -> constantHandler @tag @a @b a'
 
 class BinaryCommPartialStrategy tag a c | tag a -> c where
-  singleConstantHandler :: a -> Term a -> Maybe(Term c)
+  singleConstantHandler :: a -> Term a -> Maybe (Term c)
 
 class BinaryPartialStrategy tag a b c | tag a b -> c where
   extractora :: Term a -> Maybe a
   extractorb :: Term b -> Maybe b
-  allConstantHandler :: a -> b -> Maybe(Term c)
-  leftConstantHandler :: a -> Term b -> Maybe(Term c)
+  allConstantHandler :: a -> b -> Maybe (Term c)
+  leftConstantHandler :: a -> Term b -> Maybe (Term c)
   default leftConstantHandler :: (a ~ b, BinaryCommPartialStrategy tag a c) => a -> Term b -> Maybe (Term c)
   leftConstantHandler = singleConstantHandler @tag @a
-  rightConstantHandler :: Term a -> b -> Maybe(Term c)
+  rightConstantHandler :: Term a -> b -> Maybe (Term c)
   default rightConstantHandler :: (a ~ b, BinaryCommPartialStrategy tag a c) => Term a -> b -> Maybe (Term c)
   rightConstantHandler = flip $ singleConstantHandler @tag @a
-  nonBinaryConstantHandler :: Term a -> Term b -> Maybe(Term c)
+  nonBinaryConstantHandler :: Term a -> Term b -> Maybe (Term c)
 
 binaryPartial :: forall tag a b c. (BinaryPartialStrategy tag a b c) => PartialRuleBinary a b c
 binaryPartial a b = case (extractora @tag @a @b @c a, extractorb @tag @a @b @c b) of
@@ -120,6 +119,3 @@ binaryPartial a b = case (extractora @tag @a @b @c a, extractorb @tag @a @b @c b
   (Just a', Nothing) -> leftConstantHandler @tag @a @b @c a' b
   (Nothing, Just b') -> rightConstantHandler @tag @a @b @c a b'
   (Just a', Just b') -> allConstantHandler @tag @a @b @c a' b'
-
-  
-

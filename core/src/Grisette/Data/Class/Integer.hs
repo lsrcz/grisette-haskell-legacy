@@ -4,13 +4,21 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
 
-module Grisette.Data.Class.Int where
+module Grisette.Data.Class.Integer
+  ( LinearArithOp (..),
+    TimesOp (..),
+    ArithError (..),
+    SignedDivMod (..),
+    UnsignedDivMod (..),
+    SignedQuotRem (..),
+    SymIntegerOp,
+  )
+where
 
 import Control.Monad.Except
-import Grisette.Control.Monad.Union.Mergeable
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Error
-import Grisette.Data.StringError
+import Grisette.Data.Class.SimpleMergeable
 
 class LinearArithOp a where
   (+~) :: a -> a -> a
@@ -25,9 +33,6 @@ data ArithError = DivByZeroError deriving (Show)
 instance TransformError ArithError () where
   transformError _ = ()
 
-instance TransformError ArithError StringError where
-  transformError DivByZeroError = StringError "DivByZero"
-
 class SignedDivMod bool a where
   divs :: (MonadError e uf, Monad uf, UnionMOp bool uf, TransformError ArithError e) => a -> a -> uf a
   mods :: (MonadError e uf, Monad uf, UnionMOp bool uf, TransformError ArithError e) => a -> a -> uf a
@@ -40,4 +45,4 @@ class SignedQuotRem bool a where
   quots :: (MonadError e uf, Monad uf, UnionMOp bool uf, TransformError ArithError e) => a -> a -> uf a
   rems :: (MonadError e uf, Monad uf, UnionMOp bool uf, TransformError ArithError e) => a -> a -> uf a
 
-class (LinearArithOp a, TimesOp a, SEq bool a) => IntOp bool a
+class (LinearArithOp a, TimesOp a, SEq bool a) => SymIntegerOp bool a

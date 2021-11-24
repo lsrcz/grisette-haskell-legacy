@@ -1,25 +1,28 @@
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE UndecidableSuperClasses #-}
+{-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE UndecidableInstances #-}
-module Grisette.Data.Class.Bool (
-  SEq(..),
-  SEq'(..),
-  (/=~),
-  LogicalOp(..),
-  SymBoolOp,
-  ITEOp(..)
-)where
-import Grisette.Data.Class.PrimWrapper
-import Generics.Deriving
+{-# LANGUAGE UndecidableSuperClasses #-}
+
+module Grisette.Data.Class.Bool
+  ( SEq (..),
+    SEq' (..),
+    (/=~),
+    LogicalOp (..),
+    SymBoolOp,
+    ITEOp (..),
+  )
+where
+
 import Control.Monad.Except
 import Control.Monad.Trans.Maybe
+import Generics.Deriving
+import Grisette.Data.Class.PrimWrapper
 
-class (SymBoolOp bool) => SEq' bool f  where
+class (SymBoolOp bool) => SEq' bool f where
   (==~~) :: f a -> f a -> bool
   infix 4 ==~~
 
@@ -51,6 +54,7 @@ class (SymBoolOp bool) => SEq bool a where
 
 (/=~) :: (SEq bool a) => a -> a -> bool
 (/=~) l r = nots $ l ==~ r
+
 infix 4 /=~
 
 class LogicalOp b where
@@ -69,7 +73,7 @@ class LogicalOp b where
 class ITEOp b v where
   ites :: b -> v -> v -> v
 
-class (SEq b b, Eq b, LogicalOp b, PrimWrapper b Bool, ITEOp b b) => SymBoolOp b where
+class (SEq b b, Eq b, LogicalOp b, PrimWrapper b Bool, ITEOp b b) => SymBoolOp b
 
 instance (SymBoolOp bool, SEq bool a) => SEq bool (Maybe a)
 

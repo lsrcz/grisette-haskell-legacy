@@ -1,21 +1,32 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeApplications #-}
 
-module Grisette.Data.SymInt where
+module Grisette.Data.SymInteger (
+  SymInteger(..),
+  concInteger,
+  symbInteger,
+) where
 
 import Control.Monad.Except
 import Grisette.Control.Monad
-import Grisette.Control.Monad.Union.Mergeable
+import Grisette.Data.Class.Mergeable
+import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Error
-import Grisette.Data.Class.Int
+import Grisette.Data.Class.Integer
 import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.SymBool
-import Grisette.Prim.Bool
-import Grisette.Prim.Integer
-import Grisette.Prim.InternedTerm
+import Grisette.Data.Prim.Bool
+import Grisette.Data.Prim.Integer
+import Grisette.Data.Prim.InternedTerm
 
 newtype SymInteger = SymInteger (Term Integer) deriving (Eq)
+
+concInteger :: Integer -> SymInteger
+concInteger = conc
+
+symbInteger :: String -> SymInteger
+symbInteger = symb
 
 instance Show SymInteger where
   show (SymInteger t) = pformat t
@@ -33,7 +44,7 @@ instance TimesOp SymInteger where
 
 instance PrimWrapper SymInteger Integer where
   conc = SymInteger . concTerm
-  concView (SymInteger (IntConcTerm t)) = Just t
+  concView (SymInteger (IntegerConcTerm t)) = Just t
   concView _ = Nothing
   symb = SymInteger . symbTerm
 
@@ -59,3 +70,5 @@ instance SignedDivMod SymBool SymInteger where
         (rs ==~ conc 0)
         (throwError $ transformError DivByZeroError)
         (mrgReturn $ SymInteger $ modi l r)
+
+instance SymIntegerOp SymBool SymInteger

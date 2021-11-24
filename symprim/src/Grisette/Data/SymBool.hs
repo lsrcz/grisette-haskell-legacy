@@ -1,15 +1,22 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
-module Grisette.Data.SymBool where
+{-# LANGUAGE MultiParamTypeClasses #-}
 
-import Grisette.Prim.Bool
-import Grisette.Prim.InternedTerm
+module Grisette.Data.SymBool
+  ( SymBool (..),
+    concBool,
+    symbBool,
+  )
+where
+
 import Grisette.Data.Class.Bool
+import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.PrimWrapper
-import Grisette.Control.Monad.Union.Mergeable
+import Grisette.Data.Class.SimpleMergeable
+import Grisette.Data.Prim.Bool
+import Grisette.Data.Prim.InternedTerm
 
-newtype SymBool = SymBool (Term Bool) deriving Eq
+newtype SymBool = SymBool (Term Bool) deriving (Eq)
 
 instance Show SymBool where
   show (SymBool t) = pformat t

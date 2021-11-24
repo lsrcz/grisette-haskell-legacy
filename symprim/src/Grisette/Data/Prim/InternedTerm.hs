@@ -11,12 +11,12 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Grisette.Prim.InternedTerm
+module Grisette.Data.Prim.InternedTerm
   ( UnaryOp (..),
     BinaryOp (..),
     TernaryOp (..),
-    Term(..),
-    SupportedPrim(..),
+    Term (..),
+    SupportedPrim (..),
     castTerm,
     identity,
     pformat,
@@ -24,12 +24,12 @@ module Grisette.Prim.InternedTerm
     constructBinary,
     constructTernary,
     concTerm,
-    symbTerm
+    symbTerm,
   )
 where
 
 import Data.Function (on)
-import Data.Hashable
+import Data.Hashable (Hashable (hashWithSalt))
 import Data.Interned
 import Data.Typeable
 

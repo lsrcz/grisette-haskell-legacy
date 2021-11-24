@@ -10,7 +10,7 @@
 {-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Grisette.Prim.Bool
+module Grisette.Data.Prim.Bool
   ( trueTerm,
     falseTerm,
     pattern BoolConcTerm,
@@ -43,8 +43,8 @@ where
 import Control.Monad.Except
 import Data.Maybe
 import Data.Typeable
-import Grisette.Prim.Helpers
-import Grisette.Prim.InternedTerm
+import Grisette.Data.Prim.Helpers
+import Grisette.Data.Prim.InternedTerm
 
 -- Basic Bool
 instance SupportedPrim Bool where
@@ -102,7 +102,7 @@ neterm :: (SupportedPrim a) => Term a -> Term a -> Term Bool
 neterm l r = notb $ eqterm l r
 
 instance SupportedPrim a => BinaryOp Eqv a a Bool where
-  partialEvalBinary _ l@ConcTerm{} r@ConcTerm{} = concTerm $ l == r
+  partialEvalBinary _ l@ConcTerm {} r@ConcTerm {} = concTerm $ l == r
   partialEvalBinary _ (NotTerm lv) (BoolTerm r)
     | lv == r = falseTerm
   partialEvalBinary _ (BoolTerm l) (NotTerm rv)

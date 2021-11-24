@@ -1,14 +1,16 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-module Grisette.Control.Monad.Union where
-import Grisette.Control.Monad.Union.UnionOp
-import Grisette.Data.Class.Bool
+
+module Grisette.Data.UnionBase (UnionBase (..)) where
+
 import Data.Functor.Classes
+import Grisette.Data.Class.Bool
+import Grisette.Data.Class.UnionOp
 
 data UnionBase b a
   = Single a
   | Guard a b (UnionBase b a) (UnionBase b a)
-  deriving Show
+  deriving (Show)
 
 instance SymBoolOp bool => UnionOp bool (UnionBase bool) where
   single = Single

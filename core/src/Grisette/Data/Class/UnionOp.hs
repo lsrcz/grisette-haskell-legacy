@@ -1,11 +1,18 @@
+{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE UndecidableSuperClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Grisette.Control.Monad.Union.UnionOp where
+{-# LANGUAGE UndecidableSuperClasses #-}
+{-# LANGUAGE ViewPatterns #-}
+
+module Grisette.Data.Class.UnionOp
+  ( UnionOp (..),
+    pattern SingleU,
+    pattern GuardU,
+  )
+where
+
 import Grisette.Data.Class.Bool
 
 class (SymBoolOp bool) => UnionOp bool (u :: * -> *) | u -> bool where
@@ -16,9 +23,13 @@ class (SymBoolOp bool) => UnionOp bool (u :: * -> *) | u -> bool where
   leftMost :: u a -> a
 
 pattern SingleU :: UnionOp bool u => a -> u a
-pattern SingleU x <- (singleView -> Just x)
-  where SingleU x = single x
+pattern SingleU x <-
+  (singleView -> Just x)
+  where
+    SingleU x = single x
 
 pattern GuardU :: UnionOp bool u => bool -> u a -> u a -> u a
-pattern GuardU c t f <- (guardView -> Just (c, t, f))
-  where GuardU c t f = guard c t f
+pattern GuardU c t f <-
+  (guardView -> Just (c, t, f))
+  where
+    GuardU c t f = guard c t f

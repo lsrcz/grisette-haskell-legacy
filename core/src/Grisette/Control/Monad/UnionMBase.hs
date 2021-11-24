@@ -4,14 +4,19 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 
-module Grisette.Control.Monad.UnionM where
+module Grisette.Control.Monad.UnionMBase
+  ( UnionMBase,
+    underlyingUnion,
+  )
+where
 
 import Data.Functor.Classes
 import Grisette.Control.Monad
-import Grisette.Control.Monad.Union
-import Grisette.Control.Monad.Union.Mergeable
-import Grisette.Control.Monad.Union.UnionOp
 import Grisette.Data.Class.Bool
+import Grisette.Data.Class.Mergeable
+import Grisette.Data.Class.SimpleMergeable
+import Grisette.Data.Class.UnionOp
+import Grisette.Data.UnionBase
 
 data UnionMBase bool a where
   UAny :: UnionBase bool a -> UnionMBase bool a
@@ -64,9 +69,9 @@ instance (SymBoolOp bool, Mergeable bool a) => Mergeable bool (UnionMBase bool a
 instance (SymBoolOp bool, Mergeable bool a) => SimpleMergeable bool (UnionMBase bool a) where
   mrgIf = mrgGuard
 
-instance (SymBoolOp bool) => Mergeable1 bool (UnionMBase bool) where
+instance (SymBoolOp bool) => Mergeable1 bool (UnionMBase bool)
 
-instance SymBoolOp bool => SimpleMergeable1 bool (UnionMBase bool) where
+instance SymBoolOp bool => SimpleMergeable1 bool (UnionMBase bool)
 
 instance SymBoolOp bool => UnionMOp bool (UnionMBase bool) where
   merge u = u >>= mrgSingle

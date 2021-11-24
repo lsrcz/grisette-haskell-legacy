@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 
-name:           grisette-core
+name:           grisette-symprim
 version:        0.1.0.0
-synopsis:       Monadic symbolic compilation
-description:    Monadic library for a symbolic host language in haskell
+synopsis:       Symbolic primitives
+description:    Default symbolic primitives implementation for grisette
 category:       Formal Methods, Theorem Provers, Symbolic Computation, SMT
 homepage:       https://github.com/lsrcz/grisette-haskell#readme
 bug-reports:    https://github.com/lsrcz/grisette-haskell/issues
@@ -23,31 +23,22 @@ source-repository head
 
 library
   exposed-modules:
-      Grisette.Control.Monad
-      Grisette.Control.Monad.Trans
-      Grisette.Control.Monad.UnionMBase
-      Grisette.Data.Class.Bool
-      Grisette.Data.Class.Error
-      Grisette.Data.Class.Integer
-      Grisette.Data.Class.Mergeable
-      Grisette.Data.Class.PrimWrapper
-      Grisette.Data.Class.SimpleMergeable
-      Grisette.Data.Class.UnionOp
-      Grisette.Data.Class.Utils.CConst
-      Grisette.Data.UnionBase
+      Grisette.Data.Prim.Bool
+      Grisette.Data.Prim.Helpers
+      Grisette.Data.Prim.Integer
+      Grisette.Data.Prim.InternedTerm
+      Grisette.Data.StringError
+      Grisette.Data.SymBool
+      Grisette.Data.SymInteger
   other-modules:
-      Paths_grisette_core
+      Paths_grisette_symprim
   hs-source-dirs:
       src
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie
-    , base >4.7 && <5
-    , constraints
-    , generic-deriving
+      base >4.7 && <5
+    , grisette-core
     , hashable
     , intern
-    , monad-coroutine
     , mtl
-    , transformers
   default-language: Haskell2010
