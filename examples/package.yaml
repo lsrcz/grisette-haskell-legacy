@@ -1,0 +1,25 @@
+name: grisette-examples
+version: 0.1.0.0
+synopsis: Example code for Grisette
+description: Example symbolic DSLs
+category: Formal Methods, Theorem Provers, Symbolic Computation, SMT
+author: "Sirui Lu"
+maintainer: siruilu@uw.edu
+license: BSD3
+github: lsrcz/grisette-haskell
+copyright: "2021 Sirui Lu"
+
+dependencies:
+- base > 4.7 && < 5
+- grisette-core
+- grisette-symprim
+- mtl
+
+ghc-options: -Wall -ferror-spans
+
+executables:
+  expr-interpreter:
+    source-dirs: expr-interpreter
+    main: Main.hs
+
+
