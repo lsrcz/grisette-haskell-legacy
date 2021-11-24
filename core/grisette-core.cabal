@@ -29,8 +29,10 @@ library
       Grisette.Data.Class.Bool
       Grisette.Data.Class.Error
       Grisette.Data.Class.Mergeable
+      Grisette.Data.Class.OrphanGeneric
       Grisette.Data.Class.PrimWrapper
       Grisette.Data.Class.SimpleMergeable
+      Grisette.Data.Class.ToSym
       Grisette.Data.Class.UnionOp
       Grisette.Data.Class.Utils.CConst
       Grisette.Data.Functor

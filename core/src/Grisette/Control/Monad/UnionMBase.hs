@@ -23,6 +23,8 @@ import Grisette.Data.Class.UnionOp
 import Grisette.Data.UnionBase
 import Data.IORef
 import GHC.IO
+import Grisette.Data.Class.ToSym
+import Grisette.Data.Functor (mrgFmap)
 
 data UnionMBase bool a where
   UAny :: IORef (Either (UnionBase bool a) (UnionMBase bool a)) -> UnionBase bool a -> UnionMBase bool a
@@ -102,3 +104,9 @@ instance (SymBoolOp bool, SEq bool a, Mergeable bool bool) => SEq bool (UnionMBa
                  ) of
     UMrg (Single v) -> v
     _ -> error "Should not happen"
+
+instance {-# OVERLAPPABLE #-} (SymBoolOp bool, ToSym a b, Mergeable bool b) => ToSym a (UnionMBase bool b) where
+  toSym = mrgSingle . toSym
+
+instance {-# OVERLAPPING #-} (SymBoolOp bool, ToSym a b, Mergeable bool b) => ToSym (UnionMBase bool a) (UnionMBase bool b) where
+  toSym = mrgFmap toSym

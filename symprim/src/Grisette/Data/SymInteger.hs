@@ -20,6 +20,7 @@ import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.Integer
 import Grisette.Data.Prim.InternedTerm
 import Grisette.Data.SymBool
+import Grisette.Data.Class.ToSym
 
 newtype SymInteger = SymInteger (Term Integer) deriving (Eq)
 
@@ -73,3 +74,9 @@ instance SignedDivMod SymBool SymInteger where
         (mrgReturn $ SymInteger $ modi l r)
 
 instance SymIntegerOp SymBool SymInteger
+
+instance ToSym Integer SymInteger where
+  toSym = conc
+
+instance ToSym SymInteger SymInteger where
+  toSym = id
