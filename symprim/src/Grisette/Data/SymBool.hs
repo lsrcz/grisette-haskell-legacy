@@ -14,6 +14,7 @@ import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.InternedTerm
 import Grisette.Data.Class.ToSym
+import Grisette.Data.Class.ToCon
 
 newtype SymBool = SymBool (Term Bool) deriving (Eq)
 
@@ -51,3 +52,10 @@ instance ToSym Bool SymBool where
 
 instance ToSym SymBool SymBool where
   toSym = id
+
+instance ToCon SymBool SymBool where
+  toCon = Just
+
+instance ToCon SymBool Bool where
+  toCon (SymBool (BoolConcTerm t)) = Just t
+  toCon _ = Nothing

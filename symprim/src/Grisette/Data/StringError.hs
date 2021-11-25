@@ -11,6 +11,8 @@ import Grisette.Data.Class.Error
 import Grisette.Data.Class.Integer
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.PrimWrapper
+import Grisette.Data.Class.ToSym
+import Grisette.Data.Class.ToCon
 
 newtype StringError = StringError String deriving (Eq, Ord)
 
@@ -25,3 +27,10 @@ instance (SymBoolOp bool) => SEq bool StringError where
 
 instance TransformError ArithError StringError where
   transformError DivByZeroError = StringError "DivByZero"
+
+instance ToSym StringError StringError where
+  toSym = id
+
+instance ToCon StringError StringError where
+  toCon = Just
+

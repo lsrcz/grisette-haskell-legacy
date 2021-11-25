@@ -6,6 +6,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE BangPatterns #-}
 {-# OPTIONS_GHC -fno-cse #-}
+{-# LANGUAGE FlexibleContexts #-}
 -- {-# OPTIONS_GHC -fno-full-laziness #-}
 
 module Grisette.Control.Monad.UnionMBase
@@ -26,6 +27,7 @@ import GHC.IO
 import Grisette.Data.Class.ToSym
 import Grisette.Data.Functor (mrgFmap)
 import Control.Monad.Identity (Identity(..))
+import Grisette.Data.Class.ToCon
 
 data UnionMBase bool a where
   UAny :: IORef (Either (UnionBase bool a) (UnionMBase bool a)) -> UnionBase bool a -> UnionMBase bool a
@@ -114,3 +116,21 @@ instance {-# OVERLAPPING #-} (SymBoolOp bool, ToSym a b, Mergeable bool b) => To
 
 instance {-# OVERLAPPING #-} (SymBoolOp bool, ToSym a b, Mergeable bool b) => ToSym (Identity a) (UnionMBase bool b) where
   toSym (Identity x) = toSym x
+
+instance (SymBoolOp bool, ToCon a b) => ToCon (UnionMBase bool a) b where
+  toCon v = go $ underlyingUnion v
+    where
+      go (Single x) = toCon x
+      go _ = Nothing
+
+instance (SymBoolOp bool, ToCon a b, Mergeable bool b) => ToCon (UnionMBase bool a) (UnionMBase bool b) where
+  toCon v = go $ underlyingUnion v
+    where
+      go (Single x) = mrgSingle <$> toCon x
+      go (Guard _ cond t f) = do
+        t1 <- go t
+        f1 <- go f
+        return $ guard cond t1 f1
+
+instance (SymBoolOp bool, ToCon a b) => ToCon (UnionMBase bool a) (Identity b) where
+  toCon v = Identity <$> (toCon v :: Maybe b)

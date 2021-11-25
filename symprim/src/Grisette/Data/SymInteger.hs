@@ -19,6 +19,7 @@ import Grisette.Data.Prim.Integer
 import Grisette.Data.Prim.InternedTerm
 import Grisette.Data.SymBool
 import Grisette.Data.Class.ToSym
+import Grisette.Data.Class.ToCon
 
 newtype SymInteger = SymInteger (Term Integer) deriving (Eq)
 
@@ -73,3 +74,10 @@ instance ToSym Integer SymInteger where
 
 instance ToSym SymInteger SymInteger where
   toSym = id
+
+instance ToCon SymInteger SymInteger where
+  toCon = Just
+
+instance ToCon SymInteger Integer where
+  toCon (SymInteger (IntegerConcTerm t)) = Just t
+  toCon _ = Nothing
