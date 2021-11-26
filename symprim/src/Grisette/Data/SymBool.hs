@@ -15,6 +15,8 @@ import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.InternedTerm
 import Grisette.Data.Class.ToSym
 import Grisette.Data.Class.ToCon
+import Grisette.Data.Class.SymEval
+import Grisette.Data.Prim.Model
 
 newtype SymBool = SymBool (Term Bool) deriving (Eq)
 
@@ -59,3 +61,6 @@ instance ToCon SymBool SymBool where
 instance ToCon SymBool Bool where
   toCon (SymBool (BoolConcTerm t)) = Just t
   toCon _ = Nothing
+
+instance SymEval Model SymBool where
+  symeval fillDefault model (SymBool t) = SymBool $ evaluateTerm fillDefault model t

@@ -1,6 +1,7 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
@@ -12,7 +13,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -fno-cse #-}
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Grisette.Data.Prim.InternedTerm
   ( UnaryOp (..),
@@ -20,6 +21,7 @@ module Grisette.Data.Prim.InternedTerm
     TernaryOp (..),
     Term (..),
     SupportedPrim (..),
+    Symbol (..),
     castTerm,
     identity,
     pformat,
@@ -30,7 +32,7 @@ module Grisette.Data.Prim.InternedTerm
     symbTerm,
     ssymbTerm,
     isymbTerm,
-  )
+  TermSymbol(..))
 where
 
 import Data.Dynamic
@@ -40,8 +42,8 @@ import Data.Hashable (Hashable (hashWithSalt))
 import Data.IORef (IORef, atomicModifyIORef', newIORef)
 import Data.Interned
 import Data.Typeable
-import GHC.IO (unsafeDupablePerformIO)
 import GHC.Generics
+import GHC.IO (unsafeDupablePerformIO)
 
 class (SupportedPrim arg, SupportedPrim t) => UnaryOp tag arg t | tag arg -> t where
   partialEvalUnary :: (Typeable tag, Typeable t) => tag -> Term arg -> Term t
@@ -74,24 +76,35 @@ instance Show Symbol where
 
 instance Hashable Symbol
 
+data TermSymbol = TermSymbol Symbol Dynamic
+
+instance Eq TermSymbol where
+  (TermSymbol s1 d1) == (TermSymbol s2 d2) = s1 == s2 && dynTypeRep d1 == dynTypeRep d2
+
+instance Hashable TermSymbol where
+  hashWithSalt s (TermSymbol s1 d1) = s `hashWithSalt` s1 `hashWithSalt` dynTypeRep d1
+
+instance Show TermSymbol where
+  show (TermSymbol s _) = show s
+
 data Term t where
-  ConcTerm :: (Typeable t, Hashable t, Eq t, Show t) => {-# UNPACK #-} !Id -> !t -> Term t
-  SymbTerm :: (Typeable t) => {-# UNPACK #-} !Id -> !Symbol -> Term t
+  ConcTerm :: (SupportedPrim t) => {-# UNPACK #-} !Id -> !t -> Term t
+  SymbTerm :: (SupportedPrim t) => {-# UNPACK #-} !Id -> !TermSymbol -> Term t
   UnaryTerm ::
-    (UnaryOp tag arg t, Typeable tag, Typeable t, Show tag) =>
+    (UnaryOp tag arg t, Typeable tag, Show tag) =>
     {-# UNPACK #-} !Id ->
     !tag ->
     !(Term arg) ->
     Term t
   BinaryTerm ::
-    (BinaryOp tag arg1 arg2 t, Typeable tag, Typeable t, Show tag) =>
+    (BinaryOp tag arg1 arg2 t, Typeable tag, Show tag) =>
     {-# UNPACK #-} !Id ->
     !tag ->
     !(Term arg1) ->
     !(Term arg2) ->
     Term t
   TernaryTerm ::
-    (TernaryOp tag arg1 arg2 arg3 t, Typeable tag, Typeable t, Show tag) =>
+    (TernaryOp tag arg1 arg2 arg3 t, Typeable tag, Show tag) =>
     {-# UNPACK #-} !Id ->
     !tag ->
     !(Term arg1) ->
@@ -120,17 +133,17 @@ instance Show (Term ty) where
       ++ "}"
 
 data UTerm t where
-  UConcTerm :: (Typeable t, Hashable t, Eq t, Show t) => t -> UTerm t
-  USymbTerm :: (Typeable t) => Symbol -> UTerm t
-  UUnaryTerm :: (UnaryOp tag arg t, Typeable tag, Typeable t, Show tag) => tag -> Term arg -> UTerm t
+  UConcTerm :: (SupportedPrim t) => t -> UTerm t
+  USymbTerm :: (SupportedPrim t) => TermSymbol -> UTerm t
+  UUnaryTerm :: (UnaryOp tag arg t, Typeable tag, Show tag) => tag -> Term arg -> UTerm t
   UBinaryTerm ::
-    (BinaryOp tag arg1 arg2 t, Typeable tag, Typeable t, Show tag) =>
+    (BinaryOp tag arg1 arg2 t, Typeable tag, Show tag) =>
     tag ->
     Term arg1 ->
     Term arg2 ->
     UTerm t
   UTernaryTerm ::
-    (TernaryOp tag arg1 arg2 arg3 t, Typeable tag, Typeable t, Show tag) =>
+    (TernaryOp tag arg1 arg2 arg3 t, Typeable tag, Show tag) =>
     tag ->
     Term arg1 ->
     Term arg2 ->
@@ -154,7 +167,7 @@ typeMemoizedCache = unsafeDupablePerformIO $
           !r = (newDynamicCache @a)
 {-# NOINLINE typeMemoizedCache #-}
 
-class (Typeable t, Hashable t, Eq t) => SupportedPrim t where
+class (Typeable t, Hashable t, Eq t, Show t) => SupportedPrim t where
   termCache :: Cache (Term t)
   termCache = typeMemoizedCache
   pformatConc :: t -> String
@@ -162,21 +175,24 @@ class (Typeable t, Hashable t, Eq t) => SupportedPrim t where
   pformatConc = show
   pformatSymb :: Symbol -> String
   pformatSymb = show
+  defaultValue :: t
+  defaultValueDynamic :: Dynamic
+  defaultValueDynamic = toDyn (defaultValue @t)
 
 instance (SupportedPrim t) => Interned (Term t) where
   type Uninterned (Term t) = UTerm t
   data Description (Term t) where
-    DConcTerm :: (Typeable t, Hashable t, Eq t, Show t) => t -> Description (Term t)
-    DSymbTerm :: (Typeable t) => Symbol -> Description (Term t)
-    DUnaryTerm :: (UnaryOp tag arg t, Typeable tag, Typeable t, Show tag) => tag -> (TypeRep, Id) -> Description (Term t)
+    DConcTerm :: t -> Description (Term t)
+    DSymbTerm :: TermSymbol -> Description (Term t)
+    DUnaryTerm :: (UnaryOp tag arg t, Typeable tag, Show tag) => tag -> (TypeRep, Id) -> Description (Term t)
     DBinaryTerm ::
-      (BinaryOp tag arg1 arg2 t, Typeable tag, Typeable t, Show tag) =>
+      (BinaryOp tag arg1 arg2 t, Typeable tag, Show tag) =>
       tag ->
       (TypeRep, Id) ->
       (TypeRep, Id) ->
       Description (Term t)
     DTernaryTerm ::
-      (TernaryOp tag arg1 arg2 arg3 t, Typeable tag, Typeable t, Show tag) =>
+      (TernaryOp tag arg1 arg2 arg3 t, Typeable tag, Show tag) =>
       tag ->
       (TypeRep, Id) ->
       (TypeRep, Id) ->
@@ -246,7 +262,7 @@ castTerm t@TernaryTerm {} = cast t
 
 pformat :: forall t. (SupportedPrim t) => Term t -> String
 pformat (ConcTerm _ t) = pformatConc t
-pformat (SymbTerm _ name) = pformatSymb @t name
+pformat (SymbTerm _ (TermSymbol symb _)) = pformatSymb @t symb
 pformat (UnaryTerm _ (_ :: tagt) (arg1 :: Term arg1t)) = pformatUnary @tagt @arg1t @t arg1
 pformat (BinaryTerm _ (_ :: tagt) (arg1 :: Term arg1t) (arg2 :: Term arg2t)) =
   pformatBinary @tagt @arg1t @arg2t @t arg1 arg2
@@ -283,8 +299,8 @@ constructTernary tag tm1 tm2 tm3 = intern $ UTernaryTerm tag tm1 tm2 tm3
 concTerm :: (SupportedPrim t, Typeable t, Hashable t, Eq t, Show t) => t -> Term t
 concTerm t = intern $ UConcTerm t
 
-symbTerm :: (SupportedPrim t, Typeable t) => Symbol -> Term t
-symbTerm t = intern $ USymbTerm t
+symbTerm :: forall t. (SupportedPrim t, Typeable t) => Symbol -> Term t
+symbTerm t = intern $ USymbTerm (TermSymbol t (defaultValueDynamic @t))
 
 ssymbTerm :: (SupportedPrim t, Typeable t) => String -> Term t
 ssymbTerm = symbTerm . SimpleSymbol

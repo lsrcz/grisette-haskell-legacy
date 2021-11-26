@@ -20,6 +20,8 @@ import Grisette.Data.Prim.InternedTerm
 import Grisette.Data.SymBool
 import Grisette.Data.Class.ToSym
 import Grisette.Data.Class.ToCon
+import Grisette.Data.Class.SymEval
+import Grisette.Data.Prim.Model
 
 newtype SymInteger = SymInteger (Term Integer) deriving (Eq)
 
@@ -81,3 +83,6 @@ instance ToCon SymInteger SymInteger where
 instance ToCon SymInteger Integer where
   toCon (SymInteger (IntegerConcTerm t)) = Just t
   toCon _ = Nothing
+
+instance SymEval Model SymInteger where
+  symeval fillDefault model (SymInteger t) = SymInteger $ evaluateTerm fillDefault model t

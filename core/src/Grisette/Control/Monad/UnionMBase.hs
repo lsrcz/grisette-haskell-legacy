@@ -28,6 +28,7 @@ import Grisette.Data.Class.ToSym
 import Grisette.Data.Functor (mrgFmap)
 import Control.Monad.Identity (Identity(..))
 import Grisette.Data.Class.ToCon
+import Grisette.Data.Class.SymEval
 
 data UnionMBase bool a where
   UAny :: IORef (Either (UnionBase bool a) (UnionMBase bool a)) -> UnionBase bool a -> UnionMBase bool a
@@ -134,3 +135,14 @@ instance (SymBoolOp bool, ToCon a b, Mergeable bool b) => ToCon (UnionMBase bool
 
 instance (SymBoolOp bool, ToCon a b) => ToCon (UnionMBase bool a) (Identity b) where
   toCon v = Identity <$> (toCon v :: Maybe b)
+
+instance (SymBoolOp bool, Mergeable bool a, SymEval model a, SymEval model bool) => SymEval model (UnionMBase bool a) where
+  symeval fillDefault model x = go $ underlyingUnion x
+    where
+      go :: UnionBase bool a -> UnionMBase bool a
+      go (Single v) = mrgSingle $ symeval fillDefault model v
+      go (Guard _ cond t f) =
+        mrgGuard
+          (symeval fillDefault model cond)
+          (symeval fillDefault model $ UMrg t)
+          (symeval fillDefault model $ UMrg f)

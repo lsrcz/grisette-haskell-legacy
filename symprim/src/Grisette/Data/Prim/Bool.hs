@@ -44,11 +44,18 @@ import Data.Maybe
 import Data.Typeable
 import Grisette.Data.Prim.Helpers
 import Grisette.Data.Prim.InternedTerm
+import Data.Dynamic
 
 -- Basic Bool
+defaultValueForBool :: Bool
+defaultValueForBool = True
+defaultValueForBoolDyn :: Dynamic
+defaultValueForBoolDyn = toDyn defaultValueForBool
 instance SupportedPrim Bool where
   pformatConc True = "true"
   pformatConc False = "false"
+  defaultValue = True
+  defaultValueDynamic = defaultValueForBoolDyn
 
 trueTerm :: Term Bool
 trueTerm = concTerm True

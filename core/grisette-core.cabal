@@ -32,6 +32,7 @@ library
       Grisette.Data.Class.OrphanGeneric
       Grisette.Data.Class.PrimWrapper
       Grisette.Data.Class.SimpleMergeable
+      Grisette.Data.Class.SymEval
       Grisette.Data.Class.ToCon
       Grisette.Data.Class.ToSym
       Grisette.Data.Class.UnionOp

@@ -20,7 +20,6 @@ module Grisette.Data.Prim.TabularFunc
 where
 
 import Data.Data
-import Data.Hashable
 import Grisette.Data.Class.FiniteFunction
 import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.Helpers
@@ -28,8 +27,9 @@ import Grisette.Data.Prim.InternedTerm
 import Grisette.Data.TabularFunc
 
 instance
-  (Show a, Show b, Typeable a, Typeable b, SupportedPrim a, SupportedPrim b, Eq a, Eq b, Hashable a, Hashable b) =>
-  SupportedPrim (a =-> b)
+  (SupportedPrim a, SupportedPrim b) =>
+  SupportedPrim (a =-> b) where
+    defaultValue = TabularFunc [] (defaultValue @b)
 
 tabularFuncConcTermView :: forall a b c. (Typeable b, Typeable c) => Term a -> Maybe (b =-> c)
 tabularFuncConcTermView (ConcTerm _ b) = cast b

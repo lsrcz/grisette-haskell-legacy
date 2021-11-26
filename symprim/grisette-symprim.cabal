@@ -30,6 +30,7 @@ library
       Grisette.Data.Prim.Helpers
       Grisette.Data.Prim.Integer
       Grisette.Data.Prim.InternedTerm
+      Grisette.Data.Prim.Model
       Grisette.Data.Prim.TabularFunc
       Grisette.Data.StringError
       Grisette.Data.SymBool
