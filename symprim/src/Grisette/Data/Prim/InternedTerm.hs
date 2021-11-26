@@ -9,21 +9,23 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -fno-cse #-}
-{-# LANGUAGE RankNTypes #-}
 
 module Grisette.Data.Prim.InternedTerm
   ( UnaryOp (..),
     BinaryOp (..),
     TernaryOp (..),
     Term (..),
+    SomeTerm (..),
     SupportedPrim (..),
     Symbol (..),
     castTerm,
     identity,
+    identityWithTypeRep,
     pformat,
     constructUnary,
     constructBinary,
@@ -111,6 +113,9 @@ data Term t where
     !(Term arg2) ->
     !(Term arg3) ->
     Term t
+
+data SomeTerm where
+  SomeTerm :: forall a. (SupportedPrim a) => Term a -> SomeTerm
 
 instance Show (Term ty) where
   show (ConcTerm i v) = "ConcTerm{id=" ++ show i ++ ", v=" ++ show v ++ "}"
@@ -221,6 +226,13 @@ identity (UnaryTerm i _ _) = i
 identity (BinaryTerm i _ _ _) = i
 identity (TernaryTerm i _ _ _ _) = i
 
+identityWithTypeRep :: forall t. Term t -> (TypeRep, Id)
+identityWithTypeRep (ConcTerm i _) = (typeRep (Proxy @t), i)
+identityWithTypeRep (SymbTerm i _) = (typeRep (Proxy @t), i)
+identityWithTypeRep (UnaryTerm i _ _) = (typeRep (Proxy @t), i)
+identityWithTypeRep (BinaryTerm i _ _ _) = (typeRep (Proxy @t), i)
+identityWithTypeRep (TernaryTerm i _ _ _ _) = (typeRep (Proxy @t), i)
+
 instance (SupportedPrim t) => Eq (Description (Term t)) where
   DConcTerm (l :: tyl) == DConcTerm (r :: tyr) = cast @tyl @tyr l == Just r
   DSymbTerm ls == DSymbTerm rs = ls == rs
@@ -252,6 +264,12 @@ instance (SupportedPrim t) => Eq (Term t) where
 
 instance (SupportedPrim t) => Hashable (Term t) where
   hashWithSalt s t = hashWithSalt s $ identity t
+
+instance Eq SomeTerm where
+  (SomeTerm t1) == (SomeTerm t2) = identityWithTypeRep t1 == identityWithTypeRep t2
+
+instance Hashable SomeTerm where
+  hashWithSalt s (SomeTerm t) = hashWithSalt s $ identityWithTypeRep t
 
 castTerm :: forall a b. (Typeable b) => Term a -> Maybe (Term b)
 castTerm t@ConcTerm {} = cast t
