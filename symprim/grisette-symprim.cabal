@@ -35,6 +35,8 @@ library
       Grisette.Data.StringError
       Grisette.Data.SymBool
       Grisette.Data.SymInteger
+      Grisette.Data.SymPrim
+      Grisette.Data.SymTabularFunc
       Grisette.Data.TabularFunc
       Grisette.Data.Union
   other-modules:

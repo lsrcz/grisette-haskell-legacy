@@ -1,5 +1,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Grisette.Data.SymInteger
   ( SymInteger (..),
@@ -22,8 +24,14 @@ import Grisette.Data.Class.ToSym
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.SymEval
 import Grisette.Data.Prim.Model
+import Grisette.Data.SymPrim
 
 newtype SymInteger = SymInteger (Term Integer) deriving (Eq)
+
+instance SymPrimType Integer where
+  type SymPrim Integer = SymInteger
+  underlyingTerm (SymInteger v) = v
+  wrapTerm = SymInteger
 
 instance Show SymInteger where
   show (SymInteger t) = pformat t

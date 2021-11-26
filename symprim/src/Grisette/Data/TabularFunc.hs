@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Grisette.Data.TabularFunc (type (=->) (..)) where
 
@@ -14,7 +15,9 @@ data (=->) a b = TabularFunc {funcTable :: [(a, b)], defaultFuncValue :: b} deri
 
 infixr 0 =->
 
-instance (Eq a) => FiniteFunction (a =-> b) a b where
+instance (Eq a) => FiniteFunction (a =-> b) where
+  type Arg (a =-> b) = a
+  type Ret (a =-> b) = b
   runFunc (TabularFunc table defaultValue) a = go table
     where
       go [] = defaultValue

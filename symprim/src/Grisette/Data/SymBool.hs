@@ -1,6 +1,8 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Grisette.Data.SymBool
   ( SymBool (..),
@@ -17,8 +19,14 @@ import Grisette.Data.Class.ToSym
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.SymEval
 import Grisette.Data.Prim.Model
+import Grisette.Data.SymPrim
 
 newtype SymBool = SymBool (Term Bool) deriving (Eq)
+
+instance SymPrimType Bool where
+  type SymPrim Bool = SymBool
+  underlyingTerm (SymBool v) = v
+  wrapTerm = SymBool
 
 instance Show SymBool where
   show (SymBool t) = pformat t
