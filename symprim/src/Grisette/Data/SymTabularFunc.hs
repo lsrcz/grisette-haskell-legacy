@@ -17,24 +17,19 @@ import Grisette.Data.Prim.TabularFunc
 import Grisette.Data.SymPrim
 import Grisette.Data.TabularFunc
 
-newtype a =~> b = SymTabularFunc (Term (a =-> b))
+newtype a =~> b = SymTabularFunc (Sym (a =-> b))
 
-instance (SymPrimType a, SymPrimType b) => SymPrimType (a =-> b) where
-  type SymPrim (a =-> b) = a =~> b
-  underlyingTerm (SymTabularFunc v) = v
-  wrapTerm = SymTabularFunc
-
-instance (SupportedPrim a, SupportedPrim b, SymPrimType a, SymPrimType b) => FiniteFunction (a =~> b) where
-  type Arg (a =~> b) = SymPrim a
-  type Ret (a =~> b) = SymPrim b
-  runFunc (SymTabularFunc f) t = wrapTerm $ applyf f (underlyingTerm t)
+instance (SupportedPrim a, SupportedPrim b) => FiniteFunction (a =~> b) where
+  type Arg (a =~> b) = Sym a
+  type Ret (a =~> b) = Sym b
+  runFunc (SymTabularFunc (Sym f)) t = Sym $ applyf f (underlyingTerm t)
 
 instance (SupportedPrim a, SupportedPrim b) => PrimWrapper (a =~> b) (a =-> b) where
-  conc = SymTabularFunc . concTerm
-  concView (SymTabularFunc (TabularFuncConcTerm t)) = Just t
+  conc = SymTabularFunc . Sym . concTerm
+  concView (SymTabularFunc (Sym (TabularFuncConcTerm t))) = Just t
   concView _ = Nothing
-  ssymb = SymTabularFunc . ssymbTerm
-  isymb i str = SymTabularFunc $ isymbTerm i str
+  ssymb = SymTabularFunc . Sym . ssymbTerm
+  isymb i str = SymTabularFunc $ Sym $ isymbTerm i str
 
 instance
   ( SupportedPrim a,
@@ -44,4 +39,4 @@ instance
   ) =>
   ExtractSymbolics (S.HashSet TermSymbol) (a =~> b)
   where
-  extractSymbolics (SymTabularFunc t) = extractSymbolicsTerm t
+  extractSymbolics (SymTabularFunc (Sym t)) = extractSymbolicsTerm t

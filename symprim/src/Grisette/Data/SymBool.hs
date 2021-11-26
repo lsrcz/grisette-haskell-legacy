@@ -1,81 +1,82 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
-{-# LANGUAGE FlexibleInstances #-}
 
 module Grisette.Data.SymBool
-  ( SymBool (..),
+  ( SymBool,
   )
 where
 
+import Data.HashSet as S
+import Data.Hashable
 import Grisette.Data.Class.Bool
+import Grisette.Data.Class.ExtractSymbolics
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.SimpleMergeable
+import Grisette.Data.Class.SymEval
+import Grisette.Data.Class.ToCon
+import Grisette.Data.Class.ToSym
 import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.InternedTerm
-import Grisette.Data.Class.ToSym
-import Grisette.Data.Class.ToCon
-import Grisette.Data.Class.SymEval
 import Grisette.Data.Prim.Model
 import Grisette.Data.SymPrim
-import Data.HashSet as S
-import Grisette.Data.Class.ExtractSymbolics
 
-newtype SymBool = SymBool (Term Bool) deriving (Eq)
+type SymBool = Sym Bool
 
-instance SymPrimType Bool where
-  type SymPrim Bool = SymBool
-  underlyingTerm (SymBool v) = v
-  wrapTerm = SymBool
+instance Show (Sym Bool) where
+  show (Sym t) = pformat t
 
-instance Show SymBool where
-  show (SymBool t) = pformat t
+instance SEq (Sym Bool) (Sym Bool) where
+  (Sym l) ==~ (Sym r) = Sym $ eqterm l r
 
-instance SEq SymBool SymBool where
-  (SymBool l) ==~ (SymBool r) = SymBool $ eqterm l r
+instance LogicalOp (Sym Bool) where
+  (Sym l) ||~ (Sym r) = Sym $ orb l r
+  (Sym l) &&~ (Sym r) = Sym $ andb l r
+  nots (Sym v) = Sym $ notb v
 
-instance LogicalOp SymBool where
-  (SymBool l) ||~ (SymBool r) = SymBool $ orb l r
-  (SymBool l) &&~ (SymBool r) = SymBool $ andb l r
-  nots (SymBool v) = SymBool $ notb v
+instance ITEOp (Sym Bool) (Sym Bool) where
+  ites (Sym c) (Sym t) (Sym f) = Sym $ iteterm c t f
 
-instance ITEOp SymBool SymBool where
-  ites (SymBool c) (SymBool t) (SymBool f) = SymBool $ iteterm c t f
+instance Eq (Sym Bool) where
+  (Sym l) == (Sym r) = l == r
 
-instance SymBoolOp SymBool
+instance Hashable (Sym Bool) where
+  hashWithSalt s (Sym v) = s `hashWithSalt` v
 
-instance PrimWrapper SymBool Bool where
-  conc = SymBool . concTerm
-  concView (SymBool (BoolConcTerm t)) = Just t
+instance SymBoolOp (Sym Bool)
+
+instance PrimWrapper (Sym Bool) Bool where
+  conc = Sym . concTerm
+  concView (Sym (BoolConcTerm t)) = Just t
   concView _ = Nothing
-  ssymb = SymBool . ssymbTerm
-  isymb i str = SymBool $ isymbTerm i str
+  ssymb = Sym . ssymbTerm
+  isymb i str = Sym $ isymbTerm i str
 
-instance Mergeable SymBool SymBool where
+instance Mergeable (Sym Bool) (Sym Bool) where
   mergeStrategy = SimpleStrategy ites
 
-instance SimpleMergeable SymBool SymBool where
+instance SimpleMergeable (Sym Bool) (Sym Bool) where
   mrgIf = ites
 
-instance ToSym Bool SymBool where
+instance ToSym Bool (Sym Bool) where
   toSym = conc
 
-instance ToSym SymBool SymBool where
+instance ToSym (Sym Bool) (Sym Bool) where
   toSym = id
 
-instance ToCon SymBool SymBool where
+instance ToCon (Sym Bool) (Sym Bool) where
   toCon = Just
 
-instance ToCon SymBool Bool where
-  toCon (SymBool (BoolConcTerm t)) = Just t
+instance ToCon (Sym Bool) Bool where
+  toCon (Sym (BoolConcTerm t)) = Just t
   toCon _ = Nothing
 
-instance SymEval Model SymBool where
-  symeval fillDefault model (SymBool t) = SymBool $ evaluateTerm fillDefault model t
+instance SymEval Model (Sym Bool) where
+  symeval fillDefault model (Sym t) = Sym $ evaluateTerm fillDefault model t
 
-instance ExtractSymbolics (S.HashSet TermSymbol) SymBool where
-  extractSymbolics (SymBool t) = extractSymbolicsTerm t
-
+instance ExtractSymbolics (S.HashSet TermSymbol) (Sym Bool) where
+  extractSymbolics (Sym t) = extractSymbolicsTerm t

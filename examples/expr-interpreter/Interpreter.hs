@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
@@ -18,6 +19,7 @@ import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Functor
 import Grisette.Data.SymBool
 import Grisette.Data.SymInteger
+import Grisette.Data.SymPrim
 
 data Expr
   = Lit LitExpr
@@ -44,13 +46,13 @@ data Stmt
   | ValueStmt (UnionM Expr)
   deriving (Generic, Show)
 
-instance Mergeable SymBool Expr
+instance Mergeable (Sym Bool) Expr
 
-instance Mergeable SymBool LitExpr
+instance Mergeable (Sym Bool) LitExpr
 
-instance Mergeable SymBool OpsExpr
+instance Mergeable (Sym Bool) OpsExpr
 
-instance Mergeable SymBool Stmt
+instance Mergeable (Sym Bool) Stmt
 
 data Error
   = Typer TyperError
@@ -68,11 +70,11 @@ data RuntimeError
   | RuntimeRuntimeError
   deriving (Generic, Show)
 
-instance Mergeable SymBool Error
+instance Mergeable (Sym Bool) Error
 
-instance Mergeable SymBool TyperError
+instance Mergeable (Sym Bool) TyperError
 
-instance Mergeable SymBool RuntimeError
+instance Mergeable (Sym Bool) RuntimeError
 
 data Type
   = UnitType
@@ -80,7 +82,7 @@ data Type
   | ListType
   deriving (Generic, Show, Eq)
 
-instance Mergeable SymBool Type
+instance Mergeable (Sym Bool) Type
 
 type TypingEnv = [(SymInteger, UnionM Type)]
 
