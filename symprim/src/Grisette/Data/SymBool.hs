@@ -3,6 +3,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Grisette.Data.SymBool
   ( SymBool (..),
@@ -20,6 +21,8 @@ import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.SymEval
 import Grisette.Data.Prim.Model
 import Grisette.Data.SymPrim
+import Data.HashSet as S
+import Grisette.Data.Class.ExtractSymbolics
 
 newtype SymBool = SymBool (Term Bool) deriving (Eq)
 
@@ -72,3 +75,7 @@ instance ToCon SymBool Bool where
 
 instance SymEval Model SymBool where
   symeval fillDefault model (SymBool t) = SymBool $ evaluateTerm fillDefault model t
+
+instance ExtractSymbolics (S.HashSet TermSymbol) SymBool where
+  extractSymbolics (SymBool t) = extractSymbolicsTerm t
+

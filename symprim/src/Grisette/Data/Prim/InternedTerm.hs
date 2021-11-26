@@ -34,12 +34,16 @@ module Grisette.Data.Prim.InternedTerm
     symbTerm,
     ssymbTerm,
     isymbTerm,
-  TermSymbol(..))
+    extractSymbolicsTerm,
+    TermSymbol (..),
+  )
 where
 
+import Control.Monad.State
 import Data.Dynamic
 import Data.Function (on)
 import Data.HashMap.Strict as M
+import Data.HashSet as S
 import Data.Hashable (Hashable (hashWithSalt))
 import Data.IORef (IORef, atomicModifyIORef', newIORef)
 import Data.Interned
@@ -159,7 +163,7 @@ newDynamicCache :: forall a. (Interned a, Typeable a) => Dynamic
 newDynamicCache = toDyn $ mkCache @a
 
 termCacheCell :: IORef (M.HashMap TypeRep Dynamic)
-termCacheCell = unsafeDupablePerformIO $ newIORef empty
+termCacheCell = unsafeDupablePerformIO $ newIORef M.empty
 {-# NOINLINE termCacheCell #-}
 
 typeMemoizedCache :: forall a. (Interned a, Typeable a) => Cache a
@@ -325,6 +329,36 @@ ssymbTerm = symbTerm . SimpleSymbol
 
 isymbTerm :: (SupportedPrim t, Typeable t) => Int -> String -> Term t
 isymbTerm idx str = symbTerm $ IndexedSymbol idx str
+
+extractSymbolicsSomeTerm :: SomeTerm -> S.HashSet TermSymbol
+extractSymbolicsSomeTerm t1 = evalState (gocached t1) M.empty
+  where
+    gocached :: SomeTerm -> State (M.HashMap SomeTerm (S.HashSet TermSymbol)) (S.HashSet TermSymbol)
+    gocached t = do
+      v <- gets (M.lookup t)
+      case v of
+        Just x -> return x
+        Nothing -> do
+          res <- go t
+          st <- get
+          put $ M.insert t res st
+          return res
+    go :: SomeTerm -> State (M.HashMap SomeTerm (S.HashSet TermSymbol)) (S.HashSet TermSymbol)
+    go (SomeTerm ConcTerm {}) = return $ S.empty
+    go (SomeTerm (SymbTerm _ symb)) = return $ S.singleton symb
+    go (SomeTerm (UnaryTerm _ _ arg)) = gocached (SomeTerm arg)
+    go (SomeTerm (BinaryTerm _ _ arg1 arg2)) = do
+      r1 <- gocached (SomeTerm arg1)
+      r2 <- gocached (SomeTerm arg2)
+      return $ r1 <> r2
+    go (SomeTerm (TernaryTerm _ _ arg1 arg2 arg3)) = do
+      r1 <- gocached (SomeTerm arg1)
+      r2 <- gocached (SomeTerm arg2)
+      r3 <- gocached (SomeTerm arg3)
+      return $ r1 <> r2 <> r3
+
+extractSymbolicsTerm :: (SupportedPrim a) => Term a -> S.HashSet TermSymbol
+extractSymbolicsTerm t = extractSymbolicsSomeTerm (SomeTerm t)
 
 {-
 To prove that we are doing interning correctly, we ensured that:

@@ -28,6 +28,7 @@ library
       Grisette.Control.Monad.UnionMBase
       Grisette.Data.Class.Bool
       Grisette.Data.Class.Error
+      Grisette.Data.Class.ExtractSymbolics
       Grisette.Data.Class.Mergeable
       Grisette.Data.Class.OrphanGeneric
       Grisette.Data.Class.PrimWrapper
@@ -45,8 +46,7 @@ library
       src
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie
-    , base >4.7 && <5
+      base >4.7 && <5
     , constraints
     , generic-deriving
     , hashable

@@ -3,7 +3,14 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages: []
+packages:
+- completed:
+    hackage: memoize-1.1.1@sha256:a4c636df010564307ce1fe6e69379192de0c756f7766e61224da8a896ffd5fe1,1926
+    pantry-tree:
+      size: 687
+      sha256: 903833765b601ec1cfd8bfeb2290dffaf6e551eaf4b1754c62858b181c414843
+  original:
+    hackage: memoize-1.1.1
 snapshots:
 - completed:
     size: 586292

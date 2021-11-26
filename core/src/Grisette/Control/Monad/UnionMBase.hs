@@ -1,12 +1,13 @@
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE BangPatterns #-}
 {-# OPTIONS_GHC -fno-cse #-}
-{-# LANGUAGE FlexibleContexts #-}
+
 -- {-# OPTIONS_GHC -fno-full-laziness #-}
 
 module Grisette.Control.Monad.UnionMBase
@@ -15,20 +16,21 @@ module Grisette.Control.Monad.UnionMBase
   )
 where
 
+import Control.Monad.Identity (Identity (..))
 import Data.Functor.Classes
-import Grisette.Control.Monad
-import Grisette.Data.Class.Bool
-import Grisette.Data.Class.Mergeable
-import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.Class.UnionOp
-import Grisette.Data.UnionBase
 import Data.IORef
 import GHC.IO
-import Grisette.Data.Class.ToSym
-import Grisette.Data.Functor (mrgFmap)
-import Control.Monad.Identity (Identity(..))
-import Grisette.Data.Class.ToCon
+import Grisette.Control.Monad
+import Grisette.Data.Class.Bool
+import Grisette.Data.Class.ExtractSymbolics
+import Grisette.Data.Class.Mergeable
+import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.SymEval
+import Grisette.Data.Class.ToCon
+import Grisette.Data.Class.ToSym
+import Grisette.Data.Class.UnionOp
+import Grisette.Data.Functor (mrgFmap)
+import Grisette.Data.UnionBase
 
 data UnionMBase bool a where
   UAny :: IORef (Either (UnionBase bool a) (UnionMBase bool a)) -> UnionBase bool a -> UnionMBase bool a
@@ -91,10 +93,12 @@ instance SymBoolOp bool => SimpleMergeable1 bool (UnionMBase bool)
 
 instance SymBoolOp bool => UnionMOp bool (UnionMBase bool) where
   merge m@(UMrg _) = m
-  merge m@(UAny ref _) = unsafeDupablePerformIO $ atomicModifyIORef' ref $ \case
-    x@(Right r) -> (x, r)
-    Left _ -> (Right r, r)
-      where !r = m >>= mrgSingle
+  merge m@(UAny ref _) = unsafeDupablePerformIO $
+    atomicModifyIORef' ref $ \case
+      x@(Right r) -> (x, r)
+      Left _ -> (Right r, r)
+        where
+          !r = m >>= mrgSingle
   {-# NOINLINE merge #-}
   mrgSingle = UMrg . single
   mrgGuard cond l r =
@@ -144,5 +148,14 @@ instance (SymBoolOp bool, Mergeable bool a, SymEval model a, SymEval model bool)
       go (Guard _ cond t f) =
         mrgGuard
           (symeval fillDefault model cond)
-          (symeval fillDefault model $ UMrg t)
-          (symeval fillDefault model $ UMrg f)
+          (go t)
+          (go f)
+
+instance
+  (Monoid symbolSet, SymBoolOp bool, ExtractSymbolics symbolSet a, ExtractSymbolics symbolSet bool) =>
+  ExtractSymbolics symbolSet (UnionMBase bool a)
+  where
+  extractSymbolics v = go $ underlyingUnion v
+    where
+      go (Single x) = extractSymbolics x
+      go (Guard _ cond t f) = extractSymbolics cond <> go t <> go f

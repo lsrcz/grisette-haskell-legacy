@@ -16,6 +16,7 @@ dependencies:
 - hashable
 - mtl
 - unordered-containers
+- memoize
 
 library:
   source-dirs: src

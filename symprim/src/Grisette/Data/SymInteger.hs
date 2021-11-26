@@ -2,6 +2,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Grisette.Data.SymInteger
   ( SymInteger (..),
@@ -25,6 +26,8 @@ import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.SymEval
 import Grisette.Data.Prim.Model
 import Grisette.Data.SymPrim
+import Grisette.Data.Class.ExtractSymbolics
+import Data.HashSet as S
 
 newtype SymInteger = SymInteger (Term Integer) deriving (Eq)
 
@@ -94,3 +97,6 @@ instance ToCon SymInteger Integer where
 
 instance SymEval Model SymInteger where
   symeval fillDefault model (SymInteger t) = SymInteger $ evaluateTerm fillDefault model t
+
+instance ExtractSymbolics (S.HashSet TermSymbol) SymInteger where
+  extractSymbolics (SymInteger t) = extractSymbolicsTerm t
