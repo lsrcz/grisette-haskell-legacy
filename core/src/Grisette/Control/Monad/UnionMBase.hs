@@ -13,6 +13,7 @@
 module Grisette.Control.Monad.UnionMBase
   ( UnionMBase,
     underlyingUnion,
+    isMerged,
   )
 where
 
@@ -51,6 +52,10 @@ instance (Show bool) => Show1 (UnionMBase bool) where
 underlyingUnion :: UnionMBase bool a -> UnionBase bool a
 underlyingUnion (UAny _ a) = a
 underlyingUnion (UMrg a) = a
+
+isMerged :: UnionMBase bool a -> Bool
+isMerged UAny {} = False
+isMerged UMrg {} = True
 
 instance SymBoolOp bool => UnionOp bool (UnionMBase bool) where
   single v = (freshUAny . single) v

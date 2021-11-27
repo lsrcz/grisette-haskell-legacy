@@ -4,6 +4,9 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Grisette.Data.SymPrim where
 
@@ -19,6 +22,8 @@ import Grisette.Data.Class.ExtractSymbolics
 import Grisette.Data.Class.SymEval
 import Grisette.Data.Prim.Model
 import Data.HashSet as S
+import Grisette.Data.Class.SymGen
+import Control.Monad.State
 
 newtype Sym a = Sym {underlyingTerm :: Term a}
 
@@ -63,3 +68,13 @@ instance (SupportedPrim a) => SymEval Model (Sym a) where
 
 instance (SupportedPrim a) => ExtractSymbolics (S.HashSet TermSymbol) (Sym a) where
   extractSymbolics (Sym t) = extractSymbolicsTerm t
+
+instance (SymBoolOp (Sym Bool), SupportedPrim a, SymConcView a) => SymGen (Sym Bool) () (Sym a) where
+  genSymIndexed _ = mrgSingle <$> genSymSimpleIndexed @(Sym Bool) ()
+
+instance (SymBoolOp (Sym Bool), SupportedPrim a, SymConcView a) => SymGenSimple (Sym Bool) () (Sym a) where
+  genSymSimpleIndexed _ = do
+    (i, s) <- get
+    put (i + 1, s)
+    return $ isymb i s
+
