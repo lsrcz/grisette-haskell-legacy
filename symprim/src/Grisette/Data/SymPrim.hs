@@ -26,8 +26,7 @@ class SupportedPrim a => SymConcView a where
   symConcView :: Sym a -> Maybe a
 
 pattern SymConc :: SymConcView a => a -> Sym a
-pattern SymConc c <-
-  (concView -> Just c)
+pattern SymConc c <- (Sym (ConcTerm _ c))
   where
     SymConc c = conc c
 
