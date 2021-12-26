@@ -1,19 +1,21 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Grisette.Data.Prim.Model where
 
 import Data.Dynamic
-import Data.HashMap.Lazy as M
-import Data.HashSet as S
+import qualified Data.HashMap.Strict as M
+import qualified Data.HashSet as S
 import Data.Typeable
 import Grisette.Data.Prim.InternedTerm
-import Data.Maybe
-import Control.Monad.State
 import Unsafe.Coerce
+import Control.Monad.Memo
+import Data.Hashable
 
-newtype Model = Model (M.HashMap Symbol Dynamic)
+newtype Model = Model (M.HashMap Symbol Dynamic) deriving Show
 
 empty :: Model
 empty = Model M.empty
@@ -48,42 +50,41 @@ insert (Model m) (TermSymbol sym df) v =
     then Model $ M.insert sym (toDyn v) m
     else error "Bad value type"
 
-evaluateSomeTerm :: Bool -> Model -> SomeTerm -> SomeTerm
-evaluateSomeTerm fillDefault (Model ma) t1 = evalState (gocached t1) M.empty
+newtype MemoHashMap k v = MemoHashMap { unMemoHashMap :: M.HashMap k v }
+
+instance (Eq a, Hashable a) => MapLike (MemoHashMap a b) a b where
+  lookup k = M.lookup k . unMemoHashMap
+  add k v = MemoHashMap . M.insert k v . unMemoHashMap
+
+evaluateSomeTermMemo :: Bool -> Model -> SomeTerm -> MemoState (MemoHashMap SomeTerm SomeTerm) SomeTerm SomeTerm SomeTerm
+evaluateSomeTermMemo fillDefault (Model ma) = go
   where
-    gocached :: SomeTerm -> State (M.HashMap SomeTerm SomeTerm) SomeTerm
-    gocached t = do
-      v <- gets (M.lookup t)
-      case v of
-        Just x -> return x
-        Nothing -> do
-          res <- go t
-          st <- get
-          put $ M.insert t res st
-          return res
-    go :: SomeTerm -> State (M.HashMap SomeTerm SomeTerm) SomeTerm
+    go :: SomeTerm -> MemoState (MemoHashMap SomeTerm SomeTerm) SomeTerm SomeTerm SomeTerm
     go c@(SomeTerm ConcTerm{}) = return c
     go c@(SomeTerm ((SymbTerm _ (TermSymbol sym df)) :: Term a)) = return $ case M.lookup sym ma of
       Nothing -> if fillDefault then SomeTerm $ concTerm $ fromDyn @a df undefined else c
       Just dy -> SomeTerm $ concTerm (fromDyn @a dy undefined)
     go (SomeTerm (UnaryTerm _ tag (arg :: Term a))) = do
-      SomeTerm argv <- gocached (SomeTerm arg)
+      SomeTerm argv <- memo go (SomeTerm arg)
       return $ SomeTerm $ partialEvalUnary tag (unsafeCoerce argv :: Term a)
     go (SomeTerm (BinaryTerm _ tag (arg1 :: Term a1) (arg2 :: Term a2))) = do
-      SomeTerm arg1v <- gocached (SomeTerm arg1)
-      SomeTerm arg2v <- gocached (SomeTerm arg2)
+      SomeTerm arg1v <- memo go (SomeTerm arg1)
+      SomeTerm arg2v <- memo go (SomeTerm arg2)
       return $ SomeTerm $ partialEvalBinary tag
         (unsafeCoerce arg1v :: Term a1)
         (unsafeCoerce arg2v :: Term a2)
     go (SomeTerm (TernaryTerm _ tag (arg1 :: Term a1) (arg2 :: Term a2) (arg3 :: Term a3))) =do
-      SomeTerm arg1v <- gocached (SomeTerm arg1)
-      SomeTerm arg2v <- gocached (SomeTerm arg2)
-      SomeTerm arg3v <- gocached (SomeTerm arg3)
+      SomeTerm arg1v <- memo go (SomeTerm arg1)
+      SomeTerm arg2v <- memo go (SomeTerm arg2)
+      SomeTerm arg3v <- memo go (SomeTerm arg3)
       return $ SomeTerm $ partialEvalTernary tag
         (unsafeCoerce arg1v :: Term a1)
         (unsafeCoerce arg2v :: Term a2)
         (unsafeCoerce arg3v :: Term a3)
 
+evaluateSomeTerm :: Bool -> Model -> SomeTerm -> SomeTerm
+evaluateSomeTerm fillDefault m t1 = evalMemoState (evaluateSomeTermMemo fillDefault m t1) (MemoHashMap M.empty)
+
 evaluateTerm :: forall a. (SupportedPrim a) => Bool -> Model -> Term a -> Term a
 evaluateTerm fillDefault m t = case evaluateSomeTerm fillDefault m $ SomeTerm t of
-  SomeTerm (t1 :: Term b) -> fromJust $ cast @(Term b) @(Term a) t1
+  SomeTerm (t1 :: Term b) -> unsafeCoerce @(Term b) @(Term a) t1

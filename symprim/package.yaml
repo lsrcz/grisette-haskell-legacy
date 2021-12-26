@@ -16,7 +16,7 @@ dependencies:
 - hashable
 - mtl
 - unordered-containers
-- memoize
+- monad-memo
 
 library:
   source-dirs: src
