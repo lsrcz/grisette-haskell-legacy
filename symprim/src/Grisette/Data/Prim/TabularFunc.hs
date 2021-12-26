@@ -67,5 +67,5 @@ instance (Show a, Show b, SupportedPrim a, SupportedPrim b) => BinaryOp ApplyF (
 applyf :: (Show a, Show b, SupportedPrim a, SupportedPrim b) => Term (a =-> b) -> Term a -> Term b
 applyf = partialEvalBinary ApplyF
 
-pattern ApplyFTerm :: (Typeable a, Typeable b) => Term (a =-> b) -> Term b -> Term c
+pattern ApplyFTerm :: (Typeable a, Typeable b) => Term (a =-> b) -> Term a -> Term b
 pattern ApplyFTerm l r <- BinaryTermPatt ApplyF l r
