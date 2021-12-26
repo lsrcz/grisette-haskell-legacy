@@ -23,6 +23,9 @@ instance (SupportedPrim a, SupportedPrim b) => FiniteFunction (a =~> b) where
   type Ret (a =~> b) = Sym b
   runFunc (Sym f) t = Sym $ applyf f (underlyingTerm t)
 
+instance (SupportedPrim a, SupportedPrim b) => Show (a =~> b) where
+  show (Sym f) = pformat f
+
 instance (SupportedPrim a, SupportedPrim b) => SymConcView (a =-> b) where
   symConcView (Sym (TabularFuncConcTerm t)) = Just t
   symConcView _ = Nothing
