@@ -20,6 +20,7 @@ module Grisette.Data.Prim.InternedTerm
     BinaryOp (..),
     TernaryOp (..),
     Term (..),
+    introSupportedPrimConstraint,
     SomeTerm (..),
     SupportedPrim (..),
     Symbol (..),
@@ -36,6 +37,7 @@ module Grisette.Data.Prim.InternedTerm
     isymbTerm,
     extractSymbolicsTerm,
     TermSymbol (..),
+    termSymbolTypeRep
   )
 where
 
@@ -93,6 +95,9 @@ instance Hashable TermSymbol where
 instance Show TermSymbol where
   show (TermSymbol s _) = show s
 
+termSymbolTypeRep :: TermSymbol -> TypeRep
+termSymbolTypeRep (TermSymbol _ d) = dynTypeRep d
+
 data Term t where
   ConcTerm :: (SupportedPrim t) => {-# UNPACK #-} !Id -> !t -> Term t
   SymbTerm :: (SupportedPrim t) => {-# UNPACK #-} !Id -> !TermSymbol -> Term t
@@ -117,6 +122,13 @@ data Term t where
     !(Term arg2) ->
     !(Term arg3) ->
     Term t
+
+introSupportedPrimConstraint :: forall t a. Term t -> ((SupportedPrim t) => a) -> a
+introSupportedPrimConstraint ConcTerm{} x = x
+introSupportedPrimConstraint SymbTerm{} x = x
+introSupportedPrimConstraint UnaryTerm{} x = x
+introSupportedPrimConstraint BinaryTerm{} x = x
+introSupportedPrimConstraint TernaryTerm{} x = x
 
 data SomeTerm where
   SomeTerm :: forall a. (SupportedPrim a) => Term a -> SomeTerm
