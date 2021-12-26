@@ -129,12 +129,12 @@ instance Show (Term ty) where
       ++ "}"
   show (UnaryTerm i tag arg) = "Unary{id=" ++ show i ++ ", tag=" ++ show tag ++ ", arg=" ++ show arg ++ "}"
   show (BinaryTerm i tag arg1 arg2) =
-    "Unary{id=" ++ show i ++ ", tag=" ++ show tag ++ ", arg1=" ++ show arg1
+    "Binary{id=" ++ show i ++ ", tag=" ++ show tag ++ ", arg1=" ++ show arg1
       ++ ", arg2="
       ++ show arg2
       ++ "}"
   show (TernaryTerm i tag arg1 arg2 arg3) =
-    "Unary{id=" ++ show i ++ ", tag=" ++ show tag ++ ", arg1=" ++ show arg1
+    "Ternary{id=" ++ show i ++ ", tag=" ++ show tag ++ ", arg1=" ++ show arg1
       ++ ", arg2="
       ++ show arg2
       ++ ", arg3="
@@ -274,6 +274,9 @@ instance Eq SomeTerm where
 
 instance Hashable SomeTerm where
   hashWithSalt s (SomeTerm t) = hashWithSalt s $ identityWithTypeRep t
+
+instance Show SomeTerm where
+  show (SomeTerm t) = show t
 
 castTerm :: forall a b. (Typeable b) => Term a -> Maybe (Term b)
 castTerm t@ConcTerm {} = cast t
