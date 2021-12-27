@@ -35,6 +35,7 @@ import Data.Typeable
 import GHC.Exts (sortWith)
 import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.Integer
+import Grisette.Data.Prim.Num
 import Grisette.Data.Prim.InternedTerm
 import Grisette.Data.Prim.Model as PM
 import Grisette.Data.Prim.TabularFunc
@@ -264,6 +265,9 @@ lowerSinglePrimImpl config t@(UnaryTerm _ op (_ :: Term x)) m =
           UMinusITerm t1 -> lowerUnaryTerm config t t1 (\x -> - x) m
           SignumITerm t1 -> lowerUnaryTerm config t t1 signum m
           AbsITerm t1 -> lowerUnaryTerm config t t1 abs m
+          UMinusNumTerm (t1 :: Term Integer) -> lowerUnaryTerm config t t1 (\x -> - x) m
+          SignumNumTerm (t1 :: Term Integer) -> lowerUnaryTerm config t t1 signum m
+          AbsNumTerm (t1 :: Term Integer) -> lowerUnaryTerm config t t1 abs m
           _ -> errorMsg
       _ -> errorMsg
   where
@@ -294,7 +298,9 @@ lowerSinglePrimImpl config t@(BinaryTerm _ op (t1 :: Term x) (t2 :: Term y)) m =
                 (_, Just Refl) ->
                   ( case t of
                       AddITerm t1' t2' -> lowerBinaryTerm config t t1' t2' (+) m
+                      AddNumTerm (t1' :: Term Integer) t2' -> lowerBinaryTerm config t t1' t2' (+) m
                       TimesITerm t1' t2' -> lowerBinaryTerm config t t1' t2' (*) m
+                      TimesNumTerm (t1' :: Term Integer) t2' -> lowerBinaryTerm config t t1' t2' (*) m
                       DivITerm t1' t2' -> lowerBinaryTerm config t t1' t2' SBV.sDiv m
                       _ -> errorMsg
                   )

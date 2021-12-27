@@ -17,6 +17,7 @@ dependencies:
 - mtl
 - unordered-containers
 - monad-memo
+- bv-sized
 
 library:
   source-dirs: src

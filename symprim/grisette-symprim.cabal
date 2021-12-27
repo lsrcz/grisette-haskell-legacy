@@ -31,6 +31,7 @@ library
       Grisette.Data.Prim.Integer
       Grisette.Data.Prim.InternedTerm
       Grisette.Data.Prim.Model
+      Grisette.Data.Prim.Num
       Grisette.Data.Prim.TabularFunc
       Grisette.Data.StringError
       Grisette.Data.SymPrim
@@ -43,6 +44,7 @@ library
   ghc-options: -Wall -ferror-spans
   build-depends:
       base >4.7 && <5
+    , bv-sized
     , grisette-core
     , hashable
     , intern
