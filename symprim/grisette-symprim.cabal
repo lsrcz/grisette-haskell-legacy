@@ -45,6 +45,7 @@ library
   build-depends:
       base >4.7 && <5
     , bv-sized
+    , constraints
     , grisette-core
     , hashable
     , intern

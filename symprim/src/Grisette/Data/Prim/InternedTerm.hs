@@ -1,5 +1,7 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -7,10 +9,14 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 {-# OPTIONS_GHC -fno-cse #-}
 
 module Grisette.Data.Prim.InternedTerm
@@ -35,11 +41,14 @@ module Grisette.Data.Prim.InternedTerm
     isymbTerm,
     extractSymbolicsTerm,
     TermSymbol (..),
-    termSymbolTypeRep,
+    -- termSymbolTypeRep,
   )
 where
 
 import Control.Monad.State
+import Data.BitVector.Sized
+import Data.BitVector.Sized.Signed
+import Data.Constraint
 import Data.Dynamic
 import Data.Function (on)
 import Data.HashMap.Strict as M
@@ -50,6 +59,7 @@ import Data.Interned
 import Data.Typeable
 import GHC.Generics
 import GHC.IO (unsafeDupablePerformIO)
+import GHC.TypeNats
 
 class (SupportedPrim arg, SupportedPrim t) => UnaryOp tag arg t | tag arg -> t where
   partialEvalUnary :: (Typeable tag, Typeable t) => tag -> Term arg -> Term t
@@ -82,19 +92,17 @@ instance Show Symbol where
 
 instance Hashable Symbol
 
-data TermSymbol = TermSymbol Symbol Dynamic
+data TermSymbol where
+  TermSymbol :: forall t. (SupportedPrim t) => Proxy t -> Symbol -> TermSymbol
 
 instance Eq TermSymbol where
-  (TermSymbol s1 d1) == (TermSymbol s2 d2) = s1 == s2 && dynTypeRep d1 == dynTypeRep d2
+  (TermSymbol p1 s1) == (TermSymbol p2 s2) = s1 == s2 && typeRep p1 == typeRep p2
 
 instance Hashable TermSymbol where
-  hashWithSalt s (TermSymbol s1 d1) = s `hashWithSalt` s1 `hashWithSalt` dynTypeRep d1
+  hashWithSalt s (TermSymbol p1 s1) = s `hashWithSalt` s1 `hashWithSalt` typeRep p1
 
 instance Show TermSymbol where
-  show (TermSymbol s _) = show s
-
-termSymbolTypeRep :: TermSymbol -> TypeRep
-termSymbolTypeRep (TermSymbol _ d) = dynTypeRep d
+  show (TermSymbol _ s) = show s
 
 data Term t where
   ConcTerm :: (SupportedPrim t) => {-# UNPACK #-} !Id -> !t -> Term t
@@ -187,11 +195,11 @@ typeMemoizedCache = unsafeDupablePerformIO $
 {-# NOINLINE typeMemoizedCache #-}
 
 class (Typeable t, Hashable t, Eq t, Show t) => SupportedPrim t where
-  type RuntimeEvType t
-  default runtimeEvTypeable :: (Typeable (RuntimeEvType t)) => (Typeable (RuntimeEvType t) => r) -> r
-  runtimeEvTypeable :: (Typeable (RuntimeEvType t) => r) -> r
-  runtimeEvTypeable = id
-  runtimeEv :: RuntimeEvType t
+  type PrimConstraint t :: Constraint
+  type PrimConstraint t = ()
+  default withPrim :: PrimConstraint t => (PrimConstraint t => a) -> a
+  withPrim :: (PrimConstraint t => a) -> a
+  withPrim i = i
   termCache :: Cache (Term t)
   termCache = typeMemoizedCache
   pformatConc :: t -> String
@@ -302,7 +310,7 @@ castTerm t@TernaryTerm {} = cast t
 
 pformat :: forall t. (SupportedPrim t) => Term t -> String
 pformat (ConcTerm _ t) = pformatConc t
-pformat (SymbTerm _ (TermSymbol symb _)) = pformatSymb @t symb
+pformat (SymbTerm _ (TermSymbol _ symb)) = pformatSymb @t symb
 pformat (UnaryTerm _ (_ :: tagt) (arg1 :: Term arg1t)) = pformatUnary @tagt @arg1t @t arg1
 pformat (BinaryTerm _ (_ :: tagt) (arg1 :: Term arg1t) (arg2 :: Term arg2t)) =
   pformatBinary @tagt @arg1t @arg2t @t arg1 arg2
@@ -340,7 +348,7 @@ concTerm :: (SupportedPrim t, Typeable t, Hashable t, Eq t, Show t) => t -> Term
 concTerm t = intern $ UConcTerm t
 
 symbTerm :: forall t. (SupportedPrim t, Typeable t) => Symbol -> Term t
-symbTerm t = intern $ USymbTerm (TermSymbol t (defaultValueDynamic @t))
+symbTerm t = intern $ USymbTerm (TermSymbol (Proxy @t) t)
 
 ssymbTerm :: (SupportedPrim t, Typeable t) => String -> Term t
 ssymbTerm = symbTerm . SimpleSymbol
@@ -399,8 +407,6 @@ defaultValueForBoolDyn :: Dynamic
 defaultValueForBoolDyn = toDyn defaultValueForBool
 
 instance SupportedPrim Bool where
-  type RuntimeEvType Bool = ()
-  runtimeEv = ()
   pformatConc True = "true"
   pformatConc False = "false"
   defaultValue = True
@@ -414,8 +420,15 @@ defaultValueForIntegerDyn = toDyn defaultValueForInteger
 
 -- Basic Integer
 instance SupportedPrim Integer where
-  type RuntimeEvType Integer = ()
-  runtimeEv = ()
   pformatConc i = show i ++ "I"
   defaultValue = defaultValueForInteger
   defaultValueDynamic = defaultValueForIntegerDyn
+
+instance (KnownNat w, 1 <= w) => Hashable (SignedBV w) where
+  s `hashWithSalt` (SignedBV b) = s `hashWithSalt` b
+
+-- Signed BV
+instance (KnownNat w, 1 <= w) => SupportedPrim (SignedBV w) where
+  type PrimConstraint (SignedBV w) = (KnownNat w, 1 <= w)
+  pformatConc i = show i ++ "SB"
+  defaultValue = mkSignedBV knownNat 0

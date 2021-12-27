@@ -38,13 +38,13 @@ valueOf (Model m) sym =
 
 exceptFor :: Model -> S.HashSet TermSymbol -> Model
 exceptFor (Model m) s =
-  Model $ S.foldl' (\acc (TermSymbol sym _) -> M.delete sym acc) m s
+  Model $ S.foldl' (\acc (TermSymbol _ sym) -> M.delete sym acc) m s
 
 restrictTo :: Model -> S.HashSet TermSymbol -> Model
 restrictTo (Model m) s =
   Model $
     S.foldl'
-      ( \acc (TermSymbol sym _) -> case M.lookup sym m of
+      ( \acc (TermSymbol _ sym) -> case M.lookup sym m of
           Just v -> M.insert sym v acc
           Nothing -> acc
       )
@@ -55,9 +55,9 @@ extendTo :: Model -> S.HashSet TermSymbol -> Model
 extendTo (Model m) s =
   Model $
     S.foldl'
-      ( \acc (TermSymbol sym dv) -> case M.lookup sym acc of
+      ( \acc (TermSymbol (_ :: Proxy t) sym) -> case M.lookup sym acc of
           Just _ -> acc
-          Nothing -> M.insert sym dv acc
+          Nothing -> M.insert sym (defaultValueDynamic @t) acc
       )
       m
       s
@@ -66,8 +66,8 @@ exact :: Model -> S.HashSet TermSymbol -> Model
 exact m s = restrictTo (extendTo m s) s
 
 insert :: (Typeable a) => Model -> TermSymbol -> a -> Model
-insert (Model m) (TermSymbol sym df) v =
-  if dynTypeRep df == typeOf v
+insert (Model m) (TermSymbol p sym) v =
+  if typeRep p == typeOf v
     then Model $ M.insert sym (toDyn v) m
     else error "Bad value type"
 
@@ -82,8 +82,8 @@ evaluateSomeTermMemo fillDefault (Model ma) = go
   where
     go :: SomeTerm -> MemoState (MemoHashMap SomeTerm SomeTerm) SomeTerm SomeTerm SomeTerm
     go c@(SomeTerm ConcTerm {}) = return c
-    go c@(SomeTerm ((SymbTerm _ (TermSymbol sym df)) :: Term a)) = return $ case M.lookup sym ma of
-      Nothing -> if fillDefault then SomeTerm $ concTerm $ fromDyn @a df undefined else c
+    go c@(SomeTerm ((SymbTerm _ (TermSymbol (_ :: Proxy t) sym)) :: Term a)) = return $ case M.lookup sym ma of
+      Nothing -> if fillDefault then SomeTerm $ concTerm (defaultValue @t) else c
       Just dy -> SomeTerm $ concTerm (fromDyn @a dy undefined)
     go (SomeTerm (UnaryTerm _ tag (arg :: Term a))) = do
       SomeTerm argv <- memo go (SomeTerm arg)

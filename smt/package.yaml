@@ -22,6 +22,7 @@ dependencies:
 - mmorph
 - bv-sized
 - parameterized-utils
+- constraints
 
 library:
   source-dirs: src

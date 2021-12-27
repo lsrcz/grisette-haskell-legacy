@@ -21,11 +21,13 @@ where
 
 import Control.Monad
 import Data.Bifunctor
-import Data.BitVector.Sized.Signed as BVS
-import Data.BitVector.Sized.Unsigned as BVU
+import qualified Data.BitVector.Sized as BV
+import qualified Data.BitVector.Sized.Signed as BVS
+import qualified Data.BitVector.Sized.Unsigned as BVU
 import Data.Dynamic
 import qualified Data.HashMap.Strict as M
 import Data.Maybe
+import Data.Parameterized.Axiom (unsafeAxiom)
 import Data.Parameterized.NatRepr
 import Data.Parameterized.Some
 import qualified Data.SBV as SBV
@@ -33,18 +35,17 @@ import qualified Data.SBV.Internals as SBVI
 import Data.Type.Equality (type (~~))
 import Data.Typeable
 import GHC.Exts (sortWith)
+import GHC.TypeNats
 import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.Integer
-import Grisette.Data.Prim.Num
 import Grisette.Data.Prim.InternedTerm
 import Grisette.Data.Prim.Model as PM
+import Grisette.Data.Prim.Num
 import Grisette.Data.Prim.TabularFunc
 import Grisette.Data.SMT.Config
 import Grisette.Data.TabularFunc
 import qualified Type.Reflection as R
 import Unsafe.Coerce
-import GHC.TypeNats
-import Data.Parameterized.Axiom (unsafeAxiom)
 
 data SymBiMap = SymBiMap
   { biMapToSBV :: M.HashMap SomeTerm Dynamic,
@@ -83,6 +84,7 @@ resolveConfig config a = case config of
 
 resolveSimpleType ::
   forall s1 integerBitWidth r.
+  (SupportedPrim s1) =>
   GrisetteSMTConfig integerBitWidth ->
   R.TypeRep s1 ->
   ( forall s1'.
@@ -97,13 +99,15 @@ resolveSimpleType ::
   ) ->
   Maybe r
 resolveSimpleType config t a = R.withTypeable t $
-  case (eqT @s1 @Bool, eqT @s1 @Integer) of
-    (Just Refl, _) -> Just a
-    (_, Just Refl) -> Just $ resolveConfig config a
+  case (eqT @s1 @Bool, eqT @s1 @Integer, t) of
+    (Just Refl, _, _) -> Just a
+    (_, Just Refl, _) -> Just $ resolveConfig config a
+    (_, _, SignedBVType _) -> Just a
     _ -> Nothing
 
 resolveDeepType ::
   forall s1 integerBitWidth r.
+  (SupportedPrim s1) =>
   GrisetteSMTConfig integerBitWidth ->
   R.TypeRep s1 ->
   ( forall s1'.
@@ -122,25 +126,25 @@ resolveDeepType config t a =
 
 buildUFunc11 ::
   forall integerBitWidth s1 s2 a.
-  (SupportedPrim a) =>
+  (SupportedPrim a, SupportedPrim s1, SupportedPrim s2) =>
   GrisetteSMTConfig integerBitWidth ->
   R.TypeRep s1 ->
   R.TypeRep s2 ->
   Term a ->
   SymBiMap ->
   Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth (s1 =-> s2)))
-buildUFunc11 config ta tb term@(SymbTerm _ ts@(TermSymbol s _)) m =
+buildUFunc11 config ta tb term@(SymbTerm _ ts) m =
   join $
     resolveSimpleType @s1 config ta $
       resolveSimpleType @s2 config tb $
-        let name = "ufunc_" ++ show s
+        let name = "ufunc_" ++ show ts
             f = SBV.uninterpret @(TermTy integerBitWidth s1 -> TermTy integerBitWidth s2) name
          in return (addBiMap (SomeTerm term) (toDyn f) name ts m, f)
 buildUFunc11 _ _ _ _ _ = error "Should only be called on SymbTerm"
 
 buildUFunc111 ::
   forall integerBitWidth s1 s2 s3 a.
-  (SupportedPrim a) =>
+  (SupportedPrim a, SupportedPrim s1, SupportedPrim s2, SupportedPrim s3) =>
   GrisetteSMTConfig integerBitWidth ->
   R.TypeRep s1 ->
   R.TypeRep s2 ->
@@ -148,12 +152,12 @@ buildUFunc111 ::
   Term a ->
   SymBiMap ->
   Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth (s1 =-> s2 =-> s3)))
-buildUFunc111 config ta tb tc term@(SymbTerm _ ts@(TermSymbol s _)) m =
+buildUFunc111 config ta tb tc term@(SymbTerm _ ts) m =
   (join . join) $
     resolveSimpleType @s1 config ta $
       resolveSimpleType @s2 config tb $
         resolveSimpleType @s3 config tc $
-          let name = "ufunc_" ++ show s
+          let name = "ufunc_" ++ show ts
               f = SBV.uninterpret @(TermTy integerBitWidth s1 -> TermTy integerBitWidth s2 -> TermTy integerBitWidth s3) name
            in return (addBiMap (SomeTerm term) (toDyn f) name ts m, f)
 buildUFunc111 _ _ _ _ _ _ = error "Should only be called on SymbTerm"
@@ -232,11 +236,13 @@ lowerSinglePrimImpl ::
   SymBiMap ->
   SBV.Symbolic (SymBiMap, TermTy integerBitWidth a)
 lowerSinglePrimImpl config (ConcTerm _ v) m =
-  case (eqT @a @Bool, eqT @a @Integer) of
-    (Just Refl, _) -> return (m, if v then SBV.sTrue else SBV.sFalse)
-    (_, Just Refl) -> resolveConfig config $ return (m, fromInteger v)
+  case (eqT @a @Bool, eqT @a @Integer, R.typeRep @a) of
+    (Just Refl, _, _) -> return (m, if v then SBV.sTrue else SBV.sFalse)
+    (_, Just Refl, _) -> resolveConfig config $ return (m, fromInteger v)
+    (_, _, SignedBVType _) -> case v of
+      BVS.SignedBV (BV.BV x) -> return (m, fromInteger x)
     _ -> error $ "Don't know how to translate the type " ++ show (typeRep (Proxy @a)) ++ " to SMT"
-lowerSinglePrimImpl config t@(SymbTerm _ ts@(TermSymbol s _)) m =
+lowerSinglePrimImpl config t@(SymbTerm _ ts) m =
   fromMaybe errorMsg $
     resolveDeepType
       config
@@ -250,17 +256,17 @@ lowerSinglePrimImpl config t@(SymbTerm _ ts@(TermSymbol s _)) m =
     errorMsg = error $ "Don't know how to translate the type " ++ show (typeRep (Proxy @a)) ++ " to SMT"
     b1 :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
     b1 = resolveSimpleType @a config (R.typeRep @a) $ do
-      let name = show s
+      let name = show ts
       (g :: TermTy integerBitWidth a) <- SBV.free name
       return (addBiMap (SomeTerm t) (toDyn g) name ts m, g)
 lowerSinglePrimImpl config t@(UnaryTerm _ op (_ :: Term x)) m =
   resolveConfig config $
-    case (eqT @a @Bool, eqT @a @Integer) of
-      (Just Refl, _) -> do
+    case (eqT @a @Bool, eqT @a @Integer, R.typeRep @a) of
+      (Just Refl, _, _) -> do
         case t of
           NotTerm t1 -> lowerUnaryTerm config t t1 SBV.sNot m
           _ -> errorMsg
-      (_, Just Refl) ->
+      (_, Just Refl, _) ->
         case t of
           UMinusITerm t1 -> lowerUnaryTerm config t t1 (\x -> - x) m
           SignumITerm t1 -> lowerUnaryTerm config t t1 signum m
@@ -268,6 +274,12 @@ lowerSinglePrimImpl config t@(UnaryTerm _ op (_ :: Term x)) m =
           UMinusNumTerm (t1 :: Term Integer) -> lowerUnaryTerm config t t1 (\x -> - x) m
           SignumNumTerm (t1 :: Term Integer) -> lowerUnaryTerm config t t1 signum m
           AbsNumTerm (t1 :: Term Integer) -> lowerUnaryTerm config t t1 abs m
+          _ -> errorMsg
+      (_, _, SignedBVType (_ :: Proxy n)) ->
+        case t of
+          UMinusNumTerm (t1 :: Term (BVS.SignedBV n)) -> lowerUnaryTerm config t t1 (\x -> - x) m
+          SignumNumTerm (t1 :: Term (BVS.SignedBV n)) -> lowerUnaryTerm config t t1 signum m
+          AbsNumTerm (t1 :: Term (BVS.SignedBV n)) -> lowerUnaryTerm config t t1 abs m
           _ -> errorMsg
       _ -> errorMsg
   where
@@ -285,8 +297,8 @@ lowerSinglePrimImpl config t@(BinaryTerm _ op (t1 :: Term x) (t2 :: Term y)) m =
           resolveSimpleType @x @integerBitWidth
             config
             (introSupportedPrimConstraint @x t1 R.typeRep)
-            ( case (eqT @a @Bool, eqT @a @Integer) of
-                (Just Refl, _) ->
+            ( case (eqT @a @Bool, eqT @a @Integer, R.typeRep @a) of
+                (Just Refl, _, _) ->
                   ( case t of
                       EqvTerm (t1' :: Term x) t2' -> lowerBinaryTerm config t t1' t2' (SBV..==) m
                       AndTerm t1' t2' -> lowerBinaryTerm config t t1' t2' (SBV..&&) m
@@ -295,13 +307,19 @@ lowerSinglePrimImpl config t@(BinaryTerm _ op (t1 :: Term x) (t2 :: Term y)) m =
                       LEITerm t1' t2' -> lowerBinaryTerm config t t1' t2' (SBV..<=) m
                       _ -> errorMsg
                   )
-                (_, Just Refl) ->
+                (_, Just Refl, _) ->
                   ( case t of
                       AddITerm t1' t2' -> lowerBinaryTerm config t t1' t2' (+) m
                       AddNumTerm (t1' :: Term Integer) t2' -> lowerBinaryTerm config t t1' t2' (+) m
                       TimesITerm t1' t2' -> lowerBinaryTerm config t t1' t2' (*) m
                       TimesNumTerm (t1' :: Term Integer) t2' -> lowerBinaryTerm config t t1' t2' (*) m
                       DivITerm t1' t2' -> lowerBinaryTerm config t t1' t2' SBV.sDiv m
+                      _ -> errorMsg
+                  )
+                (_, _, SignedBVType (_ :: Proxy n)) ->
+                  ( case t of
+                      AddNumTerm (t1' :: Term (BVS.SignedBV n)) t2' -> lowerBinaryTerm config t t1' t2' (+) m
+                      TimesNumTerm (t1' :: Term (BVS.SignedBV n)) t2' -> lowerBinaryTerm config t t1' t2' (*) m
                       _ -> errorMsg
                   )
                 _ -> errorMsg
@@ -372,7 +390,7 @@ unsafeWithNonZeroKnownNat :: forall w r. Int -> ((KnownNat w, SBV.BVIsNonZero w)
 unsafeWithNonZeroKnownNat i r
   | i <= 0 = error "Not an nonzero natural number"
   | otherwise = withKnownNat @w (unsafeMkNatRepr i) $ unsafeBVIsNonZero r
-  where 
+  where
     unsafeBVIsNonZero :: ((SBV.BVIsNonZero w) => r) -> r
     unsafeBVIsNonZero r1 = case unsafeAxiom :: w :~: 1 of
       Refl -> r1
@@ -382,10 +400,8 @@ parseModel _ (SBVI.SMTModel _ _ assoc uifuncs) mp = foldr gouifuncs (foldr goass
   where
     goassoc :: (String, SBVI.CV) -> PM.Model -> PM.Model
     goassoc (name, cv) m = case findStringToSymbol name mp of
-      Just s -> case termSymbolTypeRep s of
-        SomeTypeRepK1 (t :: R.TypeRep a) ->
-          R.withTypeable t $ PM.insert m s (resolveSingle t cv)
-        _ -> error "Assoc can only work for kind *"
+      Just s@(TermSymbol (_ :: Proxy t) _) ->
+        PM.insert m s (resolveSingle (R.typeRep @t) cv)
       Nothing -> error "Bad"
     resolveSingle :: R.TypeRep a -> SBVI.CV -> a
     resolveSingle t (SBVI.CV SBVI.KBool (SBVI.CInteger n)) =
@@ -404,20 +420,26 @@ parseModel _ (SBVI.SMTModel _ _ assoc uifuncs) mp = foldr gouifuncs (foldr goass
             case R.eqTypeRep (R.typeRepKind n) (R.typeRep @Nat) of
               Just R.HRefl ->
                 unsafeWithNonZeroKnownNat @w bitWidth $
-                case (R.eqTypeRep a (R.typeRep @SignedBV), R.eqTypeRep a (R.typeRep @UnsignedBV)) of
-                  (Just R.HRefl, _) -> mkSignedBV knownNat i
-                  (_, Just R.HRefl) -> mkUnsignedBV knownNat i
-                  _ -> error "Bad type"
+                  case (R.eqTypeRep a (R.typeRep @BVS.SignedBV), R.eqTypeRep a (R.typeRep @BVU.UnsignedBV)) of
+                    (Just R.HRefl, _) -> BVS.mkSignedBV knownNat i
+                    (_, Just R.HRefl) -> BVU.mkUnsignedBV knownNat i
+                    _ -> error "Bad type"
               _ -> error "Bad type"
           _ -> error "Bad type"
     resolveSingle _ _ = error "Unknown cv"
 
-    buildConstFunc :: R.TypeRep a -> R.TypeRep r -> SBVI.CV -> a =-> r
+    buildConstFunc :: (SupportedPrim a, SupportedPrim r) => R.TypeRep a -> R.TypeRep r -> SBVI.CV -> a =-> r
     buildConstFunc _ tr v = case tr of
       TFunType (ta2' :: R.TypeRep a2) (tr2' :: R.TypeRep r2) -> TabularFunc [] $ buildConstFunc ta2' tr2' v
       _ -> TabularFunc [] $ resolveSingle tr v
 
-    goufuncResolve :: forall a r. R.TypeRep a -> R.TypeRep r -> ([([SBVI.CV], SBVI.CV)], SBVI.CV) -> (a =-> r)
+    goufuncResolve ::
+      forall a r.
+      (SupportedPrim a, SupportedPrim r) =>
+      R.TypeRep a ->
+      R.TypeRep r ->
+      ([([SBVI.CV], SBVI.CV)], SBVI.CV) ->
+      (a =-> r)
     goufuncResolve ta1 ta2 (l, s) =
       case ta2 of
         TFunType (ta2' :: R.TypeRep a2) (tr2' :: R.TypeRep r2) ->
@@ -434,8 +456,8 @@ parseModel _ (SBVI.SMTModel _ _ assoc uifuncs) mp = foldr gouifuncs (foldr goass
       (Just R.HRefl, _) -> partitionWithOrd . resolveFirst t
       (_, Just R.HRefl) -> partitionWithOrd . resolveFirst t
       _ -> case t of
-        R.App bv _ -> case (R.eqTypeRep bv (R.typeRep @SignedBV), R.eqTypeRep bv (R.typeRep @UnsignedBV)) of
-          (Just R.HRefl, _) -> fmap (first SignedBV) . partitionWithOrd . fmap (first BVS.asBV) . resolveFirst t
+        R.App bv _ -> case (R.eqTypeRep bv (R.typeRep @BVS.SignedBV), R.eqTypeRep bv (R.typeRep @BVU.UnsignedBV)) of
+          (Just R.HRefl, _) -> fmap (first BVS.SignedBV) . partitionWithOrd . fmap (first BVS.asBV) . resolveFirst t
           (_, Just R.HRefl) -> partitionWithOrd . resolveFirst t
           _ -> error "Unknown type"
         _ -> error "Unknown type"
@@ -455,28 +477,54 @@ parseModel _ (SBVI.SMTModel _ _ assoc uifuncs) mp = foldr gouifuncs (foldr goass
 
     gouifuncs :: (String, (SBVI.SBVType, ([([SBVI.CV], SBVI.CV)], SBVI.CV))) -> PM.Model -> PM.Model
     gouifuncs (name, (SBVI.SBVType _, l)) m = case findStringToSymbol name mp of
-      Just s -> case termSymbolTypeRep s of
-        R.SomeTypeRep t@(TFunType a r) -> R.withTypeable t $ PM.insert m s $ goufuncResolve a r l
+      Just s@(TermSymbol (_ :: Proxy t) _) -> case R.typeRep @t of
+        t@(TFunType a r) -> R.withTypeable t $ PM.insert m s $ goufuncResolve a r l
         _ -> error "Bad"
       Nothing -> error "Bad"
 
 -- helpers
-data TFunTypeContainer :: forall k. k -> * where
-  TFunTypeContainer :: R.TypeRep a -> R.TypeRep b -> TFunTypeContainer (a =-> b)
 
-tFunTypeView :: R.TypeRep t -> Maybe (TFunTypeContainer t)
+data SignedBVTypeContainer :: forall k. k -> * where
+  SignedBVTypeContainer :: (SBV.BVIsNonZero n, KnownNat n, 1 <= n) => Proxy n -> SignedBVTypeContainer (BVS.SignedBV n)
+
+signedBVTypeView :: forall t. (SupportedPrim t) => R.TypeRep t -> Maybe (SignedBVTypeContainer t)
+signedBVTypeView t = case t of
+  R.App s (n :: R.TypeRep w) ->
+    case (R.eqTypeRep s (R.typeRep @BVS.SignedBV), R.eqTypeRep (R.typeRepKind n) (R.typeRep @Nat)) of
+      (Just R.HRefl, Just R.HRefl) ->
+        Just $ unsafeBVIsNonZero @w $ withPrim @t (SignedBVTypeContainer Proxy)
+      _ -> Nothing
+  _ -> Nothing
+  where
+    unsafeBVIsNonZero :: forall w r. ((SBV.BVIsNonZero w) => r) -> r
+    unsafeBVIsNonZero r1 = case unsafeAxiom :: w :~: 1 of
+      Refl -> r1
+
+pattern SignedBVType ::
+  forall t.
+  (SupportedPrim t) =>
+  forall (n :: Nat).
+  (t ~~ BVS.SignedBV n, KnownNat n, 1 <= n, SBV.BVIsNonZero n) =>
+  Proxy n ->
+  R.TypeRep t
+pattern SignedBVType p <- (signedBVTypeView @t -> Just (SignedBVTypeContainer p))
+
+data TFunTypeContainer :: forall k. k -> * where
+  TFunTypeContainer :: (SupportedPrim a, SupportedPrim b) => R.TypeRep a -> R.TypeRep b -> TFunTypeContainer (a =-> b)
+
+tFunTypeView :: forall t. (SupportedPrim t) => R.TypeRep t -> Maybe (TFunTypeContainer t)
 tFunTypeView t = case t of
   R.App (R.App arr (ta2' :: R.TypeRep a2)) (tr2' :: R.TypeRep r2) ->
     case R.eqTypeRep arr (R.typeRep @(=->)) of
-      Just R.HRefl -> Just $ TFunTypeContainer ta2' tr2'
+      Just R.HRefl -> Just $ withPrim @t $ TFunTypeContainer ta2' tr2'
       Nothing -> Nothing
   _ -> Nothing
 
 pattern TFunType ::
-  forall k (t :: k).
-  () =>
+  forall t.
+  (SupportedPrim t) =>
   forall (a :: *) (b :: *).
-  (t ~~ (a =-> b), k ~ *) =>
+  (t ~~ (a =-> b), SupportedPrim a, SupportedPrim b) =>
   R.TypeRep a ->
   R.TypeRep b ->
   R.TypeRep t
@@ -486,16 +534,17 @@ pattern TFunType a b <-
     TFunType a b = R.App (R.App (R.typeRep @(=->)) a) b
 
 pattern TFun3Type ::
-  forall k (t :: k).
-  () =>
+  forall t.
+  (SupportedPrim t) =>
   forall (a :: *) (b :: *) (c :: *).
-  (t ~~ (a =-> b =-> c), k ~ *) =>
+  (t ~~ (a =-> b =-> c), SupportedPrim a, SupportedPrim b, SupportedPrim c) =>
   R.TypeRep a ->
   R.TypeRep b ->
   R.TypeRep c ->
   R.TypeRep t
 pattern TFun3Type a b c = TFunType a (TFunType b c)
 
+{-
 data SomeTypeRepK1Ty where
   SomeTypeRepK1Ty :: forall (a :: *). R.TypeRep a -> SomeTypeRepK1Ty
 
@@ -512,3 +561,4 @@ pattern SomeTypeRepK1 ::
   R.TypeRep a ->
   R.SomeTypeRep
 pattern SomeTypeRepK1 a <- (someTypeRepK1View -> Just (SomeTypeRepK1Ty a))
+-}

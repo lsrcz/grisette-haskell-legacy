@@ -18,6 +18,7 @@ dependencies:
 - unordered-containers
 - monad-memo
 - bv-sized
+- constraints
 
 library:
   source-dirs: src
