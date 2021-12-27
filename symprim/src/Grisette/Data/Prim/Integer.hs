@@ -15,6 +15,12 @@ module Grisette.Data.Prim.Integer
     UMinusI (..),
     uminusi,
     pattern UMinusITerm,
+    AbsI (..),
+    absi,
+    pattern AbsITerm,
+    SignumI (..),
+    signumi,
+    pattern SignumITerm,
     LTI (..),
     lti,
     gei,
@@ -122,6 +128,51 @@ instance UnaryOp UMinusI Integer Integer where
 
 pattern UMinusITerm :: Term Integer -> Term a
 pattern UMinusITerm v <- UnaryTermPatt UMinusI v
+
+-- abs
+data AbsI = AbsI deriving (Show)
+
+absi :: Term Integer -> Term Integer
+absi = partialEvalUnary AbsI
+
+instance UnaryPartialStrategy AbsI Integer Integer where
+  extractor = integerConcTermView
+  constantHandler i = Just $ concTerm $ abs i
+  nonConstantHandler (UMinusITerm v) = Just $ absi v
+  nonConstantHandler t@(AbsITerm _) = Just t
+  nonConstantHandler (TimesITerm l r) = Just $ timesi (absi l) $ absi r
+
+  nonConstantHandler (AddITerm _ (IntegerConcTerm _)) = error "Should not happen" -- Just $ minusi (concTerm $ -r) l
+  nonConstantHandler _ = Nothing
+
+instance UnaryOp AbsI Integer Integer where
+  partialEvalUnary _ v = unaryUnfoldOnce (unaryPartial @AbsI) (constructUnary AbsI) v
+  pformatUnary v = "(absI " ++ pformat v ++ ")"
+
+pattern AbsITerm :: Term Integer -> Term a
+pattern AbsITerm v <- UnaryTermPatt AbsI v
+
+-- signum
+data SignumI = SignumI deriving (Show)
+
+signumi :: Term Integer -> Term Integer
+signumi = partialEvalUnary SignumI
+
+instance UnaryPartialStrategy SignumI Integer Integer where
+  extractor = integerConcTermView
+  constantHandler i = Just $ concTerm $ signum i
+  nonConstantHandler (UMinusITerm v) = Just $ uminusi $ signumi v
+  nonConstantHandler (TimesITerm l r) = Just $ timesi (signumi l) $ signumi r
+
+  nonConstantHandler (AddITerm _ (IntegerConcTerm _)) = error "Should not happen" -- Just $ minusi (concTerm $ -r) l
+  nonConstantHandler _ = Nothing
+
+instance UnaryOp SignumI Integer Integer where
+  partialEvalUnary _ v = unaryUnfoldOnce (unaryPartial @SignumI) (constructUnary SignumI) v
+  pformatUnary v = "(signumI " ++ pformat v ++ ")"
+
+pattern SignumITerm :: Term Integer -> Term a
+pattern SignumITerm v <- UnaryTermPatt SignumI v
 
 -- lt
 data LTI = LTI deriving (Show)

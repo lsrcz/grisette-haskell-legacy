@@ -262,6 +262,8 @@ lowerSinglePrimImpl config t@(UnaryTerm _ op (_ :: Term x)) m =
       (_, Just Refl) ->
         case t of
           UMinusITerm t1 -> lowerUnaryTerm config t t1 (\x -> - x) m
+          SignumITerm t1 -> lowerUnaryTerm config t t1 signum m
+          AbsITerm t1 -> lowerUnaryTerm config t t1 abs m
           _ -> errorMsg
       _ -> errorMsg
   where

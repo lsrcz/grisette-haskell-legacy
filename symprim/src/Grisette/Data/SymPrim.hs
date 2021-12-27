@@ -125,13 +125,14 @@ type SymInteger = Sym Integer
 instance SEq (Sym Bool) (Sym Integer) where
   (Sym l) ==~ (Sym r) = Sym $ eqterm l r
 
-instance LinearArithOp (Sym Integer) where
-  (Sym l) +~ (Sym r) = Sym $ addi l r
-  (Sym l) -~ (Sym r) = Sym $ minusi l r
-  negs (Sym v) = Sym $ uminusi v
-
-instance TimesOp (Sym Integer) where
-  (Sym l) *~ (Sym r) = Sym $ timesi l r
+instance Num (Sym Integer) where
+  (Sym l) + (Sym r) = Sym $ addi l r
+  (Sym l) - (Sym r) = Sym $ minusi l r
+  (Sym l) * (Sym r) = Sym $ timesi l r
+  negate (Sym v) = Sym $ uminusi v
+  abs (Sym v) = Sym $ absi v
+  signum (Sym v) = Sym $ signumi v
+  fromInteger i = conc i
 
 instance SymConcView Integer where
   symConcView (Sym (IntegerConcTerm t)) = Just t
