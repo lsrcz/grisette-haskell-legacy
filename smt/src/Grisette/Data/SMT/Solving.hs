@@ -10,11 +10,14 @@ import Grisette.Data.Prim.Model as PM
 import Grisette.Data.SMT.Config
 import Grisette.Data.SMT.Lowering
 
-solveWith :: forall integerBitWidth. GrisetteSMTConfig integerBitWidth -> Term Bool -> IO PM.Model
+solveWith :: forall integerBitWidth. GrisetteSMTConfig integerBitWidth -> Term Bool -> IO (Either SBVC.CheckSatResult PM.Model)
 solveWith config term = SBV.runSMTWith (sbvConfig config) $ do
   (m, a) <- lowerSinglePrim config term
   SBVC.query $ do
     SBV.constrain a
-    _ <- SBVC.checkSat
-    md <- SBVC.getModel
-    return $ parseModel config md m
+    r <- SBVC.checkSat
+    case r of
+      SBVC.Sat -> do
+        md <- SBVC.getModel
+        return $ Right $ parseModel config md m
+      _ -> return $ Left r

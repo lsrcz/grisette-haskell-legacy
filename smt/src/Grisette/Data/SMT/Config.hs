@@ -13,10 +13,10 @@ module Grisette.Data.SMT.Config
   )
 where
 
-import Data.BitVector.Sized.Signed
 import qualified Data.SBV as SBV
 import GHC.TypeNats
 import Grisette.Data.TabularFunc
+import Data.BitVector.Sized.Signed
 
 type Aux :: Bool -> Nat -> *
 type family Aux o n where
