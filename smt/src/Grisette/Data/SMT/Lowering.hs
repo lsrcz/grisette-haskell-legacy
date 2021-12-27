@@ -543,22 +543,3 @@ pattern TFun3Type ::
   R.TypeRep c ->
   R.TypeRep t
 pattern TFun3Type a b c = TFunType a (TFunType b c)
-
-{-
-data SomeTypeRepK1Ty where
-  SomeTypeRepK1Ty :: forall (a :: *). R.TypeRep a -> SomeTypeRepK1Ty
-
-someTypeRepK1View :: R.SomeTypeRep -> Maybe SomeTypeRepK1Ty
-someTypeRepK1View (R.SomeTypeRep t) =
-  case R.eqTypeRep (R.typeRepKind t) (R.typeRepKind (R.typeRep @Bool)) of
-    Just R.HRefl -> Just $ SomeTypeRepK1Ty t
-    _ -> Nothing
-
-pattern SomeTypeRepK1 ::
-  () =>
-  forall k (a :: k).
-  (k ~ *) =>
-  R.TypeRep a ->
-  R.SomeTypeRep
-pattern SomeTypeRepK1 a <- (someTypeRepK1View -> Just (SomeTypeRepK1Ty a))
--}
