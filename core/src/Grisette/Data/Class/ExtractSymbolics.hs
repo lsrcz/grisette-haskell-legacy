@@ -5,7 +5,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Grisette.Data.Class.ExtractSymbolics where
+module Grisette.Data.Class.ExtractSymbolics (ExtractSymbolics (..)) where
 
 import Control.Monad.Coroutine
 import Control.Monad.Except

@@ -13,15 +13,20 @@ module Grisette.Data.SymPrim
     pattern SymConc,
     SymBool,
     SymInteger,
-    type (=~>)
+    type (=~>),
   )
 where
 
+import Control.Monad.Except
 import Control.Monad.State
 import Data.HashSet as S
 import Data.Hashable
+import Grisette.Control.Monad
 import Grisette.Data.Class.Bool
+import Grisette.Data.Class.Error
 import Grisette.Data.Class.ExtractSymbolics
+import Grisette.Data.Class.FiniteFunction
+import Grisette.Data.Class.Integer
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.SimpleMergeable
@@ -30,16 +35,11 @@ import Grisette.Data.Class.SymGen
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
 import Grisette.Data.Prim.Bool
+import Grisette.Data.Prim.Integer
 import Grisette.Data.Prim.InternedTerm
 import Grisette.Data.Prim.Model
-import Grisette.Data.Class.Integer
-import Grisette.Data.Prim.Integer
-import Grisette.Data.Class.Error
-import Grisette.Control.Monad
-import Control.Monad.Except
-import Grisette.Data.TabularFunc
-import Grisette.Data.Class.FiniteFunction
 import Grisette.Data.Prim.TabularFunc
+import Grisette.Data.TabularFunc
 
 newtype Sym a = Sym {underlyingTerm :: Term a}
 

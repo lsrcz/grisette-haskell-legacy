@@ -1,17 +1,18 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
-module Grisette.Data.Class.SymEval where
-import Grisette.Data.Class.ToCon
+
+module Grisette.Data.Class.SymEval (SymEval (..), symevalToCon) where
+
+import Control.Monad.Coroutine
+import Control.Monad.Except
+import Control.Monad.Trans.Maybe
 import Data.Maybe
 import GHC.Generics
-import Control.Monad.Trans.Maybe
-import Control.Monad.Except
-import Control.Monad.Coroutine
+import Grisette.Data.Class.ToCon
 
 class SymEval model a where
   symeval :: Bool -> model -> a -> a
@@ -80,4 +81,3 @@ instance (SymEval model (m (Either e a))) => SymEval model (ExceptT e m a) where
 -- Coroutine
 instance (SymEval model (m (Either (sus (Coroutine sus m a)) a))) => SymEval model (Coroutine sus m a) where
   symeval fillDefault model (Coroutine v) = Coroutine $ symeval fillDefault model v
-

@@ -6,7 +6,12 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Grisette.Data.SMT.Config where
+module Grisette.Data.SMT.Config
+  ( GrisetteSMTConfig (..),
+    sbvConfig,
+    TermTy,
+  )
+where
 
 import qualified Data.SBV as SBV
 import GHC.TypeNats

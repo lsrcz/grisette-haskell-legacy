@@ -3,17 +3,28 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
-{-# LANGUAGE QuantifiedConstraints #-}
 
-module Grisette.Data.Class.SymGen where
+module Grisette.Data.Class.SymGen
+  ( SymGen (..),
+    genSym,
+    SymGenSimple (..),
+    genSymSimple,
+    SymGenNoSpec (..),
+    SymGenSimpleNoSpec (..),
+    genSymIndexedWithDerivedNoSpec,
+    genSymSimpleIndexedWithDerivedNoSpec,
+    genSymIndexedWithDerivedSameShape,
+  )
+where
 
+import Control.Monad.Except
 import Control.Monad.State
 import Control.Monad.Trans.Maybe
 import Generics.Deriving
@@ -23,7 +34,6 @@ import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.UnionOp
 import Grisette.Data.Functor
-import Control.Monad.Except
 
 class (SymBoolOp bool, Mergeable bool a) => SymGen bool spec a where
   genSymIndexed :: spec -> State (Int, String) (UnionMBase bool a)
@@ -85,6 +95,7 @@ instance (SymBoolOp bool, SymGenSimple bool () bool) => SymGen bool () Bool wher
 -- ()
 instance (SymBoolOp bool, SymGenSimple bool () bool) => SymGen bool () () where
   genSymIndexed _ = genSymIndexedWithDerivedNoSpec
+
 -- Either
 instance
   (SymBoolOp bool, SymGenSimple bool () bool, SymGen bool () a, Mergeable bool a, SymGen bool () b, Mergeable bool b) =>
@@ -381,15 +392,11 @@ instance
   where
   genSymSimpleIndexed (ExceptT v) = ExceptT <$> genSymSimpleIndexed @bool v
 
-
 -- UnionM
-instance (SymBoolOp bool , SymGen bool spec a, Mergeable bool a) => SymGen bool spec (UnionMBase bool a) where
+instance (SymBoolOp bool, SymGen bool spec a, Mergeable bool a) => SymGen bool spec (UnionMBase bool a) where
   genSymIndexed spec = mrgSingle <$> genSymSimpleIndexed @bool spec
 
-instance (SymBoolOp bool , SymGen bool spec a) => SymGenSimple bool spec (UnionMBase bool a) where
+instance (SymBoolOp bool, SymGen bool spec a) => SymGenSimple bool spec (UnionMBase bool a) where
   genSymSimpleIndexed spec = do
     res <- genSymIndexed spec
     if not (isMerged res) then error "Not merged" else return res
-  
-
-

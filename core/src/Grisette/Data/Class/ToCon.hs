@@ -1,13 +1,15 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
-module Grisette.Data.Class.ToCon where
-import GHC.Generics
-import Control.Monad.Trans.Maybe
-import Control.Monad.Except
+
+module Grisette.Data.Class.ToCon (ToCon (..)) where
+
 import Control.Monad.Coroutine
+import Control.Monad.Except
+import Control.Monad.Trans.Maybe
+import GHC.Generics
 
 class ToCon a b where
   toCon :: a -> Maybe b
@@ -64,19 +66,22 @@ instance (ToCon a1 a2, ToCon b1 b2) => ToCon (a1, b1) (a2, b2)
 instance (ToCon a1 a2, ToCon b1 b2, ToCon c1 c2) => ToCon (a1, b1, c1) (a2, b2, c2)
 
 -- MaybeT
-instance ToCon (m1 (Maybe a)) (m2 (Maybe b)) =>
-  ToCon (MaybeT m1 a) (MaybeT m2 b) where
-    toCon (MaybeT v) = MaybeT <$> toCon v
+instance
+  ToCon (m1 (Maybe a)) (m2 (Maybe b)) =>
+  ToCon (MaybeT m1 a) (MaybeT m2 b)
+  where
+  toCon (MaybeT v) = MaybeT <$> toCon v
 
 -- ExceptT
-instance ToCon (m1 (Either e1 a)) (m2 (Either e2 b)) =>
-  ToCon (ExceptT e1 m1 a) (ExceptT e2 m2 b) where
-    toCon (ExceptT v) = ExceptT <$> toCon v
+instance
+  ToCon (m1 (Either e1 a)) (m2 (Either e2 b)) =>
+  ToCon (ExceptT e1 m1 a) (ExceptT e2 m2 b)
+  where
+  toCon (ExceptT v) = ExceptT <$> toCon v
 
 -- Coroutine
-instance (ToCon (m1 (Either (sus (Coroutine sus m1 a)) a)) (m2 (Either (sus (Coroutine sus m2 b)) b))) =>
- ToCon (Coroutine sus m1 a) (Coroutine sus m2 b) where
-   toCon (Coroutine a) = Coroutine <$> toCon a
-
-
-
+instance
+  (ToCon (m1 (Either (sus (Coroutine sus m1 a)) a)) (m2 (Either (sus (Coroutine sus m2 b)) b))) =>
+  ToCon (Coroutine sus m1 a) (Coroutine sus m2 b)
+  where
+  toCon (Coroutine a) = Coroutine <$> toCon a

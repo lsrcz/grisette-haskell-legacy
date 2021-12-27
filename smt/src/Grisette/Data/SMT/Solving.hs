@@ -1,9 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeOperators #-}
 
-module Grisette.Data.SMT.Solving where
+module Grisette.Data.SMT.Solving (solveWith) where
 
 import qualified Data.SBV as SBV
 import qualified Data.SBV.Control as SBVC
@@ -20,9 +18,3 @@ solveWith config term = SBV.runSMTWith (sbvConfig config) $ do
     _ <- SBVC.checkSat
     md <- SBVC.getModel
     return $ parseModel config md m
-
-unboundedConfig :: GrisetteSMTConfig 0
-unboundedConfig = UnboundedReasoning $ SBV.z3 {SBV.verbose = True}
-
-boundedConfig :: GrisetteSMTConfig 3
-boundedConfig = BoundedReasoning $ SBV.z3 {SBV.verbose = True}

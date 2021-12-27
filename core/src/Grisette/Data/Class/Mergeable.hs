@@ -1,18 +1,14 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DefaultSignatures #-}
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -37,10 +33,10 @@ import Control.Monad.Trans.State
 import Data.Typeable
 import Generics.Deriving
 import Grisette.Data.Class.Bool
+import Grisette.Data.Class.OrphanGeneric ()
 import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.UnionOp
 import Grisette.Data.Class.Utils.CConst
-import Grisette.Data.Class.OrphanGeneric ()
 
 data MergeStrategy bool a where
   SimpleStrategy :: (bool -> a -> a -> a) -> MergeStrategy bool a
@@ -66,12 +62,10 @@ guardWithStrategy strategy cond (GuardU condTrue tt _) f
   | cond == condTrue = guardWithStrategy strategy cond tt f
 guardWithStrategy strategy cond (GuardU condTrue _ ft) f
   | nots cond == condTrue || cond == nots condTrue = guardWithStrategy strategy cond ft f
-
 guardWithStrategy strategy cond t (GuardU condFalse _ ff)
   | cond == condFalse = guardWithStrategy strategy cond t ff
 guardWithStrategy strategy cond t (GuardU condTrue tf _)
   | nots cond == condTrue || cond == nots condTrue = guardWithStrategy strategy cond t tf
-
 guardWithStrategy (SimpleStrategy m) cond (SingleU l) (SingleU r) = SingleU $ m cond l r
 guardWithStrategy strategy@(OrderedStrategy idxFun substrategy) cond ifTrue ifFalse = case (ifTrue, ifFalse) of
   (SingleU _, SingleU _) -> ssGuard cond ifTrue ifFalse
@@ -100,7 +94,7 @@ guardWithStrategy strategy@(OrderedStrategy idxFun substrategy) cond ifTrue ifFa
     gsGuard cond' ifTrue'@(GuardU condt tt tf) ifFalse'
       | idxtt == idxtf = ssGuard cond' ifTrue' ifFalse'
       | idxtt < idxf = guardWithStrategy strategy (cond' &&~ condt) ifTrue $ guardWithStrategy strategy cond' tf ifFalse'
-      | idxtt == idxf = guardWithStrategy strategy  (nots cond' ||~ condt) (guardWithStrategy (substrategy idxf) cond' tt ifFalse') tf
+      | idxtt == idxf = guardWithStrategy strategy (nots cond' ||~ condt) (guardWithStrategy (substrategy idxf) cond' tt ifFalse') tf
       | otherwise = guardWithStrategy strategy (nots cond') ifFalse' ifTrue'
       where
         idxtt = idxFun $ leftMost tt
@@ -215,12 +209,13 @@ instance (SymBoolOp bool, Mergeable bool a) => Mergeable bool (Maybe a)
 instance (SymBoolOp bool) => Mergeable1 bool Maybe
 
 -- List
-instance (SymBoolOp bool, Mergeable bool a) => Mergeable bool [a] where
-  --mergeStrategy = OrderedStrategy length $ \_ -> case mergeStrategy of
-  --  SimpleStrategy m -> SimpleStrategy $ \cond t f -> zipWith (m cond) t f
-  --  _ -> NoStrategy -- in the future we may change this
+instance (SymBoolOp bool, Mergeable bool a) => Mergeable bool [a]
 
-instance (SymBoolOp bool) => Mergeable1 bool [] where
+--mergeStrategy = OrderedStrategy length $ \_ -> case mergeStrategy of
+--  SimpleStrategy m -> SimpleStrategy $ \cond t f -> zipWith (m cond) t f
+--  _ -> NoStrategy -- in the future we may change this
+
+instance (SymBoolOp bool) => Mergeable1 bool []
 
 -- (,)
 instance (SymBoolOp bool, Mergeable bool a, Mergeable bool b) => Mergeable bool (a, b)

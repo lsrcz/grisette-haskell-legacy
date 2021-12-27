@@ -1,17 +1,18 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
-module Grisette.Data.Class.ToSym where
 
-import Generics.Deriving
-import Grisette.Data.Class.OrphanGeneric ()
-import Control.Monad.Trans.Maybe
-import Control.Monad.Trans.Except
+module Grisette.Data.Class.ToSym (ToSym (..)) where
+
 import Control.Monad.Coroutine
 import Control.Monad.State
+import Control.Monad.Trans.Except
+import Control.Monad.Trans.Maybe
+import Generics.Deriving
+import Grisette.Data.Class.OrphanGeneric ()
 
 class ToSym a b where
   toSym :: a -> b
@@ -53,7 +54,7 @@ instance ToSym () () where
 instance (ToSym e1 e2, ToSym a1 a2) => ToSym (Either e1 a1) (Either e2 a2)
 
 -- Maybe
-instance ToSym a b => ToSym (Maybe a) (Maybe b) where
+instance ToSym a b => ToSym (Maybe a) (Maybe b)
 
 -- List
 instance (ToSym a b) => ToSym [a] [b]
@@ -69,22 +70,26 @@ instance (ToSym a b, ToSym c d) => ToSym (d -> a) (c -> b) where
   toSym f = toSym . f . toSym
 
 -- MaybeT
-instance (ToSym (m1 (Maybe a)) (m2 (Maybe b))) => 
-  ToSym (MaybeT m1 a) (MaybeT m2 b) where
-    toSym (MaybeT v) = MaybeT $ toSym v
+instance
+  (ToSym (m1 (Maybe a)) (m2 (Maybe b))) =>
+  ToSym (MaybeT m1 a) (MaybeT m2 b)
+  where
+  toSym (MaybeT v) = MaybeT $ toSym v
 
 -- ExceptT
-instance (ToSym (m1 (Either e1 a)) (m2 (Either e2 b))) => 
-  ToSym (ExceptT e1 m1 a) (ExceptT e2 m2 b) where
-    toSym (ExceptT v) = ExceptT $ toSym v
+instance
+  (ToSym (m1 (Either e1 a)) (m2 (Either e2 b))) =>
+  ToSym (ExceptT e1 m1 a) (ExceptT e2 m2 b)
+  where
+  toSym (ExceptT v) = ExceptT $ toSym v
 
 -- Coroutine
-instance (ToSym (m1 (Either (sus (Coroutine sus m1 a)) a)) (m2 (Either (sus (Coroutine sus m2 b)) b))) =>
- ToSym (Coroutine sus m1 a) (Coroutine sus m2 b) where
-   toSym (Coroutine a) = Coroutine $ toSym a
-  
+instance
+  (ToSym (m1 (Either (sus (Coroutine sus m1 a)) a)) (m2 (Either (sus (Coroutine sus m2 b)) b))) =>
+  ToSym (Coroutine sus m1 a) (Coroutine sus m2 b)
+  where
+  toSym (Coroutine a) = Coroutine $ toSym a
+
 -- StateT
 instance (ToSym (s1 -> m1 (a1, s1)) (s2 -> m2 (a2, s2))) => ToSym (StateT s1 m1 a1) (StateT s2 m2 a2) where
   toSym (StateT f1) = StateT $ toSym f1
-
-

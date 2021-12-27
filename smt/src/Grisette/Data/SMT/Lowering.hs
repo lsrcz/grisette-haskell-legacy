@@ -3,21 +3,21 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneKindSignatures #-}
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module Grisette.Data.SMT.Lowering where
+module Grisette.Data.SMT.Lowering
+  ( lowerSinglePrim,
+    parseModel,
+  )
+where
 
 import Control.Monad
 import Data.Bifunctor
@@ -59,9 +59,6 @@ addBiMapIntermediate s d (SymBiMap t f) = SymBiMap (M.insert s d t) f
 
 findStringToSymbol :: String -> SymBiMap -> Maybe TermSymbol
 findStringToSymbol s (SymBiMap _ f) = M.lookup s f
-
-findSomeTerm :: SomeTerm -> SymBiMap -> Maybe Dynamic
-findSomeTerm t = M.lookup t . biMapToSBV
 
 resolveConfig ::
   forall integerBitWidth r.

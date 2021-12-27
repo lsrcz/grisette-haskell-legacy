@@ -6,8 +6,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -37,7 +35,7 @@ module Grisette.Data.Prim.InternedTerm
     isymbTerm,
     extractSymbolicsTerm,
     TermSymbol (..),
-    termSymbolTypeRep
+    termSymbolTypeRep,
   )
 where
 
@@ -124,11 +122,11 @@ data Term t where
     Term t
 
 introSupportedPrimConstraint :: forall t a. Term t -> ((SupportedPrim t) => a) -> a
-introSupportedPrimConstraint ConcTerm{} x = x
-introSupportedPrimConstraint SymbTerm{} x = x
-introSupportedPrimConstraint UnaryTerm{} x = x
-introSupportedPrimConstraint BinaryTerm{} x = x
-introSupportedPrimConstraint TernaryTerm{} x = x
+introSupportedPrimConstraint ConcTerm {} x = x
+introSupportedPrimConstraint SymbTerm {} x = x
+introSupportedPrimConstraint UnaryTerm {} x = x
+introSupportedPrimConstraint BinaryTerm {} x = x
+introSupportedPrimConstraint TernaryTerm {} x = x
 
 data SomeTerm where
   SomeTerm :: forall a. (SupportedPrim a) => Term a -> SomeTerm
@@ -391,8 +389,10 @@ QED
 -- Basic Bool
 defaultValueForBool :: Bool
 defaultValueForBool = True
+
 defaultValueForBoolDyn :: Dynamic
 defaultValueForBoolDyn = toDyn defaultValueForBool
+
 instance SupportedPrim Bool where
   pformatConc True = "true"
   pformatConc False = "false"
@@ -401,11 +401,12 @@ instance SupportedPrim Bool where
 
 defaultValueForInteger :: Integer
 defaultValueForInteger = 0
+
 defaultValueForIntegerDyn :: Dynamic
 defaultValueForIntegerDyn = toDyn defaultValueForInteger
+
 -- Basic Integer
 instance SupportedPrim Integer where
   pformatConc i = show i ++ "I"
   defaultValue = defaultValueForInteger
   defaultValueDynamic = defaultValueForIntegerDyn
-
