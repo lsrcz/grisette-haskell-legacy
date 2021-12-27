@@ -187,6 +187,11 @@ typeMemoizedCache = unsafeDupablePerformIO $
 {-# NOINLINE typeMemoizedCache #-}
 
 class (Typeable t, Hashable t, Eq t, Show t) => SupportedPrim t where
+  type RuntimeEvType t
+  default runtimeEvTypeable :: (Typeable (RuntimeEvType t)) => (Typeable (RuntimeEvType t) => r) -> r
+  runtimeEvTypeable :: (Typeable (RuntimeEvType t) => r) -> r
+  runtimeEvTypeable = id
+  runtimeEv :: RuntimeEvType t
   termCache :: Cache (Term t)
   termCache = typeMemoizedCache
   pformatConc :: t -> String
@@ -394,6 +399,8 @@ defaultValueForBoolDyn :: Dynamic
 defaultValueForBoolDyn = toDyn defaultValueForBool
 
 instance SupportedPrim Bool where
+  type RuntimeEvType Bool = ()
+  runtimeEv = ()
   pformatConc True = "true"
   pformatConc False = "false"
   defaultValue = True
@@ -407,6 +414,8 @@ defaultValueForIntegerDyn = toDyn defaultValueForInteger
 
 -- Basic Integer
 instance SupportedPrim Integer where
+  type RuntimeEvType Integer = ()
+  runtimeEv = ()
   pformatConc i = show i ++ "I"
   defaultValue = defaultValueForInteger
   defaultValueDynamic = defaultValueForIntegerDyn

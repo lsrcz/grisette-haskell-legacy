@@ -20,6 +20,9 @@ infixr 0 =->
 instance
   (SupportedPrim a, SupportedPrim b) =>
   SupportedPrim (a =-> b) where
+    type RuntimeEvType (a =-> b) = (RuntimeEvType a, RuntimeEvType b)
+    runtimeEvTypeable r = runtimeEvTypeable @a $ runtimeEvTypeable @b r
+    runtimeEv = (runtimeEv @a, runtimeEv @b)
     defaultValue = TabularFunc [] (defaultValue @b)
 
 
