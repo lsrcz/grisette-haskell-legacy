@@ -33,6 +33,7 @@ packages:
   - symprim
   - core
   - examples
+  - smt
 # Dependency packages to be pulled from upstream that are not in the resolver.
 # These entries can reference officially published versions as well as
 # forks / in-progress versions pinned to a git hash. For example:
@@ -44,7 +45,10 @@ packages:
 #
 # extra-deps: []
 extra-deps:
-  - memoize-1.1.1
+  - bv-sized-1.0.3@sha256:0453825c28a5560603ad682ad43dc6699bd6d1aab5512a1351b8d4b7e75917e9,2099
+  - bitwise-1.0.0.1@sha256:2499779e8c9d59b3d8660e4994d357328750de8b4d1076c9924fb93404fa4c3a,3110
+  - panic-0.4.0.1@sha256:fb46577c9e0ca38c37960572f958a8469f2b577e963ed4f3ea1904d8400d828b,702
+  - parameterized-utils-2.1.4.0@sha256:ac8bc9945b38b6ec4d1fef83f5f7f7d8ebbf2cb62351dcc92a60fbdae90f2f68,4405
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

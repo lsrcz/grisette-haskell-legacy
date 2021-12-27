@@ -1,0 +1,29 @@
+name: grisette-smt
+version: 0.1.0.0
+synopsis: Lowering symbolic primitives to SMT
+description: Lowering symbolic primitives to SMT
+category: Formal Methods, Theorem Provers, Symbolic Computation, SMT
+author: "Sirui Lu"
+maintainer: siruilu@uw.edu
+license: BSD3
+github: lsrcz/grisette-haskell
+copyright: "2021 Sirui Lu"
+
+dependencies:
+- base > 4.7 && < 5
+- grisette-core
+- grisette-symprim
+- intern
+- hashable
+- mtl
+- unordered-containers
+- monad-memo
+- sbv
+- mmorph
+- bv-sized
+- parameterized-utils
+
+library:
+  source-dirs: src
+  ghc-options: -Wall -ferror-spans
+
