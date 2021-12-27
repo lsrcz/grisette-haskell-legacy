@@ -387,3 +387,25 @@ To prove that we are doing interning correctly, we ensured that:
   e. ...
 QED
 -}
+
+-- Basic Bool
+defaultValueForBool :: Bool
+defaultValueForBool = True
+defaultValueForBoolDyn :: Dynamic
+defaultValueForBoolDyn = toDyn defaultValueForBool
+instance SupportedPrim Bool where
+  pformatConc True = "true"
+  pformatConc False = "false"
+  defaultValue = True
+  defaultValueDynamic = defaultValueForBoolDyn
+
+defaultValueForInteger :: Integer
+defaultValueForInteger = 0
+defaultValueForIntegerDyn :: Dynamic
+defaultValueForIntegerDyn = toDyn defaultValueForInteger
+-- Basic Integer
+instance SupportedPrim Integer where
+  pformatConc i = show i ++ "I"
+  defaultValue = defaultValueForInteger
+  defaultValueDynamic = defaultValueForIntegerDyn
+

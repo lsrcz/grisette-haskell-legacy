@@ -8,7 +8,6 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ViewPatterns #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Grisette.Data.Prim.TabularFunc
   ( pattern TabularFuncConcTerm,
@@ -25,11 +24,6 @@ import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.Helpers
 import Grisette.Data.Prim.InternedTerm
 import Grisette.Data.TabularFunc
-
-instance
-  (SupportedPrim a, SupportedPrim b) =>
-  SupportedPrim (a =-> b) where
-    defaultValue = TabularFunc [] (defaultValue @b)
 
 tabularFuncConcTermView :: forall a b c. (Typeable b, Typeable c) => Term a -> Maybe (b =-> c)
 tabularFuncConcTermView (ConcTerm _ b) = cast b

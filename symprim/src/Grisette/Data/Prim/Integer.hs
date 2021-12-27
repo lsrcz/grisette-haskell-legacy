@@ -4,8 +4,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ViewPatterns #-}
-{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Grisette.Data.Prim.Integer
   ( pattern IntegerConcTerm,
@@ -41,17 +39,6 @@ import Data.Typeable
 import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.Helpers
 import Grisette.Data.Prim.InternedTerm
-import Data.Dynamic
-
-defaultValueForInteger :: Integer
-defaultValueForInteger = 0
-defaultValueForIntegerDyn :: Dynamic
-defaultValueForIntegerDyn = toDyn defaultValueForInteger
--- Basic Integer
-instance SupportedPrim Integer where
-  pformatConc i = show i ++ "I"
-  defaultValue = defaultValueForInteger
-  defaultValueDynamic = defaultValueForIntegerDyn
 
 integerConcTermView :: forall a. Term a -> Maybe Integer
 integerConcTermView (ConcTerm _ b) = cast b

@@ -1,13 +1,11 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ViewPatterns #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Grisette.Data.Prim.Bool
   ( trueTerm,
@@ -44,18 +42,6 @@ import Data.Maybe
 import Data.Typeable
 import Grisette.Data.Prim.Helpers
 import Grisette.Data.Prim.InternedTerm
-import Data.Dynamic
-
--- Basic Bool
-defaultValueForBool :: Bool
-defaultValueForBool = True
-defaultValueForBoolDyn :: Dynamic
-defaultValueForBoolDyn = toDyn defaultValueForBool
-instance SupportedPrim Bool where
-  pformatConc True = "true"
-  pformatConc False = "false"
-  defaultValue = True
-  defaultValueDynamic = defaultValueForBoolDyn
 
 trueTerm :: Term Bool
 trueTerm = concTerm True
