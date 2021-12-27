@@ -42,6 +42,8 @@ import Grisette.Data.SMT.Config
 import Grisette.Data.TabularFunc
 import qualified Type.Reflection as R
 import Unsafe.Coerce
+import GHC.TypeNats
+import Data.Parameterized.Axiom (unsafeAxiom)
 
 data SymBiMap = SymBiMap
   { biMapToSBV :: M.HashMap SomeTerm Dynamic,
@@ -358,6 +360,15 @@ unsafeMkNatRepr x =
   case mkNatRepr (fromInteger $ toInteger x) of
     Some v -> unsafeCoerce v
 
+unsafeWithNonZeroKnownNat :: forall w r. Int -> ((KnownNat w, SBV.BVIsNonZero w) => r) -> r
+unsafeWithNonZeroKnownNat i r
+  | i <= 0 = error "Not an nonzero natural number"
+  | otherwise = withKnownNat @w (unsafeMkNatRepr i) $ unsafeBVIsNonZero r
+  where 
+    unsafeBVIsNonZero :: ((SBV.BVIsNonZero w) => r) -> r
+    unsafeBVIsNonZero r1 = case unsafeAxiom :: w :~: 1 of
+      Refl -> r1
+
 parseModel :: forall integerBitWidth. GrisetteSMTConfig integerBitWidth -> SBVI.SMTModel -> SymBiMap -> PM.Model
 parseModel _ (SBVI.SMTModel _ _ assoc uifuncs) mp = foldr gouifuncs (foldr goassoc PM.empty assoc) uifuncs
   where
@@ -381,10 +392,14 @@ parseModel _ (SBVI.SMTModel _ _ assoc uifuncs) mp = foldr gouifuncs (foldr goass
       case R.eqTypeRep t (R.typeRep @Integer) of
         Just R.HRefl -> i
         _ -> case t of
-          R.App a _ ->
-            case (R.eqTypeRep a (R.typeRep @SignedBV), R.eqTypeRep a (R.typeRep @UnsignedBV)) of
-              (Just R.HRefl, _) -> mkSignedBV (unsafeMkNatRepr (fromInteger $ toInteger bitWidth)) i
-              (_, Just R.HRefl) -> mkUnsignedBV (unsafeMkNatRepr (fromInteger $ toInteger bitWidth)) i
+          R.App a (n :: R.TypeRep w) ->
+            case R.eqTypeRep (R.typeRepKind n) (R.typeRep @Nat) of
+              Just R.HRefl ->
+                unsafeWithNonZeroKnownNat @w bitWidth $
+                case (R.eqTypeRep a (R.typeRep @SignedBV), R.eqTypeRep a (R.typeRep @UnsignedBV)) of
+                  (Just R.HRefl, _) -> mkSignedBV knownNat i
+                  (_, Just R.HRefl) -> mkUnsignedBV knownNat i
+                  _ -> error "Bad type"
               _ -> error "Bad type"
           _ -> error "Bad type"
     resolveSingle _ _ = error "Unknown cv"
