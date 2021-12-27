@@ -29,12 +29,10 @@ import Data.Maybe
 import Data.Parameterized.NatRepr
 import Data.Parameterized.Some
 import qualified Data.SBV as SBV
-import qualified Data.SBV.Dynamic as SBVD
 import qualified Data.SBV.Internals as SBVI
 import Data.Type.Equality (type (~~))
 import Data.Typeable
 import GHC.Exts (sortWith)
-import GHC.TypeNats
 import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.Integer
 import Grisette.Data.Prim.InternedTerm
@@ -233,14 +231,7 @@ lowerSinglePrimImpl ::
 lowerSinglePrimImpl config (ConcTerm _ v) m =
   case (eqT @a @Bool, eqT @a @Integer) of
     (Just Refl, _) -> return (m, if v then SBV.sTrue else SBV.sFalse)
-    (_, Just Refl) -> case config of
-      UnboundedReasoning {} -> return (m, SBVI.SBV (SBVD.svInteger SBV.KUnbounded v) :: SBV.SBV Integer)
-      BoundedReasoning {} ->
-        return
-          ( m,
-            SBVI.SBV (SBVD.svInteger (SBV.KBounded True (fromInteger $ toInteger $ natVal (Proxy @integerBitWidth))) v) ::
-              SBV.SBV (SBV.IntN integerBitWidth)
-          )
+    (_, Just Refl) -> resolveConfig config $ return (m, fromInteger v)
     _ -> error $ "Don't know how to translate the type " ++ show (typeRep (Proxy @a)) ++ " to SMT"
 lowerSinglePrimImpl config t@(SymbTerm _ ts@(TermSymbol s _)) m =
   fromMaybe errorMsg $
