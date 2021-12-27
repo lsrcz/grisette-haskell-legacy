@@ -33,10 +33,7 @@ library
       Grisette.Data.Prim.Model
       Grisette.Data.Prim.TabularFunc
       Grisette.Data.StringError
-      Grisette.Data.SymBool
-      Grisette.Data.SymInteger
       Grisette.Data.SymPrim
-      Grisette.Data.SymTabularFunc
       Grisette.Data.TabularFunc
       Grisette.Data.Union
   other-modules:

@@ -17,8 +17,6 @@ import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Functor
-import Grisette.Data.SymBool
-import Grisette.Data.SymInteger
 import Grisette.Data.SymPrim
 
 data Expr
