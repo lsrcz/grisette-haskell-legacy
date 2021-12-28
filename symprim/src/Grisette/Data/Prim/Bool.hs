@@ -74,10 +74,12 @@ notb = partialEvalUnary Not
 instance UnaryOp Not Bool Bool where
   partialEvalUnary _ (NotTerm tm) = tm
   partialEvalUnary _ (BoolConcTerm a) = if a then falseTerm else trueTerm
+  {-
   partialEvalUnary _ (OrTerm (NotTerm n1) n2) = andb n1 (notb n2)
   partialEvalUnary _ (OrTerm n1 (NotTerm n2)) = andb (notb n1) n2
   partialEvalUnary _ (AndTerm (NotTerm n1) n2) = orb n1 (notb n2)
   partialEvalUnary _ (AndTerm n1 (NotTerm n2)) = orb (notb n1) n2
+  -}
   partialEvalUnary _ tm = constructUnary Not tm
   pformatUnary t = "!" ++ pformat t
 
