@@ -175,6 +175,8 @@ lowerSinglePrimImpl ResolvedConfig {} (ConcTerm _ v) m =
     IntegerType -> return (m, fromInteger v)
     SignedBVType _ -> case v of
       BVS.SignedBV (BV.BV x) -> return (m, fromInteger x)
+    UnsignedBVType _ -> case v of
+      BVU.UnsignedBV (BV.BV x) -> return (m, fromInteger x)
     _ -> error $ "Don't know how to translate the type " ++ show (typeRep (Proxy @a)) ++ " to SMT"
 lowerSinglePrimImpl config t@(SymbTerm _ ts) m =
   fromMaybe errorMsg $ asum [simple, ufunc]
@@ -420,6 +422,31 @@ pattern SignedBVType ::
   R.TypeRep t
 pattern SignedBVType p <- (signedBVTypeView @t -> Just (SignedBVTypeContainer p))
 
+data UnsignedBVTypeContainer :: forall k. k -> * where
+  UnsignedBVTypeContainer :: (SBV.BVIsNonZero n, KnownNat n, 1 <= n) => Proxy n -> UnsignedBVTypeContainer (BVU.UnsignedBV n)
+
+unsignedBVTypeView :: forall t. (SupportedPrim t) => R.TypeRep t -> Maybe (UnsignedBVTypeContainer t)
+unsignedBVTypeView t = case t of
+  R.App s (n :: R.TypeRep w) ->
+    case (R.eqTypeRep s (R.typeRep @BVU.UnsignedBV), R.eqTypeRep (R.typeRepKind n) (R.typeRep @Nat)) of
+      (Just R.HRefl, Just R.HRefl) ->
+        Just $ unsafeBVIsNonZero @w $ withPrim @t (UnsignedBVTypeContainer Proxy)
+      _ -> Nothing
+  _ -> Nothing
+  where
+    unsafeBVIsNonZero :: forall w r. ((SBV.BVIsNonZero w) => r) -> r
+    unsafeBVIsNonZero r1 = case unsafeAxiom :: w :~: 1 of
+      Refl -> r1
+
+pattern UnsignedBVType ::
+  forall t.
+  (SupportedPrim t) =>
+  forall (n :: Nat).
+  (t ~~ BVU.UnsignedBV n, KnownNat n, 1 <= n, SBV.BVIsNonZero n) =>
+  Proxy n ->
+  R.TypeRep t
+pattern UnsignedBVType p <- (unsignedBVTypeView @t -> Just (UnsignedBVTypeContainer p))
+
 data TFunTypeContainer :: forall k. k -> * where
   TFunTypeContainer :: (SupportedPrim a, SupportedPrim b) => R.TypeRep a -> R.TypeRep b -> TFunTypeContainer (a =-> b)
 
@@ -534,6 +561,7 @@ resolveSimpleTypeView (ResolvedConfig {}, s) = case s of
   BoolType -> Just DictSimpleType
   IntegerType -> Just DictSimpleType
   SignedBVType _ -> Just DictSimpleType
+  UnsignedBVType _ -> Just DictSimpleType
   _ -> Nothing
 resolveSimpleTypeView _ = error "Should never happen, make compiler happy"
 
@@ -591,6 +619,7 @@ resolveNumTypeView :: TypeResolver DictNumType
 resolveNumTypeView (ResolvedConfig {}, s) = case s of
   IntegerType -> Just DictNumType
   SignedBVType _ -> Just DictNumType
+  UnsignedBVType _ -> Just DictNumType
   _ -> Nothing
 resolveNumTypeView _ = error "Should never happen, make compiler happy"
 
@@ -619,6 +648,7 @@ resolveNumOrdTypeView :: TypeResolver DictNumOrdType
 resolveNumOrdTypeView (ResolvedConfig {}, s) = case s of
   IntegerType -> Just DictNumOrdType
   SignedBVType _ -> Just DictNumOrdType
+  UnsignedBVType _ -> Just DictNumOrdType
   _ -> Nothing
 resolveNumOrdTypeView _ = error "Should never happen, make compiler happy"
 

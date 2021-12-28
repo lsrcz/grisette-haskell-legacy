@@ -47,7 +47,8 @@ where
 
 import Control.Monad.State
 import Data.BitVector.Sized
-import Data.BitVector.Sized.Signed
+import Data.BitVector.Sized.Signed as BVS
+import Data.BitVector.Sized.Unsigned as BVU
 import Data.Constraint
 import Data.Dynamic
 import Data.Function (on)
@@ -424,11 +425,20 @@ instance SupportedPrim Integer where
   defaultValue = defaultValueForInteger
   defaultValueDynamic = defaultValueForIntegerDyn
 
+-- Signed BV
 instance (KnownNat w, 1 <= w) => Hashable (SignedBV w) where
   s `hashWithSalt` (SignedBV b) = s `hashWithSalt` b
 
--- Signed BV
 instance (KnownNat w, 1 <= w) => SupportedPrim (SignedBV w) where
   type PrimConstraint (SignedBV w) = (KnownNat w, 1 <= w)
   pformatConc i = show i ++ "SB"
   defaultValue = mkSignedBV knownNat 0
+
+-- Unsigned BV
+instance (KnownNat w, 1 <= w) => Hashable (UnsignedBV w) where
+  s `hashWithSalt` (UnsignedBV b) = s `hashWithSalt` b
+
+instance (KnownNat w, 1 <= w) => SupportedPrim (UnsignedBV w) where
+  type PrimConstraint (UnsignedBV w) = (KnownNat w, 1 <= w)
+  pformatConc i = show i ++ "SB"
+  defaultValue = mkUnsignedBV knownNat 0

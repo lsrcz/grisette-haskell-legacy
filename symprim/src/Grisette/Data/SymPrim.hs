@@ -6,6 +6,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Grisette.Data.SymPrim
   ( Sym (..),
@@ -14,6 +15,8 @@ module Grisette.Data.SymPrim
     SymBool,
     SymInteger,
     type (=~>),
+    SymSignedBV,
+    SymUnsignedBV,
   )
 where
 
@@ -42,6 +45,10 @@ import Grisette.Data.Prim.Model
 import Grisette.Data.Prim.Num
 import Grisette.Data.Prim.TabularFunc
 import Grisette.Data.TabularFunc
+import Data.BitVector.Sized.Signed (SignedBV, mkSignedBV)
+import Data.BitVector.Sized (knownNat)
+import Grisette.Data.Prim.BV
+import Data.BitVector.Sized.Unsigned
 
 newtype Sym a = Sym {underlyingTerm :: Term a}
 
@@ -106,6 +113,7 @@ instance (SupportedPrim a) => Hashable (Sym a) where
 instance (SupportedPrim a) => Eq (Sym a) where
   (Sym l) == (Sym r) = l == r
 
+-- bool
 type SymBool = Sym Bool
 
 instance SEq (Sym Bool) (Sym Bool) where
@@ -122,6 +130,8 @@ instance SymConcView Bool where
   symConcView (Sym (BoolConcTerm t)) = Just t
   symConcView _ = Nothing
 
+
+-- integer
 type SymInteger = Sym Integer
 
 instance SEq (Sym Bool) (Sym Integer) where
@@ -162,6 +172,60 @@ instance SOrd (Sym Bool) (Sym Integer) where
 
 instance SymIntegerOp (Sym Bool) (Sym Integer)
 
+-- signed bv
+type SymSignedBV n = Sym (SignedBV n)
+
+instance (SupportedPrim (SignedBV n)) => SEq (Sym Bool) (Sym (SignedBV n)) where
+  (Sym l) ==~ (Sym r) = Sym $ eqterm l r
+
+instance (SupportedPrim (SignedBV n)) => SymConcView (SignedBV n) where
+  symConcView (Sym x) = withPrim @(SignedBV n) $ case x of
+    SignedBVConcTerm t -> Just t
+    _ -> Nothing
+
+instance (SupportedPrim (SignedBV n)) => Num (Sym (SignedBV n)) where
+  (Sym l) + (Sym r) = Sym $ withPrim @(SignedBV n) $ addNum l r
+  (Sym l) - (Sym r) = Sym $ withPrim @(SignedBV n) $ minusNum l r
+  (Sym l) * (Sym r) = Sym $ withPrim @(SignedBV n) $ timesNum l r
+  negate (Sym v) = Sym $ withPrim @(SignedBV n) $ uminusNum v
+  abs (Sym v) = Sym $ withPrim @(SignedBV n) $ absNum v
+  signum (Sym v) = Sym $ withPrim @(SignedBV n) $ signumNum v
+  fromInteger i = withPrim @(SignedBV n) $ conc $ mkSignedBV knownNat i
+
+instance (SupportedPrim (SignedBV n)) => SOrd (Sym Bool) (Sym (SignedBV n)) where
+  (Sym a) <=~ (Sym b) = Sym $ withPrim @(SignedBV n) $ leNum a b
+  (Sym a) <~ (Sym b) = Sym $ withPrim @(SignedBV n) $ ltNum a b
+  (Sym a) >=~ (Sym b) = Sym $ withPrim @(SignedBV n) $ geNum a b
+  (Sym a) >~ (Sym b) = Sym $ withPrim @(SignedBV n) $ gtNum a b
+
+-- unsigned bv
+type SymUnsignedBV n = Sym (UnsignedBV n)
+
+instance (SupportedPrim (UnsignedBV n)) => SEq (Sym Bool) (Sym (UnsignedBV n)) where
+  (Sym l) ==~ (Sym r) = Sym $ eqterm l r
+
+instance (SupportedPrim (UnsignedBV n)) => SymConcView (UnsignedBV n) where
+  symConcView (Sym x) = withPrim @(UnsignedBV n) $ case x of
+    UnsignedBVConcTerm t -> Just t
+    _ -> Nothing
+
+instance (SupportedPrim (UnsignedBV n)) => Num (Sym (UnsignedBV n)) where
+  (Sym l) + (Sym r) = Sym $ withPrim @(UnsignedBV n) $ addNum l r
+  (Sym l) - (Sym r) = Sym $ withPrim @(UnsignedBV n) $ minusNum l r
+  (Sym l) * (Sym r) = Sym $ withPrim @(UnsignedBV n) $ timesNum l r
+  negate (Sym v) = Sym $ withPrim @(UnsignedBV n) $ uminusNum v
+  abs (Sym v) = Sym $ withPrim @(UnsignedBV n) $ absNum v
+  signum (Sym v) = Sym $ withPrim @(UnsignedBV n) $ signumNum v
+  fromInteger i = withPrim @(UnsignedBV n) $ conc $ mkUnsignedBV knownNat i
+
+instance (SupportedPrim (UnsignedBV n)) => SOrd (Sym Bool) (Sym (UnsignedBV n)) where
+  (Sym a) <=~ (Sym b) = Sym $ withPrim @(UnsignedBV n) $ leNum a b
+  (Sym a) <~ (Sym b) = Sym $ withPrim @(UnsignedBV n) $ ltNum a b
+  (Sym a) >=~ (Sym b) = Sym $ withPrim @(UnsignedBV n) $ geNum a b
+  (Sym a) >~ (Sym b) = Sym $ withPrim @(UnsignedBV n) $ gtNum a b
+
+
+-- tabular func
 type a =~> b = Sym (a =-> b)
 
 instance (SupportedPrim a, SupportedPrim b) => FiniteFunction (a =~> b) where
