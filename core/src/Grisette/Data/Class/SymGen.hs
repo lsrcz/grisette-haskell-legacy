@@ -21,6 +21,9 @@ module Grisette.Data.Class.SymGen
     genSymIndexedWithDerivedNoSpec,
     genSymSimpleIndexedWithDerivedNoSpec,
     genSymIndexedWithDerivedSameShape,
+    choose,
+    chooseU,
+    ListSpec (..),
   )
 where
 
@@ -225,6 +228,25 @@ genSymIndexedWithDerivedSameShape ::
   State (Int, String) a
 genSymIndexedWithDerivedSameShape a = to <$> genSymSameShapeIndexed @bool @(Rep a) (from a)
 
+choose :: forall bool a. (SymBoolOp bool, Mergeable bool a, SymGenSimple bool () bool) => a -> [a] -> State (Int, String) (UnionMBase bool a)
+choose x [] = return $ mrgSingle x
+choose x (r : rs) = do
+  b <- genSymSimpleIndexed @bool ()
+  res <- choose r rs
+  return $ mrgGuard b (mrgSingle x) res
+
+chooseU ::
+  forall bool a.
+  (SymBoolOp bool, Mergeable bool a, SymGenSimple bool () bool) =>
+  UnionMBase bool a ->
+  [UnionMBase bool a] ->
+  State (Int, String) (UnionMBase bool a)
+chooseU x [] = return x
+chooseU x (r : rs) = do
+  b <- genSymSimpleIndexed @bool ()
+  res <- chooseU r rs
+  return $ mrgGuard b x res
+
 -- Bool
 instance (SymBoolOp bool, SymGenSimple bool () bool) => SymGen bool Bool Bool where
   genSymIndexed v = return $ mrgSingle v
@@ -283,6 +305,50 @@ instance
   SymGen bool [a] [a]
   where
   genSymIndexed v = mrgSingle <$> genSymSimpleIndexed @bool v
+
+instance
+  (SymBoolOp bool, SymGenSimple bool () bool, SymGenSimple bool () a, Mergeable bool a) =>
+  SymGen bool Integer [a]
+  where
+  genSymIndexed v = do
+    l <- gl v
+    let (x : xs) = reverse $ scanr (:) [] l
+    choose x xs
+    where
+      gl :: Integer -> State (Int, String) [a]
+      gl v1
+        | v1 <= 0 = return []
+        | otherwise = do
+          l <- genSymSimpleIndexed @bool ()
+          r <- gl (v1 - 1)
+          return $ l : r
+
+data ListSpec spec = ListSpec
+  { genListMinLength :: Integer,
+    genListMaxLength :: Integer,
+    genListSubSpec :: spec
+  }
+  deriving (Show)
+
+instance
+  (SymBoolOp bool, SymGenSimple bool () bool, SymGenSimple bool spec a, Mergeable bool a) =>
+  SymGen bool (ListSpec spec) [a]
+  where
+  genSymIndexed (ListSpec minLen maxLen subSpec) =
+    if minLen < 0 || maxLen < 0 || minLen >= maxLen
+      then error $ "Bad lengthes: " ++ show (minLen, maxLen)
+      else do
+        l <- gl maxLen
+        let (x : xs) = reverse $ scanr (:) [] $ drop (fromInteger minLen) l
+        choose x xs
+    where
+      gl :: Integer -> State (Int, String) [a]
+      gl currLen
+        | currLen <= 0 = return []
+        | otherwise = do
+          l <- genSymSimpleIndexed @bool subSpec
+          r <- gl (currLen - 1)
+          return $ l : r
 
 instance
   (SymBoolOp bool, SymGenSimple bool () bool, SymGenSimple bool a a, Mergeable bool a) =>
