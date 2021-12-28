@@ -81,7 +81,7 @@ instance UnaryOp Not Bool Bool where
   partialEvalUnary _ (AndTerm n1 (NotTerm n2)) = orb (notb n1) n2
   -}
   partialEvalUnary _ tm = constructUnary Not tm
-  pformatUnary t = "!" ++ pformat t
+  pformatUnary t = "(! " ++ pformat t ++ ")"
 
 pattern NotTerm :: Term Bool -> Term a
 pattern NotTerm t <- UnaryTermPatt Not t
