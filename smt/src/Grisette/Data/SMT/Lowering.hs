@@ -8,6 +8,7 @@
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneKindSignatures #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -20,14 +21,14 @@ module Grisette.Data.SMT.Lowering
   )
 where
 
-import Control.Monad
 import Data.Bifunctor
 import qualified Data.BitVector.Sized as BV
 import qualified Data.BitVector.Sized.Signed as BVS
 import qualified Data.BitVector.Sized.Unsigned as BVU
 import Data.Dynamic
+import Data.Foldable
 import qualified Data.HashMap.Strict as M
-import Data.Maybe
+import Data.Maybe (fromMaybe)
 import Data.Parameterized.Axiom (unsafeAxiom)
 import Data.Parameterized.NatRepr
 import Data.Parameterized.Some
@@ -38,7 +39,6 @@ import Data.Typeable
 import GHC.Exts (sortWith)
 import GHC.TypeNats
 import Grisette.Data.Prim.Bool
-import Grisette.Data.Prim.Integer
 import Grisette.Data.Prim.InternedTerm
 import Grisette.Data.Prim.Model as PM
 import Grisette.Data.Prim.Num
@@ -72,13 +72,12 @@ buildUFunc11 ::
   Term a ->
   SymBiMap ->
   Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth (s1 =-> s2)))
-buildUFunc11 config ta tb term@(SymbTerm _ ts) m =
-  join $
-    resolveSimpleType @s1 config ta $
-      resolveSimpleType @s2 config tb $
-        let name = "ufunc_" ++ show ts
-            f = SBV.uninterpret @(TermTy integerBitWidth s1 -> TermTy integerBitWidth s2) name
-         in return (addBiMap (SomeTerm term) (toDyn f) name ts m, f)
+buildUFunc11 config ta tb term@(SymbTerm _ ts) m = case ((config, ta), (config, tb)) of
+  (ResolvedSimpleType, ResolvedSimpleType) ->
+    let name = "ufunc_" ++ show ts
+        f = SBV.uninterpret @(TermTy integerBitWidth s1 -> TermTy integerBitWidth s2) name
+     in Just $ return (addBiMap (SomeTerm term) (toDyn f) name ts m, f)
+  _ -> Nothing
 buildUFunc11 _ _ _ _ _ = error "Should only be called on SymbTerm"
 
 buildUFunc111 ::
@@ -91,14 +90,12 @@ buildUFunc111 ::
   Term a ->
   SymBiMap ->
   Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth (s1 =-> s2 =-> s3)))
-buildUFunc111 config ta tb tc term@(SymbTerm _ ts) m =
-  (join . join) $
-    resolveSimpleType @s1 config ta $
-      resolveSimpleType @s2 config tb $
-        resolveSimpleType @s3 config tc $
-          let name = "ufunc_" ++ show ts
-              f = SBV.uninterpret @(TermTy integerBitWidth s1 -> TermTy integerBitWidth s2 -> TermTy integerBitWidth s3) name
-           in return (addBiMap (SomeTerm term) (toDyn f) name ts m, f)
+buildUFunc111 config ta tb tc term@(SymbTerm _ ts) m = case ((config, ta), (config, tb), (config, tc)) of
+  (ResolvedSimpleType, ResolvedSimpleType, ResolvedSimpleType) ->
+    let name = "ufunc_" ++ show ts
+        f = SBV.uninterpret @(TermTy integerBitWidth s1 -> TermTy integerBitWidth s2 -> TermTy integerBitWidth s3) name
+     in Just $ return (addBiMap (SomeTerm term) (toDyn f) name ts m, f)
+  _ -> Nothing
 buildUFunc111 _ _ _ _ _ _ = error "Should only be called on SymbTerm"
 
 lowerSinglePrimUFunc ::
@@ -152,14 +149,12 @@ lowerSinglePrimCached ::
   SBV.Symbolic (SymBiMap, TermTy integerBitWidth a)
 lowerSinglePrimCached config t m =
   introSupportedPrimConstraint t $
-    fromMaybe (error $ "Don't know how to translate the type " ++ show (typeRep (Proxy @a)) ++ " to SMT") $
-      resolveDeepType @a @integerBitWidth @(SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
-        config
-        (R.typeRep @a)
-        ( case M.lookup (SomeTerm t) (biMapToSBV m) of
-            Just x -> return (m, fromDyn x undefined)
-            Nothing -> lowerSinglePrimImpl config t m
-        )
+    case (config, R.typeRep @a) of
+      ResolvedDeepType ->
+        case M.lookup (SomeTerm t) (biMapToSBV m) of
+          Just x -> return (m, fromDyn x undefined)
+          Nothing -> lowerSinglePrimImpl config t m
+      _ -> error $ "Don't know how to translate the type " ++ show (typeRep (Proxy @a)) ++ " to SMT"
 
 lowerSinglePrim ::
   forall integerBitWidth a.
@@ -182,44 +177,21 @@ lowerSinglePrimImpl ResolvedConfig {} (ConcTerm _ v) m =
       BVS.SignedBV (BV.BV x) -> return (m, fromInteger x)
     _ -> error $ "Don't know how to translate the type " ++ show (typeRep (Proxy @a)) ++ " to SMT"
 lowerSinglePrimImpl config t@(SymbTerm _ ts) m =
-  fromMaybe errorMsg $
-    resolveDeepType
-      config
-      (R.typeRep @a)
-      ( case b1 of
-          Just v -> v
-          _ -> fromMaybe errorMsg (lowerSinglePrimUFunc config t m)
-      )
+  fromMaybe errorMsg $ asum [simple, ufunc]
   where
     errorMsg :: forall x. x
     errorMsg = error $ "Don't know how to translate the type " ++ show (typeRep (Proxy @a)) ++ " to SMT"
-    b1 :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
-    b1 = resolveSimpleType @a config (R.typeRep @a) $ do
-      let name = show ts
-      (g :: TermTy integerBitWidth a) <- SBV.free name
-      return (addBiMap (SomeTerm t) (toDyn g) name ts m, g)
+    simple :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
+    simple = case (config, R.typeRep @a) of
+      ResolvedSimpleType -> Just $ do
+        let name = show ts
+        (g :: TermTy integerBitWidth a) <- SBV.free name
+        return (addBiMap (SomeTerm t) (toDyn g) name ts m, g)
+      _ -> Nothing
+    ufunc :: (Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a)))
+    ufunc = lowerSinglePrimUFunc config t m
 lowerSinglePrimImpl config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) m =
-  case (eqT @a @Bool, eqT @a @Integer, R.typeRep @a) of
-    (Just Refl, _, _) -> do
-      case t of
-        NotTerm t1 -> lowerUnaryTerm config t t1 SBV.sNot m
-        _ -> errorMsg
-    (_, Just Refl, _) ->
-      case t of
-        UMinusITerm t1 -> lowerUnaryTerm config t t1 (\x -> - x) m
-        SignumITerm t1 -> lowerUnaryTerm config t t1 signum m
-        AbsITerm t1 -> lowerUnaryTerm config t t1 abs m
-        UMinusNumTerm (t1 :: Term Integer) -> lowerUnaryTerm config t t1 (\x -> - x) m
-        SignumNumTerm (t1 :: Term Integer) -> lowerUnaryTerm config t t1 signum m
-        AbsNumTerm (t1 :: Term Integer) -> lowerUnaryTerm config t t1 abs m
-        _ -> errorMsg
-    (_, _, SignedBVType (_ :: Proxy n)) ->
-      case t of
-        UMinusNumTerm (t1 :: Term (BVS.SignedBV n)) -> lowerUnaryTerm config t t1 (\x -> - x) m
-        SignumNumTerm (t1 :: Term (BVS.SignedBV n)) -> lowerUnaryTerm config t t1 signum m
-        AbsNumTerm (t1 :: Term (BVS.SignedBV n)) -> lowerUnaryTerm config t t1 abs m
-        _ -> errorMsg
-    _ -> errorMsg
+  fromMaybe errorMsg $ asum [numType, boolType {-, integerType-}]
   where
     errorMsg :: forall t1. t1
     errorMsg =
@@ -228,52 +200,23 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) m 
           ++ show (R.typeRep @x)
           ++ " -> "
           ++ show (R.typeRep @a)
-lowerSinglePrimImpl config@ResolvedConfig {} t@(BinaryTerm _ op (t1 :: Term x) (t2 :: Term y)) m =
-  let s :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
-      s =
-        resolveSimpleType @x @integerBitWidth
-          config
-          (introSupportedPrimConstraint @x t1 R.typeRep)
-          $ case (eqT @a @Bool, eqT @a @Integer, R.typeRep @a) of
-            (Just Refl, _, _) ->
-              case t of
-                EqvTerm (t1' :: Term x) t2' -> lowerBinaryTerm config t t1' t2' (SBV..==) m
-                AndTerm t1' t2' -> lowerBinaryTerm config t t1' t2' (SBV..&&) m
-                OrTerm t1' t2' -> lowerBinaryTerm config t t1' t2' (SBV..||) m
-                LTITerm t1' t2' -> lowerBinaryTerm config t t1' t2' (SBV..<) m
-                LEITerm t1' t2' -> lowerBinaryTerm config t t1' t2' (SBV..<=) m
-                _ -> errorMsg
-            (_, Just Refl, _) ->
-              case t of
-                AddITerm t1' t2' -> lowerBinaryTerm config t t1' t2' (+) m
-                AddNumTerm (t1' :: Term Integer) t2' -> lowerBinaryTerm config t t1' t2' (+) m
-                TimesITerm t1' t2' -> lowerBinaryTerm config t t1' t2' (*) m
-                TimesNumTerm (t1' :: Term Integer) t2' -> lowerBinaryTerm config t t1' t2' (*) m
-                DivITerm t1' t2' -> lowerBinaryTerm config t t1' t2' SBV.sDiv m
-                _ -> errorMsg
-            (_, _, SignedBVType (_ :: Proxy n)) ->
-              case t of
-                AddNumTerm (t1' :: Term (BVS.SignedBV n)) t2' -> lowerBinaryTerm config t t1' t2' (+) m
-                TimesNumTerm (t1' :: Term (BVS.SignedBV n)) t2' -> lowerBinaryTerm config t t1' t2' (*) m
-                _ -> errorMsg
-            _ -> errorMsg
-      d :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
-      d =
-        introSupportedPrimConstraint @y t2 $
-          resolveDeepType @a @integerBitWidth
-            config
-            R.typeRep
-            $ introSupportedPrimConstraint @y t2 $ case t of
-              ApplyFTerm (t1' :: Term (y =-> a)) (t2' :: Term y) -> do
-                (m1, l1) <- lowerSinglePrimCached config t1' m
-                (m2, l2) <- lowerSinglePrimCached config t2' m1
-                let g = l1 l2
-                return (addBiMapIntermediate (SomeTerm t) (toDyn g) m2, g)
-              _ -> errorMsg
-   in case (s, d) of
-        (Just r, _) -> r
-        (_, Just r) -> r
-        _ -> errorMsg
+    numType :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
+    numType = case (config, R.typeRep @a) of
+      ResolvedNumType ->
+        case t of
+          UMinusNumTerm (t1 :: Term a) -> Just $ lowerUnaryTerm config t t1 (\x -> - x) m
+          SignumNumTerm (t1 :: Term a) -> Just $ lowerUnaryTerm config t t1 signum m
+          AbsNumTerm (t1 :: Term a) -> Just $ lowerUnaryTerm config t t1 abs m
+          _ -> Nothing
+      _ -> Nothing
+    boolType :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
+    boolType = case R.typeRep @a of
+      BoolType -> case t of
+        NotTerm t1 -> Just $ lowerUnaryTerm config t t1 SBV.sNot m
+        _ -> Nothing
+      _ -> Nothing
+lowerSinglePrimImpl config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_ :: Term y)) m =
+  fromMaybe errorMsg $ asum [numType, numOrdCmp, simpleBoolType, eqTerm, funcApply]
   where
     errorMsg :: forall t1. t1
     errorMsg =
@@ -284,12 +227,49 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(BinaryTerm _ op (t1 :: Term x) (
           ++ show (R.typeRep @y)
           ++ " -> "
           ++ show (R.typeRep @a)
-lowerSinglePrimImpl config@ResolvedConfig {} t@(TernaryTerm _ op (_ :: Term x) (t2 :: Term y) (_ :: Term z)) m =
-  fromMaybe errorMsg $
-    resolveDeepType @a @integerBitWidth
-      config
-      (introSupportedPrimConstraint @y t2 R.typeRep)
-      $ case t of
+    eqTerm :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
+    eqTerm = case ((config, R.typeRep @x), R.typeRep @a) of
+      (ResolvedSimpleType, BoolType) -> case t of
+        EqvTerm (t1' :: Term x) t2' -> Just $ lowerBinaryTerm config t t1' t2' (SBV..==) m
+        _ -> Nothing
+      _ -> Nothing
+    simpleBoolType :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
+    simpleBoolType = case R.typeRep @a of
+      BoolType -> case t of
+        AndTerm t1' t2' -> Just $ lowerBinaryTerm config t t1' t2' (SBV..&&) m
+        OrTerm t1' t2' -> Just $ lowerBinaryTerm config t t1' t2' (SBV..||) m
+        _ -> Nothing
+      _ -> Nothing
+    numOrdCmp :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
+    numOrdCmp = case (R.typeRep @a, (config, R.typeRep @x)) of
+      (BoolType, ResolvedNumOrdType) -> case t of
+        LTNumTerm (t1' :: Term x) t2' -> Just $ lowerBinaryTerm config t t1' t2' (SBV..<) m
+        LENumTerm (t1' :: Term x) t2' -> Just $ lowerBinaryTerm config t t1' t2' (SBV..<=) m
+        _ -> Nothing
+      _ -> Nothing
+    numType :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
+    numType = case (config, R.typeRep @a) of
+      ResolvedNumType ->
+        case t of
+          AddNumTerm (t1' :: Term a) t2' -> Just $ lowerBinaryTerm config t t1' t2' (+) m
+          TimesNumTerm (t1' :: Term a) t2' -> Just $ lowerBinaryTerm config t t1' t2' (*) m
+          _ -> Nothing
+      _ -> Nothing
+    funcApply :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
+    funcApply = case (config, R.typeRep @a) of
+      ResolvedDeepType -> Just $
+        case t of
+          ApplyFTerm (t1' :: Term (y =-> a)) (t2' :: Term y) -> do
+            (m1, l1) <- lowerSinglePrimCached config t1' m
+            (m2, l2) <- lowerSinglePrimCached config t2' m1
+            let g = l1 l2
+            return (addBiMapIntermediate (SomeTerm t) (toDyn g) m2, g)
+          _ -> errorMsg
+      _ -> Nothing
+lowerSinglePrimImpl config@ResolvedConfig {} t@(TernaryTerm _ op (_ :: Term x) (_ :: Term y) (_ :: Term z)) m =
+  case (config, R.typeRep @a) of
+    ResolvedDeepType ->
+      case t of
         ITETerm c t1 f1 -> do
           (m1, l1) <- lowerSinglePrimCached config c m
           (m2, l2) <- lowerSinglePrimCached config t1 m1
@@ -297,6 +277,7 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(TernaryTerm _ op (_ :: Term x) (
           let g = SBV.ite l1 l2 l3
           return (addBiMapIntermediate (SomeTerm t) (toDyn g) m3, g)
         _ -> errorMsg
+    _ -> errorMsg
   where
     errorMsg :: forall t1. t1
     errorMsg =
@@ -494,6 +475,9 @@ type ConfigConstraint integerBitWidth s =
     SBV.HasKind s,
     Typeable s,
     Num (SBV.SBV s),
+    Num s,
+    SBV.OrdSymbolic (SBV.SBV s),
+    Ord s,
     SBV.SDivisible (SBV.SBV s),
     SBV.OrdSymbolic (SBV.SBV s),
     SBV.Mergeable (SBV.SBV s)
@@ -523,45 +507,125 @@ pattern ResolvedConfig ::
   GrisetteSMTConfig integerBitWidth
 pattern ResolvedConfig c <- (resolveConfigView -> DictConfig c)
 
-resolveSimpleType ::
-  forall s1 integerBitWidth r.
-  (SupportedPrim s1) =>
-  GrisetteSMTConfig integerBitWidth ->
-  R.TypeRep s1 ->
-  ( forall s1'.
-    ( SBV.SBV s1' ~ TermTy integerBitWidth s1,
-      SBV.SymVal s1',
-      SBV.HasKind s1',
-      Typeable s1',
-      SBV.OrdSymbolic (SBV.SBV s1'),
-      SBV.Mergeable (SBV.SBV s1')
-    ) =>
-    r
-  ) ->
-  Maybe r
-resolveSimpleType ResolvedConfig {} t a = R.withTypeable t $
-  case t of
-    BoolType -> Just a
-    IntegerType -> Just a
-    SignedBVType _ -> Just a
-    _ -> Nothing
-resolveSimpleType _ _ _ = error "Should never happen"
+type SimpleTypeConstraint integerBitWidth s s' =
+  ( SBV.SBV s' ~ TermTy integerBitWidth s,
+    SBV.SymVal s',
+    SBV.HasKind s',
+    Typeable s',
+    SBV.OrdSymbolic (SBV.SBV s'),
+    SBV.Mergeable (SBV.SBV s')
+  )
 
-resolveDeepType ::
-  forall s1 integerBitWidth r.
-  (SupportedPrim s1) =>
-  GrisetteSMTConfig integerBitWidth ->
-  R.TypeRep s1 ->
-  ( forall s1'.
-    ( s1' ~ TermTy integerBitWidth s1,
-      Typeable s1',
-      SBV.Mergeable s1'
-    ) =>
-    r
-  ) ->
-  Maybe r
-resolveDeepType config t a =
-  case (resolveSimpleType config t a, t) of
-    (Just r, _) -> Just r
-    (_, TFunType (ta :: R.TypeRep a) (tb :: R.TypeRep b)) -> join $ resolveDeepType config ta $ resolveDeepType config tb a
-    _ -> Nothing
+type TypeResolver dictType =
+  forall integerBitWidth s.
+  (SupportedPrim s) =>
+  (GrisetteSMTConfig integerBitWidth, R.TypeRep s) ->
+  Maybe (dictType integerBitWidth s)
+
+-- has to declare this because GHC does not support impredicative polymorphism
+data DictSimpleType integerBitWidth s where
+  DictSimpleType ::
+    forall integerBitWidth s s'.
+    (SimpleTypeConstraint integerBitWidth s s') =>
+    DictSimpleType integerBitWidth s
+
+resolveSimpleTypeView :: TypeResolver DictSimpleType
+resolveSimpleTypeView (ResolvedConfig {}, s) = case s of
+  BoolType -> Just DictSimpleType
+  IntegerType -> Just DictSimpleType
+  SignedBVType _ -> Just DictSimpleType
+  _ -> Nothing
+resolveSimpleTypeView _ = error "Should never happen, make compiler happy"
+
+pattern ResolvedSimpleType ::
+  forall integerBitWidth s.
+  (SupportedPrim s) =>
+  forall s'.
+  SimpleTypeConstraint integerBitWidth s s' =>
+  (GrisetteSMTConfig integerBitWidth, R.TypeRep s)
+pattern ResolvedSimpleType <- (resolveSimpleTypeView -> Just DictSimpleType)
+
+type DeepTypeConstraint integerBitWidth s s' =
+  ( s' ~ TermTy integerBitWidth s,
+    Typeable s',
+    SBV.Mergeable s'
+  )
+
+data DictDeepType integerBitWidth s where
+  DictDeepType ::
+    forall integerBitWidth s s'.
+    (DeepTypeConstraint integerBitWidth s s') =>
+    DictDeepType integerBitWidth s
+
+resolveDeepTypeView :: TypeResolver DictDeepType
+resolveDeepTypeView r = case r of
+  ResolvedSimpleType -> Just DictDeepType
+  (config, TFunType (ta :: R.TypeRep a) (tb :: R.TypeRep b)) ->
+    case (resolveDeepTypeView (config, ta), resolveDeepTypeView (config, tb)) of
+      (Just DictDeepType, Just DictDeepType) -> Just DictDeepType
+      _ -> Nothing
+  _ -> Nothing
+
+pattern ResolvedDeepType ::
+  forall integerBitWidth s.
+  (SupportedPrim s) =>
+  forall s'.
+  DeepTypeConstraint integerBitWidth s s' =>
+  (GrisetteSMTConfig integerBitWidth, R.TypeRep s)
+pattern ResolvedDeepType <- (resolveDeepTypeView -> Just DictDeepType)
+
+type NumTypeConstraint integerBitWidth s s' =
+  ( SimpleTypeConstraint integerBitWidth s s',
+    Num (SBV.SBV s'),
+    Num s',
+    Num s
+  )
+
+data DictNumType integerBitWidth s where
+  DictNumType ::
+    forall integerBitWidth s s'.
+    (NumTypeConstraint integerBitWidth s s') =>
+    DictNumType integerBitWidth s
+
+resolveNumTypeView :: TypeResolver DictNumType
+resolveNumTypeView (ResolvedConfig {}, s) = case s of
+  IntegerType -> Just DictNumType
+  SignedBVType _ -> Just DictNumType
+  _ -> Nothing
+resolveNumTypeView _ = error "Should never happen, make compiler happy"
+
+pattern ResolvedNumType ::
+  forall integerBitWidth s.
+  (SupportedPrim s) =>
+  forall s'.
+  NumTypeConstraint integerBitWidth s s' =>
+  (GrisetteSMTConfig integerBitWidth, R.TypeRep s)
+pattern ResolvedNumType <- (resolveNumTypeView -> Just DictNumType)
+
+type NumOrdTypeConstraint integerBitWidth s s' =
+  ( NumTypeConstraint integerBitWidth s s',
+    SBV.OrdSymbolic (SBV.SBV s'),
+    Ord s',
+    Ord s
+  )
+
+data DictNumOrdType integerBitWidth s where
+  DictNumOrdType ::
+    forall integerBitWidth s s'.
+    (NumOrdTypeConstraint integerBitWidth s s') =>
+    DictNumOrdType integerBitWidth s
+
+resolveNumOrdTypeView :: TypeResolver DictNumOrdType
+resolveNumOrdTypeView (ResolvedConfig {}, s) = case s of
+  IntegerType -> Just DictNumOrdType
+  SignedBVType _ -> Just DictNumOrdType
+  _ -> Nothing
+resolveNumOrdTypeView _ = error "Should never happen, make compiler happy"
+
+pattern ResolvedNumOrdType ::
+  forall integerBitWidth s.
+  (SupportedPrim s) =>
+  forall s'.
+  NumOrdTypeConstraint integerBitWidth s s' =>
+  (GrisetteSMTConfig integerBitWidth, R.TypeRep s)
+pattern ResolvedNumOrdType <- (resolveNumOrdTypeView -> Just DictNumOrdType)

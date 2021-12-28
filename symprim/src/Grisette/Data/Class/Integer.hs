@@ -16,6 +16,7 @@ where
 import Control.Monad.Except
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Error
+import Grisette.Data.Class.SOrd
 import Grisette.Data.Class.SimpleMergeable
 
 data ArithError = DivByZeroError deriving (Show)
@@ -35,4 +36,4 @@ class SignedQuotRem bool a where
   quots :: (MonadError e uf, Monad uf, UnionMOp bool uf, TransformError ArithError e) => a -> a -> uf a
   rems :: (MonadError e uf, Monad uf, UnionMOp bool uf, TransformError ArithError e) => a -> a -> uf a
 
-class (Num a, SEq bool a) => SymIntegerOp bool a
+class (Num a, SEq bool a, SOrd bool a) => SymIntegerOp bool a

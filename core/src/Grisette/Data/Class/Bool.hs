@@ -8,6 +8,7 @@
 
 module Grisette.Data.Class.Bool
   ( SEq (..),
+    SEq' (..),
     (/=~),
     LogicalOp (..),
     SymBoolOp,

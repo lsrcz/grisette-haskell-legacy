@@ -29,6 +29,7 @@ import Grisette.Data.Class.FiniteFunction
 import Grisette.Data.Class.Integer
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.PrimWrapper
+import Grisette.Data.Class.SOrd
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.SymEval
 import Grisette.Data.Class.SymGen
@@ -38,6 +39,7 @@ import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.Integer
 import Grisette.Data.Prim.InternedTerm
 import Grisette.Data.Prim.Model
+import Grisette.Data.Prim.Num
 import Grisette.Data.Prim.TabularFunc
 import Grisette.Data.TabularFunc
 
@@ -126,12 +128,12 @@ instance SEq (Sym Bool) (Sym Integer) where
   (Sym l) ==~ (Sym r) = Sym $ eqterm l r
 
 instance Num (Sym Integer) where
-  (Sym l) + (Sym r) = Sym $ addi l r
-  (Sym l) - (Sym r) = Sym $ minusi l r
-  (Sym l) * (Sym r) = Sym $ timesi l r
-  negate (Sym v) = Sym $ uminusi v
-  abs (Sym v) = Sym $ absi v
-  signum (Sym v) = Sym $ signumi v
+  (Sym l) + (Sym r) = Sym $ addNum l r
+  (Sym l) - (Sym r) = Sym $ minusNum l r
+  (Sym l) * (Sym r) = Sym $ timesNum l r
+  negate (Sym v) = Sym $ uminusNum v
+  abs (Sym v) = Sym $ absNum v
+  signum (Sym v) = Sym $ signumNum v
   fromInteger i = conc i
 
 instance SymConcView Integer where
@@ -151,6 +153,12 @@ instance SignedDivMod (Sym Bool) (Sym Integer) where
         (rs ==~ conc 0)
         (throwError $ transformError DivByZeroError)
         (mrgReturn $ Sym $ modi l r)
+
+instance SOrd (Sym Bool) (Sym Integer) where
+  (Sym a) <=~ (Sym b) = Sym $ leNum a b
+  (Sym a) <~ (Sym b) = Sym $ ltNum a b
+  (Sym a) >=~ (Sym b) = Sym $ geNum a b
+  (Sym a) >~ (Sym b) = Sym $ gtNum a b
 
 instance SymIntegerOp (Sym Bool) (Sym Integer)
 
