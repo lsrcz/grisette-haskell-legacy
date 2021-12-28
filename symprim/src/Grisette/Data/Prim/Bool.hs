@@ -189,7 +189,7 @@ instance (SupportedPrim a) => TernaryOp ITE Bool a a a where
   partialEvalTernary _ cond ifTrue TrueTerm =
     iteHelper (implyb cond) ifTrue
   partialEvalTernary _ cond ifTrue FalseTerm =
-    iteHelper (orb cond) ifTrue
+    iteHelper (andb cond) ifTrue
   partialEvalTernary _ cond ifTrue ifFalse
     | Just cond == castTerm ifTrue = iteHelper (orb cond) ifFalse
   partialEvalTernary _ cond ifTrue ifFalse
