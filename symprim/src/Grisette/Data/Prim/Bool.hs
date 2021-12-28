@@ -167,6 +167,7 @@ iteHelper f a = fromJust $ castTerm a >>= castTerm . f
 instance (SupportedPrim a) => TernaryOp ITE Bool a a a where
   partialEvalTernary _ TrueTerm ifTrue _ = ifTrue
   partialEvalTernary _ FalseTerm _ ifFalse = ifFalse
+  partialEvalTernary _ _ ifTrue ifFalse | ifTrue == ifFalse = ifTrue
   partialEvalTernary _ (NotTerm ncond) ifTrue ifFalse = partialEvalTernary ITE ncond ifFalse ifTrue
   partialEvalTernary _ (ITETerm cc ct cf) (ITETerm tc tt tf) (ITETerm fc ft ff)
     | cc == tc && cc == fc = iteterm cc (iteterm ct tt ft) (iteterm cf tf ff)
