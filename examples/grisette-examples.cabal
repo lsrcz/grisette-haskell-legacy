@@ -32,6 +32,8 @@ executable expr-interpreter
   build-depends:
       base >4.7 && <5
     , grisette-core
+    , grisette-smt
     , grisette-symprim
     , mtl
+    , sbv
   default-language: Haskell2010

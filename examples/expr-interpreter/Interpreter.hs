@@ -16,7 +16,10 @@ import Grisette.Control.Monad.UnionM
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.SimpleMergeable
+import Grisette.Data.Class.SymEval
+import Grisette.Data.Class.SymGen
 import Grisette.Data.Functor
+import Grisette.Data.Prim.Model
 import Grisette.Data.SymPrim
 
 data Expr
@@ -39,10 +42,54 @@ data OpsExpr
   | VarExpr SymInteger
   deriving (Generic, Show)
 
+data ExprSpec = ExprSpec
+  { exprDepth :: Integer,
+    exprListLength :: Integer
+  }
+  deriving (Show)
+
+instance SymGen (Sym Bool) Integer LitExpr where
+  genSymIndexed listLength = do
+    b <- genSymSimpleIndexed @SymBool ()
+    l <- genSymIndexed @SymBool listLength
+    choose (BoolLit b) [ListLit l, UnitLit]
+
+instance SymGen (Sym Bool) ExprSpec OpsExpr where
+  genSymIndexed (ExprSpec d l) = do
+    l1 <- genSymIndexed @SymBool (ExprSpec (d - 1) l)
+    l2 <- genSymIndexed @SymBool (ExprSpec (d - 1) l)
+    v <- genSymSimpleIndexed @SymBool ()
+    choose
+      (HeadExpr l1)
+      [ TailExpr l1,
+        ConsExpr l1 l2,
+        AndExpr l1 l2,
+        NotExpr l1,
+        VarExpr v
+      ]
+
+instance SymGen (Sym Bool) ExprSpec Expr where
+  genSymIndexed e@(ExprSpec d l) =
+    merge
+      <$> if d <= 0
+        then do
+          lit <- genSymIndexed @SymBool l
+          return $ Lit <$> lit
+        else do
+          lit <- genSymIndexed @SymBool l
+          ops <- genSymIndexed @SymBool e
+          chooseU (Lit <$> lit) [Ops <$> ops]
+
 data Stmt
   = DefineStmt SymInteger (UnionM Expr)
   | ValueStmt (UnionM Expr)
   deriving (Generic, Show)
+
+instance SymGen (Sym Bool) ExprSpec Stmt where
+  genSymIndexed e = do
+    expr <- genSymIndexed @SymBool e
+    vari <- genSymSimpleIndexed @SymBool ()
+    choose (DefineStmt vari expr) [ValueStmt expr]
 
 instance Mergeable (Sym Bool) Expr
 
@@ -51,6 +98,14 @@ instance Mergeable (Sym Bool) LitExpr
 instance Mergeable (Sym Bool) OpsExpr
 
 instance Mergeable (Sym Bool) Stmt
+
+instance SymEval Model LitExpr
+
+instance SymEval Model OpsExpr
+
+instance SymEval Model Expr
+
+instance SymEval Model Stmt
 
 data Error
   = Typer TyperError
@@ -74,6 +129,12 @@ instance Mergeable (Sym Bool) TyperError
 
 instance Mergeable (Sym Bool) RuntimeError
 
+instance SymEval Model Error
+
+instance SymEval Model TyperError
+
+instance SymEval Model RuntimeError
+
 data Type
   = UnitType
   | BoolType
@@ -85,7 +146,7 @@ instance Mergeable (Sym Bool) Type
 type TypingEnv = [(SymInteger, UnionM Type)]
 
 typeCheckU :: TypingEnv -> UnionM Expr -> ExceptT Error UnionM Type
-typeCheckU env u = mrgLift u >>= typeCheck env
+typeCheckU env u = lift u >>= typeCheck env
 
 typeCheck :: TypingEnv -> Expr -> ExceptT Error UnionM Type
 typeCheck _ (Lit UnitLit) = mrgReturn UnitType
@@ -117,13 +178,21 @@ typeCheckStmt :: Stmt -> StateT TypingEnv (ExceptT Error UnionM) Type
 typeCheckStmt (DefineStmt i expr) = StateT $ \st -> mrgFmap (\t -> (UnitType, (i, mrgSingle t) : st)) $ typeCheckU st expr
 typeCheckStmt (ValueStmt expr) = StateT $ \st -> mrgFmap (,st) $ mrgLift expr >>= typeCheck st
 
+typeCheckStmtU :: UnionM Stmt -> StateT TypingEnv (ExceptT Error UnionM) Type
+typeCheckStmtU stmt = (lift . lift) stmt >>= typeCheckStmt
+
 typeCheckStmtList :: [Stmt] -> StateT TypingEnv (ExceptT Error UnionM) Type
 typeCheckStmtList [] = mrgReturn UnitType
 typeCheckStmtList [x] = typeCheckStmt x
 typeCheckStmtList (x : xs) = typeCheckStmt x >>~ typeCheckStmtList xs
 
-typeCheckStmtListU :: UnionM [Stmt] -> StateT TypingEnv (ExceptT Error UnionM) Type
-typeCheckStmtListU u = (lift . lift) u >>= typeCheckStmtList
+typeCheckStmtListU :: [UnionM Stmt] -> StateT TypingEnv (ExceptT Error UnionM) Type
+typeCheckStmtListU [] = mrgReturn UnitType
+typeCheckStmtListU [x] = typeCheckStmtU x
+typeCheckStmtListU (x : xs) = typeCheckStmtU x >>~ typeCheckStmtListU xs
+
+typeCheckStmtUListU :: UnionM [UnionM Stmt] -> StateT TypingEnv (ExceptT Error UnionM) Type
+typeCheckStmtUListU u = (lift . lift) u >>= typeCheckStmtListU
 
 reduceHead :: LitExpr -> ExceptT Error UnionM LitExpr
 reduceHead (ListLit l) = do
@@ -189,16 +258,24 @@ interpretStmt :: Stmt -> StateT ExecutingEnv (ExceptT Error UnionM) LitExpr
 interpretStmt (DefineStmt i expr) = StateT $ \st -> mrgFmap (\t -> (UnitLit, (i, mrgSingle t) : st)) $ interpretU st expr
 interpretStmt (ValueStmt expr) = StateT $ \env -> mrgFmap (,env) $ mrgLift expr >>= interpret env
 
+interpretStmtU :: UnionM Stmt -> StateT ExecutingEnv (ExceptT Error UnionM) LitExpr
+interpretStmtU stmt = (lift . lift) stmt >>= interpretStmt
+
 interpretStmtList :: [Stmt] -> StateT ExecutingEnv (ExceptT Error UnionM) LitExpr
 interpretStmtList [] = mrgReturn UnitLit
 interpretStmtList [x] = interpretStmt x
 interpretStmtList (x : xs) = interpretStmt x >>~ interpretStmtList xs
 
-interpretStmtListU :: UnionM [Stmt] -> StateT ExecutingEnv (ExceptT Error UnionM) LitExpr
-interpretStmtListU u = (lift . lift) u >>= interpretStmtList
+interpretStmtListU :: [UnionM Stmt] -> StateT ExecutingEnv (ExceptT Error UnionM) LitExpr
+interpretStmtListU [] = mrgReturn UnitLit
+interpretStmtListU [x] = interpretStmtU x
+interpretStmtListU (x : xs) = interpretStmtU x >>~ interpretStmtListU xs
+
+interpretStmtUListU :: UnionM [UnionM Stmt] -> StateT ExecutingEnv (ExceptT Error UnionM) LitExpr
+interpretStmtUListU stmtlst = (lift . lift) stmtlst >>= interpretStmtListU
 
 checkAndInterpretStmtList :: [Stmt] -> ExceptT Error UnionM LitExpr
 checkAndInterpretStmtList st = evalStateT (typeCheckStmtList st) [] >>~ evalStateT (interpretStmtList st) []
 
-checkAndInterpretStmtListU :: UnionM [Stmt] -> ExceptT Error UnionM LitExpr
-checkAndInterpretStmtListU st = evalStateT (typeCheckStmtListU st) [] >>~ evalStateT (interpretStmtListU st) []
+checkAndInterpretStmtUListU :: UnionM [UnionM Stmt] -> ExceptT Error UnionM LitExpr
+checkAndInterpretStmtUListU st = evalStateT (typeCheckStmtUListU st) [] >>~ evalStateT (interpretStmtUListU st) []
