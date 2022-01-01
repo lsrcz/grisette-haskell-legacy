@@ -30,7 +30,7 @@ library
       Paths_grisette_smt
   hs-source-dirs:
       src
-  ghc-options: -Wall -ferror-spans
+  ghc-options: -Wall -ferror-spans -O2
   build-depends:
       base >4.7 && <5
     , bv-sized

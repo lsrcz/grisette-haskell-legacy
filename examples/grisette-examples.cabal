@@ -28,7 +28,7 @@ executable expr-interpreter
       Paths_grisette_examples
   hs-source-dirs:
       expr-interpreter
-  ghc-options: -Wall -ferror-spans
+  ghc-options: -Wall -ferror-spans -O2
   build-depends:
       MemoTrie
     , base >4.7 && <5
@@ -52,7 +52,7 @@ executable regex
       Paths_grisette_examples
   hs-source-dirs:
       regex
-  ghc-options: -Wall -ferror-spans
+  ghc-options: -Wall -ferror-spans -O2
   build-depends:
       MemoTrie
     , base >4.7 && <5

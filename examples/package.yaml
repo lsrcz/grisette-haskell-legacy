@@ -25,7 +25,7 @@ dependencies:
 - MemoTrie
 - monad-memo
 
-ghc-options: -Wall -ferror-spans
+ghc-options: -Wall -ferror-spans -O2
 
 executables:
   expr-interpreter:

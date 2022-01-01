@@ -22,5 +22,5 @@ dependencies:
 
 library:
   source-dirs: src
-  ghc-options: -Wall -ferror-spans
+  ghc-options: -Wall -ferror-spans -O2
 
