@@ -7,9 +7,13 @@ module Grisette.Control.Monad
     (>>=~),
     mrgFoldM,
     (>>~),
+    mrgMzero,
+    mrgMplus,
+    mrgMsum,
   )
 where
 
+import Control.Monad
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.SimpleMergeable
@@ -28,3 +32,12 @@ mrgFoldM f z0 xs = foldr c mrgReturn xs z0
 
 (>>~) :: forall bool m a b. (SymBoolOp bool, UnionMOp bool m, Mergeable bool b, Monad m) => m a -> m b -> m b
 a >>~ f = merge $ mrgFmap (const ()) a >> f
+
+mrgMzero :: forall bool m a. (UnionMOp bool m, Mergeable bool a, MonadPlus m) => m a
+mrgMzero = merge mzero
+
+mrgMplus :: forall bool m a. (UnionMOp bool m, Mergeable bool a, MonadPlus m) => m a -> m a -> m a
+mrgMplus a b = merge $ mplus a b
+
+mrgMsum :: forall bool m a t. (UnionMOp bool m, Mergeable bool a, MonadPlus m, Foldable t) => t (m a) -> m a
+mrgMsum = foldr mrgMplus mrgMzero
