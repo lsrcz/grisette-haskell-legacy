@@ -1,13 +1,13 @@
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Main where
@@ -15,37 +15,48 @@ module Main where
 import Control.Monad
 import Control.Monad.Coroutine hiding (merge)
 import Control.Monad.Coroutine.SuspensionFunctors
+import Control.Monad.Memo as MM
+import Control.Monad.State
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Maybe
+import Data.Bifunctor
+import qualified Data.ByteString.Char8 as B
 import Data.Functor.Sum
+import Data.Hashable
+import Data.Maybe
+import Data.MemoTrie
+import qualified Data.SBV as SBV
+import GHC.Generics
 import Grisette.Control.Monad
 import Grisette.Control.Monad.Trans
 import Grisette.Control.Monad.UnionM
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
+import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.SimpleMergeable
+import Grisette.Data.Class.SymEval
+import Grisette.Data.Class.SymGen
+import Grisette.Data.Class.ToCon
+import Grisette.Data.Class.ToSym
 import Grisette.Data.Class.UnionOp
 import Grisette.Data.Functor
-import qualified Data.ByteString.Char8 as B
-import Grisette.Data.SymPrim
-import GHC.Generics
-import Grisette.Data.Class.ToSym
-import Grisette.Data.Class.ToCon
-import Text.Regex.PCRE
-import Data.Maybe
-import Data.MemoTrie
-import Data.Bifunctor
+import Grisette.Data.MemoUtils
+import Grisette.Data.Prim.Model
 import Grisette.Data.SMT.Config
 import Grisette.Data.SMT.Solving
-import Grisette.Data.Class.PrimWrapper
-import Grisette.Data.Class.SymEval
-import Grisette.Data.Prim.Model
-import Grisette.Data.Class.SymGen
-import Data.SBV (z3)
-import Control.Monad.State
-import Control.Monad.Memo as MM
-import Grisette.Data.MemoUtils
-import Data.Hashable
+import Grisette.Data.SymPrim
+import System.CPUTime
+import Text.Printf
+import Text.Regex.PCRE
+
+time :: IO t -> IO t
+time a = do
+  start <- getCPUTime
+  v <- a
+  end <- getCPUTime
+  let diff = fromIntegral (end - start) / (10 ^ 12)
+  printf "Computation time: %0.3f sec\n" (diff :: Double)
+  return v
 
 instance HasTrie B.ByteString where
   newtype B.ByteString :->: a = ByteStringTrie (Either () (Char, B.ByteString) :->: a)
@@ -149,9 +160,13 @@ data Patt
   deriving (Show, Generic, Eq)
 
 instance Mergeable (Sym Bool) Patt
+
 instance SymEval Model Patt
+
 instance ToSym ConcPatt Patt
+
 instance ToCon Patt ConcPatt
+
 instance Hashable Patt
 
 toCoroU :: UnionM Patt -> PattCoro
@@ -182,6 +197,7 @@ toCoroMemo (PlusPatt p greedy) = do
 
 toCoro :: Patt -> PattCoro
 toCoro x = MM.evalMemoState (toCoroMemo x) emptyMemoHashMap
+
 {-
 toCoro :: Patt -> PattCoro
 toCoro (PrimPatt s) = getSingle $ mrgFmap primPatt s
@@ -192,23 +208,20 @@ toCoro (PlusPatt p greedy) = plusPatt greedy (toCoroU p)
 
 conformsFirst :: PattCoro -> B.ByteString -> B.ByteString -> SymBool
 conformsFirst patt reg str =
-  let
-    rp = matchFirstImpl patt str
-    rc = bimap toInteger toInteger <$> listToMaybe (getAllMatches (str =~ reg) :: [(Int, Int)])
-    rc1 = MaybeT $ mrgReturn rc
-  in
-    rp ==~ rc1
+  let rp = matchFirstImpl patt str
+      rc = bimap toInteger toInteger <$> listToMaybe (getAllMatches (str =~ reg) :: [(Int, Int)])
+      rc1 = MaybeT $ mrgReturn rc
+   in rp ==~ rc1
 
 synthesisRegexCompiled :: GrisetteSMTConfig b -> UnionM Patt -> PattCoro -> B.ByteString -> [B.ByteString] -> IO (Maybe ConcPatt)
 synthesisRegexCompiled config patt coro reg strs =
-  let
-    constraints = conformsFirst coro reg <$> strs
-    constraint = foldr (&&~) (conc True) constraints
-  in do
-    solveRes <- solveWith config constraint
-    case solveRes of
-      Left _ -> return Nothing
-      Right mo -> return $ Just $ symevalToCon mo patt
+  let constraints = conformsFirst coro reg <$> strs
+      constraint = foldr (&&~) (conc True) constraints
+   in do
+        solveRes <- solveWith config constraint
+        case solveRes of
+          Left _ -> return Nothing
+          Right mo -> return $ Just $ symevalToCon mo patt
 
 synthesisRegex :: GrisetteSMTConfig b -> UnionM Patt -> B.ByteString -> [B.ByteString] -> IO (Maybe ConcPatt)
 synthesisRegex config patt = synthesisRegexCompiled config patt (toCoroU patt)
@@ -267,8 +280,10 @@ str7 :: B.ByteString
 str7 = "c"
 
 sk1 :: UnionM Patt
-sk1 = runSymGenIndexed
-  (choose (toSym $ ConcPrimPatt "a") [toSym $ ConcPrimPatt "b"]) "a"
+sk1 =
+  runSymGenIndexed
+    (choose (toSym $ ConcPrimPatt "a") [toSym $ ConcPrimPatt "b"])
+    "a"
 
 freshPrim :: State (Int, String) (UnionM Patt)
 freshPrim = choose (toSym $ ConcPrimPatt "d") $ toSym <$> [ConcPrimPatt "c", ConcPrimPatt "b", ConcPrimPatt "a", ConcPrimPatt ""]
@@ -341,7 +356,7 @@ main = do
   print $ listToMaybe (getAllMatches (str7 =~ reg6) :: [(Int, Int)])
   print sk1
   -}
-  res <- synthesisRegex (UnboundedReasoning z3) (mrgSingle sk) "[cd](a?b)+?" $ genWordsUpTo 4 "abcd"
+  res <- time $ synthesisRegex (UnboundedReasoning SBV.z3 {SBV.transcript = Just "/tmp/a.smt2", SBV.timing = SBV.PrintTiming}) (mrgSingle sk) "[cd](a?b)+?" $ genWordsUpTo 4 "abcd"
   print res
   print $ matchFirstImpl (toCoro r) "cabab"
   print $ listToMaybe (getAllMatches (("cabab" :: B.ByteString) =~ ("[cd](a?b)+?" :: B.ByteString)) :: [(Int, Int)])
