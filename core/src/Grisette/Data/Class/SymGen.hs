@@ -23,6 +23,7 @@ module Grisette.Data.Class.SymGen
     genSymIndexedWithDerivedSameShape,
     choose,
     chooseU,
+    runSymGenIndexed,
     ListSpec (..),
   )
 where
@@ -37,6 +38,9 @@ import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.UnionOp
 import Grisette.Data.Functor
+
+runSymGenIndexed :: State (Int, String) a -> String -> a
+runSymGenIndexed st s = evalState st (0, s)
 
 class (SymBoolOp bool, Mergeable bool a) => SymGen bool spec a where
   genSymIndexed :: spec -> State (Int, String) (UnionMBase bool a)
