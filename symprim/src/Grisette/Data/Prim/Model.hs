@@ -21,10 +21,10 @@ import Control.Monad.Memo
 import Data.Dynamic
 import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet as S
-import Data.Hashable
 import Data.Typeable
 import Grisette.Data.Prim.InternedTerm
 import Unsafe.Coerce
+import Grisette.Data.MemoUtils
 
 newtype Model = Model (M.HashMap Symbol Dynamic) deriving (Show)
 
@@ -70,12 +70,6 @@ insert (Model m) (TermSymbol p sym) v =
   if typeRep p == typeOf v
     then Model $ M.insert sym (toDyn v) m
     else error "Bad value type"
-
-newtype MemoHashMap k v = MemoHashMap {unMemoHashMap :: M.HashMap k v}
-
-instance (Eq a, Hashable a) => MapLike (MemoHashMap a b) a b where
-  lookup k = M.lookup k . unMemoHashMap
-  add k v = MemoHashMap . M.insert k v . unMemoHashMap
 
 evaluateSomeTermMemo :: Bool -> Model -> SomeTerm -> MemoState (MemoHashMap SomeTerm SomeTerm) SomeTerm SomeTerm SomeTerm
 evaluateSomeTermMemo fillDefault (Model ma) = go

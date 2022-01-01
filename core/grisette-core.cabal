@@ -41,6 +41,7 @@ library
       Grisette.Data.Class.UnionOp
       Grisette.Data.Class.Utils.CConst
       Grisette.Data.Functor
+      Grisette.Data.MemoUtils
       Grisette.Data.UnionBase
   other-modules:
       Paths_grisette_core
@@ -55,6 +56,8 @@ library
     , hashable
     , intern
     , monad-coroutine
+    , monad-memo
     , mtl
     , transformers
+    , unordered-containers
   default-language: Haskell2010

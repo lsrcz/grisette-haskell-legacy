@@ -19,6 +19,8 @@ dependencies:
 - monad-coroutine
 - constraints
 - bytestring
+- unordered-containers
+- monad-memo
 
 library:
   source-dirs: src
