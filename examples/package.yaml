@@ -15,13 +15,21 @@ dependencies:
 - grisette-symprim
 - grisette-smt
 - mtl
+- transformers
 - sbv
+- monad-coroutine
+- bytestring
+- regex-base
+- regex-pcre
 
 ghc-options: -Wall -ferror-spans
 
 executables:
   expr-interpreter:
     source-dirs: expr-interpreter
+    main: Main.hs
+  regex:
+    source-dirs: regex
     main: Main.hs
 
 
