@@ -21,6 +21,9 @@ dependencies:
 - bytestring
 - regex-base
 - regex-pcre
+- hashable
+- MemoTrie
+- monad-memo
 
 ghc-options: -Wall -ferror-spans
 

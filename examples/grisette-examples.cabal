@@ -30,12 +30,15 @@ executable expr-interpreter
       expr-interpreter
   ghc-options: -Wall -ferror-spans
   build-depends:
-      base >4.7 && <5
+      MemoTrie
+    , base >4.7 && <5
     , bytestring
     , grisette-core
     , grisette-smt
     , grisette-symprim
+    , hashable
     , monad-coroutine
+    , monad-memo
     , mtl
     , regex-base
     , regex-pcre
@@ -51,12 +54,15 @@ executable regex
       regex
   ghc-options: -Wall -ferror-spans
   build-depends:
-      base >4.7 && <5
+      MemoTrie
+    , base >4.7 && <5
     , bytestring
     , grisette-core
     , grisette-smt
     , grisette-symprim
+    , hashable
     , monad-coroutine
+    , monad-memo
     , mtl
     , regex-base
     , regex-pcre
