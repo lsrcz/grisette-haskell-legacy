@@ -1,16 +1,19 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Grisette.Data.UnionBase (UnionBase (..)) where
 
 import Data.Functor.Classes
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.UnionOp
+import Data.Hashable
+import GHC.Generics
 
 data UnionBase b a
   = Single a
   | Guard a b (UnionBase b a) (UnionBase b a)
-  deriving (Show)
+  deriving (Show, Generic, Eq)
 
 instance SymBoolOp bool => UnionOp bool (UnionBase bool) where
   single = Single
@@ -27,3 +30,7 @@ instance (Show b) => Show1 (UnionBase b) where
     "Single(" ++ sp i a ")" ++ s
   liftShowsPrec sp sl i (Guard _ cond t f) s =
     "Guard(" ++ showsPrec i cond (liftShowsPrec sp sl i t (liftShowsPrec sp sl i f ")")) ++ s
+
+instance (Hashable b, Hashable a) => Hashable (UnionBase b a) where
+  s `hashWithSalt` (Single a) = s `hashWithSalt` (0 :: Int) `hashWithSalt` a
+  s `hashWithSalt` (Guard _ c l r) = s `hashWithSalt` (1 :: Int) `hashWithSalt` c `hashWithSalt` l `hashWithSalt` r

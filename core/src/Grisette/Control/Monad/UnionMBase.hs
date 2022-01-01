@@ -32,6 +32,7 @@ import Grisette.Data.Class.ToSym
 import Grisette.Data.Class.UnionOp
 import Grisette.Data.Functor (mrgFmap)
 import Grisette.Data.UnionBase
+import Data.Hashable
 
 data UnionMBase bool a where
   UAny :: IORef (Either (UnionBase bool a) (UnionMBase bool a)) -> UnionBase bool a -> UnionMBase bool a
@@ -168,3 +169,10 @@ instance
     where
       go (Single x) = extractSymbolics x
       go (Guard _ cond t f) = extractSymbolics cond <> go t <> go f
+
+instance (Hashable bool, Hashable a) => Hashable (UnionMBase bool a) where
+  s `hashWithSalt` (UAny _ u) = s `hashWithSalt` (0 :: Int) `hashWithSalt` u
+  s `hashWithSalt` (UMrg u) = s `hashWithSalt` (1 :: Int) `hashWithSalt` u
+
+instance (Eq bool, Eq a) => Eq (UnionMBase bool a) where
+  l == r = underlyingUnion l == underlyingUnion r
