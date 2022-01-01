@@ -17,6 +17,7 @@
 
 module Grisette.Data.Class.Mergeable
   ( MergeStrategy (..),
+    derivedMergeStrategy,
     wrapMergeStrategy,
     guardWithStrategy,
     Mergeable (..),
@@ -37,6 +38,8 @@ import Grisette.Data.Class.OrphanGeneric ()
 import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.UnionOp
 import Grisette.Data.Class.Utils.CConst
+import Data.Functor.Sum
+import qualified Data.ByteString as B
 
 data MergeStrategy bool a where
   SimpleStrategy :: (bool -> a -> a -> a) -> MergeStrategy bool a
@@ -123,7 +126,10 @@ guardWithStrategy _ _ _ _ = error "Invariant violated"
 class Mergeable bool a where
   mergeStrategy :: MergeStrategy bool a
   default mergeStrategy :: (Generic a, Mergeable' bool (Rep a)) => MergeStrategy bool a
-  mergeStrategy = wrapMergeStrategy mergeStrategy' to from
+  mergeStrategy = derivedMergeStrategy
+
+derivedMergeStrategy :: (Generic a, Mergeable' bool (Rep a)) => MergeStrategy bool a
+derivedMergeStrategy = wrapMergeStrategy mergeStrategy' to from
 
 class Mergeable1 bool (u :: * -> *) where
   withMergeableT :: forall a t. (Mergeable bool a) => (Mergeable bool (u a) => t a) -> t a
@@ -197,6 +203,10 @@ instance (SymBoolOp bool) => Mergeable bool Integer where
 
 -- ()
 instance (SymBoolOp bool) => Mergeable bool ()
+
+-- ByteString
+instance (SymBoolOp bool) => Mergeable bool B.ByteString where
+  mergeStrategy = OrderedStrategy id $ \_ -> SimpleStrategy $ \_ t _ -> t
 
 -- Either
 instance (SymBoolOp bool, Mergeable bool e, Mergeable bool a) => Mergeable bool (Either e a)
@@ -287,3 +297,11 @@ instance
         wrapMergeStrategy mergeStrategy StateT runStateT
 
 instance (SymBoolOp bool, Mergeable bool s, Mergeable1 bool m) => Mergeable1 bool (StateT s m)
+
+-- Sum
+instance (SymBoolOp bool, Mergeable1 bool l, Mergeable1 bool r, Mergeable bool x) =>
+  Mergeable bool (Sum l r x) where
+    mergeStrategy =
+      withMergeable @bool @l @x $ withMergeable @bool @r @x $ derivedMergeStrategy
+
+instance (SymBoolOp bool, Mergeable1 bool l, Mergeable1 bool r) => Mergeable1 bool (Sum l r)

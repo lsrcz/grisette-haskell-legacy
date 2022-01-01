@@ -13,6 +13,8 @@ import Control.Monad.Trans.Except
 import Control.Monad.Trans.Maybe
 import Generics.Deriving
 import Grisette.Data.Class.OrphanGeneric ()
+import qualified Data.ByteString as B
+import Data.Functor.Sum
 
 class ToSym a b where
   toSym :: a -> b
@@ -28,7 +30,7 @@ instance ToSym' U1 U1 where
 instance (ToSym a b) => ToSym' (K1 i a) (K1 i b) where
   toSym' (K1 a) = K1 $ toSym a
 
-instance (ToSym' a b) => ToSym' (M1 i c a) (M1 i c b) where
+instance (ToSym' a b) => ToSym' (M1 i c1 a) (M1 i c2 b) where
   toSym' (M1 a) = M1 $ toSym' a
 
 instance (ToSym' a1 a2, ToSym' b1 b2) => ToSym' (a1 :+: b1) (a2 :+: b2) where
@@ -48,6 +50,10 @@ instance ToSym Integer Integer where
 
 -- Unit
 instance ToSym () () where
+  toSym = id
+
+-- ByteString
+instance ToSym B.ByteString B.ByteString where
   toSym = id
 
 -- Either
@@ -93,3 +99,6 @@ instance
 -- StateT
 instance (ToSym (s1 -> m1 (a1, s1)) (s2 -> m2 (a2, s2))) => ToSym (StateT s1 m1 a1) (StateT s2 m2 a2) where
   toSym (StateT f1) = StateT $ toSym f1
+
+-- Sum
+instance (ToSym (f a) (f1 a1), ToSym (g a) (g1 a1)) => ToSym (Sum f g a) (Sum f1 g1 a1)

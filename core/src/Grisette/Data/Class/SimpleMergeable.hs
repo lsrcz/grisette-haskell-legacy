@@ -7,9 +7,11 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE UndecidableSuperClasses #-}
 
 module Grisette.Data.Class.SimpleMergeable
   ( UnionMOp (..),
+    getSingle,
     SimpleMergeable (..),
     SimpleMergeable1 (..),
     withSimpleMergeable,
@@ -26,9 +28,15 @@ import Control.Monad.Trans.Maybe
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.Utils.CConst
+import Grisette.Data.Class.UnionOp
 
 class Mergeable bool a => SimpleMergeable bool a where
   mrgIf :: bool -> a -> a -> a
+
+getSingle :: forall bool u a. (SimpleMergeable bool a, UnionMOp bool u, UnionOp bool u) => u a -> a
+getSingle u = case merge u of
+  SingleU x -> x
+  _ -> error "Should not happen"
 
 class (Mergeable1 bool u) => SimpleMergeable1 bool u where
   withSimpleMergeableT :: forall a t. (SimpleMergeable bool a) => (SimpleMergeable bool (u a) => t a) -> t a

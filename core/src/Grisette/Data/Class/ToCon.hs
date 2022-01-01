@@ -10,6 +10,8 @@ import Control.Monad.Coroutine
 import Control.Monad.Except
 import Control.Monad.Trans.Maybe
 import GHC.Generics
+import qualified Data.ByteString as B
+import Data.Functor.Sum
 
 class ToCon a b where
   toCon :: a -> Maybe b
@@ -25,7 +27,7 @@ instance ToCon' U1 U1 where
 instance ToCon a b => ToCon' (K1 i a) (K1 i b) where
   toCon' (K1 a) = K1 <$> toCon a
 
-instance ToCon' a b => ToCon' (M1 i c a) (M1 i c b) where
+instance ToCon' a b => ToCon' (M1 i c1 a) (M1 i c2 b) where
   toCon' (M1 a) = M1 <$> toCon' a
 
 instance (ToCon' a1 a2, ToCon' b1 b2) => ToCon' (a1 :+: b1) (a2 :+: b2) where
@@ -48,6 +50,10 @@ instance ToCon Integer Integer where
 
 -- Unit
 instance ToCon () () where
+  toCon = Just
+
+-- ByteString
+instance ToCon B.ByteString B.ByteString where
   toCon = Just
 
 -- Either
@@ -85,3 +91,6 @@ instance
   ToCon (Coroutine sus m1 a) (Coroutine sus m2 b)
   where
   toCon (Coroutine a) = Coroutine <$> toCon a
+
+-- Sum
+instance (ToCon (f a) (f1 a1), ToCon (g a) (g1 a1)) => ToCon (Sum f g a) (Sum f1 g1 a1)

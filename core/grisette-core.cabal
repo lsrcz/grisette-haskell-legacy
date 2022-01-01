@@ -49,6 +49,7 @@ library
   ghc-options: -Wall -ferror-spans
   build-depends:
       base >4.7 && <5
+    , bytestring
     , constraints
     , generic-deriving
     , hashable

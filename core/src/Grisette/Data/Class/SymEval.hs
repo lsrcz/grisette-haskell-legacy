@@ -13,6 +13,8 @@ import Control.Monad.Trans.Maybe
 import Data.Maybe
 import GHC.Generics
 import Grisette.Data.Class.ToCon
+import qualified Data.ByteString as B
+import Data.Functor.Sum
 
 class SymEval model a where
   symeval :: Bool -> model -> a -> a
@@ -55,6 +57,10 @@ instance SymEval model Integer where
 instance SymEval model () where
   symeval _ _ = id
 
+-- ByteString
+instance SymEval model B.ByteString where
+  symeval _ _ = id
+
 -- Either
 instance (SymEval model a, SymEval model b) => SymEval model (Either a b)
 
@@ -81,3 +87,6 @@ instance (SymEval model (m (Either e a))) => SymEval model (ExceptT e m a) where
 -- Coroutine
 instance (SymEval model (m (Either (sus (Coroutine sus m a)) a))) => SymEval model (Coroutine sus m a) where
   symeval fillDefault model (Coroutine v) = Coroutine $ symeval fillDefault model v
+
+-- Sum
+instance (SymEval model (f a), SymEval model (g a)) => SymEval model (Sum f g a)

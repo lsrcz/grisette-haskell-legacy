@@ -11,6 +11,8 @@ import Control.Monad.Coroutine
 import Control.Monad.Except
 import Control.Monad.Trans.Maybe
 import GHC.Generics
+import qualified Data.ByteString as B
+import Data.Functor.Sum
 
 class (Monoid symbolSet) => ExtractSymbolics symbolSet a where
   extractSymbolics :: a -> symbolSet
@@ -57,6 +59,10 @@ instance (Monoid symbolSet) => ExtractSymbolics symbolSet Integer where
 instance (Monoid symbolSet) => ExtractSymbolics symbolSet () where
   extractSymbolics _ = mempty
 
+-- ByteString
+instance (Monoid symbolSet) => ExtractSymbolics symbolSet B.ByteString where
+  extractSymbolics _ = mempty
+
 -- Either
 instance
   (Monoid symbolSet, ExtractSymbolics symbolSet a, ExtractSymbolics symbolSet b) =>
@@ -95,3 +101,8 @@ instance
   ExtractSymbolics symbolSet (Coroutine sus m a)
   where
   extractSymbolics (Coroutine v) = extractSymbolics v
+
+-- Sum
+instance
+  (Monoid symbolSet, ExtractSymbolics symbolSet (f a), ExtractSymbolics symbolSet (g a)) =>
+  ExtractSymbolics symbolSet (Sum f g a)

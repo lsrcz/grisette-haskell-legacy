@@ -18,6 +18,7 @@ dependencies:
 - generic-deriving
 - monad-coroutine
 - constraints
+- bytestring
 
 library:
   source-dirs: src
