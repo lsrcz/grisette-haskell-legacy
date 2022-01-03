@@ -24,6 +24,9 @@ dependencies:
 - hashable
 - MemoTrie
 - monad-memo
+- loch-th
+- template-haskell
+- utf8-string
 
 ghc-options: -Wall -ferror-spans -O2
 
@@ -36,6 +39,9 @@ executables:
     main: Main.hs
   order:
     source-dirs: order
+    main: Main.hs
+  location:
+    source-dirs: location
     main: Main.hs
 
 
