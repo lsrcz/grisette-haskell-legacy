@@ -1,20 +1,22 @@
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TemplateHaskell #-}
+
 module Exception where
-import Language.Haskell.TH
+
+import Control.Monad.Except
+import Grisette.Control.Monad.UnionM
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.SymPrim
-import Grisette.Control.Monad.UnionM
-import Control.Monad.Except
+import Language.Haskell.TH
 
 type Exception raw = raw
 
 assertWithException :: Q Exp
-assertWithException = [|assertWithException' |]
+assertWithException = [|assertWithException'|]
 
 assertWithException' ::
   forall exceptT raw.
