@@ -54,7 +54,6 @@ executable location
   other-modules:
       Exception
       ExceptionWithLocation
-      RawException
       Paths_grisette_examples
   hs-source-dirs:
       location

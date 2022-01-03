@@ -10,17 +10,16 @@ import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.SymPrim
 import Grisette.Control.Monad.UnionM
 import Control.Monad.Except
-import RawException
 
-type Exception = RawException
+type Exception raw = raw
 
 assertWithException :: Q Exp
 assertWithException = [|assertWithException' |]
 
 assertWithException' ::
-  forall exceptT.
-  (MonadError Exception (exceptT Exception UnionM), UnionMOp SymBool (exceptT Exception UnionM)) =>
-  RawException ->
+  forall exceptT raw.
+  (MonadError (Exception raw) (exceptT (Exception raw) UnionM), UnionMOp SymBool (exceptT (Exception raw) UnionM)) =>
+  raw ->
   SymBool ->
-  exceptT Exception UnionM ()
+  exceptT (Exception raw) UnionM ()
 assertWithException' ex x = mrgGuard x (return ()) (throwError ex)
