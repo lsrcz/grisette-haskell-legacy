@@ -34,5 +34,8 @@ executables:
   regex:
     source-dirs: regex
     main: Main.hs
+  order:
+    source-dirs: order
+    main: Main.hs
 
 

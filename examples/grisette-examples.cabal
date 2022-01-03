@@ -46,6 +46,30 @@ executable expr-interpreter
     , transformers
   default-language: Haskell2010
 
+executable order
+  main-is: Main.hs
+  other-modules:
+      Paths_grisette_examples
+  hs-source-dirs:
+      order
+  ghc-options: -Wall -ferror-spans -O2
+  build-depends:
+      MemoTrie
+    , base >4.7 && <5
+    , bytestring
+    , grisette-core
+    , grisette-smt
+    , grisette-symprim
+    , hashable
+    , monad-coroutine
+    , monad-memo
+    , mtl
+    , regex-base
+    , regex-pcre
+    , sbv
+    , transformers
+  default-language: Haskell2010
+
 executable regex
   main-is: Main.hs
   other-modules:
