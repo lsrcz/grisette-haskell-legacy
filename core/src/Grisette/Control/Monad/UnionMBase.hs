@@ -42,17 +42,12 @@ freshUAny :: UnionBase bool a -> UnionMBase bool a
 freshUAny v = UAny (unsafeDupablePerformIO $ newIORef $ Left v) v
 {-# NOINLINE freshUAny #-}
 
-formatUnion :: (Show a, Show bool) => UnionBase bool a -> String
-formatUnion (Single x) = show x
-formatUnion (Guard _ c l r) = "{ite " ++ show c ++ " " ++ formatUnion l ++ " " ++ formatUnion r ++ " }"
-
 instance (Show a, Show bool) => (Show (UnionMBase bool a)) where
-  show (UAny _ u) = "UAny(" ++ formatUnion u ++ ")"
-  show (UMrg u) = "UMrg(" ++ formatUnion u ++ ")"
+  showsPrec = showsPrec1
 
-instance (Show bool) => Show1 (UnionMBase bool) where
-  liftShowsPrec sp sl i (UAny _ u) s = "UAny(" ++ liftShowsPrec sp sl i u s ++ ")"
-  liftShowsPrec sp sl i (UMrg u) s = "UMrg(" ++ liftShowsPrec sp sl i u s ++ ")"
+instance (Show b) => Show1 (UnionMBase b) where
+  liftShowsPrec sp sl i (UAny _ a) = showsUnaryWith (liftShowsPrec sp sl) "UAny" i a
+  liftShowsPrec sp sl i (UMrg a) = showsUnaryWith (liftShowsPrec sp sl) "UMrg" i a
 
 underlyingUnion :: UnionMBase bool a -> UnionBase bool a
 underlyingUnion (UAny _ a) = a

@@ -13,7 +13,7 @@ import GHC.Generics
 data UnionBase b a
   = Single a
   | Guard a b (UnionBase b a) (UnionBase b a)
-  deriving (Show, Generic, Eq)
+  deriving (Generic, Eq)
 
 instance SymBoolOp bool => UnionOp bool (UnionBase bool) where
   single = Single
@@ -26,10 +26,13 @@ instance SymBoolOp bool => UnionOp bool (UnionBase bool) where
   leftMost (Guard a _ _ _) = a
 
 instance (Show b) => Show1 (UnionBase b) where
-  liftShowsPrec sp _ i (Single a) s =
-    "Single(" ++ sp i a ")" ++ s
-  liftShowsPrec sp sl i (Guard _ cond t f) s =
-    "Guard(" ++ showsPrec i cond (liftShowsPrec sp sl i t (liftShowsPrec sp sl i f ")")) ++ s
+  liftShowsPrec sp _ i (Single a) = showsUnaryWith sp "Single" i a
+  liftShowsPrec sp sl i (Guard _ cond t f) = showParen (i > 10) $
+    showString "Guard" . showChar ' ' . showsPrec 11 cond . showChar ' ' . sp1 11 t . showChar ' ' . sp1 11 f
+    where sp1 = liftShowsPrec sp sl
+
+instance (Show b, Show a) => Show (UnionBase b a) where
+  showsPrec = showsPrec1
 
 instance (Hashable b, Hashable a) => Hashable (UnionBase b a) where
   s `hashWithSalt` (Single a) = s `hashWithSalt` (0 :: Int) `hashWithSalt` a
