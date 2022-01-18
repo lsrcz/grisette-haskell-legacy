@@ -21,6 +21,7 @@ import Grisette.Data.Class.SymGen
 import Grisette.Data.Functor
 import Grisette.Data.Prim.Model
 import Grisette.Data.SymPrim
+import Grisette.Data.Class.ToSym
 
 data Expr
   = Lit LitExpr
@@ -106,6 +107,11 @@ instance SymEval Model OpsExpr
 instance SymEval Model Expr
 
 instance SymEval Model Stmt
+
+instance ToSym LitExpr LitExpr
+instance ToSym OpsExpr OpsExpr
+instance ToSym Expr Expr
+instance ToSym Stmt Stmt
 
 data Error
   = Typer TyperError
