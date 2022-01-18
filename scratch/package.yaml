@@ -1,0 +1,38 @@
+name: grisette-scratch
+version: 0.1.0.0
+synopsis: Example code for Grisette
+description: Example symbolic DSLs
+category: Formal Methods, Theorem Provers, Symbolic Computation, SMT
+author: "Sirui Lu"
+maintainer: siruilu@uw.edu
+license: BSD3
+github: lsrcz/grisette-haskell
+copyright: "2021 Sirui Lu"
+
+dependencies:
+- base > 4.7 && < 5
+- grisette-core
+- grisette-symprim
+- grisette-smt
+- mtl
+- transformers
+- sbv
+- monad-coroutine
+- bytestring
+- regex-base
+- regex-pcre
+- hashable
+- MemoTrie
+- monad-memo
+- loch-th
+- template-haskell
+- utf8-string
+
+ghc-options: -Wall -ferror-spans -O2
+
+executables:
+  list-union:
+    source-dirs: list-union
+    main: Main.hs
+  
+
