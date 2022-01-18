@@ -20,6 +20,8 @@ import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.SymPrim
 import Unsafe.Coerce
+import Grisette.Data.Functor
+import Grisette.Control.Monad
 
 newtype Either' a b = Either' {getEither' :: Either a b} deriving (Show, Generic)
 
@@ -99,28 +101,67 @@ instance (SymBoolOp bool, UnionMOp bool m, Mergeable bool e) => UnionMOp bool (E
   mrgSingle = ExceptT' . mrgSingle . Either' . Right
   mrgGuard = mrgIf
 
-assert :: forall exceptT. (MonadError Exceptions (exceptT Exceptions UnionM), UnionMOp SymBool (exceptT Exceptions UnionM)) => SymBool -> exceptT Exceptions UnionM ()
-assert x = mrgGuard x (return ()) (throwError AssertViolation)
+assertWithError :: forall m b ex. (MonadError ex m, SymBoolOp b, UnionMOp b m) => ex -> b -> m ()
+assertWithError ex x = mrgGuard x (return ()) (throwError ex)
 
-assume :: forall exceptT. (MonadError Exceptions (exceptT Exceptions UnionM), UnionMOp SymBool (exceptT Exceptions UnionM)) => SymBool -> exceptT Exceptions UnionM ()
-assume x = mrgGuard x (return ()) (throwError AssumeViolation)
+assert :: forall m b. (MonadError Exceptions m, SymBoolOp b, UnionMOp b m) => b -> m ()
+assert = assertWithError AssertViolation
+
+assume :: forall m b. (MonadError Exceptions m, SymBoolOp b, UnionMOp b m) => b -> m ()
+assume = assertWithError AssumeViolation
 
 test :: forall exceptT. (MonadError Exceptions (exceptT Exceptions UnionM), UnionMOp SymBool (exceptT Exceptions UnionM)) => exceptT Exceptions UnionM SymBool
 test =
   mrgGuard
     (ssymb "a")
     ( do
-        assert (ssymb "assert")
-        return (ssymb "x")
+        assert $ ssymb "assert"
+        return $ ssymb "x"
     )
     ( do
-        assume (ssymb "assume")
-        return (ssymb "y")
+        assume $ ssymb "assume"
+        return $ ssymb "y"
     )
+
+test2 :: forall exceptT. (MonadError Exceptions (exceptT Exceptions UnionM), UnionMOp SymBool (exceptT Exceptions UnionM)) => exceptT Exceptions UnionM SymBool
+test2 = do
+  assert $ ssymb "x"
+  r <- mrgGuard
+    (ssymb "c")
+    ( do
+        assert $ ssymb "a1"
+        return $ ssymb "r1")
+    ( do
+        assert $ ssymb "a2"
+        -- assume (ssymb "assume")
+        return $ ssymb "r2"
+    )
+  assert $ ssymb "y"
+  mrgReturn r
+
+test3 :: forall exceptT. (MonadError Exceptions (exceptT Exceptions UnionM), UnionMOp SymBool (exceptT Exceptions UnionM)) => exceptT Exceptions UnionM ()
+test3 = do
+  assert $ ssymb "x"
+  assume $ ssymb "y"
+  assert $ ssymb "z"
+  assume $ ssymb "k"
+  
+
 
 main :: IO ()
 main = do
   -- ExceptT (UMrg (Guard (ite a (! assert) (! assume)) (Guard a (Single (Left AssertViolation)) (Single (Left AssumeViolation))) (Single (Right (ite a x y)))))
   print $ test @ExceptT
+  -- UMrg (Single (&& (! (ite a (! assert) (! assume))) (ite a x y)))
+  print $ mrgFmap (\case; Left _ -> conc False; Right x -> x) $ runExceptT test
   -- ExceptT' (UMrg (Guard (ite a assert assume) (Single (Right (ite a x y))) (Guard a (Single (Left AssertViolation)) (Single (Left AssumeViolation)))))
   print $ test @ExceptT'
+  -- UMrg (Single (&& (ite a assert assume) (ite a x y)))
+  print $ mrgFmap (\case; (Either' (Left _)) -> conc False; (Either' (Right x)) -> x) $ runExceptT' test
+  putStrLn "2222"
+  print $ test2 @ExceptT
+  print $ test2 @ExceptT'
+  print $ test3 @ExceptT
+  print $ test3 @ExceptT'
+  print $ mrgFmap (\case; (Left AssertViolation) -> conc @SymBool True; _ -> conc False) $ runExceptT test3
+  print $ mrgFmap (\case; (Either' (Left AssertViolation)) -> conc @SymBool True; _ -> conc False) $ runExceptT' test3
