@@ -63,6 +63,8 @@ sketch = genSym (ListSpec 0 2 (ExprSpec 2 1)) "a"
 
 main :: IO ()
 main = do
+  omg
+  -- print "omg"
   m <- solveWith (UnboundedReasoning z3 {verbose = True}) $ case checkAndInterpretStmtUListU (toSym p1) of
     ExceptT u -> case mrgFmap
       ( \case

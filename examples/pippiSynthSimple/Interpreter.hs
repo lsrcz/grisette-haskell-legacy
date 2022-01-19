@@ -5,7 +5,7 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
 
-module Interpreter where
+module PippiInterpreter where
 
 import Control.Monad.Except
 import Control.Monad.State
@@ -42,6 +42,23 @@ data OpsExpr
   | NotExpr (UnionM Expr)
   | VarExpr SymInteger
   deriving (Generic, Show)
+
+-- COORDINATE STUFF
+data Coord = [Int, Int]
+
+data MovementExpr 
+   = Coord coord
+   | Movement movement coord
+   deriving (Generic, Show)
+
+data Movement 
+   = MoveUp    (UnionM MovementExpr)
+   = MoveDown  (UnionM MovementExpr)
+   = MoveLeft  (UnionM MovementExpr)
+   = MoveRight (UnionM MovementExpr)
+
+omg
+
 
 data ExprSpec = ExprSpec
   { exprDepth :: Integer,

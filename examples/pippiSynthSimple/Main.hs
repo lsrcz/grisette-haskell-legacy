@@ -15,7 +15,7 @@ import Grisette.Data.Functor
 import Grisette.Data.SMT.Config
 import Grisette.Data.SMT.Solving
 import Grisette.Data.SymPrim
-import Interpreter
+import PippiInterpreter
 import Grisette.Data.Class.ToSym
 
 -- ?ident:a
