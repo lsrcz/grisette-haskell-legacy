@@ -17,11 +17,15 @@ import Grisette.Data.SMT.Solving
 import Grisette.Data.SymPrim
 import Interpreter
 
+-- equivalent to 
+--        `a`   hole for identifier to fill in
 p1 :: [Stmt]
 p1 =
   [ ValueStmt $ mrgSingle $ Ops $ VarExpr $ ssymb "a"
   ]
 
+-- equivalent to 
+--        `and True False`
 p2 :: [Stmt]
 p2 =
   [ ValueStmt $
@@ -30,6 +34,9 @@ p2 =
           AndExpr (mrgSingle $ Lit $ BoolLit $ conc True) (mrgSingle $ Lit $ BoolLit $ conc False)
   ]
 
+-- equivalent to 
+--        `var a = symb boolean`
+--        `c`
 p3 :: [Stmt]
 p3 =
   [ DefineStmt (ssymb "a") $
@@ -57,3 +64,18 @@ main = do
       print $ symeval False mm sketch
       print $ symeval True mm sketch
     Left _ -> print "Verified"
+
+{-
+  ?iden:a
+
+  var x = ...
+  var y = ...
+  var z = ...
+  var w = ?iden:a
+  return ?iden:a + ?iden:b
+
+  check:
+      * give you that it's possible (ex: p1) - return exceptT with no such variable
+      * add condition 
+      * passes unconditionally
+-}
