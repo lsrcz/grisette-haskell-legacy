@@ -28,4 +28,9 @@
 
 gramar: moveUp e, moveLeft e, moveRight e, moveLeft e
 
+
+
+errors: 
+
+
 -}

@@ -43,5 +43,8 @@ executables:
   location:
     source-dirs: location
     main: Main.hs
+  pippi-synth-simple:
+    source-dirs: pippi-synth-simple
+    main: Main.hs
 
 

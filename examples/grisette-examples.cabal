@@ -49,34 +49,6 @@ executable expr-interpreter
     , utf8-string
   default-language: Haskell2010
 
-executable pippiSynthSimple
-  main-is: Main.hs
-  other-modules:
-      Interpreter
-      Paths_grisette_examples
-  hs-source-dirs:
-      pippiSynthSimple
-  ghc-options: -Wall -ferror-spans -O2
-  build-depends:
-      MemoTrie
-    , base >4.7 && <5
-    , bytestring
-    , grisette-core
-    , grisette-smt
-    , grisette-symprim
-    , hashable
-    , loch-th
-    , monad-coroutine
-    , monad-memo
-    , mtl
-    , regex-base
-    , regex-pcre
-    , sbv
-    , template-haskell
-    , transformers
-    , utf8-string
-  default-language: Haskell2010
-
 executable location
   main-is: Main.hs
   other-modules:
@@ -112,6 +84,34 @@ executable order
       Paths_grisette_examples
   hs-source-dirs:
       order
+  ghc-options: -Wall -ferror-spans -O2
+  build-depends:
+      MemoTrie
+    , base >4.7 && <5
+    , bytestring
+    , grisette-core
+    , grisette-smt
+    , grisette-symprim
+    , hashable
+    , loch-th
+    , monad-coroutine
+    , monad-memo
+    , mtl
+    , regex-base
+    , regex-pcre
+    , sbv
+    , template-haskell
+    , transformers
+    , utf8-string
+  default-language: Haskell2010
+
+executable pippi-synth-simple
+  main-is: Main.hs
+  other-modules:
+      PippiInterpreter
+      Paths_grisette_examples
+  hs-source-dirs:
+      pippi-synth-simple
   ghc-options: -Wall -ferror-spans -O2
   build-depends:
       MemoTrie
