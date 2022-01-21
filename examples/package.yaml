@@ -43,5 +43,8 @@ executables:
   location:
     source-dirs: location
     main: Main.hs
+  genfunc:
+    source-dirs: genfunc
+    main: Main.hs
 
 
