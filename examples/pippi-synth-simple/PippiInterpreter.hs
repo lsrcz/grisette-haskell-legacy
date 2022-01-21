@@ -30,20 +30,29 @@ import Grisette.Data.Class.ToSym
 data MovingExpr 
    = Coord CoordExpr
    | Moving MovingOpExpr
-   deriving (Generic, Show)
+   deriving (Generic)
 
-instance Mergeable (SymBool) MovingExpr
+instance Show MovingExpr where
+  show (Coord c) = show c 
+  show (Moving op) = show op
+
+instance Mergeable SymBool MovingExpr
 instance ToSym MovingExpr MovingExpr
 instance SymEval Model MovingExpr
 
 data CoordExpr 
   = CoordLit SymInteger SymInteger
   | UnitLit
-  deriving (Generic, Show)
+  deriving (Generic)
 
-instance Mergeable (SymBool) CoordExpr
+instance Show CoordExpr where
+  show (CoordLit x y) = "Coord {x: " ++ (show x) ++ ", y: " ++ (show y) ++ ")"
+  show UnitLit = "UnitLit"
+
+instance Mergeable SymBool CoordExpr
 instance ToSym CoordExpr CoordExpr
 instance SymEval Model CoordExpr
+instance SEq (Sym Bool) CoordExpr
 
 data MovingOpExpr
    = MoveUp    (UnionM MovingExpr)
@@ -51,18 +60,29 @@ data MovingOpExpr
    | MoveLeft  (UnionM MovingExpr)
    | MoveRight (UnionM MovingExpr)
    | MovingVarExpr   SymInteger
-   deriving (Generic, Show)
+   deriving (Generic)
 
-instance Mergeable (SymBool) MovingOpExpr
+instance Show MovingOpExpr where 
+  show (MovingVarExpr name) = show name
+  show (MoveUp e) = "MoveUp (" ++ show e ++ ")"
+  show (MoveDown e) = "MoveDown (" ++ show e ++ ")"
+  show (MoveLeft e) = "MoveLeft (" ++ show e ++ ")"
+  show (MoveRight e) = "MoveRight (" ++ show e ++ ")"
+
+instance Mergeable SymBool MovingOpExpr
 instance ToSym MovingOpExpr MovingOpExpr
 instance SymEval Model MovingOpExpr
 
 data MovingStmt
   = MovingDefineStmt SymInteger (UnionM MovingExpr)
   | MovingValueStmt (UnionM MovingExpr)
-  deriving (Generic, Show)
+  deriving (Generic)
 
-instance Mergeable (SymBool) MovingStmt
+instance Show MovingStmt where
+  show (MovingDefineStmt name e) = show name ++ " = " ++ show e 
+  show (MovingValueStmt e) = "return " ++ show e
+
+instance Mergeable SymBool MovingStmt
 instance ToSym MovingStmt MovingStmt
 instance SymEval Model MovingStmt
 
@@ -76,27 +96,27 @@ type ExecutingEnv = [(SymInteger, UnionM CoordExpr)]
 type TypingEnv = [(SymInteger, UnionM MovingType)]
 
 --
--- | SymGen Instances
+-- | SymGen Instances Without Arg
 --
-instance SymGen (SymBool) Integer CoordExpr where
+instance SymGen SymBool Integer CoordExpr where
   genSymIndexed unused = do
     x <- genSymSimpleIndexed @SymBool ()
     y <- genSymSimpleIndexed @SymBool ()
     choose (CoordLit x y) [UnitLit]
 
-instance SymGen (SymBool) MovingExprSpec MovingOpExpr where
+instance SymGen SymBool MovingExprSpec MovingOpExpr where
   genSymIndexed (MovingExprSpec d l) = do
-    l1 <- genSymIndexed (MovingExprSpec (d - 1) l)
+    e <- genSymIndexed (MovingExprSpec (d - 1) l)
     v <- genSymSimpleIndexed @SymBool ()
     choose
-       (MoveUp l1)
-      [ MoveDown l1,
-        MoveLeft l1,
-        MoveRight l1,
+       (MoveUp e)
+      [ MoveDown e,
+        MoveLeft e,
+        MoveRight e,
         MovingVarExpr v
       ]
 
-instance SymGen (SymBool) MovingExprSpec MovingExpr where
+instance SymGen SymBool MovingExprSpec MovingExpr where
   genSymIndexed e@(MovingExprSpec d l) =
     merge
       <$> if d <= 0
@@ -108,12 +128,44 @@ instance SymGen (SymBool) MovingExprSpec MovingExpr where
           moving <- genSymIndexed e
           chooseU (Coord <$> coord) [Moving <$> moving]
 
-instance SymGen (SymBool) MovingExprSpec MovingStmt where
+instance SymGen SymBool MovingExprSpec MovingStmt where
   genSymIndexed e = do
     expr <- genSymIndexed @SymBool e
     vari <- genSymSimpleIndexed @SymBool ()
     choose (MovingDefineStmt vari expr) [MovingValueStmt expr]
 
+--
+-- | SymGen Instances With Arg
+--
+instance SymGen SymBool (MovingExprSpec, CoordExpr) MovingOpExpr where
+  genSymIndexed ((MovingExprSpec d l), arg) = do
+    e <- genSymIndexed ((MovingExprSpec (d - 1) l), arg)
+    v <- genSymSimpleIndexed @SymBool ()
+    choose
+       (MoveUp e)
+      [ MoveDown e,
+        MoveLeft e,
+        MoveRight e,
+        MovingVarExpr v
+      ]
+
+instance SymGen SymBool (MovingExprSpec, CoordExpr) MovingExpr where
+  genSymIndexed (e@(MovingExprSpec d _), arg) =
+    merge
+      <$> if d <= 0
+        then do
+          let coord = toSym arg -- genSymSimpleIndexed @SymBool l
+          return $ Coord <$> coord
+        else do
+          let coord = toSym arg --genSymIndexed l
+          moving <- genSymIndexed (e, arg)
+          chooseU (Coord <$> coord) [Moving <$> moving]
+
+instance SymGen SymBool (MovingExprSpec, CoordExpr) MovingStmt where
+  genSymIndexed (e, arg) = do
+    expr <- genSymIndexed @SymBool (e, arg)
+    vari <- genSymSimpleIndexed @SymBool ()
+    choose (MovingDefineStmt vari expr) [MovingValueStmt expr]
 
 --
 -- | Errors

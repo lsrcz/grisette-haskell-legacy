@@ -30,7 +30,9 @@ gramar: moveUp e, moveLeft e, moveRight e, moveLeft e
 
 
 
-errors: 
+exmaple
 
+  var x = CoordLit a b
+  return x
 
 -}
