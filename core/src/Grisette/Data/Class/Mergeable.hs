@@ -19,7 +19,6 @@ module Grisette.Data.Class.Mergeable
   ( MergeStrategy (..),
     derivedMergeStrategy,
     wrapMergeStrategy,
-    guardWithStrategy,
     Mergeable (..),
     Mergeable1 (..),
     withMergeable,
@@ -35,8 +34,6 @@ import Data.Typeable
 import Generics.Deriving
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.OrphanGeneric ()
-import Grisette.Data.Class.PrimWrapper
-import Grisette.Data.Class.UnionOp
 import Grisette.Data.Class.Utils.CConst
 import Data.Functor.Sum
 import qualified Data.ByteString as B
@@ -57,71 +54,6 @@ wrapMergeStrategy (OrderedStrategy idxFun substrategy) wrap unwrap =
     (idxFun . unwrap)
     (\idx -> wrapMergeStrategy (substrategy idx) wrap unwrap)
 wrapMergeStrategy NoStrategy _ _ = NoStrategy
-
-guardWithStrategy :: (UnionOp bool u) => MergeStrategy bool a -> bool -> u a -> u a -> u a
-guardWithStrategy _ (Conc True) t _ = t
-guardWithStrategy _ (Conc False) _ f = f
-guardWithStrategy strategy cond (GuardU condTrue tt _) f
-  | cond == condTrue = guardWithStrategy strategy cond tt f
-guardWithStrategy strategy cond (GuardU condTrue _ ft) f
-  | nots cond == condTrue || cond == nots condTrue = guardWithStrategy strategy cond ft f
-guardWithStrategy strategy cond t (GuardU condFalse _ ff)
-  | cond == condFalse = guardWithStrategy strategy cond t ff
-guardWithStrategy strategy cond t (GuardU condTrue tf _)
-  | nots cond == condTrue || cond == nots condTrue = guardWithStrategy strategy cond t tf
-guardWithStrategy (SimpleStrategy m) cond (SingleU l) (SingleU r) = SingleU $ m cond l r
-guardWithStrategy strategy@(OrderedStrategy idxFun substrategy) cond ifTrue ifFalse = case (ifTrue, ifFalse) of
-  (SingleU _, SingleU _) -> ssGuard cond ifTrue ifFalse
-  (SingleU _, GuardU {}) -> sgGuard cond ifTrue ifFalse
-  (GuardU {}, SingleU _) -> gsGuard cond ifTrue ifFalse
-  (GuardU {}, GuardU {}) -> ggGuard cond ifTrue ifFalse
-  _ -> undefined
-  where
-    ssGuard cond' ifTrue' ifFalse'
-      | idxt < idxf = GuardU cond' ifTrue' ifFalse'
-      | idxt == idxf = guardWithStrategy (substrategy idxt) cond' ifTrue' ifFalse'
-      | otherwise = guardWithStrategy strategy (nots cond') ifFalse' ifTrue'
-      where
-        idxt = idxFun $ leftMost ifTrue'
-        idxf = idxFun $ leftMost ifFalse'
-    sgGuard cond' ifTrue' ifFalse'@(GuardU condf ft ff)
-      | idxft == idxff = ssGuard cond' ifTrue' ifFalse'
-      | idxt < idxft = GuardU cond' ifTrue' ifFalse'
-      | idxt == idxft = GuardU (cond' ||~ condf) (guardWithStrategy (substrategy idxt) cond' ifTrue' ft) ff
-      | otherwise = guardWithStrategy strategy (nots cond' &&~ condf) ft (guardWithStrategy strategy cond' ifTrue' ff)
-      where
-        idxft = idxFun $ leftMost ft
-        idxff = idxFun $ leftMost ff
-        idxt = idxFun $ leftMost ifTrue'
-    sgGuard _ _ _ = undefined
-    gsGuard cond' ifTrue'@(GuardU condt tt tf) ifFalse'
-      | idxtt == idxtf = ssGuard cond' ifTrue' ifFalse'
-      | idxtt < idxf = GuardU (cond' &&~ condt) tt $ guardWithStrategy strategy cond' tf ifFalse'
-      | idxtt == idxf = GuardU (nots cond' ||~ condt) (guardWithStrategy (substrategy idxf) cond' tt ifFalse') tf
-      | otherwise = GuardU (nots cond') ifFalse' ifTrue'
-      where
-        idxtt = idxFun $ leftMost tt
-        idxtf = idxFun $ leftMost tf
-        idxf = idxFun $ leftMost ifFalse'
-    gsGuard _ _ _ = undefined
-    ggGuard cond' ifTrue'@(GuardU condt tt tf) ifFalse'@(GuardU condf ft ff)
-      | idxtt == idxtf = sgGuard cond' ifTrue' ifFalse'
-      | idxft == idxff = gsGuard cond' ifTrue' ifFalse'
-      | idxtt < idxft = GuardU (cond' &&~ condt) tt $ guardWithStrategy strategy cond' tf ifFalse'
-      | idxtt == idxft =
-        let newCond = ites cond' condt condf
-            newIfTrue = guardWithStrategy (substrategy idxtt) cond' tt ft
-            newIfFalse = guardWithStrategy strategy cond' tf ff
-         in GuardU newCond newIfTrue newIfFalse
-      | otherwise = GuardU (nots cond' &&~ condf) ft $ guardWithStrategy strategy cond' ifTrue' ff
-      where
-        idxtt = idxFun $ leftMost tt
-        idxtf = idxFun $ leftMost tf
-        idxft = idxFun $ leftMost ft
-        idxff = idxFun $ leftMost ff
-    ggGuard _ _ _ = undefined
-guardWithStrategy NoStrategy cond ifTrue ifFalse = GuardU cond ifTrue ifFalse
-guardWithStrategy _ _ _ _ = error "Invariant violated"
 
 class Mergeable bool a where
   mergeStrategy :: MergeStrategy bool a

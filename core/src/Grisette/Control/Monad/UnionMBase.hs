@@ -80,7 +80,7 @@ instance (SymBoolOp bool) => Applicative (UnionMBase bool) where
 
 bindUnion :: SymBoolOp bool => UnionBase bool a -> (a -> UnionMBase bool b) -> UnionMBase bool b
 bindUnion (Single a') f' = f' a'
-bindUnion (Guard _ cond ifTrue ifFalse) f' =
+bindUnion (Guard _ _ cond ifTrue ifFalse) f' =
   guard cond (bindUnion ifTrue f') (bindUnion ifFalse f')
 
 instance (SymBoolOp bool) => Monad (UnionMBase bool) where
@@ -98,12 +98,12 @@ instance SymBoolOp bool => SimpleMergeable1 bool (UnionMBase bool)
 
 instance SymBoolOp bool => UnionMOp bool (UnionMBase bool) where
   merge m@(UMrg _) = m
-  merge m@(UAny ref _) = unsafeDupablePerformIO $
+  merge (UAny ref u) = unsafeDupablePerformIO $
     atomicModifyIORef' ref $ \case
       x@(Right r) -> (x, r)
       Left _ -> (Right r, r)
         where
-          !r = m >>= mrgSingle
+          !r = UMrg $ fullReconstruct mergeStrategy u --m >>= mrgSingle
   {-# NOINLINE merge #-}
   mrgSingle = UMrg . single
   mrgGuard cond l r =
@@ -137,7 +137,7 @@ instance (SymBoolOp bool, ToCon a b, Mergeable bool b) => ToCon (UnionMBase bool
   toCon v = go $ underlyingUnion v
     where
       go (Single x) = mrgSingle <$> toCon x
-      go (Guard _ cond t f) = do
+      go (Guard _ _ cond t f) = do
         t1 <- go t
         f1 <- go f
         return $ guard cond t1 f1
@@ -150,7 +150,7 @@ instance (SymBoolOp bool, Mergeable bool a, SymEval model a, SymEval model bool)
     where
       go :: UnionBase bool a -> UnionMBase bool a
       go (Single v) = mrgSingle $ symeval fillDefault model v
-      go (Guard _ cond t f) =
+      go (Guard _ _ cond t f) =
         mrgGuard
           (symeval fillDefault model cond)
           (go t)
@@ -163,7 +163,7 @@ instance
   extractSymbolics v = go $ underlyingUnion v
     where
       go (Single x) = extractSymbolics x
-      go (Guard _ cond t f) = extractSymbolics cond <> go t <> go f
+      go (Guard _ _ cond t f) = extractSymbolics cond <> go t <> go f
 
 instance (Hashable bool, Hashable a) => Hashable (UnionMBase bool a) where
   s `hashWithSalt` (UAny _ u) = s `hashWithSalt` (0 :: Int) `hashWithSalt` u
