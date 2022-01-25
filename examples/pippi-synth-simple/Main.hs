@@ -39,7 +39,8 @@ e2 = Moving (MoveUp $ mrgSingle $ e1)
 -- | Sketches
 --
 sketchEmpty :: UnionM [UnionM MovingStmt]
-sketchEmpty = genSym (ListSpec 0 2 (MovingExprSpec 2 1)) "a"
+sketchEmpty = genSym (ListSpec 0 2 (MovingExprSpec 2)) "a"
+-- sketchEmpty = genSym (ListSpec 0 2 (MovingExprSpec 2 1)) "a"
 
 {-
   var ?ident:a := CoordLit ?ident:b ?ident:c
@@ -49,7 +50,7 @@ sketchSimple :: UnionM [UnionM MovingStmt]
 sketchSimple = toSym
   [ MovingDefineStmt (ssymb "a") $
       mrgSingle $ Coord $ CoordLit (ssymb "b") (ssymb "c"),
-    MovingValueStmt $ mrgSingle $ Moving $ MovingVarExpr $ ssymb "a"
+    MovingValueStmt $ mrgSingle $ MovingVarExpr $ ssymb "a"
   ]
 
 {-
@@ -71,8 +72,13 @@ sketchWithArg :: UnionM [UnionM MovingStmt]
 sketchWithArg = toSym
   [ MovingDefineStmt (conc 1) $
       mrgSingle $ Coord $ c2,
-    MovingValueStmt $ Moving <$> genSym ((MovingExprSpec 2 1), c2) "b" 
+    -- MovingValueStmt $ Moving <$> genSym ((MovingExprSpec 2 1), c2) "b" 
+    MovingValueStmt $ Moving <$> genSym ((MovingExprSpec 2), c2) "b" 
   ]
+
+-- coord1 = Coord 10 10 
+-- moveUp (moveUp (Coord 1 1))
+-- moveUp (moveUp coord1)
 
 --
 -- | Main
@@ -121,7 +127,7 @@ verifyTypeChecker = do
 
 synthesisAttempt :: IO ()
 synthesisAttempt = do
-  printBeginning "Attemping Synthesis"
+  printBeginning "Attempting Synthesis"
   m <- solveWith (UnboundedReasoning z3 {verbose = doVerbose}) $ case checkAndInterpretStmtUListU sketchSimple of
     ExceptT u -> case mrgFmap
       ( \case
