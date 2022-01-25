@@ -63,11 +63,9 @@ data MovingOpExpr
    | MoveDown  (UnionM MovingExpr)
    | MoveLeft  (UnionM MovingExpr)
    | MoveRight (UnionM MovingExpr)
-  --  | MovingVarExpr   SymInteger -- (conc 1)
    deriving (Generic)
 
 instance Show MovingOpExpr where 
-  -- show (MovingVarExpr name) = show name
   show (MoveUp e) = wrapInParens $ "MoveUp " ++ (wrapInParens $ show e)
   show (MoveDown e) = wrapInParens $ "MoveDown" ++ (wrapInParens $ show e)
   show (MoveLeft e) = wrapInParens $ "MoveLeft" ++ (wrapInParens $ show e)
@@ -78,8 +76,8 @@ instance ToSym MovingOpExpr MovingOpExpr
 instance SymEval Model MovingOpExpr
 
 data MovingStmt
-  = MovingDefineStmt SymInteger (UnionM MovingExpr) -- (conc 1) = ...
-  | MovingValueStmt (UnionM MovingExpr)  -- return $ MovingVarExpr (ssymb "a") (ssymb "b")
+  = MovingDefineStmt SymInteger (UnionM MovingExpr)
+  | MovingValueStmt (UnionM MovingExpr)
   deriving (Generic)
 
 instance Show MovingStmt where
@@ -91,10 +89,7 @@ instance ToSym MovingStmt MovingStmt
 instance SymEval Model MovingStmt
 
 data MovingExprSpec = MovingExprSpec
-  { mvmntExprDepth :: Integer
-  -- { mvmntExprDepth :: Integer,
-    --mvmntExprListLength :: Integer
-  }
+  { mvmntExprDepth :: Integer }
   deriving (Show)
 
 type ExecutingEnv = [(SymInteger, UnionM CoordExpr)]
@@ -110,39 +105,27 @@ instance SymGen SymBool () CoordExpr where
     choose (CoordLit x y) [UnitLit]
 
 instance SymGen SymBool MovingExprSpec MovingOpExpr where
-  -- genSymIndexed (MovingExprSpec d l) = do
   genSymIndexed (MovingExprSpec d) = do
-    -- e <- genSymIndexed (MovingExprSpec (d - 1) l)
     e <- genSymIndexed (MovingExprSpec (d - 1))
-    -- v <- genSymSimpleIndexed @SymBool ()
     choose
        (MoveUp e)
       [ MoveDown e,
         MoveLeft e,
         MoveRight e
-        -- MovingVarExpr v
       ]
 
 instance SymGen SymBool MovingExprSpec MovingExpr where
-  -- genSymIndexed e@(MovingExprSpec d l) =
   genSymIndexed e@(MovingExprSpec d) =
     merge
       <$> if d <= 0
         then do
-          -- coord <- genSymSimpleIndexed @SymBool l
           coord <- genSymSimpleIndexed @SymBool ()
           v <- genSymSimpleIndexed @SymBool ()
           chooseU (Coord <$> coord) [MovingVarExpr <$> v]
-          -- return $ Coord <$> coord
         else do
-          -- coord <- genSymIndexed l
           coord <- genSymIndexed ()
           moving <- genSymIndexed e
           v <- genSymSimpleIndexed @SymBool ()
-          -- coord <- genSymSimpleIndexed @SymBool ()
-          -- v <- genSymSimpleIndexed @SymBool ()
-          -- moving <- genSymSimpleIndexed @SymBool e
-          -- choose (Coord coord) [MovingVarExpr v, Moving moving]
           chooseU (Coord <$> coord) [Moving <$> moving, MovingVarExpr <$> v]
 
 instance SymGen SymBool MovingExprSpec MovingStmt where
@@ -155,31 +138,25 @@ instance SymGen SymBool MovingExprSpec MovingStmt where
 -- | SymGen Instances With Arg
 --
 instance SymGen SymBool (MovingExprSpec, CoordExpr) MovingOpExpr where
-  -- genSymIndexed ((MovingExprSpec d l), arg) = do
   genSymIndexed ((MovingExprSpec d), arg) = do
-    -- e <- genSymIndexed ((MovingExprSpec (d - 1) l), arg)
     e <- genSymIndexed ((MovingExprSpec (d - 1)), arg)
-    -- v <- genSymSimpleIndexed @SymBool ()
     choose
        (MoveUp e)
       [ MoveDown e,
         MoveLeft e,
         MoveRight e
-        -- MovingVarExpr v
       ]
 
 instance SymGen SymBool (MovingExprSpec, CoordExpr) MovingExpr where
-  -- genSymIndexed (e@(MovingExprSpec d _), arg) =
   genSymIndexed (e@(MovingExprSpec d), arg) =
     merge
       <$> if d <= 0
         then do
-          let coord = toSym arg -- genSymSimpleIndexed @SymBool l
-          -- return $ Coord <$> coord
+          let coord = toSym arg
           v <- genSymSimpleIndexed @SymBool ()
           choose (Coord coord) [MovingVarExpr v]
         else do
-          let coord = toSym arg --genSymIndexed l
+          let coord = toSym arg
           moving <- genSymIndexed (e, arg)
           chooseU (Coord <$> coord) [Moving <$> moving]
 
@@ -242,7 +219,6 @@ typeCheck env (Moving (MoveLeft e)) = do
 typeCheck env (Moving (MoveRight e)) = do
   et <- typeCheckU env e
   merge $ if et == CoordType then return CoordType else throwError $ MovingTyper TypeMismatch
--- typeCheck env (Moving (MovingVarExpr i)) = resolveEnv env i
 typeCheck env (MovingVarExpr i) = resolveEnv env i
   where
     resolveEnv [] _ = merge $ throwError $ MovingTyper MovingTypeVarNotFound
@@ -316,7 +292,6 @@ interpret env (Moving (MoveLeft e)) = do
 interpret env (Moving (MoveRight e)) = do
   ev <- interpretU env e
   reduceMoveRight ev
--- interpret env (Moving (MovingVarExpr i)) = reduceValue env i
 interpret env (MovingVarExpr i) = reduceValue env i
 
 interpretStmt :: MovingStmt -> StateT ExecutingEnv (ExceptT MovingError UnionM) CoordExpr
