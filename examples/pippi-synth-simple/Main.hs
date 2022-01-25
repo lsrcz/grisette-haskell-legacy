@@ -20,9 +20,6 @@ import PippiInterpreter
 import Grisette.Data.Class.ToSym
 import Text.Printf
 
--- genSym1 spec name arg = genSym (spec, arg) name
-
-
 --
 -- | Example Expressions
 --
@@ -40,7 +37,6 @@ e2 = Moving (MoveUp $ mrgSingle $ e1)
 --
 sketchEmpty :: UnionM [UnionM MovingStmt]
 sketchEmpty = genSym (ListSpec 0 2 (MovingExprSpec 2)) "a"
--- sketchEmpty = genSym (ListSpec 0 2 (MovingExprSpec 2 1)) "a"
 
 {-
   var ?ident:a := CoordLit ?ident:b ?ident:c
@@ -72,7 +68,6 @@ sketchWithArg :: UnionM [UnionM MovingStmt]
 sketchWithArg = toSym
   [ MovingDefineStmt (conc 1) $
       mrgSingle $ Coord $ c2,
-    -- MovingValueStmt $ Moving <$> genSym ((MovingExprSpec 2 1), c2) "b" 
     MovingValueStmt $ Moving <$> genSym ((MovingExprSpec 2), c2) "b" 
   ]
 
