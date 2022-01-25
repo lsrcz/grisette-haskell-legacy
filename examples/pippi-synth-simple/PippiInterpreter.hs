@@ -99,7 +99,7 @@ type TypingEnv = [(SymInteger, UnionM MovingType)]
 -- | SymGen Instances Without Arg
 --
 instance SymGen SymBool () CoordExpr where
-  genSymIndexed unused = do
+  genSymIndexed _ = do
     x <- genSymSimpleIndexed @SymBool ()
     y <- genSymSimpleIndexed @SymBool ()
     choose (CoordLit x y) [UnitLit]
