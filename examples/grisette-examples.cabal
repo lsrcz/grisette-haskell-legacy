@@ -49,6 +49,33 @@ executable expr-interpreter
     , utf8-string
   default-language: Haskell2010
 
+executable genfunc
+  main-is: Main.hs
+  other-modules:
+      Paths_grisette_examples
+  hs-source-dirs:
+      genfunc
+  ghc-options: -Wall -ferror-spans -O2
+  build-depends:
+      MemoTrie
+    , base >4.7 && <5
+    , bytestring
+    , grisette-core
+    , grisette-smt
+    , grisette-symprim
+    , hashable
+    , loch-th
+    , monad-coroutine
+    , monad-memo
+    , mtl
+    , regex-base
+    , regex-pcre
+    , sbv
+    , template-haskell
+    , transformers
+    , utf8-string
+  default-language: Haskell2010
+
 executable location
   main-is: Main.hs
   other-modules:

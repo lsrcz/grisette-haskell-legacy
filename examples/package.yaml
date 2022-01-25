@@ -46,5 +46,8 @@ executables:
   pippi-synth-simple:
     source-dirs: pippi-synth-simple
     main: Main.hs
+  genfunc:
+    source-dirs: genfunc
+    main: Main.hs
 
 
