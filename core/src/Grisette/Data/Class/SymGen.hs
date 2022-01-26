@@ -25,6 +25,7 @@ module Grisette.Data.Class.SymGen
     chooseU,
     runSymGenIndexed,
     ListSpec (..),
+    SimpleListSpec (..),
   )
 where
 
@@ -360,6 +361,33 @@ instance
   where
   genSymSimpleIndexed v = genSymIndexedWithDerivedSameShape @bool v
 
+data SimpleListSpec spec = SimpleListSpec
+  { genSimpleListLength :: Integer,
+    genSimpleListSubSpec :: spec
+  } deriving (Show)
+
+instance
+  (SymBoolOp bool, SymGenSimple bool () bool, SymGenSimple bool spec a, Mergeable bool a) =>
+  SymGen bool (SimpleListSpec spec) [a] where
+  genSymIndexed = fmap mrgSingle . genSymSimpleIndexed @bool
+
+instance
+  (SymBoolOp bool, SymGenSimple bool () bool, SymGenSimple bool spec a, Mergeable bool a) =>
+  SymGenSimple bool (SimpleListSpec spec) [a]
+  where
+  genSymSimpleIndexed (SimpleListSpec len subSpec) =
+    if len < 0
+      then error $ "Bad lengthes: " ++ show len
+      else do
+        gl len
+    where
+      gl :: Integer -> State (Int, String) [a]
+      gl currLen
+        | currLen <= 0 = return []
+        | otherwise = do
+          l <- genSymSimpleIndexed @bool subSpec
+          r <- gl (currLen - 1)
+          return $ l : r
 -- (,)
 instance
   ( SymBoolOp bool,
