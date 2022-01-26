@@ -6,7 +6,8 @@
 {-# LANGUAGE ViewPatterns #-}
 
 module Grisette.Data.Prim.Integer
-  ( pattern IntegerConcTerm,
+  ( integerConcTermView,
+    pattern IntegerConcTerm,
     pattern IntegerTerm,
     DivI (..),
     divi,

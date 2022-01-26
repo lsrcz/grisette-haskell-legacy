@@ -42,6 +42,15 @@ import Data.Maybe
 import Data.Typeable
 import Grisette.Data.Prim.Helpers
 import Grisette.Data.Prim.InternedTerm
+import {-# SOURCE #-} Grisette.Data.Prim.Integer
+import {-# SOURCE #-} Grisette.Data.Prim.Num
+
+pattern IntegerConcTerm :: Integer -> Term a
+pattern IntegerConcTerm b <- (integerConcTermView -> Just b)
+
+pattern AddNumTerm :: forall b a. (Typeable b) => Num b => Term b -> Term b -> Term a
+pattern AddNumTerm l r <- BinaryTermPatt (AddNum :: AddNum b) l r
+
 
 trueTerm :: Term Bool
 trueTerm = concTerm True
@@ -103,6 +112,8 @@ instance SupportedPrim a => BinaryOp Eqv a a Bool where
     | l == rv = falseTerm
   partialEvalBinary _ (BoolConcTerm l) (BoolConcTerm r) =
     if l == r then trueTerm else falseTerm
+  partialEvalBinary _ (AddNumTerm (IntegerConcTerm c) v) (IntegerConcTerm c2) =
+    eqterm v (concTerm $ c2 - c)
   partialEvalBinary _ l r
     | l == r = trueTerm
     | otherwise = constructBinary Eqv l r
@@ -111,6 +122,53 @@ instance SupportedPrim a => BinaryOp Eqv a a Bool where
 pattern EqvTerm :: (Typeable a) => Term a -> Term a -> Term Bool
 pattern EqvTerm l r <- BinaryTermPatt Eqv l r
 
+impliesTerm :: Term Bool -> Term Bool -> Bool
+impliesTerm TrueTerm _ = True
+impliesTerm _ FalseTerm = True
+impliesTerm (EqvTerm (e1 :: Term Integer) (IntegerConcTerm c1))
+  (NotTerm (EqvTerm (e2 :: Term Integer) (IntegerConcTerm c2)))
+  | e1 == e2 && c1 /= c2 = True
+impliesTerm a b
+  | a == b = True
+  | otherwise = False
+
+orEqFirst :: Term Bool -> Term Bool -> Bool
+orEqFirst _ FalseTerm = True
+orEqFirst (NotTerm (EqvTerm (e1 :: Term Integer) (IntegerConcTerm c1)))
+  (EqvTerm (e2 :: Term Integer) (IntegerConcTerm c2))
+  | e1 == e2 && c1 /= c2 = True
+orEqFirst x y
+  | x == y = True
+  | otherwise = False
+
+orEqTrue :: Term Bool -> Term Bool -> Bool
+orEqTrue TrueTerm _ = True
+orEqTrue _ TrueTerm = True
+orEqTrue (NotTerm e1) (NotTerm e2) = andEqFalse e1 e2
+orEqTrue l r
+  | l == notb r = True
+  | otherwise = False
+
+andEqFirst :: Term Bool -> Term Bool -> Bool
+andEqFirst _ TrueTerm = True
+andEqFirst (EqvTerm (e1 :: Term Integer) (IntegerConcTerm c1))
+  (NotTerm (EqvTerm (e2 :: Term Integer) (IntegerConcTerm c2)))
+  | e1 == e2 && c1 /= c2 = True
+andEqFirst x y
+  | x == y = True
+  | otherwise = False
+
+andEqFalse :: Term Bool -> Term Bool -> Bool
+andEqFalse FalseTerm _ = True
+andEqFalse _ FalseTerm = True
+andEqFalse (NotTerm e1) (NotTerm e2) = orEqTrue e1 e2
+andEqFalse (EqvTerm (e1 :: Term Integer) (IntegerConcTerm c1))
+  (EqvTerm (e2 :: Term Integer) (IntegerConcTerm c2))
+  | e1 == e2 && c1 /= c2 = True
+andEqFalse x y
+  | x == notb y = True
+  | otherwise = False
+
 -- Or
 data Or = Or deriving (Show)
 
@@ -118,16 +176,34 @@ orb :: Term Bool -> Term Bool -> Term Bool
 orb = partialEvalBinary Or
 
 instance BinaryOp Or Bool Bool Bool where
-  partialEvalBinary _ TrueTerm _ = trueTerm
-  partialEvalBinary _ FalseTerm r = r
-  partialEvalBinary _ _ TrueTerm = trueTerm
-  partialEvalBinary _ l FalseTerm = l
   partialEvalBinary _ l r
-    | l == r = l
-  partialEvalBinary _ l (NotTerm nr)
-    | l == nr = trueTerm
-  partialEvalBinary _ (NotTerm nl) r
-    | nl == r = trueTerm
+    | orEqTrue l r = trueTerm
+    | orEqFirst l r = l
+    | orEqFirst r l = r
+  partialEvalBinary _ l r@(OrTerm r1 r2)
+    | orEqTrue l r1 = trueTerm
+    | orEqTrue l r2 = trueTerm
+    | orEqFirst l r1 = orb l r2
+    | orEqFirst l r2 = orb l r1
+    | orEqFirst r1 l = r
+    | orEqFirst r2 l = r
+  partialEvalBinary _ l@(OrTerm l1 l2) r
+    | orEqTrue l1 r = trueTerm
+    | orEqTrue l2 r = trueTerm
+    | orEqFirst l1 r = l
+    | orEqFirst l2 r = l
+    | orEqFirst r l1 = orb l2 r
+    | orEqFirst r l2 = orb l1 r
+  partialEvalBinary _ l (AndTerm r1 r2)
+    | orEqTrue l r1 = orb l r2
+    | orEqTrue l r2 = orb l r1
+    | orEqFirst l r1 = l
+    | orEqFirst l r2 = l
+  partialEvalBinary _ (AndTerm l1 l2) r
+    | orEqTrue l1 r = orb l2 r
+    | orEqTrue l2 r = orb l1 r
+    | orEqFirst r l1 = r
+    | orEqFirst r l2 = r
   partialEvalBinary _ (NotTerm nl) (NotTerm nr) = notb $ andb nl nr
   partialEvalBinary _ l r = constructBinary Or l r
   pformatBinary l r = "(|| " ++ pformat l ++ " " ++ pformat r ++ ")"
@@ -142,16 +218,34 @@ andb :: Term Bool -> Term Bool -> Term Bool
 andb = partialEvalBinary And
 
 instance BinaryOp And Bool Bool Bool where
-  partialEvalBinary _ TrueTerm r = r
-  partialEvalBinary _ FalseTerm _ = falseTerm
-  partialEvalBinary _ l TrueTerm = l
-  partialEvalBinary _ _ FalseTerm = falseTerm
   partialEvalBinary _ l r
-    | l == r = l
-  partialEvalBinary _ l (NotTerm nr)
-    | l == nr = falseTerm
-  partialEvalBinary _ (NotTerm nl) r
-    | nl == r = falseTerm
+    | andEqFalse l r = falseTerm
+    | andEqFirst l r = l
+    | andEqFirst r l = r
+  partialEvalBinary _ l r@(AndTerm r1 r2)
+    | andEqFalse l r1 = falseTerm
+    | andEqFalse l r2 = falseTerm
+    | andEqFirst l r1 = andb l r2
+    | andEqFirst l r2 = andb l r1
+    | andEqFirst r1 l = r
+    | andEqFirst r2 l = r
+  partialEvalBinary _ l@(AndTerm l1 l2) r
+    | andEqFalse l1 r = falseTerm
+    | andEqFalse l2 r = falseTerm
+    | andEqFirst l1 r = l
+    | andEqFirst l2 r = l
+    | andEqFirst r l1 = andb l2 r
+    | andEqFirst r l2 = andb l1 r
+  partialEvalBinary _ l (OrTerm r1 r2)
+    | andEqFalse l r1 = andb l r2
+    | andEqFalse l r2 = andb l r1
+    | andEqFirst l r1 = l
+    | andEqFirst l r2 = l
+  partialEvalBinary _ (OrTerm l1 l2) r
+    | andEqFalse l1 r = andb l2 r
+    | andEqFalse l2 r = andb l1 r
+    | andEqFirst r l1 = r
+    | andEqFirst r l2 = r
   partialEvalBinary _ (NotTerm nl) (NotTerm nr) = notb $ orb nl nr
   partialEvalBinary _ l r = constructBinary And l r
   pformatBinary l r = "(&& " ++ pformat l ++ " " ++ pformat r ++ ")"
@@ -171,8 +265,23 @@ instance (SupportedPrim a) => TernaryOp ITE Bool a a a where
   partialEvalTernary _ cond (NotTerm nifTrue) (NotTerm nifFalse) =
     fromJust $ castTerm $ notb $ partialEvalTernary ITE cond nifTrue nifFalse
   partialEvalTernary _ (NotTerm ncond) ifTrue ifFalse = partialEvalTernary ITE ncond ifFalse ifTrue
-  partialEvalTernary _ (ITETerm cc ct cf) (ITETerm tc tt tf) (ITETerm fc ft ff)
+
+  partialEvalTernary _ (ITETerm cc ct cf) (ITETerm tc tt tf) (ITETerm fc ft ff) -- later
     | cc == tc && cc == fc = iteterm cc (iteterm ct tt ft) (iteterm cf tf ff)
+
+  partialEvalTernary _ cond (ITETerm tc tt tf) ifFalse -- later
+    | cond == tc = iteterm cond tt ifFalse
+    | cond == notb tc = iteterm cond tf ifFalse
+    | tt == ifFalse = iteterm (orb (notb cond) tc) tt tf
+    | tf == ifFalse = iteterm (andb cond tc) tt tf
+
+
+  partialEvalTernary _ cond ifTrue (ITETerm fc ft ff) -- later
+    | cond == fc = iteterm cond ifTrue ff
+    | cond == notb fc = iteterm cond ifTrue ft
+    | ifTrue == ft = iteterm (orb cond fc) ifTrue ff
+    | ifTrue == ff = iteterm (orb cond (notb fc)) ifTrue ft
+
   partialEvalTernary _ cond (AndTerm t1 t2) (AndTerm f1 f2)
     | t1 == f1 = fromJust $ castTerm $ andb t1 $ iteterm cond t2 f2
     | t1 == f2 = fromJust $ castTerm $ andb t1 $ iteterm cond t2 f1
@@ -196,6 +305,79 @@ instance (SupportedPrim a) => TernaryOp ITE Bool a a a where
     | Just cond == castTerm ifTrue = iteHelper (orb cond) ifFalse
   partialEvalTernary _ cond ifTrue ifFalse
     | Just cond == castTerm ifFalse = iteHelper (andb cond) ifTrue
+
+  partialEvalTernary _ cond (OrTerm t1 t2) ifFalse
+    | impliesTerm cond t1 = fromJust $ castTerm $ orb cond $ fromJust $ castTerm ifFalse
+    | impliesTerm cond t2 = fromJust $ castTerm $ orb cond $ fromJust $ castTerm ifFalse
+    | impliesTerm cond (notb t1) = fromJust $ castTerm $ iteterm cond t2 $ fromJust $ castTerm ifFalse
+    | impliesTerm cond (notb t2) = fromJust $ castTerm $ iteterm cond t1 $ fromJust $ castTerm ifFalse
+  {-partialEvalTernary _ cond (OrTerm (NotTerm t1) t2) ifFalse
+    | impliesTerm cond t1 = fromJust $ castTerm $ iteterm cond t2 $ fromJust $ castTerm ifFalse
+  partialEvalTernary _ cond (OrTerm t1 (NotTerm t2)) ifFalse
+    | impliesTerm cond t2 = fromJust $ castTerm $ iteterm cond t1 $ fromJust $ castTerm ifFalse-}
+
+  partialEvalTernary _ cond (AndTerm t1 t2) ifFalse
+    | impliesTerm cond t1 = fromJust $ castTerm $ iteterm cond t2 $ fromJust $ castTerm ifFalse
+    | impliesTerm cond t2 = fromJust $ castTerm $ iteterm cond t1 $ fromJust $ castTerm ifFalse
+    | impliesTerm cond (notb t1) = fromJust $ castTerm $ andb (notb cond) $ fromJust $ castTerm ifFalse
+    | impliesTerm cond (notb t2) = fromJust $ castTerm $ andb (notb cond) $ fromJust $ castTerm ifFalse
+    {-
+  partialEvalTernary _ cond (AndTerm (NotTerm t1) _) ifFalse
+    | impliesTerm cond t1 = fromJust $ castTerm $ andb (notb cond) $ fromJust $ castTerm ifFalse
+  partialEvalTernary _ cond (AndTerm _ (NotTerm t2)) ifFalse
+    | impliesTerm cond t2 = fromJust $ castTerm $ andb (notb cond) $ fromJust $ castTerm ifFalse
+    -}
+    {-
+  partialEvalTernary _ cond (AndTerm (ITETerm tc t1 t2) t3) ifFalse
+    | impliesTerm cond tc = iteterm cond (fromJust $ castTerm $ andb t1 t3) ifFalse
+  partialEvalTernary _ cond (AndTerm t1 (ITETerm tc t2 t3)) ifFalse
+    | impliesTerm cond tc = iteterm cond (fromJust $ castTerm $ andb t1 t2) ifFalse
+    -}
+  
+  partialEvalTernary _ cond (NotTerm (AndTerm t1 t2)) ifFalse
+    | impliesTerm cond t1 = fromJust $ castTerm $ iteterm cond (notb t2) $ fromJust $ castTerm ifFalse
+    | impliesTerm cond t2 = fromJust $ castTerm $ iteterm cond (notb t1) $ fromJust $ castTerm ifFalse
+    | impliesTerm cond (notb t1) || impliesTerm cond (notb t2) = fromJust $ castTerm $ orb cond $ fromJust $ castTerm ifFalse
+  partialEvalTernary _ cond (NotTerm (OrTerm t1 t2)) ifFalse
+    | impliesTerm cond t1 || impliesTerm cond t2 = fromJust $ castTerm $ andb (notb cond) $ fromJust $ castTerm ifFalse
+    | impliesTerm cond (notb t1) = fromJust $ castTerm $ iteterm cond (notb t2) $ fromJust $ castTerm ifFalse
+    | impliesTerm cond (notb t2) = fromJust $ castTerm $ iteterm cond (notb t1) $ fromJust $ castTerm ifFalse
+    {-
+  partialEvalTernary _ cond (OrTerm (NotTerm t1) t2) ifFalse
+    | cond == t1 = fromJust $ castTerm $ iteterm cond t2 (fromJust $ castTerm ifFalse)
+  partialEvalTernary _ cond (OrTerm t1 (NotTerm t2)) ifFalse
+    | cond == t2 = fromJust $ castTerm $ iteterm cond t1 (fromJust $ castTerm ifFalse)
+
+  partialEvalTernary _ cond (OrTerm t1 t2) ifFalse
+    | cond == t1 = fromJust $ castTerm $ orb cond (fromJust $ castTerm ifFalse)
+    | cond == t2 = fromJust $ castTerm $ orb cond (fromJust $ castTerm ifFalse)
+  partialEvalTernary _ cond (AndTerm t1 t2) ifFalse
+    | cond == t1 = fromJust $ castTerm $ iteterm cond t2 (fromJust $ castTerm ifFalse)
+    | cond == t2 = fromJust $ castTerm $ iteterm cond t1 (fromJust $ castTerm ifFalse)
+    -}
+{-
+  partialEvalTernary _ cond@(EqvTerm (ea :: Term Integer) (IntegerConcTerm c))
+    (OrTerm (EqvTerm (eb :: Term Integer) (IntegerConcTerm c2)) t2) ifFalse
+    | ea == eb && c /= c2 = fromJust $ castTerm $ iteterm cond t2 (fromJust $ castTerm ifFalse)
+  partialEvalTernary _ cond@(EqvTerm (ea :: Term Integer) (IntegerConcTerm c))
+    (OrTerm t2 (EqvTerm (eb :: Term Integer) (IntegerConcTerm c2))) ifFalse
+    | ea == eb && c /= c2 = fromJust $ castTerm $ iteterm cond t2 (fromJust $ castTerm ifFalse)
+
+  partialEvalTernary _ cond@(EqvTerm (ea :: Term Integer) (IntegerConcTerm c))
+    (OrTerm (NotTerm (EqvTerm (eb :: Term Integer) (IntegerConcTerm c2))) t2) ifFalse
+    | ea == eb && c /= c2 = fromJust $ castTerm $ orb cond (fromJust $ castTerm ifFalse)
+  partialEvalTernary _ cond@(EqvTerm (ea :: Term Integer) (IntegerConcTerm c))
+    (OrTerm t2 (NotTerm (EqvTerm (eb :: Term Integer) (IntegerConcTerm c2)))) ifFalse
+    | ea == eb && c /= c2 = fromJust $ castTerm $ orb cond (fromJust $ castTerm ifFalse)
+    -}
+
+  partialEvalTernary _ cond@(EqvTerm (ea :: Term Integer) (IntegerConcTerm c))
+    (ITETerm (EqvTerm (eb :: Term Integer) (IntegerConcTerm c2)) _ t2) ifFalse
+    | ea == eb && c /= c2 = fromJust $ castTerm $ iteterm cond t2 (fromJust $ castTerm ifFalse)
+  partialEvalTernary _ cond@(EqvTerm (ea :: Term Integer) (IntegerConcTerm c))
+    (ITETerm (NotTerm (EqvTerm (eb :: Term Integer) (IntegerConcTerm c2))) t1 _) ifFalse
+    | ea == eb && c /= c2 = fromJust $ castTerm $ iteterm cond t1 (fromJust $ castTerm ifFalse)
+
   partialEvalTernary _ cond ifTrue ifFalse = constructTernary ITE cond ifTrue ifFalse
   pformatTernary cond l r = "(ite " ++ pformat cond ++ " " ++ pformat l ++ " " ++ pformat r ++ ")"
 
