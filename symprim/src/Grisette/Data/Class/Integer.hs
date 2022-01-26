@@ -33,4 +33,4 @@ class SignedQuotRem bool a where
   quots :: (MonadError e uf, Monad uf, UnionMOp bool uf, TransformError ArithException e) => a -> a -> uf a
   rems :: (MonadError e uf, Monad uf, UnionMOp bool uf, TransformError ArithException e) => a -> a -> uf a
 
-class (Num a, SEq bool a, SOrd bool a) => SymIntegerOp bool a
+class (Num a, SEq bool a, SOrd bool a, PrimWrapper a Integer) => SymIntegerOp bool a
