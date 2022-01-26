@@ -5,7 +5,7 @@
 {-# LANGUAGE UndecidableSuperClasses #-}
 
 module Grisette.Data.Class.Integer
-  ( ArithError (..),
+  ( ArithException (..),
     SignedDivMod (..),
     UnsignedDivMod (..),
     SignedQuotRem (..),
@@ -18,22 +18,19 @@ import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Error
 import Grisette.Data.Class.SOrd
 import Grisette.Data.Class.SimpleMergeable
-
-data ArithError = DivByZeroError deriving (Show)
-
-instance TransformError ArithError () where
-  transformError _ = ()
+import Grisette.Data.Class.PrimWrapper
+import Control.Exception
 
 class SignedDivMod bool a where
-  divs :: (MonadError e uf, Monad uf, UnionMOp bool uf, TransformError ArithError e) => a -> a -> uf a
-  mods :: (MonadError e uf, Monad uf, UnionMOp bool uf, TransformError ArithError e) => a -> a -> uf a
+  divs :: (MonadError e uf, Monad uf, UnionMOp bool uf, TransformError ArithException e) => a -> a -> uf a
+  mods :: (MonadError e uf, Monad uf, UnionMOp bool uf, TransformError ArithException e) => a -> a -> uf a
 
 class UnsignedDivMod bool a where
-  udivs :: (MonadError e uf, Monad uf, UnionMOp bool uf, TransformError ArithError e) => a -> a -> uf a
-  umods :: (MonadError e uf, Monad uf, UnionMOp bool uf, TransformError ArithError e) => a -> a -> uf a
+  udivs :: (MonadError e uf, Monad uf, UnionMOp bool uf, TransformError ArithException e) => a -> a -> uf a
+  umods :: (MonadError e uf, Monad uf, UnionMOp bool uf, TransformError ArithException e) => a -> a -> uf a
 
 class SignedQuotRem bool a where
-  quots :: (MonadError e uf, Monad uf, UnionMOp bool uf, TransformError ArithError e) => a -> a -> uf a
-  rems :: (MonadError e uf, Monad uf, UnionMOp bool uf, TransformError ArithError e) => a -> a -> uf a
+  quots :: (MonadError e uf, Monad uf, UnionMOp bool uf, TransformError ArithException e) => a -> a -> uf a
+  rems :: (MonadError e uf, Monad uf, UnionMOp bool uf, TransformError ArithException e) => a -> a -> uf a
 
 class (Num a, SEq bool a, SOrd bool a) => SymIntegerOp bool a

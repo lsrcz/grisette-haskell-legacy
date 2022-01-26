@@ -25,8 +25,8 @@ instance (SymBoolOp bool) => Mergeable bool StringError where
 instance (SymBoolOp bool) => SEq bool StringError where
   l ==~ r = conc $ l == r
 
-instance TransformError ArithError StringError where
-  transformError DivByZeroError = StringError "DivByZero"
+instance TransformError ArithException StringError where
+  transformError = StringError . show
 
 instance ToSym StringError StringError where
   toSym = id

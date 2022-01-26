@@ -155,13 +155,13 @@ instance SignedDivMod (Sym Bool) (Sym Integer) where
     withSimpleMergeableU @(Sym Bool) $
       mrgIf @(Sym Bool)
         (rs ==~ conc 0)
-        (throwError $ transformError DivByZeroError)
+        (throwError $ transformError DivideByZero)
         (mrgReturn $ Sym $ divi l r)
   mods (Sym l) rs@(Sym r) =
     withSimpleMergeableU @(Sym Bool) $
       mrgIf @(Sym Bool)
         (rs ==~ conc 0)
-        (throwError $ transformError DivByZeroError)
+        (throwError $ transformError DivideByZero)
         (mrgReturn $ Sym $ modi l r)
 
 instance SOrd (Sym Bool) (Sym Integer) where
