@@ -14,6 +14,7 @@ dependencies:
 - grisette-core
 - grisette-symprim
 - grisette-smt
+- grisette-lifted
 - mtl
 - transformers
 - sbv
@@ -45,6 +46,9 @@ executables:
     main: Main.hs
   genfunc:
     source-dirs: genfunc
+    main: Main.hs
+  fluidics:
+    source-dirs: fluidics
     main: Main.hs
 
 

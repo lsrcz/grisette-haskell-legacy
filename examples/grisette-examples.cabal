@@ -34,6 +34,35 @@ executable expr-interpreter
     , base >4.7 && <5
     , bytestring
     , grisette-core
+    , grisette-lifted
+    , grisette-smt
+    , grisette-symprim
+    , hashable
+    , loch-th
+    , monad-coroutine
+    , monad-memo
+    , mtl
+    , regex-base
+    , regex-pcre
+    , sbv
+    , template-haskell
+    , transformers
+    , utf8-string
+  default-language: Haskell2010
+
+executable fluidics
+  main-is: Main.hs
+  other-modules:
+      Paths_grisette_examples
+  hs-source-dirs:
+      fluidics
+  ghc-options: -Wall -ferror-spans -O2
+  build-depends:
+      MemoTrie
+    , base >4.7 && <5
+    , bytestring
+    , grisette-core
+    , grisette-lifted
     , grisette-smt
     , grisette-symprim
     , hashable
@@ -61,6 +90,7 @@ executable genfunc
     , base >4.7 && <5
     , bytestring
     , grisette-core
+    , grisette-lifted
     , grisette-smt
     , grisette-symprim
     , hashable
@@ -90,6 +120,7 @@ executable location
     , base >4.7 && <5
     , bytestring
     , grisette-core
+    , grisette-lifted
     , grisette-smt
     , grisette-symprim
     , hashable
@@ -117,6 +148,7 @@ executable order
     , base >4.7 && <5
     , bytestring
     , grisette-core
+    , grisette-lifted
     , grisette-smt
     , grisette-symprim
     , hashable
@@ -144,6 +176,7 @@ executable regex
     , base >4.7 && <5
     , bytestring
     , grisette-core
+    , grisette-lifted
     , grisette-smt
     , grisette-symprim
     , hashable
