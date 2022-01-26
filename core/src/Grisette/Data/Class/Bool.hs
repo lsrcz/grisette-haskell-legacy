@@ -20,6 +20,7 @@ import Control.Monad.Except
 import Control.Monad.Trans.Maybe
 import Generics.Deriving
 import Grisette.Data.Class.PrimWrapper
+import qualified Data.ByteString as B
 
 class (SymBoolOp bool) => SEq' bool f where
   (==~~) :: f a -> f a -> bool
@@ -97,3 +98,7 @@ instance (SymBoolOp bool, SEq bool (m (Maybe a))) => SEq bool (MaybeT m a) where
 
 -- (,)
 instance (SymBoolOp bool, SEq bool a, SEq bool b) => SEq bool (a, b)
+
+-- ByteString
+instance (SymBoolOp bool) => SEq bool B.ByteString where
+  l ==~ r = conc $ l == r
