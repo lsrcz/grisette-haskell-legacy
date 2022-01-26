@@ -16,7 +16,8 @@ import Grisette.Data.Functor
 import Grisette.Data.SMT.Config
 import Grisette.Data.SMT.Solving
 import Grisette.Data.SymPrim
-import PippiInterpreter
+-- import PippiInterpreter
+import PippiInterpreter2
 import Grisette.Data.Class.ToSym
 import Text.Printf
 
@@ -71,19 +72,33 @@ sketchWithArg = toSym
     MovingValueStmt $ Moving <$> genSym ((MovingExprSpec 2), c2) "b" 
   ]
 
--- coord1 = Coord 10 10 
--- moveUp (moveUp (Coord 1 1))
--- moveUp (moveUp coord1)
+
+
+-- Sirui Argument Trial 
+-- genSketch :: ListSpec Int -> String -> Coord -> UnionM [UnionM Move]
+-- genSketch (ListSpec minl maxl sub) name coord = genSym (ListSpec minl maxl (sub, coord)) name
+
+genSketchBetter :: ListSpec MovingExprSpec -> String -> CoordExpr -> UnionM [UnionM MovingExpr]
+genSketchBetter (ListSpec minl maxl movingSpec) = genSymSimple @SymBool (ListSpec minl maxl movingSpec)
+
+-- sketch :: Coord -> UnionM [UnionM Move]
+-- sketch = genSketch (ListSpec 0 1 (MovingExprSpec 1)) "a"
+
+sketch1 :: CoordExpr -> UnionM [UnionM MovingExpr]
+sketch1 = genSketchBetter (ListSpec 0 1 (MovingExprSpec 1)) "a"
+
+
 
 --
 -- | Main
 --
 main :: IO ()
 main = do
-  printingVars
+  -- printingVars
   -- verifyTypeChecker
-  synthesisAttempt
+  -- synthesisAttempt
   -- print sketchWithArg
+  sketchArgumentTrial
 
 --
 -- | Tasks
@@ -139,6 +154,14 @@ synthesisAttempt = do
     Left _ -> print "Couldn't find solution :("
   printEnd
 
+sketchArgumentTrial :: IO ()
+sketchArgumentTrial = do
+  printBeginning "Attempting Sketch Argument"
+  -- print $ sketch (Coord (conc 0) (conc 0))
+  -- print $ sketch (genSymSimple @SymBool () "coord")
+  print $ sketch1 (CoordLit (conc 0) (conc 0))
+  print $ sketch1 <$> genSym @SymBool () "coord"
+  printEnd
 
 --
 -- | Printing

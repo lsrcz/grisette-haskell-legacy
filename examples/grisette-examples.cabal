@@ -136,6 +136,7 @@ executable pippi-synth-simple
   main-is: Main.hs
   other-modules:
       PippiInterpreter
+      PippiInterpreter2
       Paths_grisette_examples
   hs-source-dirs:
       pippi-synth-simple
