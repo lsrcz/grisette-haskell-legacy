@@ -32,6 +32,7 @@ resolver:
 packages:
   - symprim
   - core
+  - lifted
   - examples
   - smt
   - scratch

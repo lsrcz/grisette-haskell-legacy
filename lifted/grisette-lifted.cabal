@@ -1,0 +1,38 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.34.4.
+--
+-- see: https://github.com/sol/hpack
+
+name:           grisette-lifted
+version:        0.1.0.0
+synopsis:       Lifted base functions
+description:    Lifted base functions
+category:       Formal Methods, Theorem Provers, Symbolic Computation, SMT
+homepage:       https://github.com/lsrcz/grisette-haskell#readme
+bug-reports:    https://github.com/lsrcz/grisette-haskell/issues
+author:         Sirui Lu
+maintainer:     siruilu@uw.edu
+copyright:      2021 Sirui Lu
+license:        BSD3
+build-type:     Simple
+
+source-repository head
+  type: git
+  location: https://github.com/lsrcz/grisette-haskell
+
+library
+  exposed-modules:
+      Grisette.Data.List
+  other-modules:
+      Paths_grisette_lifted
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -ferror-spans -O2
+  build-depends:
+      base >4.7 && <5
+    , grisette-core
+    , grisette-symprim
+    , mtl
+    , transformers
+  default-language: Haskell2010

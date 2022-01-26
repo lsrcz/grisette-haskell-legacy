@@ -1,0 +1,22 @@
+name: grisette-lifted
+version: 0.1.0.0
+synopsis: Lifted base functions
+description: Lifted base functions
+category: Formal Methods, Theorem Provers, Symbolic Computation, SMT
+author: "Sirui Lu"
+maintainer: siruilu@uw.edu
+license: BSD3
+github: lsrcz/grisette-haskell
+copyright: "2021 Sirui Lu"
+
+dependencies:
+- base > 4.7 && < 5
+- grisette-core
+- grisette-symprim
+- transformers
+- mtl
+
+library:
+  source-dirs: src
+  ghc-options: -Wall -ferror-spans -O2
+
