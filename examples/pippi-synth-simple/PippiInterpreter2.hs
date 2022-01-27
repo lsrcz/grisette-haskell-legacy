@@ -205,7 +205,8 @@ instance SymGenSimple SymBool MovingExprSpec (CoordExpr -> UnionM MovingExpr) wh
         then do
           v <- genSymSimpleIndexed @SymBool ()
 
-          r <- choose (mrgSingle . Coord) [mrgSingle . MovingVarExpr . v]
+          r <- choose (mrgSingle . Coord) 
+                      [mrgSingle . MovingVarExpr . v]
           return $ getSingle @SymBool r
 
         else do

@@ -85,9 +85,14 @@ genSketchBetter (ListSpec minl maxl movingSpec) = genSymSimple @SymBool (ListSpe
 -- sketch = genSketch (ListSpec 0 1 (MovingExprSpec 1)) "a"
 
 sketch1 :: CoordExpr -> UnionM [UnionM MovingExpr]
-sketch1 = genSketchBetter (ListSpec 0 1 (MovingExprSpec 1)) "a"
+sketch1 = genSketchBetter (ListSpec 0 1 (MovingExprSpec 2)) "a"
 
+-- let arg = genSym @SymBool () "coord" :: UnionM CoordExpr
 
+-- fullArgSketch :: UnionM [UnionM MovingStmt]
+-- fullArgSketch = toSym
+--   [ MovingValueStmt $ (sketch1 <$> genSym @SymBool () "coord")
+--   ]
 
 --
 -- | Main
@@ -99,6 +104,11 @@ main = do
   -- synthesisAttempt
   -- print sketchWithArg
   sketchArgumentTrial
+
+
+
+
+
 
 --
 -- | Tasks
@@ -154,13 +164,44 @@ synthesisAttempt = do
     Left _ -> print "Couldn't find solution :("
   printEnd
 
+
 sketchArgumentTrial :: IO ()
 sketchArgumentTrial = do
   printBeginning "Attempting Sketch Argument"
-  -- print $ sketch (Coord (conc 0) (conc 0))
-  -- print $ sketch (genSymSimple @SymBool () "coord")
-  print $ sketch1 (CoordLit (conc 0) (conc 0))
-  print $ sketch1 <$> genSym @SymBool () "coord"
+
+  let arg :: UnionM CoordExpr
+      arg = genSym @SymBool () "coord" 
+      
+  let concSketch :: UnionM [UnionM MovingExpr]
+      concSketch = sketch1 (CoordLit (conc 0) (conc 0)) 
+
+  let argSketch :: UnionM [UnionM MovingExpr]
+      argSketch = arg >>= sketch1 
+
+  let argTypeTo_checkAndInterpretStmtUListU :: UnionM [UnionM MovingStmt]
+      argTypeTo_checkAndInterpretStmtUListU = undefined
+
+
+  -- printf "arg: %s\n\n" (show arg)
+  -- printf "argSketch: %s\n\n" (show argSketch)
+
+  -- let coord = getSingle arg
+  -- printf "coord: %s\n\n" (show <$> arg)
+
+  -- m <- solveWith (UnboundedReasoning z3 {verbose = doVerbose}) $ case checkAndInterpretStmtUListU (toSym argSketch) of
+  --   ExceptT u -> case mrgFmap
+  --     ( \case
+  --         Left _ -> conc @SymBool False
+  --         Right v -> (v ==~ CoordLit 1 1)
+  --     )
+  --     u of
+  --     SingleU x -> x
+  --     _ -> error "Bad"
+  -- case m of
+  --   Right mm -> do
+  --     printf "Found Solution:\n"
+  --     print $ symeval True mm sketchSimple
+  --   Left _ -> print "Couldn't find solution :("
   printEnd
 
 --
