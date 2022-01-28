@@ -27,7 +27,12 @@ dependencies:
 - monad-memo
 - loch-th
 - template-haskell
+- th-lift-instances
 - utf8-string
+- unordered-containers
+- megaparsec
+- parser-combinators
+- timeit
 
 ghc-options: -Wall -ferror-spans -O2
 
@@ -50,5 +55,8 @@ executables:
   fluidics:
     source-dirs: fluidics
     main: Main.hs
+  cosette:
+    source-dirs: cosette
+    main: Benchmark/Main.hs
 
 

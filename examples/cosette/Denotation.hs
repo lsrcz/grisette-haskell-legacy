@@ -1,0 +1,92 @@
+{-# LANGUAGE DeriveLift #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeApplications #-}
+
+module Denotation where
+
+import Data.Bifunctor
+import qualified Data.ByteString as B
+import Data.HashMap.Strict as M
+import Evaluator
+import Grisette.Control.Monad.UnionM
+import Grisette.Data.Class.Bool
+import Grisette.Data.Class.PrimWrapper
+import Grisette.Data.Class.SimpleMergeable
+import Grisette.Data.SymPrim
+import Language.Haskell.TH
+import Syntax
+import Table
+
+moveQuotesOut :: [Q (TExp e)] -> Q (TExp [e])
+moveQuotesOut [] = [||[]||]
+moveQuotesOut (x : xs) = [||$$x : $$(moveQuotesOut xs)||]
+
+denoteSql :: Query -> Q (TExp Table)
+denoteSql (QueryNamed n) = fail $ "There are unresolved tables " ++ show n
+denoteSql (QueryTable t) = [||t||]
+denoteSql (QueryJoin q1 q2) =
+  [||xproduct $$(denoteSql q1) $$(denoteSql q2) "dummy"||]
+denoteSql (QueryLeftOuterJoin2 q1 q2 q12) =
+  [||leftOuterJoin2 $$(denoteSql q1) $$(denoteSql q2) $$(denoteSql q12)||]
+denoteSql (QueryRename q name) = [||renameTable name $$(denoteSql q)||]
+denoteSql (QueryRenameFull q name scheme) =
+  [||renameTableFull name scheme $$(denoteSql q)||]
+denoteSql qs@(QuerySelect cols q f) =
+  let schema = extractSchema q
+      indexMap = Prelude.foldr (\(i, n) b -> M.insert n i b) M.empty (zip [0 ..] schema)
+      queryQ = denoteSql q
+      filterQ = denoteFilter f indexMap
+      rowFuncs = moveQuotesOut $ (\arg -> denoteValue (ValColumnRef arg) indexMap) <$> cols
+      newSchema = extractSchema qs
+      newTblName = "dummy"
+   in [||
+      let rowFuncs1 = $$rowFuncs
+          rowFuncWrap r = (\rf -> rf r) <$> rowFuncs1
+          fromContent = case $$queryQ of
+            Table _ _ c -> c
+          postFilter = (\(r, p) -> (r, mrgIf @SymBool ($$filterQ r) p 0)) <$> fromContent
+          content = first rowFuncWrap <$> postFilter
+       in Table newTblName newSchema content
+      ||]
+denoteSql q = fail $ "I don't know how to handle the sql query " ++ show q
+
+denoteFilter :: Filter -> M.HashMap Table.Name Int -> Q (TExp ([UnionM (Maybe SymInteger)] -> SymBool))
+denoteFilter FilterTrue _ = [||const $ conc True||]
+denoteFilter FilterFalse _ = [||const $ conc False||]
+denoteFilter (FilterNot f) indexMap = [||nots . $$(denoteFilter f indexMap)||]
+denoteFilter (FilterConj f1 f2) indexMap =
+  [||\e -> $$(denoteFilter f1 indexMap) e &&~ $$(denoteFilter f2 indexMap) e||]
+denoteFilter (FilterDisj f1 f2) indexMap =
+  [||\e -> $$(denoteFilter f1 indexMap) e ||~ $$(denoteFilter f2 indexMap) e||]
+denoteFilter (FilterBinOp FBinEq v1 v2) indexMap =
+  [||\e -> $$(denoteValue v1 indexMap) e ==~ $$(denoteValue v2 indexMap) e||]
+denoteFilter (FilterBinOp FBinNEq v1 v2) indexMap =
+  [||\e -> $$(denoteValue v1 indexMap) e /=~ $$(denoteValue v2 indexMap) e||]
+denoteFilter f _ = fail $ "I don't know how to handle the sql filter " ++ show f
+
+denoteValue ::
+  Val ->
+  M.HashMap Table.Name Int ->
+  Q
+    ( TExp
+        ( [UnionM (Maybe SymInteger)] ->
+          UnionM (Maybe SymInteger)
+        )
+    )
+denoteValue (ValConst i) _ = [||const $ mrgSingle i||]
+denoteValue (ValColumnRef s) indexMap =
+  case M.lookup s indexMap of
+    Just i -> [||(!! i)||]
+    Nothing -> fail $ "Unknown column " ++ show s ++ " referenced in the context " ++ show indexMap
+
+extractSchema :: Query -> Schema
+extractSchema (QueryNamed n) = fail $ "There are unresolved tables " ++ show n
+extractSchema (QueryTable t) = tableQualifiedSchema t
+extractSchema (QueryJoin q1 q2) =
+  extractSchema q1 ++ extractSchema q2
+extractSchema (QueryRenameFull _ name schema) =
+  fmap (B.append (B.append name ".")) schema
+extractSchema (QuerySelect cols _ _) =
+  fmap (const "dummy") cols
+extractSchema q = fail $ "I don't know how to extract schema for the query " ++ show q

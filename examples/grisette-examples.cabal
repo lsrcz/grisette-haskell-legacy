@@ -21,6 +21,47 @@ source-repository head
   type: git
   location: https://github.com/lsrcz/grisette-haskell
 
+executable cosette
+  main-is: Benchmark/Main.hs
+  other-modules:
+      Benchmark.Queries
+      Denotation
+      Equal
+      Evaluator
+      Parser
+      Quasiquote
+      Syntax
+      Table
+      Paths_grisette_examples
+  hs-source-dirs:
+      cosette
+  ghc-options: -Wall -ferror-spans -O2
+  build-depends:
+      MemoTrie
+    , base >4.7 && <5
+    , bytestring
+    , grisette-core
+    , grisette-lifted
+    , grisette-smt
+    , grisette-symprim
+    , hashable
+    , loch-th
+    , megaparsec
+    , monad-coroutine
+    , monad-memo
+    , mtl
+    , parser-combinators
+    , regex-base
+    , regex-pcre
+    , sbv
+    , template-haskell
+    , th-lift-instances
+    , timeit
+    , transformers
+    , unordered-containers
+    , utf8-string
+  default-language: Haskell2010
+
 executable expr-interpreter
   main-is: Main.hs
   other-modules:
@@ -39,14 +80,19 @@ executable expr-interpreter
     , grisette-symprim
     , hashable
     , loch-th
+    , megaparsec
     , monad-coroutine
     , monad-memo
     , mtl
+    , parser-combinators
     , regex-base
     , regex-pcre
     , sbv
     , template-haskell
+    , th-lift-instances
+    , timeit
     , transformers
+    , unordered-containers
     , utf8-string
   default-language: Haskell2010
 
@@ -67,14 +113,19 @@ executable fluidics
     , grisette-symprim
     , hashable
     , loch-th
+    , megaparsec
     , monad-coroutine
     , monad-memo
     , mtl
+    , parser-combinators
     , regex-base
     , regex-pcre
     , sbv
     , template-haskell
+    , th-lift-instances
+    , timeit
     , transformers
+    , unordered-containers
     , utf8-string
   default-language: Haskell2010
 
@@ -95,14 +146,19 @@ executable genfunc
     , grisette-symprim
     , hashable
     , loch-th
+    , megaparsec
     , monad-coroutine
     , monad-memo
     , mtl
+    , parser-combinators
     , regex-base
     , regex-pcre
     , sbv
     , template-haskell
+    , th-lift-instances
+    , timeit
     , transformers
+    , unordered-containers
     , utf8-string
   default-language: Haskell2010
 
@@ -125,14 +181,19 @@ executable location
     , grisette-symprim
     , hashable
     , loch-th
+    , megaparsec
     , monad-coroutine
     , monad-memo
     , mtl
+    , parser-combinators
     , regex-base
     , regex-pcre
     , sbv
     , template-haskell
+    , th-lift-instances
+    , timeit
     , transformers
+    , unordered-containers
     , utf8-string
   default-language: Haskell2010
 
@@ -153,14 +214,19 @@ executable order
     , grisette-symprim
     , hashable
     , loch-th
+    , megaparsec
     , monad-coroutine
     , monad-memo
     , mtl
+    , parser-combinators
     , regex-base
     , regex-pcre
     , sbv
     , template-haskell
+    , th-lift-instances
+    , timeit
     , transformers
+    , unordered-containers
     , utf8-string
   default-language: Haskell2010
 
@@ -181,13 +247,18 @@ executable regex
     , grisette-symprim
     , hashable
     , loch-th
+    , megaparsec
     , monad-coroutine
     , monad-memo
     , mtl
+    , parser-combinators
     , regex-base
     , regex-pcre
     , sbv
     , template-haskell
+    , th-lift-instances
+    , timeit
     , transformers
+    , unordered-containers
     , utf8-string
   default-language: Haskell2010
