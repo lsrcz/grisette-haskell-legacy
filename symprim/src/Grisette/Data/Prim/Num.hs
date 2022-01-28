@@ -281,7 +281,7 @@ pattern LENumTerm :: (Num a, Ord a, SupportedPrim a) => Term a -> Term a -> Term
 pattern LENumTerm l r <- BinaryTermPatt LENum l r
 
 gtNum :: (Num a, Ord a, SupportedPrim a) => Term a -> Term a -> Term Bool
-gtNum = flip leNum
+gtNum = flip ltNum
 
 geNum :: (Num a, Ord a, SupportedPrim a) => Term a -> Term a -> Term Bool
-geNum = flip ltNum
+geNum = flip leNum
