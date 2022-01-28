@@ -82,6 +82,9 @@ instance (SymBoolOp bool) => SEq bool Bool
 instance (SymBoolOp bool) => SEq bool Integer where
   l ==~ r = conc $ l == r
 
+-- List
+instance (SymBoolOp bool, SEq bool a) => SEq bool [a]
+
 -- Maybe
 instance (SymBoolOp bool, SEq bool a) => SEq bool (Maybe a)
 
