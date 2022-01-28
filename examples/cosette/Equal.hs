@@ -12,7 +12,6 @@ import Grisette.Data.SymPrim
 import Language.Haskell.TH
 import Syntax
 import Table
-import Debug.Trace
 getMultiplicity :: [UnionM (Maybe SymInteger)] -> RawTable -> SymInteger
 getMultiplicity r = foldr (\(r1, p1) t -> mrgIf @SymBool (r1 ==~ r) p1 0 + t) 0
 

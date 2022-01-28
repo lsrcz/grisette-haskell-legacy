@@ -5,7 +5,6 @@ import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C
 import Language.Haskell.TH
 import Text.Megaparsec
-import Text.Megaparsec.Error
 import Parser
 
 cosette :: QuasiQuoter

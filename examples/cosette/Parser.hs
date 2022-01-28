@@ -11,7 +11,6 @@ import Syntax
 import Text.Megaparsec
 import Text.Megaparsec.Byte
 import qualified Text.Megaparsec.Byte.Lexer as L
-import Grisette.Data.Class.SimpleMergeable
 
 type Parser = Parsec Void B.ByteString
 
