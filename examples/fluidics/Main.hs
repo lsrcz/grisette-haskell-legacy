@@ -29,7 +29,8 @@ import Grisette.Data.SMT.Solving
 import Grisette.Data.Class.SymEval
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Prim.Model
-import Data.SBV (z3, SMTConfig (verbose), yices)
+import Data.SBV hiding (Mergeable)
+import System.TimeIt
 
 type Grid = [[UnionM (Maybe B.ByteString)]]
 
@@ -185,22 +186,13 @@ spec g = do
   return $ r ==~ mrgSingle (Just "a") &&~ r2 ==~ mrgSingle (Just "b")
 
 main :: IO ()
-main = do
-  print $ do
-    g <-
-      gridSet
-        [ [mrgSingle (Just "a"), mrgGuard (ssymb "b") (mrgSingle (Just "c")) (mrgSingle (Just "d"))],
-          [mrgSingle Nothing, mrgSingle (Just "e")]
-        ]
-        (Point (ssymb "x") (ssymb "y"))
-        (mrgSingle (Just "f"))
-    gridRef g (Point 0 0)
+main = timeIt $ do
   let x = genSym @SymBool @() @Instruction () "a"
   -- let y = genSym @SymBool @() @Instruction () "b"
   print x
   {-print $ do
     g <- (lift x) >>= interpretInstruction initSt
     (lift y) >>= interpretInstruction g-}
-  synthr <- synthesizeProgram (UnboundedReasoning z3 {-verbose=True-}) 20 initSt spec
+  synthr <- synthesizeProgram (UnboundedReasoning z3 {verbose=False, timing=PrintTiming}) 20 initSt spec
   print synthr
 
