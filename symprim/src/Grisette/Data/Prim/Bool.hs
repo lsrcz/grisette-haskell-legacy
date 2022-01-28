@@ -116,6 +116,12 @@ instance SupportedPrim a => BinaryOp Eqv a a Bool where
     if l == r then trueTerm else falseTerm
   partialEvalBinary _ (AddNumTerm (IntegerConcTerm c) v) (IntegerConcTerm c2) =
     eqterm v (concTerm $ c2 - c)
+  partialEvalBinary _ l (ITETerm c t f)
+    | l == t = orb c (eqterm l f)
+    | l == f = orb (notb c) (eqterm l t)
+  partialEvalBinary _ (ITETerm c t f) r
+    | t == r = orb c (eqterm f r)
+    | f == r = orb (notb c) (eqterm t r)
   partialEvalBinary _ l r
     | l == r = trueTerm
     | otherwise = constructBinary Eqv l r
