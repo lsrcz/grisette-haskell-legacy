@@ -8,6 +8,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE DeriveLift #-}
 
 module Grisette.Data.Prim.TabularFunc
   ( pattern TabularFuncConcTerm,
@@ -24,6 +25,7 @@ import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.Helpers
 import Grisette.Data.Prim.InternedTerm
 import Grisette.Data.TabularFunc
+import Language.Haskell.TH.Syntax
 
 tabularFuncConcTermView :: forall a b c. (Typeable b, Typeable c) => Term a -> Maybe (b =-> c)
 tabularFuncConcTermView (ConcTerm _ b) = cast b
@@ -39,7 +41,7 @@ pattern TabularFuncTerm :: (Typeable b, Typeable c) => Term (b =-> c) -> Term a
 pattern TabularFuncTerm b <- (tabularFuncTermView -> Just b)
 
 -- apply
-data ApplyF = ApplyF deriving (Show)
+data ApplyF = ApplyF deriving (Show, Lift)
 
 instance (Show a, Show b, SupportedPrim a, SupportedPrim b) => BinaryPartialStrategy ApplyF (a =-> b) a b where
   extractora = tabularFuncConcTermView

@@ -58,6 +58,7 @@ library
     , monad-coroutine
     , monad-memo
     , mtl
+    , template-haskell
     , transformers
     , unordered-containers
   default-language: Haskell2010

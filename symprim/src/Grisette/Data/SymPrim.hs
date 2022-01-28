@@ -7,6 +7,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE DeriveLift #-}
 
 module Grisette.Data.SymPrim
   ( Sym (..),
@@ -49,8 +50,9 @@ import Data.BitVector.Sized.Signed (SignedBV, mkSignedBV)
 import Data.BitVector.Sized (knownNat)
 import Grisette.Data.Prim.BV
 import Data.BitVector.Sized.Unsigned
+import Language.Haskell.TH.Syntax
 
-newtype Sym a = Sym {underlyingTerm :: Term a}
+newtype Sym a = Sym {underlyingTerm :: Term a} deriving Lift
 
 class SupportedPrim a => SymConcView a where
   symConcView :: Sym a -> Maybe a

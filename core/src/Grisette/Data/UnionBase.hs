@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveLift #-}
 
 module Grisette.Data.UnionBase (UnionBase (..), guardWithLeftMost, guardWithStrategy, fullReconstruct) where
 
@@ -11,12 +12,13 @@ import Grisette.Data.Class.Mergeable
 import Data.Hashable
 import GHC.Generics
 import Grisette.Data.Class.PrimWrapper
+import Language.Haskell.TH.Syntax
 
 data UnionBase b a
   = Single a
   -- left most value / invariant maintained / cond / true branch / false branch
   | Guard a Bool b (UnionBase b a) (UnionBase b a)
-  deriving (Generic, Eq)
+  deriving (Generic, Eq, Lift)
 
 guardWithLeftMost :: (SymBoolOp b) => Bool -> b -> UnionBase b a -> UnionBase b a -> UnionBase b a
 guardWithLeftMost inv cond t = Guard (leftMost t) inv cond t

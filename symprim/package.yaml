@@ -19,6 +19,7 @@ dependencies:
 - monad-memo
 - bv-sized
 - constraints
+- template-haskell
 
 library:
   source-dirs: src

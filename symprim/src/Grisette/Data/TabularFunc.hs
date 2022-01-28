@@ -6,6 +6,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE DeriveLift #-}
 
 module Grisette.Data.TabularFunc (type (=->) (..)) where
 
@@ -13,8 +14,9 @@ import Data.Hashable
 import GHC.Generics
 import Grisette.Data.Class.FiniteFunction
 import Grisette.Data.Prim.InternedTerm
+import Language.Haskell.TH.Syntax
 
-data (=->) a b = TabularFunc {funcTable :: [(a, b)], defaultFuncValue :: b} deriving (Show, Eq, Generic)
+data (=->) a b = TabularFunc {funcTable :: [(a, b)], defaultFuncValue :: b} deriving (Show, Eq, Generic, Lift)
 
 infixr 0 =->
 

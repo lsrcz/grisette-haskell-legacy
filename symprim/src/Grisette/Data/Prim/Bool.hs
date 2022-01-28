@@ -6,6 +6,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE DeriveLift #-}
 
 module Grisette.Data.Prim.Bool
   ( trueTerm,
@@ -44,6 +45,7 @@ import Grisette.Data.Prim.Helpers
 import Grisette.Data.Prim.InternedTerm
 import {-# SOURCE #-} Grisette.Data.Prim.Integer
 import {-# SOURCE #-} Grisette.Data.Prim.Num
+import Language.Haskell.TH.Syntax
 
 pattern IntegerConcTerm :: Integer -> Term a
 pattern IntegerConcTerm b <- (integerConcTermView -> Just b)
@@ -75,7 +77,7 @@ pattern BoolTerm :: Term Bool -> Term a
 pattern BoolTerm b <- (castTerm -> Just b)
 
 -- Not
-data Not = Not deriving (Show)
+data Not = Not deriving (Show, Lift)
 
 notb :: Term Bool -> Term Bool
 notb = partialEvalUnary Not
@@ -96,7 +98,7 @@ pattern NotTerm :: Term Bool -> Term a
 pattern NotTerm t <- UnaryTermPatt Not t
 
 -- Eqv
-data Eqv = Eqv deriving (Show)
+data Eqv = Eqv deriving (Show, Lift)
 
 eqterm :: (SupportedPrim a) => Term a -> Term a -> Term Bool
 eqterm = partialEvalBinary Eqv
@@ -170,7 +172,7 @@ andEqFalse x y
   | otherwise = False
 
 -- Or
-data Or = Or deriving (Show)
+data Or = Or deriving (Show, Lift)
 
 orb :: Term Bool -> Term Bool -> Term Bool
 orb = partialEvalBinary Or
@@ -212,7 +214,7 @@ pattern OrTerm :: Term Bool -> Term Bool -> Term a
 pattern OrTerm l r <- BinaryTermPatt Or l r
 
 -- And
-data And = And deriving (Show)
+data And = And deriving (Show, Lift)
 
 andb :: Term Bool -> Term Bool -> Term Bool
 andb = partialEvalBinary And
@@ -253,7 +255,7 @@ instance BinaryOp And Bool Bool Bool where
 pattern AndTerm :: Term Bool -> Term Bool -> Term a
 pattern AndTerm l r <- BinaryTermPatt And l r
 
-data ITE = ITE deriving (Show)
+data ITE = ITE deriving (Show, Lift)
 
 iteHelper :: (Typeable a) => (Term Bool -> Term Bool) -> Term a -> Term a
 iteHelper f a = fromJust $ castTerm a >>= castTerm . f

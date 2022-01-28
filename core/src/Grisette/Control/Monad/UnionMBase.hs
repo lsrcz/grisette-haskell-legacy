@@ -6,6 +6,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -fno-cse #-}
 
 -- {-# OPTIONS_GHC -fno-full-laziness #-}
@@ -33,10 +34,16 @@ import Grisette.Data.Class.UnionOp
 import Grisette.Data.Functor (mrgFmap)
 import Grisette.Data.UnionBase
 import Data.Hashable
+import Language.Haskell.TH.Syntax
 
 data UnionMBase bool a where
   UAny :: IORef (Either (UnionBase bool a) (UnionMBase bool a)) -> UnionBase bool a -> UnionMBase bool a
   UMrg :: (Mergeable bool a) => UnionBase bool a -> UnionMBase bool a
+
+instance (Lift bool, Lift a) => Lift (UnionMBase bool a) where
+  lift (UAny _ v) = [| freshUAny v |]
+  lift (UMrg v) = [| UMrg v |]
+  liftTyped = unsafeTExpCoerce . lift
 
 freshUAny :: UnionBase bool a -> UnionMBase bool a
 freshUAny v = UAny (unsafeDupablePerformIO $ newIORef $ Left v) v

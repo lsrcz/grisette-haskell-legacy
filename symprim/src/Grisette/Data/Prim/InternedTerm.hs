@@ -16,8 +16,11 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE DeriveLift #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 {-# OPTIONS_GHC -fno-cse #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
 module Grisette.Data.Prim.InternedTerm
   ( UnaryOp (..),
@@ -61,13 +64,14 @@ import Data.Typeable
 import GHC.Generics
 import GHC.IO (unsafeDupablePerformIO)
 import GHC.TypeNats
+import Language.Haskell.TH.Syntax
 
-class (SupportedPrim arg, SupportedPrim t) => UnaryOp tag arg t | tag arg -> t where
+class (SupportedPrim arg, SupportedPrim t, Lift tag) => UnaryOp tag arg t | tag arg -> t where
   partialEvalUnary :: (Typeable tag, Typeable t) => tag -> Term arg -> Term t
   pformatUnary :: Term arg -> String
 
 class
-  (SupportedPrim arg1, SupportedPrim arg2, SupportedPrim t) =>
+  (SupportedPrim arg1, SupportedPrim arg2, SupportedPrim t, Lift tag) =>
   BinaryOp tag arg1 arg2 t
     | tag arg1 arg2 -> t
   where
@@ -75,7 +79,7 @@ class
   pformatBinary :: Term arg1 -> Term arg2 -> String
 
 class
-  (SupportedPrim arg1, SupportedPrim arg2, SupportedPrim arg3, SupportedPrim t) =>
+  (SupportedPrim arg1, SupportedPrim arg2, SupportedPrim arg3, SupportedPrim t, Lift tag) =>
   TernaryOp tag arg1 arg2 arg3 t
     | tag arg1 arg2 arg3 -> t
   where
@@ -85,7 +89,7 @@ class
 data Symbol
   = SimpleSymbol String
   | IndexedSymbol Int String
-  deriving (Eq, Ord, Generic)
+  deriving (Eq, Ord, Generic, Lift)
 
 instance Show Symbol where
   show (SimpleSymbol str) = str
@@ -129,6 +133,14 @@ data Term t where
     !(Term arg2) ->
     !(Term arg3) ->
     Term t
+
+instance Lift (Term t) where
+  liftTyped x = unsafeTExpCoerce (Language.Haskell.TH.Syntax.lift x)
+  lift (ConcTerm _ i) = [| concTerm i |]
+  lift (SymbTerm _ (TermSymbol _ sym)) = [| symbTerm sym |]
+  lift (UnaryTerm _ tag arg) = [| constructUnary tag arg |]
+  lift (BinaryTerm _ tag arg1 arg2) = [| constructBinary tag arg1 arg2 |]
+  lift (TernaryTerm _ tag arg1 arg2 arg3) = [| constructTernary tag arg1 arg2 arg3 |]
 
 introSupportedPrimConstraint :: forall t a. Term t -> ((SupportedPrim t) => a) -> a
 introSupportedPrimConstraint ConcTerm {} x = x
@@ -195,7 +207,7 @@ typeMemoizedCache = unsafeDupablePerformIO $
           !r = (newDynamicCache @a)
 {-# NOINLINE typeMemoizedCache #-}
 
-class (Typeable t, Hashable t, Eq t, Show t) => SupportedPrim t where
+class (Lift t, Typeable t, Hashable t, Eq t, Show t) => SupportedPrim t where
   type PrimConstraint t :: Constraint
   type PrimConstraint t = ()
   default withPrim :: PrimConstraint t => (PrimConstraint t => a) -> a
@@ -429,6 +441,7 @@ instance SupportedPrim Integer where
 instance (KnownNat w, 1 <= w) => Hashable (SignedBV w) where
   s `hashWithSalt` (SignedBV b) = s `hashWithSalt` b
 
+deriving instance (Lift (SignedBV v))
 instance (KnownNat w, 1 <= w) => SupportedPrim (SignedBV w) where
   type PrimConstraint (SignedBV w) = (KnownNat w, 1 <= w)
   pformatConc i = show i ++ "SB"
@@ -438,6 +451,7 @@ instance (KnownNat w, 1 <= w) => SupportedPrim (SignedBV w) where
 instance (KnownNat w, 1 <= w) => Hashable (UnsignedBV w) where
   s `hashWithSalt` (UnsignedBV b) = s `hashWithSalt` b
 
+deriving instance (Lift (UnsignedBV v))
 instance (KnownNat w, 1 <= w) => SupportedPrim (UnsignedBV w) where
   type PrimConstraint (UnsignedBV w) = (KnownNat w, 1 <= w)
   pformatConc i = show i ++ "SB"

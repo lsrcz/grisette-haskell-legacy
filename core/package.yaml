@@ -21,6 +21,7 @@ dependencies:
 - bytestring
 - unordered-containers
 - monad-memo
+- template-haskell
 
 library:
   source-dirs: src
