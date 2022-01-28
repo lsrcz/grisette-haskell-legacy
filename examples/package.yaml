@@ -33,8 +33,13 @@ dependencies:
 - megaparsec
 - parser-combinators
 - timeit
+- clock
+- formatting
 
 ghc-options: -Wall -ferror-spans -O2
+
+library:
+  source-dirs: utils
 
 executables:
   expr-interpreter:
@@ -55,6 +60,7 @@ executables:
   fluidics:
     source-dirs: fluidics
     main: Main.hs
+    dependencies: grisette-examples
   cosette:
     source-dirs: cosette
     main: Benchmark/Main.hs

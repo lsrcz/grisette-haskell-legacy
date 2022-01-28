@@ -30,7 +30,7 @@ import Grisette.Data.Class.SymEval
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Prim.Model
 import Data.SBV hiding (Mergeable)
-import System.TimeIt
+import Utils.Timing
 
 type Grid = [[UnionM (Maybe B.ByteString)]]
 
@@ -146,7 +146,7 @@ instance SymGen SymBool () Instruction where
   genSymIndexed _ = do
     p <- genSymSimpleIndexed @SymBool ()
     d <- genSymIndexed ()
-    choose (Move p d) [{-Mix p-}]
+    choose (Move p d) [Mix p]
 instance ToCon Instruction ConcInstruction where
 
 interpretInstruction :: Grid -> Instruction -> ExceptT () UnionM Grid
@@ -170,7 +170,7 @@ synthesizeProgram config i initst f = go 0 (mrgReturn initst)
        in
          do
            print num
-           r <- solveWith config cond
+           r <- timeItAll $ solveWith config cond
            case r of
              Left _ ->
                 go (num + 1) newst
@@ -186,7 +186,7 @@ spec g = do
   return $ r ==~ mrgSingle (Just "a") &&~ r2 ==~ mrgSingle (Just "b")
 
 main :: IO ()
-main = timeIt $ do
+main = timeItAll $ do
   let x = genSym @SymBool @() @Instruction () "a"
   -- let y = genSym @SymBool @() @Instruction () "b"
   print x
