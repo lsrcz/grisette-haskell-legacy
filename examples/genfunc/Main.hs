@@ -5,6 +5,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
+{-# LANGUAGE DeriveAnyClass #-}
 
 module Main where
 
@@ -16,19 +17,16 @@ import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.PrimWrapper (conc)
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.SymGen
-import Grisette.Data.Class.UnionOp
 import Grisette.Data.SymPrim
 import Grisette.Data.Functor
 
-data Coord = Coord SymInteger SymInteger deriving (Show, Generic)
+data Coord = Coord SymInteger SymInteger deriving (Show, Generic, Mergeable SymBool)
 
 data Move
   = ExactCoord Coord
   | MoveLeft (UnionM Move)
   | MoveRight (UnionM Move)
-  deriving (Show, Generic)
-
-instance Mergeable (Sym Bool) Coord
+  deriving (Show, Generic, Mergeable SymBool)
 
 instance SymGen (Sym Bool) () Coord where
   genSymIndexed v = genSymSimpleIndexed @SymBool v
@@ -38,8 +36,6 @@ instance SymGenSimple (Sym Bool) () Coord where
     x <- genSymSimpleIndexed @SymBool ()
     y <- genSymSimpleIndexed @SymBool ()
     return $ Coord x y
-
-instance Mergeable (Sym Bool) Move
 
 instance SymGen (Sym Bool) (Int, Coord) Move where
   genSymIndexed (v, coord) =

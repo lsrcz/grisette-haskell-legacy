@@ -9,6 +9,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
+{-# LANGUAGE DeriveAnyClass #-}
 
 module Main where
 
@@ -17,7 +18,6 @@ import Control.Monad.Coroutine hiding (merge)
 import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Monad.Memo as MM
 import Control.Monad.State
-import Control.Monad.Trans.Class
 import Control.Monad.Trans.Maybe
 import Data.Bifunctor
 import qualified Data.ByteString.Char8 as B
@@ -54,7 +54,7 @@ time a = do
   start <- getCPUTime
   v <- a
   end <- getCPUTime
-  let diff = fromIntegral (end - start) / (10 ^ 12)
+  let diff = fromIntegral (end - start) / (10 ^ (12 :: Integer))
   printf "Computation time: %0.3f sec\n" (diff :: Double)
   return v
 
@@ -91,7 +91,7 @@ mrgMapSuspension ::
 mrgMapSuspension f cort = withMergeable @bool @s' @(Coroutine s' m x) Coroutine {resume = mrgFmap map' $ resume cort}
   where
     map' :: Either (s (Coroutine s m x)) x -> Either (s' (Coroutine s' m x)) x
-    map' (Right r) = Right r
+    map' (Right r1) = Right r1
     map' (Left s) = Left $ f $ mrgMapSuspension f <$> s
 
 simpleTransducer ::
@@ -135,11 +135,11 @@ plusPatt :: SymBool -> PattCoro -> PattCoro
 plusPatt greedy = mrgIf greedy plusGreedyPatt plusLazyPatt
 
 matchFirstWithStartImpl :: PattCoro -> B.ByteString -> Integer -> MaybeT UnionM Integer
-matchFirstWithStartImpl patt str startPos = case merge $ pogoStick (\(Yield idx _) -> return $ mrgLift idx) r of
+matchFirstWithStartImpl patt str startPos = case merge $ pogoStick (\(Yield idx _) -> return $ mrgLift idx) r1 of
   SingleU x -> x
   _ -> error "Should not happen"
   where
-    r = (\_ -> MaybeT $ return Nothing) <$> patt str startPos
+    r1 = (\_ -> MaybeT $ return Nothing) <$> patt str startPos
 
 matchFirstImpl :: PattCoro -> B.ByteString -> MaybeT UnionM (Integer, Integer)
 matchFirstImpl patt str =
@@ -150,24 +150,14 @@ data ConcPatt
   | ConcSeqPatt ConcPatt ConcPatt
   | ConcAltPatt ConcPatt ConcPatt
   | ConcPlusPatt ConcPatt Bool
-  deriving (Show, Generic)
+  deriving (Show, Generic, ToCon Patt)
 
 data Patt
   = PrimPatt B.ByteString
   | SeqPatt (UnionM Patt) (UnionM Patt)
   | AltPatt (UnionM Patt) (UnionM Patt)
   | PlusPatt (UnionM Patt) SymBool
-  deriving (Show, Generic, Eq)
-
-instance Mergeable (Sym Bool) Patt
-
-instance SymEval Model Patt
-
-instance ToSym ConcPatt Patt
-
-instance ToCon Patt ConcPatt
-
-instance Hashable Patt
+  deriving (Show, Generic, Eq, Hashable, ToSym ConcPatt, SymEval Model, Mergeable SymBool)
 
 toCoroU :: UnionM Patt -> PattCoro
 toCoroU u = getSingle $ mrgFmap toCoro u
@@ -226,33 +216,40 @@ synthesisRegexCompiled config patt coro reg strs =
 synthesisRegex :: GrisetteSMTConfig b -> UnionM Patt -> B.ByteString -> [B.ByteString] -> IO (Maybe ConcPatt)
 synthesisRegex config patt = synthesisRegexCompiled config patt (toCoroU patt)
 
+test1 :: PattCoro
 test1 = toCoro $ toSym $ ConcPrimPatt "a"
 
 reg1 :: B.ByteString
 reg1 = "a"
 
+test2 :: PattCoro
 test2 = toCoro $ toSym $ ConcSeqPatt (ConcPrimPatt "a") (ConcPrimPatt "b")
 
 reg2 :: B.ByteString
 reg2 = "ab"
 
+test3 :: PattCoro
 test3 = toCoro $ toSym $ ConcAltPatt (ConcPrimPatt "a") (ConcPrimPatt "b")
 
 reg3 :: B.ByteString
 reg3 = "a|b"
 
+test4 :: PattCoro
 test4 = toCoro $ toSym $ ConcPlusPatt (ConcAltPatt (ConcPrimPatt "a") (ConcPrimPatt "b")) True
 
 reg4 :: B.ByteString
 reg4 = "(a|b)+"
 
+test5 :: PattCoro
 test5 = toCoro $ toSym $ ConcPlusPatt (ConcAltPatt (ConcPrimPatt "a") (ConcPrimPatt "b")) False
 
 reg5 :: B.ByteString
 reg5 = "(a|b)+?"
 
+test6 :: PattCoro
 test6 = toCoro $ toSym $ ConcSeqPatt (ConcPlusPatt (ConcAltPatt (ConcPrimPatt "a") (ConcPrimPatt "b")) False) (ConcPrimPatt "c")
 
+test7 :: PattCoro
 test7 = toCoro $ toSym $ ConcSeqPatt (ConcPlusPatt (ConcAltPatt (ConcPrimPatt "") (ConcPrimPatt "a")) False) (ConcPrimPatt "c")
 
 reg6 :: B.ByteString

@@ -4,6 +4,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE DeriveAnyClass #-}
 
 module Interpreter where
 
@@ -25,13 +26,13 @@ import Grisette.Data.SymPrim
 data Expr
   = Lit LitExpr
   | Ops OpsExpr
-  deriving (Generic, Show)
+  deriving (Generic, Show, SymEval Model, Mergeable SymBool)
 
 data LitExpr
   = BoolLit SymBool
   | ListLit (UnionM [SymBool])
   | UnitLit
-  deriving (Generic, Show)
+  deriving (Generic, Show, SymEval Model, Mergeable SymBool)
 
 data OpsExpr
   = HeadExpr (UnionM Expr)
@@ -40,7 +41,7 @@ data OpsExpr
   | AndExpr (UnionM Expr) (UnionM Expr)
   | NotExpr (UnionM Expr)
   | VarExpr SymInteger
-  deriving (Generic, Show)
+  deriving (Generic, Show, SymEval Model, Mergeable SymBool)
 
 data ExprSpec = ExprSpec
   { exprDepth :: Integer,
@@ -83,7 +84,7 @@ instance SymGen (Sym Bool) ExprSpec Expr where
 data Stmt
   = DefineStmt SymInteger (UnionM Expr)
   | ValueStmt (UnionM Expr)
-  deriving (Generic, Show)
+  deriving (Generic, Show, SymEval Model, Mergeable SymBool)
 
 instance SymGen (Sym Bool) ExprSpec Stmt where
   genSymIndexed e = do
@@ -91,57 +92,27 @@ instance SymGen (Sym Bool) ExprSpec Stmt where
     vari <- genSymSimpleIndexed @SymBool ()
     choose (DefineStmt vari expr) [ValueStmt expr]
 
-instance Mergeable (Sym Bool) Expr
-
-instance Mergeable (Sym Bool) LitExpr
-
-instance Mergeable (Sym Bool) OpsExpr
-
-instance Mergeable (Sym Bool) Stmt
-
-instance SymEval Model LitExpr
-
-instance SymEval Model OpsExpr
-
-instance SymEval Model Expr
-
-instance SymEval Model Stmt
-
 data Error
   = Typer TyperError
   | Runtime RuntimeError
-  deriving (Generic, Show)
+  deriving (Generic, Show, SymEval Model, Mergeable SymBool)
 
 data TyperError
   = TypeVarNotFound
   | TypeMismatch
-  deriving (Generic, Show)
+  deriving (Generic, Show, SymEval Model, Mergeable SymBool)
 
 data RuntimeError
   = RuntimeVarNotFound
   | RuntimeTypeMismatch
   | RuntimeRuntimeError
-  deriving (Generic, Show)
-
-instance Mergeable (Sym Bool) Error
-
-instance Mergeable (Sym Bool) TyperError
-
-instance Mergeable (Sym Bool) RuntimeError
-
-instance SymEval Model Error
-
-instance SymEval Model TyperError
-
-instance SymEval Model RuntimeError
+  deriving (Generic, Show, SymEval Model, Mergeable SymBool)
 
 data Type
   = UnitType
   | BoolType
   | ListType
-  deriving (Generic, Show, Eq)
-
-instance Mergeable (Sym Bool) Type
+  deriving (Generic, Show, Eq, Mergeable SymBool)
 
 type TypingEnv = [(SymInteger, UnionM Type)]
 

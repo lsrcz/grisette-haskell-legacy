@@ -6,6 +6,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE DeriveAnyClass #-}
 
 module Main where
 
@@ -49,11 +50,10 @@ replaceNth pos val ls = go pos val ls 0
     go _ _ [] _ = throwError ()
     go p v (x : xs) i = mrgGuard (p ==~ i) (mrgSingle (v : xs)) (mrgFmap (x :) $ go p v xs (i + 1))
 
-data ConcPoint = ConcPoint Integer Integer deriving (Show, Generic)
-data Point = Point SymInteger SymInteger deriving (Show, Generic)
-instance SymEval Model Point
-instance ToCon Point ConcPoint
-instance Mergeable SymBool Point
+data ConcPoint = ConcPoint Integer Integer
+  deriving (Show, Generic, ToCon Point)
+data Point = Point SymInteger SymInteger
+  deriving (Show, Generic, SymEval Model, Mergeable SymBool)
 instance SymGen SymBool () Point where
   genSymIndexed = fmap mrgSingle . genSymSimpleIndexed @SymBool
 instance SymGenSimple SymBool () Point where
@@ -79,7 +79,7 @@ unsafeSet g x y v = let
   r = unsafeReplaceNth y v xlist
   in unsafeReplaceNth x r g
 
-data Dir = N | S | W | E deriving (Show, Generic)
+data Dir = N | S | W | E deriving (Show, Generic, Mergeable SymBool, SymEval Model, ToCon Dir)
 
 dirx :: Dir -> SymInteger
 dirx N = -1
@@ -94,12 +94,8 @@ diry _ = 0
 translatePoint :: Point -> Dir -> Point
 translatePoint (Point x y) d = Point (x + dirx d) (y + diry d)
 
-instance Mergeable SymBool Dir
-
 instance SymGen SymBool () Dir where
   genSymIndexed () = choose N [S, W, E]
-instance SymEval Model Dir
-instance ToCon Dir Dir
 
 move :: Grid -> Point -> Dir -> ExceptT () UnionM Grid
 move g p d = do
@@ -138,16 +134,15 @@ mix g p = do
        move gx3 s N
        ) 3 g2
 
-data ConcInstruction = ConcMove ConcPoint Dir | ConcMix ConcPoint deriving (Show, Generic)
-data Instruction = Move Point (UnionM Dir) | Mix Point deriving (Show, Generic)
-instance Mergeable SymBool Instruction
-instance SymEval Model Instruction
+data ConcInstruction = ConcMove ConcPoint Dir | ConcMix ConcPoint
+  deriving (Show, Generic, ToCon Instruction)
+data Instruction = Move Point (UnionM Dir) | Mix Point
+  deriving (Show, Generic, Mergeable SymBool, SymEval Model)
 instance SymGen SymBool () Instruction where
   genSymIndexed _ = do
     p <- genSymSimpleIndexed @SymBool ()
     d <- genSymIndexed ()
     choose (Move p d) [Mix p]
-instance ToCon Instruction ConcInstruction where
 
 interpretInstruction :: Grid -> Instruction -> ExceptT () UnionM Grid
 interpretInstruction g (Move p ud) = lift ud >>= move g p

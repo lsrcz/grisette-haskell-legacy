@@ -3,6 +3,8 @@
 {-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveAnyClass #-}
+
 module Table where
 
 import qualified Data.ByteString as B
@@ -28,9 +30,7 @@ data Table = Table
     tableSchema :: Schema,
     tableContent :: RawTable
   }
-  deriving (Show, THSyntax.Lift, Generic)
-
-instance SymEval Model Table
+  deriving (Show, THSyntax.Lift, Generic, SymEval Model)
 
 renameTable :: Name -> Table -> Table
 renameTable name t = t {tableName = name}
