@@ -8,6 +8,8 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Grisette.Data.Class.SimpleMergeable
   ( UnionMOp (..),
@@ -29,9 +31,30 @@ import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.Utils.CConst
 import Grisette.Data.Class.UnionOp
+import GHC.Generics
+
+class SimpleMergeable' bool f where
+  mrgIf' :: bool -> f a -> f a -> f a
+
+instance (SimpleMergeable' bool U1) where
+  mrgIf' = \_ t _ -> t
+
+instance (SimpleMergeable' bool V1) where
+  mrgIf' = \_ t _ -> t
+
+instance (SimpleMergeable bool c) => (SimpleMergeable' bool (K1 i c)) where
+  mrgIf' = \cond (K1 a) (K1 b) -> K1 $ mrgIf cond a b
+
+instance (SimpleMergeable' bool a) => (SimpleMergeable' bool (M1 i c a)) where
+  mrgIf' = \cond (M1 a) (M1 b) -> M1 $ mrgIf' cond a b
+
+instance (SimpleMergeable' bool a, SimpleMergeable' bool b) => (SimpleMergeable' bool (a :*: b)) where
+  mrgIf' = \cond (a1 :*: a2) (b1 :*: b2) -> mrgIf' cond a1 b1 :*: mrgIf' cond a2 b2
 
 class Mergeable bool a => SimpleMergeable bool a where
   mrgIf :: bool -> a -> a -> a
+  default mrgIf :: (Generic a, SimpleMergeable' bool (Rep a)) => bool -> a -> a -> a
+  mrgIf cond t f = to $ mrgIf' cond (from t) (from f)
 
 getSingle :: forall bool u a. (SimpleMergeable bool a, UnionMOp bool u, UnionOp bool u) => u a -> a
 getSingle u = case merge u of

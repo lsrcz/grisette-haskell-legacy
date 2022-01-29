@@ -20,6 +20,7 @@ module Grisette.Data.Class.Mergeable
     derivedMergeStrategy,
     wrapMergeStrategy,
     Mergeable (..),
+    Mergeable' (..),
     Mergeable1 (..),
     withMergeable,
   )
@@ -81,6 +82,9 @@ class Mergeable' bool f where
   mergeStrategy' :: MergeStrategy bool (f a)
 
 instance Mergeable' bool U1 where
+  mergeStrategy' = SimpleStrategy (\_ t _ -> t)
+
+instance Mergeable' bool V1 where
   mergeStrategy' = SimpleStrategy (\_ t _ -> t)
 
 instance (Mergeable bool c) => Mergeable' bool (K1 i c) where
