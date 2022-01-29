@@ -29,6 +29,7 @@ where
 
 import Data.Typeable
 import Grisette.Data.Prim.InternedTerm
+import Control.Monad.Except
 
 unaryTermView :: forall a b tag. (Typeable tag, Typeable b) => Term a -> Maybe (tag, Term b)
 unaryTermView (UnaryTerm _ (tag :: tagt) t1) =
@@ -115,6 +116,11 @@ class BinaryPartialStrategy tag a b c | tag a b -> c where
 binaryPartial :: forall tag a b c. (BinaryPartialStrategy tag a b c) => PartialRuleBinary a b c
 binaryPartial a b = case (extractora @tag @a @b @c a, extractorb @tag @a @b @c b) of
   (Nothing, Nothing) -> nonBinaryConstantHandler @tag @a @b @c a b
-  (Just a', Nothing) -> leftConstantHandler @tag @a @b @c a' b
-  (Nothing, Just b') -> rightConstantHandler @tag @a @b @c a b'
-  (Just a', Just b') -> allConstantHandler @tag @a @b @c a' b'
+  (Just a', Nothing) ->
+    leftConstantHandler @tag @a @b @c a' b `catchError`
+    \_ -> nonBinaryConstantHandler @tag @a @b @c a b
+  (Nothing, Just b') ->
+    rightConstantHandler @tag @a @b @c a b' `catchError`
+    \_ -> nonBinaryConstantHandler @tag @a @b @c a b
+  (Just a', Just b') ->
+    allConstantHandler @tag @a @b @c a' b'
