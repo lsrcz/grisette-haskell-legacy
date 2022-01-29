@@ -34,49 +34,7 @@ library
     , base >4.7 && <5
     , bytestring
     , clock
-    , formatting
-    , grisette-core
-    , grisette-lifted
-    , grisette-smt
-    , grisette-symprim
-    , hashable
-    , loch-th
-    , megaparsec
-    , monad-coroutine
-    , monad-memo
-    , mtl
-    , parser-combinators
-    , regex-base
-    , regex-pcre
-    , sbv
-    , template-haskell
-    , th-lift-instances
-    , timeit
-    , transformers
-    , unordered-containers
-    , utf8-string
-  default-language: Haskell2010
-
-executable cosette
-  main-is: Benchmark/Main.hs
-  other-modules:
-      Benchmark.Queries
-      Denotation
-      Equal
-      Evaluator
-      Parser
-      Quasiquote
-      Syntax
-      Table
-      Paths_grisette_examples
-  hs-source-dirs:
-      cosette
-  ghc-options: -Wall -ferror-spans -O2
-  build-depends:
-      MemoTrie
-    , base >4.7 && <5
-    , bytestring
-    , clock
+    , deepseq
     , formatting
     , grisette-core
     , grisette-lifted
@@ -113,6 +71,7 @@ executable expr-interpreter
     , base >4.7 && <5
     , bytestring
     , clock
+    , deepseq
     , formatting
     , grisette-core
     , grisette-lifted
@@ -148,6 +107,7 @@ executable fluidics
     , base >4.7 && <5
     , bytestring
     , clock
+    , deepseq
     , formatting
     , grisette-core
     , grisette-examples
@@ -184,6 +144,7 @@ executable genfunc
     , base >4.7 && <5
     , bytestring
     , clock
+    , deepseq
     , formatting
     , grisette-core
     , grisette-lifted
@@ -221,6 +182,7 @@ executable location
     , base >4.7 && <5
     , bytestring
     , clock
+    , deepseq
     , formatting
     , grisette-core
     , grisette-lifted
@@ -256,6 +218,7 @@ executable order
     , base >4.7 && <5
     , bytestring
     , clock
+    , deepseq
     , formatting
     , grisette-core
     , grisette-lifted
@@ -291,6 +254,7 @@ executable regex
     , base >4.7 && <5
     , bytestring
     , clock
+    , deepseq
     , formatting
     , grisette-core
     , grisette-lifted

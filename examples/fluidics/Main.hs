@@ -32,6 +32,7 @@ import Grisette.Data.Class.ToCon
 import Grisette.Data.Prim.Model
 import Data.SBV hiding (Mergeable)
 import Utils.Timing
+import Control.DeepSeq
 
 type Grid = [[UnionM (Maybe B.ByteString)]]
 
@@ -165,7 +166,9 @@ synthesizeProgram config i initst f = go 0 (mrgReturn initst)
        in
          do
            print num
-           r <- timeItAll $ solveWith config cond
+           --print cond
+           _ <- timeItAll "symeval" $ cond `deepseq` return cond
+           r <- timeItAll "lower/solve" $ solveWith config cond
            case r of
              Left _ ->
                 go (num + 1) newst
@@ -181,7 +184,7 @@ spec g = do
   return $ r ==~ mrgSingle (Just "a") &&~ r2 ==~ mrgSingle (Just "b")
 
 main :: IO ()
-main = timeItAll $ do
+main = timeItAll "overall" $ do
   let x = genSym @SymBool @() @Instruction () "a"
   -- let y = genSym @SymBool @() @Instruction () "b"
   print x

@@ -35,6 +35,7 @@ dependencies:
 - timeit
 - clock
 - formatting
+- deepseq
 
 ghc-options: -Wall -ferror-spans -O2
 
@@ -61,8 +62,8 @@ executables:
     source-dirs: fluidics
     main: Main.hs
     dependencies: grisette-examples
-  cosette:
-    source-dirs: cosette
-    main: Benchmark/Main.hs
+  #cosette:
+  #  source-dirs: cosette
+  #  main: Benchmark/Main.hs
 
 
