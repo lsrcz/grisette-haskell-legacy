@@ -12,7 +12,8 @@
 {-# LANGUAGE UndecidableSuperClasses #-}
 
 module Grisette.Data.Class.SymGen
-  ( SymGen (..),
+  ( SymGenState,
+    SymGen (..),
     genSym,
     SymGenSimple (..),
     genSymSimple,
@@ -40,23 +41,25 @@ import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.UnionOp
 import Grisette.Data.Functor
 
+type SymGenState = (Int, String)
+
 runSymGenIndexed :: State (Int, String) a -> String -> a
 runSymGenIndexed st s = evalState st (0, s)
 
 class (SymBoolOp bool, Mergeable bool a) => SymGen bool spec a where
-  genSymIndexed :: spec -> State (Int, String) (UnionMBase bool a)
+  genSymIndexed :: (MonadState SymGenState m) => spec -> m (UnionMBase bool a)
 
 genSym :: (SymGen bool spec a) => spec -> String -> UnionMBase bool a
 genSym spec name = evalState (genSymIndexed spec) (0, name)
 
 class SymGen bool spec a => SymGenSimple bool spec a where
-  genSymSimpleIndexed :: spec -> State (Int, String) a
+  genSymSimpleIndexed :: (MonadState SymGenState m) => spec -> m a
 
 genSymSimple :: forall bool spec a. (SymGenSimple bool spec a) => spec -> String -> a
 genSymSimple spec name = evalState (genSymSimpleIndexed @bool spec) (0, name)
 
 class SymGenNoSpec bool a where
-  genSymIndexedNoSpec :: State (Int, String) (UnionMBase bool (a c))
+  genSymIndexedNoSpec :: (MonadState SymGenState m) => m (UnionMBase bool (a c))
 
 instance (SymBoolOp bool) => SymGenNoSpec bool U1 where
   genSymIndexedNoSpec = return $ single U1
@@ -91,9 +94,9 @@ instance
 
 -- Never use on recursive types
 genSymIndexedWithDerivedNoSpec ::
-  forall bool a.
-  (Generic a, SymBoolOp bool, SymGenNoSpec bool (Rep a), Mergeable bool a) =>
-  State (Int, String) (UnionMBase bool a)
+  forall bool a m.
+  (Generic a, SymBoolOp bool, SymGenNoSpec bool (Rep a), Mergeable bool a, MonadState SymGenState m) =>
+  m (UnionMBase bool a)
 genSymIndexedWithDerivedNoSpec = mrgFmap to <$> genSymIndexedNoSpec @bool @(Rep a)
 
 -- Bool
@@ -138,7 +141,7 @@ instance
   genSymIndexed _ = genSymIndexedWithDerivedNoSpec
 
 class SymGenSimpleNoSpec bool a where
-  genSymSimpleIndexedNoSpec :: State (Int, String) (a c)
+  genSymSimpleIndexedNoSpec :: (MonadState SymGenState m) => m (a c)
 
 instance (SymBoolOp bool) => SymGenSimpleNoSpec bool U1 where
   genSymSimpleIndexedNoSpec = return U1
@@ -160,9 +163,9 @@ instance
 
 -- Never use on recursive types
 genSymSimpleIndexedWithDerivedNoSpec ::
-  forall bool a.
-  (Generic a, SymBoolOp bool, SymGenSimpleNoSpec bool (Rep a)) =>
-  State (Int, String) a
+  forall bool a m.
+  (Generic a, SymBoolOp bool, SymGenSimpleNoSpec bool (Rep a), MonadState SymGenState m) =>
+  m a
 genSymSimpleIndexedWithDerivedNoSpec = to <$> genSymSimpleIndexedNoSpec @bool @(Rep a)
 
 -- ()
@@ -198,7 +201,7 @@ instance
   genSymSimpleIndexed _ = genSymSimpleIndexedWithDerivedNoSpec @bool
 
 class SymGenSameShape bool a where
-  genSymSameShapeIndexed :: a c -> State (Int, String) (a c)
+  genSymSameShapeIndexed :: (MonadState SymGenState m) => a c -> m (a c)
 
 instance (SymBoolOp bool) => SymGenSameShape bool U1 where
   genSymSameShapeIndexed _ = return U1
@@ -227,13 +230,18 @@ instance
 
 -- Can be used on recursive types
 genSymIndexedWithDerivedSameShape ::
-  forall bool a.
-  (Generic a, SymGenSameShape bool (Rep a)) =>
+  forall bool a m.
+  (Generic a, SymGenSameShape bool (Rep a), MonadState SymGenState m) =>
   a ->
-  State (Int, String) a
+  m a
 genSymIndexedWithDerivedSameShape a = to <$> genSymSameShapeIndexed @bool @(Rep a) (from a)
 
-choose :: forall bool a. (SymBoolOp bool, Mergeable bool a, SymGenSimple bool () bool) => a -> [a] -> State (Int, String) (UnionMBase bool a)
+choose ::
+  forall bool a m.
+  (SymBoolOp bool, Mergeable bool a, SymGenSimple bool () bool, MonadState SymGenState m) =>
+  a ->
+  [a] ->
+  m (UnionMBase bool a)
 choose x [] = return $ mrgSingle x
 choose x (r : rs) = do
   b <- genSymSimpleIndexed @bool ()
@@ -241,11 +249,11 @@ choose x (r : rs) = do
   return $ mrgGuard b (mrgSingle x) res
 
 chooseU ::
-  forall bool a.
-  (SymBoolOp bool, Mergeable bool a, SymGenSimple bool () bool) =>
+  forall bool a m.
+  (SymBoolOp bool, Mergeable bool a, SymGenSimple bool () bool, MonadState SymGenState m) =>
   UnionMBase bool a ->
   [UnionMBase bool a] ->
-  State (Int, String) (UnionMBase bool a)
+  m (UnionMBase bool a)
 chooseU x [] = return x
 chooseU x (r : rs) = do
   b <- genSymSimpleIndexed @bool ()
@@ -320,7 +328,7 @@ instance
     let (x : xs) = reverse $ scanr (:) [] l
     choose x xs
     where
-      gl :: Integer -> State (Int, String) [a]
+      gl :: (MonadState SymGenState m) => Integer -> m [a]
       gl v1
         | v1 <= 0 = return []
         | otherwise = do
@@ -347,7 +355,7 @@ instance
         let (x : xs) = reverse $ scanr (:) [] $ drop (fromInteger minLen) l
         choose x xs
     where
-      gl :: Integer -> State (Int, String) [a]
+      gl :: (MonadState SymGenState m) => Integer -> m [a]
       gl currLen
         | currLen <= 0 = return []
         | otherwise = do
@@ -364,11 +372,13 @@ instance
 data SimpleListSpec spec = SimpleListSpec
   { genSimpleListLength :: Integer,
     genSimpleListSubSpec :: spec
-  } deriving (Show)
+  }
+  deriving (Show)
 
 instance
   (SymBoolOp bool, SymGenSimple bool () bool, SymGenSimple bool spec a, Mergeable bool a) =>
-  SymGen bool (SimpleListSpec spec) [a] where
+  SymGen bool (SimpleListSpec spec) [a]
+  where
   genSymIndexed = fmap mrgSingle . genSymSimpleIndexed @bool
 
 instance
@@ -381,13 +391,14 @@ instance
       else do
         gl len
     where
-      gl :: Integer -> State (Int, String) [a]
+      gl :: (MonadState SymGenState m) => Integer -> m [a]
       gl currLen
         | currLen <= 0 = return []
         | otherwise = do
           l <- genSymSimpleIndexed @bool subSpec
           r <- gl (currLen - 1)
           return $ l : r
+
 -- (,)
 instance
   ( SymBoolOp bool,
