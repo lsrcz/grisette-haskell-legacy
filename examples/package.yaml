@@ -36,6 +36,7 @@ dependencies:
 - clock
 - formatting
 - deepseq
+- Unique
 
 ghc-options: -Wall -ferror-spans -O2
 
@@ -65,5 +66,11 @@ executables:
   #cosette:
   #  source-dirs: cosette
   #  main: Benchmark/Main.hs
+  expr-sketch:
+    source-dirs: expr-sketch
+    main: Main.hs
+  stmt-sketch:
+    source-dirs: stmt-sketch
+    main: Main.hs
 
 
