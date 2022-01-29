@@ -20,6 +20,7 @@ dependencies:
 - bv-sized
 - constraints
 - template-haskell
+- deepseq
 
 library:
   source-dirs: src

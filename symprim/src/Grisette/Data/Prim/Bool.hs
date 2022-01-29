@@ -7,6 +7,8 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE DeriveLift #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Grisette.Data.Prim.Bool
   ( trueTerm,
@@ -46,6 +48,8 @@ import Grisette.Data.Prim.InternedTerm
 import {-# SOURCE #-} Grisette.Data.Prim.Integer
 import {-# SOURCE #-} Grisette.Data.Prim.Num
 import Language.Haskell.TH.Syntax
+import Control.DeepSeq
+import GHC.Generics
 
 pattern IntegerConcTerm :: Integer -> Term a
 pattern IntegerConcTerm b <- (integerConcTermView -> Just b)
@@ -77,7 +81,7 @@ pattern BoolTerm :: Term Bool -> Term a
 pattern BoolTerm b <- (castTerm -> Just b)
 
 -- Not
-data Not = Not deriving (Show, Lift)
+data Not = Not deriving (Generic, Show, Lift, NFData)
 
 notb :: Term Bool -> Term Bool
 notb = partialEvalUnary Not
@@ -96,7 +100,7 @@ pattern NotTerm :: Term Bool -> Term a
 pattern NotTerm t <- UnaryTermPatt Not t
 
 -- Eqv
-data Eqv = Eqv deriving (Show, Lift)
+data Eqv = Eqv deriving (Show, Lift, Generic, NFData)
 
 eqterm :: (SupportedPrim a) => Term a -> Term a -> Term Bool
 eqterm = partialEvalBinary Eqv
@@ -176,7 +180,7 @@ andEqFalse x y
   | otherwise = False
 
 -- Or
-data Or = Or deriving (Show, Lift)
+data Or = Or deriving (Show, Lift, Generic, NFData)
 
 orb :: Term Bool -> Term Bool -> Term Bool
 orb = partialEvalBinary Or
@@ -218,7 +222,7 @@ pattern OrTerm :: Term Bool -> Term Bool -> Term a
 pattern OrTerm l r <- BinaryTermPatt Or l r
 
 -- And
-data And = And deriving (Show, Lift)
+data And = And deriving (Show, Lift, Generic, NFData)
 
 andb :: Term Bool -> Term Bool -> Term Bool
 andb = partialEvalBinary And
@@ -259,7 +263,7 @@ instance BinaryOp And Bool Bool Bool where
 pattern AndTerm :: Term Bool -> Term Bool -> Term a
 pattern AndTerm l r <- BinaryTermPatt And l r
 
-data ITE = ITE deriving (Show, Lift)
+data ITE = ITE deriving (Show, Lift, Generic, NFData)
 
 iteHelper :: (Typeable a) => (Term Bool -> Term Bool) -> Term a -> Term a
 iteHelper f a = fromJust $ castTerm a >>= castTerm . f

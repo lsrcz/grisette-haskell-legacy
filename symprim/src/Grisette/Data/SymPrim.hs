@@ -8,6 +8,8 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE DeriveLift #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveAnyClass #-}
 
 module Grisette.Data.SymPrim
   ( Sym (..),
@@ -51,8 +53,13 @@ import Data.BitVector.Sized (knownNat)
 import Grisette.Data.Prim.BV
 import Data.BitVector.Sized.Unsigned
 import Language.Haskell.TH.Syntax
+import GHC.Generics
+import Control.DeepSeq
 
-newtype Sym a = Sym {underlyingTerm :: Term a} deriving Lift
+newtype Sym a = Sym {underlyingTerm :: Term a} deriving (Lift, Generic)
+
+instance NFData (Sym a) where
+  rnf (Sym t) = rnf t
 
 class SupportedPrim a => SymConcView a where
   symConcView :: Sym a -> Maybe a

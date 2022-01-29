@@ -22,6 +22,7 @@ dependencies:
 - unordered-containers
 - monad-memo
 - template-haskell
+- deepseq
 
 library:
   source-dirs: src

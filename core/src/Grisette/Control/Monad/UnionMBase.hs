@@ -35,10 +35,20 @@ import Grisette.Data.Functor (mrgFmap)
 import Grisette.Data.UnionBase
 import Data.Hashable
 import Language.Haskell.TH.Syntax
+import Control.DeepSeq
 
 data UnionMBase bool a where
   UAny :: IORef (Either (UnionBase bool a) (UnionMBase bool a)) -> UnionBase bool a -> UnionMBase bool a
   UMrg :: (Mergeable bool a) => UnionBase bool a -> UnionMBase bool a
+
+instance (NFData bool, NFData a) => NFData (UnionMBase bool a) where
+  rnf = rnf1
+
+instance (NFData bool) => NFData1 (UnionMBase bool) where
+  liftRnf = liftRnf2 rnf
+instance NFData2 UnionMBase where
+  liftRnf2 _bool _a (UAny i m) = rnf i `seq` liftRnf2 _bool _a m
+  liftRnf2 _bool _a (UMrg m) = liftRnf2 _bool _a m
 
 instance (Lift bool, Lift a) => Lift (UnionMBase bool a) where
   lift (UAny _ v) = [| freshUAny v |]

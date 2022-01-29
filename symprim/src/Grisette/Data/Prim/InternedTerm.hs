@@ -21,6 +21,7 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 {-# OPTIONS_GHC -fno-cse #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE DeriveAnyClass #-}
 
 module Grisette.Data.Prim.InternedTerm
   ( UnaryOp (..),
@@ -65,13 +66,14 @@ import GHC.Generics
 import GHC.IO (unsafeDupablePerformIO)
 import GHC.TypeNats
 import Language.Haskell.TH.Syntax
+import Control.DeepSeq
 
-class (SupportedPrim arg, SupportedPrim t, Lift tag) => UnaryOp tag arg t | tag arg -> t where
+class (SupportedPrim arg, SupportedPrim t, Lift tag, NFData tag) => UnaryOp tag arg t | tag arg -> t where
   partialEvalUnary :: (Typeable tag, Typeable t) => tag -> Term arg -> Term t
   pformatUnary :: Term arg -> String
 
 class
-  (SupportedPrim arg1, SupportedPrim arg2, SupportedPrim t, Lift tag) =>
+  (SupportedPrim arg1, SupportedPrim arg2, SupportedPrim t, Lift tag, NFData tag) =>
   BinaryOp tag arg1 arg2 t
     | tag arg1 arg2 -> t
   where
@@ -79,7 +81,7 @@ class
   pformatBinary :: Term arg1 -> Term arg2 -> String
 
 class
-  (SupportedPrim arg1, SupportedPrim arg2, SupportedPrim arg3, SupportedPrim t, Lift tag) =>
+  (SupportedPrim arg1, SupportedPrim arg2, SupportedPrim arg3, SupportedPrim t, Lift tag, NFData tag) =>
   TernaryOp tag arg1 arg2 arg3 t
     | tag arg1 arg2 arg3 -> t
   where
@@ -89,7 +91,7 @@ class
 data Symbol
   = SimpleSymbol String
   | IndexedSymbol Int String
-  deriving (Eq, Ord, Generic, Lift)
+  deriving (Eq, Ord, Generic, Lift, NFData)
 
 instance Show Symbol where
   show (SimpleSymbol str) = str
@@ -99,6 +101,9 @@ instance Hashable Symbol
 
 data TermSymbol where
   TermSymbol :: forall t. (SupportedPrim t) => Proxy t -> Symbol -> TermSymbol
+
+instance NFData TermSymbol where
+  rnf (TermSymbol p s) = rnf p `seq` rnf s
 
 instance Eq TermSymbol where
   (TermSymbol p1 s1) == (TermSymbol p2 s2) = s1 == s2 && typeRep p1 == typeRep p2
@@ -133,6 +138,40 @@ data Term t where
     !(Term arg2) ->
     !(Term arg3) ->
     Term t
+
+doTermRnf :: Term a -> M.HashMap SomeTerm () -> (M.HashMap SomeTerm (), ())
+doTermRnf (ConcTerm i t) o = (o, rnf i `seq` rnf t)
+doTermRnf (SymbTerm i n) o = (o, rnf i `seq` rnf n)
+doTermRnf u@(UnaryTerm i tag t1) o = case M.lookup (SomeTerm u) o of 
+  Nothing ->
+    let
+      (o1, u1) = doTermRnf t1 o
+      r = rnf i `seq` rnf tag `seq` u1
+     in
+      (M.insert (SomeTerm u) r o1, r)
+  Just v -> (o, v)
+doTermRnf u@(BinaryTerm i tag t1 t2) o = case M.lookup (SomeTerm u) o of 
+  Nothing ->
+    let
+      (o1, u1) = doTermRnf t1 o
+      (o2, u2) = doTermRnf t2 o1
+      r = rnf i `seq` rnf tag `seq` u1 `seq` u2
+     in
+      (M.insert (SomeTerm u) r o2, r)
+  Just v -> (o, v)
+doTermRnf u@(TernaryTerm i tag t1 t2 t3) o = case M.lookup (SomeTerm u) o of 
+  Nothing ->
+    let
+      (o1, u1) = doTermRnf t1 o
+      (o2, u2) = doTermRnf t2 o1
+      (o3, u3) = doTermRnf t3 o2
+      r = rnf i `seq` rnf tag `seq` u1 `seq` u2 `seq` u3
+     in
+      (M.insert (SomeTerm u) r o3, r)
+  Just v -> (o, v)
+
+instance NFData (Term a) where
+  rnf a = snd $ doTermRnf a M.empty
 
 instance Lift (Term t) where
   liftTyped x = unsafeTExpCoerce (Language.Haskell.TH.Syntax.lift x)
@@ -207,7 +246,7 @@ typeMemoizedCache = unsafeDupablePerformIO $
           !r = (newDynamicCache @a)
 {-# NOINLINE typeMemoizedCache #-}
 
-class (Lift t, Typeable t, Hashable t, Eq t, Show t) => SupportedPrim t where
+class (Lift t, Typeable t, Hashable t, Eq t, Show t, NFData t) => SupportedPrim t where
   type PrimConstraint t :: Constraint
   type PrimConstraint t = ()
   default withPrim :: PrimConstraint t => (PrimConstraint t => a) -> a
@@ -442,6 +481,7 @@ instance (KnownNat w, 1 <= w) => Hashable (SignedBV w) where
   s `hashWithSalt` (SignedBV b) = s `hashWithSalt` b
 
 deriving instance (Lift (SignedBV v))
+deriving instance (NFData (SignedBV v))
 instance (KnownNat w, 1 <= w) => SupportedPrim (SignedBV w) where
   type PrimConstraint (SignedBV w) = (KnownNat w, 1 <= w)
   pformatConc i = show i ++ "SB"
@@ -452,6 +492,7 @@ instance (KnownNat w, 1 <= w) => Hashable (UnsignedBV w) where
   s `hashWithSalt` (UnsignedBV b) = s `hashWithSalt` b
 
 deriving instance (Lift (UnsignedBV v))
+deriving instance (NFData (UnsignedBV v))
 instance (KnownNat w, 1 <= w) => SupportedPrim (UnsignedBV w) where
   type PrimConstraint (UnsignedBV w) = (KnownNat w, 1 <= w)
   pformatConc i = show i ++ "SB"

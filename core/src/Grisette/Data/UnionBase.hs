@@ -13,12 +13,21 @@ import Data.Hashable
 import GHC.Generics
 import Grisette.Data.Class.PrimWrapper
 import Language.Haskell.TH.Syntax
+import Control.DeepSeq
 
 data UnionBase b a
   = Single a
   -- left most value / invariant maintained / cond / true branch / false branch
   | Guard a Bool b (UnionBase b a) (UnionBase b a)
   deriving (Generic, Eq, Lift)
+
+instance (NFData b, NFData a) => NFData (UnionBase b a) where
+  rnf = rnf1
+instance (NFData b) => NFData1 (UnionBase b) where
+  liftRnf = liftRnf2 rnf
+instance NFData2 UnionBase where
+  liftRnf2 _b _a (Single a) = _a a
+  liftRnf2 _b _a (Guard a bo b l r) = _a a `seq` rnf bo `seq` _b b `seq` liftRnf2 _b _a l `seq` liftRnf2 _b _a r
 
 guardWithLeftMost :: (SymBoolOp b) => Bool -> b -> UnionBase b a -> UnionBase b a -> UnionBase b a
 guardWithLeftMost inv cond t = Guard (leftMost t) inv cond t

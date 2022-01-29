@@ -47,6 +47,7 @@ library
       base >4.7 && <5
     , bv-sized
     , constraints
+    , deepseq
     , grisette-core
     , hashable
     , intern
