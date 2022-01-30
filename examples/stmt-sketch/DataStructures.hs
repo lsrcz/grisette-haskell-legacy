@@ -79,10 +79,9 @@ data SymbExpr
 data Op = Add | Sub | Mul | Lt | Eq | And | Or deriving (Show, Eq, Ord)
 
 instance SymGen SymBool [Op] (UnionM SymbExpr -> UnionM SymbExpr -> UnionM SymbExpr) where
-  genSymIndexed s = mrgSingle <$> genSymSimpleIndexed @SymBool s
 
 instance SymGenSimple SymBool [Op] (UnionM SymbExpr -> UnionM SymbExpr -> UnionM SymbExpr) where
-  genSymSimpleIndexed s = getSingle <$> choose @SymBool (head ops) (tail ops)
+  genSymSimpleIndexed s = simpleChoose @SymBool (head ops) (tail ops)
     where
       ops =
         (\op x y -> mrgSingle $ op x y)
@@ -114,11 +113,10 @@ instance SymGenSimple SymBool () SIdentifier where
   genSymSimpleIndexed _ = genSymSimpleIndexedWithDerivedNoSpec @SymBool
 
 instance SymGen SymBool [Integer] SIdentifier where
-  genSymIndexed l = let l1 = SIdentifier . conc <$> l in
-    choose (head l1) (tail l1)
 
 instance SymGenSimple SymBool [Integer] SIdentifier where
-  genSymSimpleIndexed l = getSingle <$> genSymIndexed @SymBool l
+  genSymSimpleIndexed l = let l1 = SIdentifier . conc <$> l in
+    simpleChoose @SymBool (head l1) (tail l1)
 
 data Stmt
   = AssignStmt Identifier ConcExpr

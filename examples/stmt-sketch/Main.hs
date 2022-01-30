@@ -8,30 +8,43 @@ import Data.SBV (z3)
 
 main :: IO ()
 main = do
-  r1 <- synthesis (UnboundedReasoning z3) (getSketch "assert ??b" "a")
+  r1 <- synthesis DoSynthesis (UnboundedReasoning z3) (getSketch "assert ??b" "a")
   print r1
-  r2 <- synthesis (UnboundedReasoning z3) (getSketch
+  r2 <- synthesis DoSynthesis (UnboundedReasoning z3) (getSketch
      "v1 = ??i;                  \
     \ v2 = ??i;                  \
+    \ v3 = ??b;                  \
     \ if (v1 < v2) {             \
-    \   v4 = ??v ??{==, <} ??v   \
+    \   v5 = ??v ??{==, <} ??v   \
     \ } else {                   \
-    \   v3 = ??v < ??v           \
+    \   v4 = ??v < ??v           \
     \ };                         \
-    \ assert v3" "a")
+    \ assert v4" "a")
   print r2
-  r3 <- synthesis (UnboundedReasoning z3) (getSketch
+  r3 <- synthesis DoSynthesis (UnboundedReasoning z3) (getSketch
      "v1 = ??i;                  \
     \ v2 = ??i;                  \
+    \ v3 = ??b;                  \
     \ if (v1 < v2) {             \
-    \   v4 = ??v ??{==, <} ??v   \
+    \   v5 = ??v ??{==, <} ??v   \
     \ } else {                   \
-    \   v3 = v1 < ??v            \
+    \   v4 = ??v < ??v           \
     \ };                         \
-    \ assert v3" "a")
+    \ assert v4" "a")
   print r3
+  r4 <- synthesis GetTypeError (UnboundedReasoning z3) (getSketch
+     "v1 = ??i;                  \
+    \ v2 = ??i;                  \
+    \ v3 = ??b;                  \
+    \ if (v1 < v2) {             \
+    \   v5 = ??v ??{==, <} ??v   \
+    \ } else {                   \
+    \   v4 = ??v < ??v           \
+    \ };                         \
+    \ assert v4" "a")
+  print r4
   {-
-  r4 <- synthesis (UnboundedReasoning z3) $ [sketch|a:
+  rquasiquoter <- synthesis DoSynthesis (UnboundedReasoning z3) $ [sketch|a:
     v1 = ??i;
     v2 = ??i;
     if (v1 < v2) {
@@ -40,5 +53,5 @@ main = do
       v3 = ??v < ??v
     };
     assert v3|]
-  print r4
+  print rquasiquoter 
   -}
