@@ -33,6 +33,7 @@ library
       MemoTrie
     , Unique
     , base >4.7 && <5
+    , bv-sized
     , bytestring
     , clock
     , deepseq
@@ -71,6 +72,7 @@ executable expr-interpreter
       MemoTrie
     , Unique
     , base >4.7 && <5
+    , bv-sized
     , bytestring
     , clock
     , deepseq
@@ -110,6 +112,7 @@ executable expr-sketch
       MemoTrie
     , Unique
     , base >4.7 && <5
+    , bv-sized
     , bytestring
     , clock
     , deepseq
@@ -147,6 +150,7 @@ executable fluidics
       MemoTrie
     , Unique
     , base >4.7 && <5
+    , bv-sized
     , bytestring
     , clock
     , deepseq
@@ -185,6 +189,7 @@ executable genfunc
       MemoTrie
     , Unique
     , base >4.7 && <5
+    , bv-sized
     , bytestring
     , clock
     , deepseq
@@ -224,6 +229,7 @@ executable location
       MemoTrie
     , Unique
     , base >4.7 && <5
+    , bv-sized
     , bytestring
     , clock
     , deepseq
@@ -261,6 +267,7 @@ executable order
       MemoTrie
     , Unique
     , base >4.7 && <5
+    , bv-sized
     , bytestring
     , clock
     , deepseq
@@ -298,6 +305,7 @@ executable regex
       MemoTrie
     , Unique
     , base >4.7 && <5
+    , bv-sized
     , bytestring
     , clock
     , deepseq
@@ -338,6 +346,45 @@ executable stmt-sketch
       MemoTrie
     , Unique
     , base >4.7 && <5
+    , bv-sized
+    , bytestring
+    , clock
+    , deepseq
+    , formatting
+    , grisette-core
+    , grisette-lifted
+    , grisette-smt
+    , grisette-symprim
+    , hashable
+    , loch-th
+    , megaparsec
+    , monad-coroutine
+    , monad-memo
+    , mtl
+    , parser-combinators
+    , regex-base
+    , regex-pcre
+    , sbv
+    , template-haskell
+    , th-lift-instances
+    , timeit
+    , transformers
+    , unordered-containers
+    , utf8-string
+  default-language: Haskell2010
+
+executable tutorial
+  main-is: Main.hs
+  other-modules:
+      Paths_grisette_examples
+  hs-source-dirs:
+      tutorial
+  ghc-options: -Wall -ferror-spans -O2
+  build-depends:
+      MemoTrie
+    , Unique
+    , base >4.7 && <5
+    , bv-sized
     , bytestring
     , clock
     , deepseq

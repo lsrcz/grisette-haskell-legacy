@@ -37,6 +37,7 @@ dependencies:
 - formatting
 - deepseq
 - Unique
+- bv-sized
 
 ghc-options: -Wall -ferror-spans -O2
 
@@ -71,6 +72,9 @@ executables:
     main: Main.hs
   stmt-sketch:
     source-dirs: stmt-sketch
+    main: Main.hs
+  tutorial:
+    source-dirs: tutorial
     main: Main.hs
 
 
