@@ -10,6 +10,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
+{-# LANGUAGE DefaultSignatures #-}
 
 module Grisette.Data.Class.SymGen
   ( SymGenState,
@@ -48,6 +49,9 @@ runSymGenIndexed st s = evalState st (0, s)
 
 class (SymBoolOp bool, Mergeable bool a) => SymGen bool spec a where
   genSymIndexed :: (MonadState SymGenState m) => spec -> m (UnionMBase bool a)
+  default genSymIndexed :: (SymGenSimple bool spec a) =>
+    (MonadState SymGenState m) => spec -> m (UnionMBase bool a)
+  genSymIndexed spec = mrgSingle <$> genSymSimpleIndexed @bool spec
 
 genSym :: (SymGen bool spec a) => spec -> String -> UnionMBase bool a
 genSym spec name = evalState (genSymIndexed spec) (0, name)
