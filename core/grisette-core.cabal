@@ -23,6 +23,7 @@ source-repository head
 
 library
   exposed-modules:
+      Grisette.Control.Exception
       Grisette.Control.Monad
       Grisette.Control.Monad.Trans
       Grisette.Control.Monad.UnionMBase
