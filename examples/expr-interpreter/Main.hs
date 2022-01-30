@@ -4,17 +4,9 @@
 module Main where
 
 import Control.Monad.Except
-import Data.SBV
-import Grisette.Control.Monad.UnionM
-import Grisette.Data.Class.PrimWrapper
-import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.Class.SymEval (SymEval (symeval))
-import Grisette.Data.Class.SymGen
-import Grisette.Data.Class.UnionOp
-import Grisette.Data.Functor
-import Grisette.Data.SMT.Config
-import Grisette.Data.SMT.Solving
-import Grisette.Data.SymPrim
+import Grisette.Backend.SBV
+import Grisette.Core
+import Grisette.SymPrim.Term
 import Interpreter
 
 p1 :: [Stmt]

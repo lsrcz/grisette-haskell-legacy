@@ -60,10 +60,7 @@ library
     , clock
     , deepseq
     , formatting
-    , grisette-core
-    , grisette-lifted
-    , grisette-smt
-    , grisette-symprim
+    , grisette
     , hashable
     , loch-th
     , megaparsec
@@ -73,7 +70,70 @@ library
     , parser-combinators
     , regex-base
     , regex-pcre
-    , sbv
+    , template-haskell
+    , th-lift-instances
+    , timeit
+    , transformers
+    , unordered-containers
+    , utf8-string
+  default-language: Haskell2010
+
+executable cosette
+  main-is: Benchmark/Main.hs
+  other-modules:
+      Benchmark.Queries
+      Denotation
+      Equal
+      Evaluator
+      Parser
+      Quasiquote
+      Syntax
+      Table
+      Paths_grisette_examples
+  hs-source-dirs:
+      cosette
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+  ghc-options: -Wall -ferror-spans -O2
+  build-depends:
+      MemoTrie
+    , Unique
+    , base >4.7 && <5
+    , bv-sized
+    , bytestring
+    , clock
+    , deepseq
+    , formatting
+    , grisette
+    , hashable
+    , loch-th
+    , megaparsec
+    , monad-coroutine
+    , monad-memo
+    , mtl
+    , parser-combinators
+    , regex-base
+    , regex-pcre
     , template-haskell
     , th-lift-instances
     , timeit
@@ -121,10 +181,7 @@ executable expr-interpreter
     , clock
     , deepseq
     , formatting
-    , grisette-core
-    , grisette-lifted
-    , grisette-smt
-    , grisette-symprim
+    , grisette
     , hashable
     , loch-th
     , megaparsec
@@ -134,7 +191,6 @@ executable expr-interpreter
     , parser-combinators
     , regex-base
     , regex-pcre
-    , sbv
     , template-haskell
     , th-lift-instances
     , timeit
@@ -183,10 +239,7 @@ executable expr-sketch
     , clock
     , deepseq
     , formatting
-    , grisette-core
-    , grisette-lifted
-    , grisette-smt
-    , grisette-symprim
+    , grisette
     , hashable
     , loch-th
     , megaparsec
@@ -196,7 +249,6 @@ executable expr-sketch
     , parser-combinators
     , regex-base
     , regex-pcre
-    , sbv
     , template-haskell
     , th-lift-instances
     , timeit
@@ -243,11 +295,8 @@ executable fluidics
     , clock
     , deepseq
     , formatting
-    , grisette-core
+    , grisette
     , grisette-examples
-    , grisette-lifted
-    , grisette-smt
-    , grisette-symprim
     , hashable
     , loch-th
     , megaparsec
@@ -257,7 +306,6 @@ executable fluidics
     , parser-combinators
     , regex-base
     , regex-pcre
-    , sbv
     , template-haskell
     , th-lift-instances
     , timeit
@@ -304,10 +352,7 @@ executable genfunc
     , clock
     , deepseq
     , formatting
-    , grisette-core
-    , grisette-lifted
-    , grisette-smt
-    , grisette-symprim
+    , grisette
     , hashable
     , loch-th
     , megaparsec
@@ -317,7 +362,6 @@ executable genfunc
     , parser-combinators
     , regex-base
     , regex-pcre
-    , sbv
     , template-haskell
     , th-lift-instances
     , timeit
@@ -366,10 +410,7 @@ executable location
     , clock
     , deepseq
     , formatting
-    , grisette-core
-    , grisette-lifted
-    , grisette-smt
-    , grisette-symprim
+    , grisette
     , hashable
     , loch-th
     , megaparsec
@@ -379,7 +420,6 @@ executable location
     , parser-combinators
     , regex-base
     , regex-pcre
-    , sbv
     , template-haskell
     , th-lift-instances
     , timeit
@@ -426,10 +466,7 @@ executable order
     , clock
     , deepseq
     , formatting
-    , grisette-core
-    , grisette-lifted
-    , grisette-smt
-    , grisette-symprim
+    , grisette
     , hashable
     , loch-th
     , megaparsec
@@ -439,7 +476,6 @@ executable order
     , parser-combinators
     , regex-base
     , regex-pcre
-    , sbv
     , template-haskell
     , th-lift-instances
     , timeit
@@ -486,10 +522,7 @@ executable regex
     , clock
     , deepseq
     , formatting
-    , grisette-core
-    , grisette-lifted
-    , grisette-smt
-    , grisette-symprim
+    , grisette
     , hashable
     , loch-th
     , megaparsec
@@ -499,7 +532,6 @@ executable regex
     , parser-combinators
     , regex-base
     , regex-pcre
-    , sbv
     , template-haskell
     , th-lift-instances
     , timeit
@@ -549,10 +581,7 @@ executable stmt-sketch
     , clock
     , deepseq
     , formatting
-    , grisette-core
-    , grisette-lifted
-    , grisette-smt
-    , grisette-symprim
+    , grisette
     , hashable
     , loch-th
     , megaparsec
@@ -562,7 +591,6 @@ executable stmt-sketch
     , parser-combinators
     , regex-base
     , regex-pcre
-    , sbv
     , template-haskell
     , th-lift-instances
     , timeit
@@ -609,10 +637,7 @@ executable tutorial
     , clock
     , deepseq
     , formatting
-    , grisette-core
-    , grisette-lifted
-    , grisette-smt
-    , grisette-symprim
+    , grisette
     , hashable
     , loch-th
     , megaparsec
@@ -622,7 +647,6 @@ executable tutorial
     , parser-combinators
     , regex-base
     , regex-pcre
-    , sbv
     , template-haskell
     , th-lift-instances
     , timeit

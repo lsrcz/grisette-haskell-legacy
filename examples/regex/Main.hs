@@ -15,26 +15,10 @@ import Data.Functor.Sum
 import Data.Hashable
 import Data.Maybe
 import Data.MemoTrie
-import qualified Data.SBV as SBV
 import GHC.Generics
-import Grisette.Control.Monad
-import Grisette.Control.Monad.Trans
-import Grisette.Control.Monad.UnionM
-import Grisette.Data.Class.Bool
-import Grisette.Data.Class.Mergeable
-import Grisette.Data.Class.PrimWrapper
-import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.Class.SymEval
-import Grisette.Data.Class.SymGen
-import Grisette.Data.Class.ToCon
-import Grisette.Data.Class.ToSym
-import Grisette.Data.Class.UnionOp
-import Grisette.Data.Functor
-import Grisette.Data.MemoUtils
-import Grisette.Data.Prim.Model
-import Grisette.Data.SMT.Config
-import Grisette.Data.SMT.Solving
-import Grisette.Data.SymPrim
+import Grisette.Backend.SBV
+import Grisette.Core
+import Grisette.SymPrim.Term
 import System.CPUTime
 import Text.Printf
 import Text.Regex.PCRE
@@ -347,7 +331,7 @@ main = do
   print $ listToMaybe (getAllMatches (str7 =~ reg6) :: [(Int, Int)])
   print sk1
   -}
-  res <- time $ synthesisRegex (UnboundedReasoning SBV.z3 {SBV.transcript = Just "/tmp/a.smt2", SBV.timing = SBV.PrintTiming}) (mrgSingle sk) "[cd](a?b)+?" $ genWordsUpTo 4 "abcd"
+  res <- time $ synthesisRegex (UnboundedReasoning z3 {transcript = Just "/tmp/a.smt2", timing = PrintTiming}) (mrgSingle sk) "[cd](a?b)+?" $ genWordsUpTo 4 "abcd"
   print res
   print $ matchFirstImpl (toCoro r) "cabab"
   print $ listToMaybe (getAllMatches (("cabab" :: B.ByteString) =~ ("[cd](a?b)+?" :: B.ByteString)) :: [(Int, Int)])

@@ -7,11 +7,8 @@ import Data.Bifunctor
 import qualified Data.ByteString as B
 import Data.HashMap.Strict as M
 import Evaluator
-import Grisette.Control.Monad.UnionM
-import Grisette.Data.Class.Bool
-import Grisette.Data.Class.PrimWrapper
-import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.SymPrim
+import Grisette.Core
+import Grisette.SymPrim.Term
 import Language.Haskell.TH
 import Syntax
 import Table

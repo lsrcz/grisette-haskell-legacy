@@ -1,7 +1,7 @@
-name: grisette-lifted
+name: grisette
 version: 0.1.0.0
-synopsis: Lifted base functions
-description: Lifted base functions
+synopsis: Monadic symbolic compilation
+description: Monadic library for a symbolic host language in haskell
 category: Formal Methods, Theorem Provers, Symbolic Computation, SMT
 author: "Sirui Lu"
 maintainer: siruilu@uw.edu
@@ -13,8 +13,9 @@ dependencies:
 - base > 4.7 && < 5
 - grisette-core
 - grisette-symprim
-- transformers
-- mtl
+- grisette-lib
+- grisette-smt
+- sbv
 
 default-extensions:
 - BangPatterns

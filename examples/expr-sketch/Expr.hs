@@ -3,18 +3,9 @@ module Expr where
 import Data.List (sort)
 import Data.List.Unique
 import GHC.Generics
-import Grisette.Control.Monad.UnionM
-import Grisette.Data.Class.Bool
-import Grisette.Data.Class.Mergeable
-import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.Class.SymEval
-import Grisette.Data.Class.SymGen
-import Grisette.Data.Class.ToCon
-import Grisette.Data.Class.ToSym
-import Grisette.Data.Prim.Model
-import Grisette.Data.SMT.Config
-import Grisette.Data.SMT.Solving
-import Grisette.Data.SymPrim
+import Grisette.Backend.SBV
+import Grisette.Core
+import Grisette.SymPrim.Term
 
 data ConcExpr
   = ConstantExpr Integer

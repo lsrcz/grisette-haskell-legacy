@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 
-name:           grisette-lifted
+name:           grisette-lib
 version:        0.1.0.0
-synopsis:       Lifted base functions
-description:    Lifted base functions
+synopsis:       Extra Grisette library
+description:    Extra Grisette library, data structures and lifted functions
 category:       Formal Methods, Theorem Provers, Symbolic Computation, SMT
 homepage:       https://github.com/lsrcz/grisette-haskell#readme
 bug-reports:    https://github.com/lsrcz/grisette-haskell/issues
@@ -24,8 +24,9 @@ source-repository head
 library
   exposed-modules:
       Grisette.Data.List
+      Grisette.Data.StringError
   other-modules:
-      Paths_grisette_lifted
+      Paths_grisette_lib
   hs-source-dirs:
       src
   default-extensions:

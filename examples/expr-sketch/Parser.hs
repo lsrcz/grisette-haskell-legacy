@@ -7,11 +7,8 @@ import Control.Monad.State as ST
 import qualified Data.ByteString as B
 import Data.Void
 import Expr
-import Grisette.Control.Monad.UnionM
-import Grisette.Data.Class.PrimWrapper
-import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.Class.SymGen
-import Grisette.Data.SymPrim
+import Grisette.Core
+import Grisette.SymPrim.Term
 import Text.Megaparsec
 import Text.Megaparsec.Byte
 import qualified Text.Megaparsec.Byte.Lexer as L

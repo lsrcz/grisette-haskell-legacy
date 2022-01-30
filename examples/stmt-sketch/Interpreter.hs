@@ -4,20 +4,9 @@ import Control.Monad.Except
 import Control.Monad.State
 import DataStructures
 import GHC.Generics
-import Grisette.Control.Monad
-import Grisette.Control.Monad.UnionM
-import Grisette.Data.Class.Bool
-import Grisette.Data.Class.Error
-import Grisette.Data.Class.Mergeable
-import Grisette.Data.Class.PrimWrapper
-import Grisette.Data.Class.SOrd
-import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.Class.SymEval
-import Grisette.Data.Class.ToCon
-import Grisette.Data.Functor (mrgFmap)
-import Grisette.Data.SMT.Config
-import Grisette.Data.SMT.Solving
-import Grisette.Data.SymPrim
+import Grisette.Backend.SBV
+import Grisette.Core hiding (AssertionError)
+import Grisette.SymPrim.Term
 
 data SValue
   = SInt SymInteger

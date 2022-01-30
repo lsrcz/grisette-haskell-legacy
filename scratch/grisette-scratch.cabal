@@ -32,9 +32,7 @@ executable list-union
       MemoTrie
     , base >4.7 && <5
     , bytestring
-    , grisette-core
-    , grisette-smt
-    , grisette-symprim
+    , grisette
     , hashable
     , loch-th
     , monad-coroutine
@@ -42,7 +40,6 @@ executable list-union
     , mtl
     , regex-base
     , regex-pcre
-    , sbv
     , template-haskell
     , transformers
     , utf8-string

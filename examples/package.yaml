@@ -11,13 +11,9 @@ copyright: "2021 Sirui Lu"
 
 dependencies:
 - base > 4.7 && < 5
-- grisette-core
-- grisette-symprim
-- grisette-smt
-- grisette-lifted
+- grisette
 - mtl
 - transformers
-- sbv
 - monad-coroutine
 - bytestring
 - regex-base
@@ -87,9 +83,9 @@ executables:
     source-dirs: fluidics
     main: Main.hs
     dependencies: grisette-examples
-  #cosette:
-  #  source-dirs: cosette
-  #  main: Benchmark/Main.hs
+  cosette:
+    source-dirs: cosette
+    main: Benchmark/Main.hs
   expr-sketch:
     source-dirs: expr-sketch
     main: Main.hs

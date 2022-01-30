@@ -1,0 +1,43 @@
+name: grisette-lib
+version: 0.1.0.0
+synopsis: Extra Grisette library
+description: Extra Grisette library, data structures and lifted functions
+category: Formal Methods, Theorem Provers, Symbolic Computation, SMT
+author: "Sirui Lu"
+maintainer: siruilu@uw.edu
+license: BSD3
+github: lsrcz/grisette-haskell
+copyright: "2021 Sirui Lu"
+
+dependencies:
+- base > 4.7 && < 5
+- grisette-core
+- grisette-symprim
+- transformers
+- mtl
+
+default-extensions:
+- BangPatterns
+- ConstraintKinds
+- DataKinds
+- DefaultSignatures
+- DeriveGeneric
+- DeriveLift
+- FlexibleContexts
+- FlexibleInstances
+- FunctionalDependencies
+- GADTs
+- KindSignatures
+- LambdaCase
+- MultiParamTypeClasses
+- RankNTypes
+- ScopedTypeVariables
+- TypeApplications
+- TypeFamilies
+- TypeOperators
+- DeriveAnyClass
+
+library:
+  source-dirs: src
+  ghc-options: -Wall -ferror-spans -O2
+

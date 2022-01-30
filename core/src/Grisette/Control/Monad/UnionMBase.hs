@@ -4,7 +4,7 @@
 -- {-# OPTIONS_GHC -fno-full-laziness #-}
 
 module Grisette.Control.Monad.UnionMBase
-  ( UnionMBase,
+  ( UnionMBase (..),
     underlyingUnion,
     isMerged,
   )

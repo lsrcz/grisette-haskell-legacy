@@ -3,8 +3,7 @@
 
 module Main where
 
-import Data.SBV (z3)
-import Grisette.Data.SMT.Config
+import Grisette.Backend.SBV
 import Interpreter
 import Parser
 

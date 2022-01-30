@@ -3,8 +3,7 @@
 module Exception where
 
 import Control.Monad.Except
-import Grisette.Data.Class.Bool
-import Grisette.Data.Class.SimpleMergeable
+import Grisette.Core
 import Language.Haskell.TH
 
 type Exception raw = raw

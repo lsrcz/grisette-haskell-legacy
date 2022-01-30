@@ -6,24 +6,11 @@ import Control.DeepSeq
 import Control.Monad.Except
 import qualified Data.ByteString as B
 import Data.Maybe (isJust)
-import Data.SBV hiding (Mergeable)
 import GHC.Generics
-import Grisette.Control.Monad
-import Grisette.Control.Monad.UnionM
-import Grisette.Data.Class.Bool
-import Grisette.Data.Class.Error
-import Grisette.Data.Class.Mergeable
-import Grisette.Data.Class.PrimWrapper
-import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.Class.SymEval
-import Grisette.Data.Class.SymGen
-import Grisette.Data.Class.ToCon
-import Grisette.Data.Functor
-import Grisette.Data.List
-import Grisette.Data.Prim.Model
-import Grisette.Data.SMT.Config
-import Grisette.Data.SMT.Solving
-import Grisette.Data.SymPrim
+import Grisette.Backend.SBV
+import Grisette.Core
+import Grisette.Lib
+import Grisette.SymPrim.Term
 import Utils.Timing
 
 type Grid = [[UnionM (Maybe B.ByteString)]]

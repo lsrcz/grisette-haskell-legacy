@@ -3,24 +3,10 @@ module Main where
 import Control.Monad.Except
 import Data.BitVector.Sized.Signed as BVS
 import Data.BitVector.Sized.Unsigned as BVU
-import Data.SBV (z3)
 import GHC.Generics
-import Grisette.Control.Exception
-import Grisette.Control.Monad
-import Grisette.Control.Monad.UnionM
-import Grisette.Data.Class.Bool
-import Grisette.Data.Class.Mergeable
-import Grisette.Data.Class.PrimWrapper
-import Grisette.Data.Class.SOrd
-import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.Class.SymEval
-import Grisette.Data.Class.SymGen
-import Grisette.Data.Class.ToCon
-import Grisette.Data.Class.ToSym
-import Grisette.Data.Prim.Model
-import Grisette.Data.SMT.Config
-import Grisette.Data.SMT.Solving
-import Grisette.Data.SymPrim
+import Grisette.Backend.SBV
+import Grisette.Core
+import Grisette.SymPrim.Term
 
 -- Symbolic primitives
 symbBool :: Sym Bool

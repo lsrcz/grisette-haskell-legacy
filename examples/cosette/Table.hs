@@ -4,13 +4,8 @@ module Table where
 
 import qualified Data.ByteString as B
 import GHC.Generics
-import Grisette.Control.Monad.UnionM
-import Grisette.Data.Class.Bool
-import Grisette.Data.Class.PrimWrapper
-import Grisette.Data.Class.SOrd
-import Grisette.Data.Class.SymEval
-import Grisette.Data.Prim.Model
-import Grisette.Data.SymPrim
+import Grisette.Core
+import Grisette.SymPrim.Term
 import Instances.TH.Lift ()
 import qualified Language.Haskell.TH.Syntax as THSyntax
 

@@ -3,15 +3,8 @@
 module Main where
 
 import GHC.Generics
-import Grisette.Control.Monad.UnionM
-import Grisette.Control.Monad.UnionMBase
-import Grisette.Data.Class.Bool
-import Grisette.Data.Class.Mergeable
-import Grisette.Data.Class.PrimWrapper (conc)
-import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.Class.SymGen
-import Grisette.Data.Functor
-import Grisette.Data.SymPrim
+import Grisette.Core
+import Grisette.SymPrim.Term
 
 data Coord = Coord SymInteger SymInteger deriving (Show, Generic, Mergeable SymBool)
 

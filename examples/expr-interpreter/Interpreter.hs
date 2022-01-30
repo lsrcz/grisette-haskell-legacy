@@ -3,17 +3,8 @@ module Interpreter where
 import Control.Monad.Except
 import Control.Monad.State
 import GHC.Generics
-import Grisette.Control.Monad
-import Grisette.Control.Monad.Trans
-import Grisette.Control.Monad.UnionM
-import Grisette.Data.Class.Bool
-import Grisette.Data.Class.Mergeable
-import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.Class.SymEval
-import Grisette.Data.Class.SymGen
-import Grisette.Data.Functor
-import Grisette.Data.Prim.Model
-import Grisette.Data.SymPrim
+import Grisette.Core
+import Grisette.SymPrim.Term
 
 data Expr
   = Lit LitExpr

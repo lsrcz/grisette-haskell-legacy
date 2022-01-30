@@ -11,12 +11,9 @@ copyright: "2021 Sirui Lu"
 
 dependencies:
 - base > 4.7 && < 5
-- grisette-core
-- grisette-symprim
-- grisette-smt
+- grisette
 - mtl
 - transformers
-- sbv
 - monad-coroutine
 - bytestring
 - regex-base

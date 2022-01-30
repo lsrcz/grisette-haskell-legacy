@@ -8,11 +8,8 @@ import Control.Monad.Except (ExceptT)
 -- import Exception
 import ExceptionWithLocation
 import GHC.Generics
-import Grisette.Control.Monad.UnionM (UnionM)
-import Grisette.Data.Class.Bool
-import Grisette.Data.Class.Mergeable
-import Grisette.Data.Class.PrimWrapper
-import Grisette.Data.Class.SimpleMergeable
+import Grisette.Core
+import Grisette.SymPrim.Term
 
 data RawException
   = Error1

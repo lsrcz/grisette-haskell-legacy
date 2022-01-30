@@ -5,12 +5,10 @@
 module Main where
 
 import Benchmark.Queries
-import Data.SBV
 import Denotation
 import Equal
-import Grisette.Data.Class.SymEval
-import Grisette.Data.SMT.Config
-import Grisette.Data.SMT.Solving
+import Grisette.Backend.SBV
+import Grisette.Core
 import System.TimeIt
 
 main :: IO ()

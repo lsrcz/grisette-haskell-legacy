@@ -4,8 +4,7 @@
 
 module Benchmark.Queries where
 
-import Grisette.Data.Class.PrimWrapper
-import Grisette.Data.Class.SimpleMergeable
+import Grisette.Core
 import Quasiquote
 import Syntax
 import Table
