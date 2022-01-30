@@ -484,7 +484,7 @@ deriving instance (Lift (SignedBV v))
 deriving instance (NFData (SignedBV v))
 instance (KnownNat w, 1 <= w) => SupportedPrim (SignedBV w) where
   type PrimConstraint (SignedBV w) = (KnownNat w, 1 <= w)
-  pformatConc i = show i ++ "SB"
+  pformatConc i = show i
   defaultValue = mkSignedBV knownNat 0
 
 -- Unsigned BV
@@ -495,5 +495,5 @@ deriving instance (Lift (UnsignedBV v))
 deriving instance (NFData (UnsignedBV v))
 instance (KnownNat w, 1 <= w) => SupportedPrim (UnsignedBV w) where
   type PrimConstraint (UnsignedBV w) = (KnownNat w, 1 <= w)
-  pformatConc i = show i ++ "SB"
+  pformatConc i = show i
   defaultValue = mkUnsignedBV knownNat 0
