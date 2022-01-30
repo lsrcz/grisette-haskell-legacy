@@ -24,6 +24,7 @@ module Grisette.Data.Class.SymGen
     genSymSimpleIndexedWithDerivedNoSpec,
     genSymIndexedWithDerivedSameShape,
     choose,
+    simpleChoose,
     chooseU,
     runSymGenIndexed,
     ListSpec (..),
@@ -251,6 +252,16 @@ choose x (r : rs) = do
   b <- genSymSimpleIndexed @bool ()
   res <- choose r rs
   return $ mrgGuard b (mrgSingle x) res
+
+simpleChoose ::
+  forall bool a m.
+  (SymBoolOp bool, SimpleMergeable bool a, SymGenSimple bool () bool, MonadState SymGenState m) =>
+  a -> [a] -> m a
+simpleChoose x [] = return x
+simpleChoose x (r : rs) = do
+  b <- genSymSimpleIndexed @bool ()
+  res <- simpleChoose @bool r rs
+  return $ mrgIf @bool b x res
 
 chooseU ::
   forall bool a m.
