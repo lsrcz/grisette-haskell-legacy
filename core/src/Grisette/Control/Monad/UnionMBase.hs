@@ -188,3 +188,11 @@ instance (Hashable bool, Hashable a) => Hashable (UnionMBase bool a) where
 
 instance (Eq bool, Eq a) => Eq (UnionMBase bool a) where
   l == r = underlyingUnion l == underlyingUnion r
+
+instance (SymBoolOp bool, Num a, Mergeable bool a) => Num (UnionMBase bool a) where
+  fromInteger = mrgSingle . fromInteger
+  negate x = x >>= (mrgSingle . negate)
+  x + y = x >>= \x1 -> y >>= \y1 -> mrgSingle $ x1 + y1
+  x * y = x >>= \x1 -> y >>= \y1 -> mrgSingle $ x1 * y1
+  abs x = x >>= mrgSingle . abs
+  signum x = x >>= mrgSingle . signum
