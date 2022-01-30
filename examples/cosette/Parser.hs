@@ -69,12 +69,15 @@ wholeStringQuery = do
   return q
 
 query :: Parser Query
-query = space >> (try namedQuery
-  <|> try joinQuery
-  <|> try asQuery
-  <|> try selectQuery
-  <|> try leftOuterJoin2Query
-  <|> subQuery)
+query =
+  space
+    >> ( try namedQuery
+           <|> try joinQuery
+           <|> try asQuery
+           <|> try selectQuery
+           <|> try leftOuterJoin2Query
+           <|> subQuery
+       )
 
 subQuery :: Parser Query
 subQuery = QuerySub <$> between (symbol "${") (symbol "}") ident

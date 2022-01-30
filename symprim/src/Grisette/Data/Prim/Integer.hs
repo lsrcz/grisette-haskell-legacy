@@ -1,12 +1,5 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE DeriveLift #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DeriveAnyClass #-}
 
 module Grisette.Data.Prim.Integer
   ( integerConcTermView,
@@ -21,13 +14,13 @@ module Grisette.Data.Prim.Integer
   )
 where
 
+import Control.DeepSeq
 import Data.Typeable
+import GHC.Generics
 import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.Helpers
 import Grisette.Data.Prim.InternedTerm
 import Language.Haskell.TH.Syntax
-import Control.DeepSeq
-import GHC.Generics
 
 integerConcTermView :: forall a. Term a -> Maybe Integer
 integerConcTermView (ConcTerm _ b) = cast b

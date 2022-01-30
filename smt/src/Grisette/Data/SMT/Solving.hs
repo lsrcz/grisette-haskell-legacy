@@ -1,10 +1,11 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
 
-module Grisette.Data.SMT.Solving (solveWith, solveWithTranslation, SolverTranslation (..)) where
+module Grisette.Data.SMT.Solving
+  ( solveWith,
+    solveWithTranslation,
+    SolverTranslation (..),
+  )
+where
 
 import Control.Monad.Except
 import qualified Data.SBV as SBV

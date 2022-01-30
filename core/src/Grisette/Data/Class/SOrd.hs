@@ -1,14 +1,8 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
 
 module Grisette.Data.Class.SOrd
   ( SOrd (..),
-
     SOrd' (..),
     derivedSymLt,
     derivedSymLe,
@@ -16,6 +10,7 @@ module Grisette.Data.Class.SOrd
     derivedSymGe,
   )
 where
+
 import GHC.Generics
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.PrimWrapper

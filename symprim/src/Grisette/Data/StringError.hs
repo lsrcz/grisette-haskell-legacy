@@ -1,6 +1,3 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-
 module Grisette.Data.StringError
   ( StringError (..),
   )
@@ -11,8 +8,8 @@ import Grisette.Data.Class.Error
 import Grisette.Data.Class.Integer
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.PrimWrapper
-import Grisette.Data.Class.ToSym
 import Grisette.Data.Class.ToCon
+import Grisette.Data.Class.ToSym
 
 newtype StringError = StringError String deriving (Eq, Ord)
 
@@ -33,4 +30,3 @@ instance ToSym StringError StringError where
 
 instance ToCon StringError StringError where
   toCon = Just
-

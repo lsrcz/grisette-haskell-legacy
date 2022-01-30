@@ -16,6 +16,27 @@ dependencies:
 - transformers
 - mtl
 
+default-extensions:
+- BangPatterns
+- ConstraintKinds
+- DataKinds
+- DefaultSignatures
+- DeriveGeneric
+- DeriveLift
+- FlexibleContexts
+- FlexibleInstances
+- FunctionalDependencies
+- GADTs
+- KindSignatures
+- LambdaCase
+- MultiParamTypeClasses
+- RankNTypes
+- ScopedTypeVariables
+- TypeApplications
+- TypeFamilies
+- TypeOperators
+- DeriveAnyClass
+
 library:
   source-dirs: src
   ghc-options: -Wall -ferror-spans -O2

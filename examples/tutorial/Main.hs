@@ -1,15 +1,3 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
-
 module Main where
 
 import Control.Monad.Except
@@ -17,6 +5,7 @@ import Data.BitVector.Sized.Signed as BVS
 import Data.BitVector.Sized.Unsigned as BVU
 import Data.SBV (z3)
 import GHC.Generics
+import Grisette.Control.Exception
 import Grisette.Control.Monad
 import Grisette.Control.Monad.UnionM
 import Grisette.Data.Class.Bool
@@ -32,7 +21,6 @@ import Grisette.Data.Prim.Model
 import Grisette.Data.SMT.Config
 import Grisette.Data.SMT.Solving
 import Grisette.Data.SymPrim
-import Grisette.Control.Exception
 
 -- Symbolic primitives
 symbBool :: Sym Bool
@@ -135,12 +123,11 @@ testIsEmpty = getSingle $ do
   l <- symbList4
   return $ isEmpty l
 
-
 -- Working with Errors + show that path conditions are maintained correctly
 -- link to the z3 example
 getitem :: (Mergeable SymBool a) => SymInteger -> [a] -> ExceptT AssertionError UnionM a
 getitem _ [] = throwError AssertionError
-getitem i (x:xs) = mrgGuard (i ==~ 0) (mrgReturn x) (getitem (i - 1) xs)
+getitem i (x : xs) = mrgGuard (i ==~ 0) (mrgReturn x) (getitem (i - 1) xs)
 
 list :: [SymBool]
 list = [ssymb "a", ssymb "b"]
@@ -163,6 +150,7 @@ data Expr
   | Eqv (UnionM Expr) (UnionM Expr)
   deriving (Show, Eq, Generic)
   deriving anyclass (Mergeable SymBool, SEq SymBool, SymEval Model, ToSym ConcExpr)
+
 -- you can write this as deriving (Show, Eq, Generic, Mergeable SymBool ...)
 
 -- What are these type classes?
@@ -243,7 +231,7 @@ sketch2 = genSym (2 :: Integer) "b"
 -- if (a ?? b < 2) {
 -- }
 -- here ?? is an operator
-instance SymGen SymBool () (UnionM Expr -> UnionM Expr -> UnionM Expr) where
+instance SymGen SymBool () (UnionM Expr -> UnionM Expr -> UnionM Expr)
 
 instance SymGenSimple SymBool () (UnionM Expr -> UnionM Expr -> UnionM Expr) where
   genSymSimpleIndexed _ =
@@ -341,12 +329,13 @@ result i = do
   case m of
     Left _ -> print "No such expression"
     Right mo -> print (toCon $ symeval True mo sketch4 :: Maybe ConcExpr)
-    -- True means that for all values that are not mentioned in the model, we should fill in a default value.
-    -- This is possible because the partial evaluator may strip some variables
+
+-- True means that for all values that are not mentioned in the model, we should fill in a default value.
+-- This is possible because the partial evaluator may strip some variables
 
 -- Construcing the sketch is still so hard? We can write a parser for a sketch like language and
 -- directly construct the symbolic program with it.
--- 
+--
 --   genSymIndexed :: (MonadState SymGenState m) => spec -> m (UnionMBase bool a)
 --                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
 -- You can add a state monad to your parser monad stack, and you can generate symbolic programs with it

@@ -1,16 +1,5 @@
-{-# LANGUAGE ExistentialQuantification #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE DeriveLift #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DeriveAnyClass #-}
 
 module Grisette.Data.Prim.TabularFunc
   ( pattern TabularFuncConcTerm,
@@ -21,15 +10,15 @@ module Grisette.Data.Prim.TabularFunc
   )
 where
 
+import Control.DeepSeq
 import Data.Data
+import GHC.Generics
 import Grisette.Data.Class.FiniteFunction
 import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.Helpers
 import Grisette.Data.Prim.InternedTerm
 import Grisette.Data.TabularFunc
 import Language.Haskell.TH.Syntax
-import Control.DeepSeq
-import GHC.Generics
 
 tabularFuncConcTermView :: forall a b c. (Typeable b, Typeable c) => Term a -> Maybe (b =-> c)
 tabularFuncConcTermView (ConcTerm _ b) = cast b

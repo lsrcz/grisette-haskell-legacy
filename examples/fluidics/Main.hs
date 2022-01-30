@@ -1,17 +1,12 @@
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE DeriveAnyClass #-}
 
 module Main where
 
+import Control.DeepSeq
 import Control.Monad.Except
 import qualified Data.ByteString as B
+import Data.Maybe (isJust)
+import Data.SBV hiding (Mergeable)
 import GHC.Generics
 import Grisette.Control.Monad
 import Grisette.Control.Monad.UnionM
@@ -20,19 +15,16 @@ import Grisette.Data.Class.Error
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.SimpleMergeable
+import Grisette.Data.Class.SymEval
 import Grisette.Data.Class.SymGen
+import Grisette.Data.Class.ToCon
 import Grisette.Data.Functor
 import Grisette.Data.List
-import Grisette.Data.SymPrim
-import Data.Maybe (isJust)
+import Grisette.Data.Prim.Model
 import Grisette.Data.SMT.Config
 import Grisette.Data.SMT.Solving
-import Grisette.Data.Class.SymEval
-import Grisette.Data.Class.ToCon
-import Grisette.Data.Prim.Model
-import Data.SBV hiding (Mergeable)
+import Grisette.Data.SymPrim
 import Utils.Timing
-import Control.DeepSeq
 
 type Grid = [[UnionM (Maybe B.ByteString)]]
 
@@ -53,10 +45,13 @@ replaceNth pos val ls = go pos val ls 0
 
 data ConcPoint = ConcPoint Integer Integer
   deriving (Show, Generic, ToCon Point)
+
 data Point = Point SymInteger SymInteger
   deriving (Show, Generic, SymEval Model, Mergeable SymBool)
+
 instance SymGen SymBool () Point where
   genSymIndexed = fmap mrgSingle . genSymSimpleIndexed @SymBool
+
 instance SymGenSimple SymBool () Point where
   genSymSimpleIndexed () = do
     x <- genSymSimpleIndexed @SymBool ()
@@ -75,10 +70,10 @@ gridSet g (Point x y) v = do
   replaceNth x r g
 
 unsafeSet :: Grid -> Int -> Int -> UnionM (Maybe B.ByteString) -> Grid
-unsafeSet g x y v = let
-  xlist = g !! x
-  r = unsafeReplaceNth y v xlist
-  in unsafeReplaceNth x r g
+unsafeSet g x y v =
+  let xlist = g !! x
+      r = unsafeReplaceNth y v xlist
+   in unsafeReplaceNth x r g
 
 data Dir = N | S | W | E deriving (Show, Generic, Mergeable SymBool, SymEval Model, ToCon Dir)
 
@@ -117,28 +112,32 @@ performN f x a = f a >>= performN f (x - 1)
 
 mix :: Grid -> Point -> ExceptT () UnionM Grid
 mix g p = do
-  let
-    e = translatePoint p E
-    se = translatePoint e S
-    s = translatePoint p S
+  let e = translatePoint p E
+      se = translatePoint e S
+      s = translatePoint p S
    in do
-     a <- gridRef g p
-     b <- gridRef g e
-     assertU $ mrgFmap (conc . isJust) a
-     assertU $ mrgFmap (conc . isJust) b
-     g1 <- gridSet g p (mrgSingle $ Just "c")
-     g2 <- gridSet g1 e (mrgSingle $ Just "c")
-     performN (\gx -> do
-       gx1 <- move gx p E
-       gx2 <- move gx1 e S
-       gx3 <- move gx2 se W
-       move gx3 s N
-       ) 3 g2
+        a <- gridRef g p
+        b <- gridRef g e
+        assertU $ mrgFmap (conc . isJust) a
+        assertU $ mrgFmap (conc . isJust) b
+        g1 <- gridSet g p (mrgSingle $ Just "c")
+        g2 <- gridSet g1 e (mrgSingle $ Just "c")
+        performN
+          ( \gx -> do
+              gx1 <- move gx p E
+              gx2 <- move gx1 e S
+              gx3 <- move gx2 se W
+              move gx3 s N
+          )
+          3
+          g2
 
 data ConcInstruction = ConcMove ConcPoint Dir | ConcMix ConcPoint
   deriving (Show, Generic, ToCon Instruction)
+
 data Instruction = Move Point (UnionM Dir) | Mix Point
   deriving (Show, Generic, Mergeable SymBool, SymEval Model)
+
 instance SymGen SymBool () Instruction where
   genSymIndexed _ = do
     p <- genSymSimpleIndexed @SymBool ()
@@ -149,30 +148,35 @@ interpretInstruction :: Grid -> Instruction -> ExceptT () UnionM Grid
 interpretInstruction g (Move p ud) = lift ud >>= move g p
 interpretInstruction g (Mix p) = mix g p
 
-synthesizeProgram :: GrisetteSMTConfig n -> Int -> Grid ->
-  (Grid -> ExceptT () UnionM SymBool) -> IO (Maybe [ConcInstruction])
+synthesizeProgram ::
+  GrisetteSMTConfig n ->
+  Int ->
+  Grid ->
+  (Grid -> ExceptT () UnionM SymBool) ->
+  IO (Maybe [ConcInstruction])
 synthesizeProgram config i initst f = go 0 (mrgReturn initst)
   where
     lst :: [UnionM Instruction]
     lst = genSymSimple @SymBool (SimpleListSpec (toInteger i) ()) "a"
     go :: Int -> ExceptT () UnionM Grid -> IO (Maybe [ConcInstruction])
-    go num st = if num == i then return Nothing else
-      let
-        newst = do
-          t1 <- st
-          ins <- lift (lst !! num)
-          interpretInstruction t1 ins
-        cond = getSingle $ mrgFmap (\case Left _ -> conc False; Right v -> v) $ runExceptT $ newst >>= f
-       in
-         do
-           print num
-           --print cond
-           _ <- timeItAll "symeval" $ cond `deepseq` return cond
-           r <- timeItAll "lower/solve" $ solveWith config cond
-           case r of
-             Left _ ->
-                go (num + 1) newst
-             Right m -> return $ toCon $ symeval True m $ take (num + 1) lst
+    go num st =
+      if num == i
+        then return Nothing
+        else
+          let newst = do
+                t1 <- st
+                ins <- lift (lst !! num)
+                interpretInstruction t1 ins
+              cond = getSingle $ mrgFmap (\case Left _ -> conc False; Right v -> v) $ runExceptT $ newst >>= f
+           in do
+                print num
+                --print cond
+                _ <- timeItAll "symeval" $ cond `deepseq` return cond
+                r <- timeItAll "lower/solve" $ solveWith config cond
+                case r of
+                  Left _ ->
+                    go (num + 1) newst
+                  Right m -> return $ toCon $ symeval True m $ take (num + 1) lst
 
 initSt :: Grid
 initSt = unsafeSet (unsafeSet (makeGrid 5 5) 0 0 (mrgSingle $ Just "a")) 0 2 (mrgSingle $ Just "b")
@@ -191,6 +195,5 @@ main = timeItAll "overall" $ do
   {-print $ do
     g <- (lift x) >>= interpretInstruction initSt
     (lift y) >>= interpretInstruction g-}
-  synthr <- synthesizeProgram (UnboundedReasoning z3 {verbose=False, timing=PrintTiming}) 20 initSt spec
+  synthr <- synthesizeProgram (UnboundedReasoning z3 {verbose = False, timing = PrintTiming}) 20 initSt spec
   print synthr
-

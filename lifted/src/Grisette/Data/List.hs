@@ -1,17 +1,16 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
+module Grisette.Data.List
+  ( (!!~),
+    symFilter,
+  )
+where
 
-module Grisette.Data.List where
-
+import Control.Exception
 import Control.Monad.Except
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Error
 import Grisette.Data.Class.Integer
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.SimpleMergeable
-import Control.Exception
 
 (!!~) ::
   ( SymBoolOp bool,
@@ -33,7 +32,6 @@ symFilter :: (SymBoolOp bool, UnionMOp bool u, Mergeable bool a, Monad u) => (a 
 symFilter f = go
   where
     go [] = mrgSingle []
-    go (x:xs) = do
+    go (x : xs) = do
       r <- go xs
       mrgGuard (f x) (mrgSingle (x : r)) (mrgSingle r)
-

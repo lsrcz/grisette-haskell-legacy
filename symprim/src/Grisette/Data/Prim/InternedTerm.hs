@@ -1,27 +1,11 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DefaultSignatures #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE DeriveLift #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 {-# OPTIONS_GHC -fno-cse #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE DeriveAnyClass #-}
 
 module Grisette.Data.Prim.InternedTerm
   ( UnaryOp (..),
@@ -49,6 +33,7 @@ module Grisette.Data.Prim.InternedTerm
   )
 where
 
+import Control.DeepSeq
 import Control.Monad.State
 import Data.BitVector.Sized
 import Data.BitVector.Sized.Signed as BVS
@@ -66,7 +51,6 @@ import GHC.Generics
 import GHC.IO (unsafeDupablePerformIO)
 import GHC.TypeNats
 import Language.Haskell.TH.Syntax
-import Control.DeepSeq
 
 class (SupportedPrim arg, SupportedPrim t, Lift tag, NFData tag) => UnaryOp tag arg t | tag arg -> t where
   partialEvalUnary :: (Typeable tag, Typeable t) => tag -> Term arg -> Term t
@@ -142,32 +126,26 @@ data Term t where
 doTermRnf :: Term a -> M.HashMap SomeTerm () -> (M.HashMap SomeTerm (), ())
 doTermRnf (ConcTerm i t) o = (o, rnf i `seq` rnf t)
 doTermRnf (SymbTerm i n) o = (o, rnf i `seq` rnf n)
-doTermRnf u@(UnaryTerm i tag t1) o = case M.lookup (SomeTerm u) o of 
+doTermRnf u@(UnaryTerm i tag t1) o = case M.lookup (SomeTerm u) o of
   Nothing ->
-    let
-      (o1, u1) = doTermRnf t1 o
-      r = rnf i `seq` rnf tag `seq` u1
-     in
-      (M.insert (SomeTerm u) r o1, r)
+    let (o1, u1) = doTermRnf t1 o
+        r = rnf i `seq` rnf tag `seq` u1
+     in (M.insert (SomeTerm u) r o1, r)
   Just v -> (o, v)
-doTermRnf u@(BinaryTerm i tag t1 t2) o = case M.lookup (SomeTerm u) o of 
+doTermRnf u@(BinaryTerm i tag t1 t2) o = case M.lookup (SomeTerm u) o of
   Nothing ->
-    let
-      (o1, u1) = doTermRnf t1 o
-      (o2, u2) = doTermRnf t2 o1
-      r = rnf i `seq` rnf tag `seq` u1 `seq` u2
-     in
-      (M.insert (SomeTerm u) r o2, r)
+    let (o1, u1) = doTermRnf t1 o
+        (o2, u2) = doTermRnf t2 o1
+        r = rnf i `seq` rnf tag `seq` u1 `seq` u2
+     in (M.insert (SomeTerm u) r o2, r)
   Just v -> (o, v)
-doTermRnf u@(TernaryTerm i tag t1 t2 t3) o = case M.lookup (SomeTerm u) o of 
+doTermRnf u@(TernaryTerm i tag t1 t2 t3) o = case M.lookup (SomeTerm u) o of
   Nothing ->
-    let
-      (o1, u1) = doTermRnf t1 o
-      (o2, u2) = doTermRnf t2 o1
-      (o3, u3) = doTermRnf t3 o2
-      r = rnf i `seq` rnf tag `seq` u1 `seq` u2 `seq` u3
-     in
-      (M.insert (SomeTerm u) r o3, r)
+    let (o1, u1) = doTermRnf t1 o
+        (o2, u2) = doTermRnf t2 o1
+        (o3, u3) = doTermRnf t3 o2
+        r = rnf i `seq` rnf tag `seq` u1 `seq` u2 `seq` u3
+     in (M.insert (SomeTerm u) r o3, r)
   Just v -> (o, v)
 
 instance NFData (Term a) where
@@ -175,11 +153,11 @@ instance NFData (Term a) where
 
 instance Lift (Term t) where
   liftTyped x = unsafeTExpCoerce (Language.Haskell.TH.Syntax.lift x)
-  lift (ConcTerm _ i) = [| concTerm i |]
-  lift (SymbTerm _ (TermSymbol _ sym)) = [| symbTerm sym |]
-  lift (UnaryTerm _ tag arg) = [| constructUnary tag arg |]
-  lift (BinaryTerm _ tag arg1 arg2) = [| constructBinary tag arg1 arg2 |]
-  lift (TernaryTerm _ tag arg1 arg2 arg3) = [| constructTernary tag arg1 arg2 arg3 |]
+  lift (ConcTerm _ i) = [|concTerm i|]
+  lift (SymbTerm _ (TermSymbol _ sym)) = [|symbTerm sym|]
+  lift (UnaryTerm _ tag arg) = [|constructUnary tag arg|]
+  lift (BinaryTerm _ tag arg1 arg2) = [|constructBinary tag arg1 arg2|]
+  lift (TernaryTerm _ tag arg1 arg2 arg3) = [|constructTernary tag arg1 arg2 arg3|]
 
 introSupportedPrimConstraint :: forall t a. Term t -> ((SupportedPrim t) => a) -> a
 introSupportedPrimConstraint ConcTerm {} x = x
@@ -481,7 +459,9 @@ instance (KnownNat w, 1 <= w) => Hashable (SignedBV w) where
   s `hashWithSalt` (SignedBV b) = s `hashWithSalt` b
 
 deriving instance (Lift (SignedBV v))
+
 deriving instance (NFData (SignedBV v))
+
 instance (KnownNat w, 1 <= w) => SupportedPrim (SignedBV w) where
   type PrimConstraint (SignedBV w) = (KnownNat w, 1 <= w)
   pformatConc i = show i
@@ -492,7 +472,9 @@ instance (KnownNat w, 1 <= w) => Hashable (UnsignedBV w) where
   s `hashWithSalt` (UnsignedBV b) = s `hashWithSalt` b
 
 deriving instance (Lift (UnsignedBV v))
+
 deriving instance (NFData (UnsignedBV v))
+
 instance (KnownNat w, 1 <= w) => SupportedPrim (UnsignedBV w) where
   type PrimConstraint (UnsignedBV w) = (KnownNat w, 1 <= w)
   pformatConc i = show i

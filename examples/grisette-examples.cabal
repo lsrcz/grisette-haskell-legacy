@@ -28,6 +28,28 @@ library
       Paths_grisette_examples
   hs-source-dirs:
       utils
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
   ghc-options: -Wall -ferror-spans -O2
   build-depends:
       MemoTrie
@@ -67,6 +89,28 @@ executable expr-interpreter
       Paths_grisette_examples
   hs-source-dirs:
       expr-interpreter
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
   ghc-options: -Wall -ferror-spans -O2
   build-depends:
       MemoTrie
@@ -107,6 +151,28 @@ executable expr-sketch
       Paths_grisette_examples
   hs-source-dirs:
       expr-sketch
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
   ghc-options: -Wall -ferror-spans -O2
   build-depends:
       MemoTrie
@@ -145,6 +211,28 @@ executable fluidics
       Paths_grisette_examples
   hs-source-dirs:
       fluidics
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
   ghc-options: -Wall -ferror-spans -O2
   build-depends:
       MemoTrie
@@ -184,6 +272,28 @@ executable genfunc
       Paths_grisette_examples
   hs-source-dirs:
       genfunc
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
   ghc-options: -Wall -ferror-spans -O2
   build-depends:
       MemoTrie
@@ -224,6 +334,28 @@ executable location
       Paths_grisette_examples
   hs-source-dirs:
       location
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
   ghc-options: -Wall -ferror-spans -O2
   build-depends:
       MemoTrie
@@ -262,6 +394,28 @@ executable order
       Paths_grisette_examples
   hs-source-dirs:
       order
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
   ghc-options: -Wall -ferror-spans -O2
   build-depends:
       MemoTrie
@@ -300,6 +454,28 @@ executable regex
       Paths_grisette_examples
   hs-source-dirs:
       regex
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
   ghc-options: -Wall -ferror-spans -O2
   build-depends:
       MemoTrie
@@ -341,6 +517,28 @@ executable stmt-sketch
       Paths_grisette_examples
   hs-source-dirs:
       stmt-sketch
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
   ghc-options: -Wall -ferror-spans -O2
   build-depends:
       MemoTrie
@@ -379,6 +577,28 @@ executable tutorial
       Paths_grisette_examples
   hs-source-dirs:
       tutorial
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
   ghc-options: -Wall -ferror-spans -O2
   build-depends:
       MemoTrie

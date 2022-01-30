@@ -1,7 +1,7 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeFamilies #-}
-
-module Grisette.Data.Class.FiniteFunction (FiniteFunction (..)) where
+module Grisette.Data.Class.FiniteFunction
+  ( FiniteFunction (..),
+  )
+where
 
 class FiniteFunction f where
   type Arg f

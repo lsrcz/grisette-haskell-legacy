@@ -1,5 +1,4 @@
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeApplications #-}
 
 module Equal where
 
@@ -12,6 +11,7 @@ import Grisette.Data.SymPrim
 import Language.Haskell.TH
 import Syntax
 import Table
+
 getMultiplicity :: [UnionM (Maybe SymInteger)] -> RawTable -> SymInteger
 getMultiplicity r = foldr (\(r1, p1) t -> mrgIf @SymBool (r1 ==~ r) p1 0 + t) 0
 
@@ -45,4 +45,4 @@ tableAllRepOk (QueryNamed n) = fail $ "There are unresolved tables " ++ show n
 tableAllRepOk q = fail $ "Don't know how to determine rep ok for " ++ show q
 
 verifCondition :: Query -> Query -> Q (TExp SymBool)
-verifCondition q1 q2 = [|| $$(tableAllRepOk q1) &&~ $$(tableAllRepOk q2) &&~ (nots $$(same q1 q2)) ||]
+verifCondition q1 q2 = [||$$(tableAllRepOk q1) &&~ $$(tableAllRepOk q2) &&~ (nots $$(same q1 q2))||]

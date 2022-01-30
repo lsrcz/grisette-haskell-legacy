@@ -1,7 +1,3 @@
-{-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-
 module Grisette.Control.Monad.Trans
   ( mrgLift,
   )

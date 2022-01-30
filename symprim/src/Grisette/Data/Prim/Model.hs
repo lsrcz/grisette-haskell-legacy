@@ -1,9 +1,3 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
-
 module Grisette.Data.Prim.Model
   ( Model (..),
     empty,
@@ -22,9 +16,9 @@ import Data.Dynamic
 import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet as S
 import Data.Typeable
+import Grisette.Data.MemoUtils
 import Grisette.Data.Prim.InternedTerm
 import Unsafe.Coerce
-import Grisette.Data.MemoUtils
 
 newtype Model = Model (M.HashMap Symbol Dynamic) deriving (Show)
 

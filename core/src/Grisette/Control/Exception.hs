@@ -1,15 +1,16 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE FlexibleInstances #-}
-module Grisette.Control.Exception where
+module Grisette.Control.Exception
+  ( AssertionError (..),
+    VerificationConditions (..),
+    gassert,
+  )
+where
 
-import Grisette.Data.Class.Error
 import Control.Monad.Except
-import Grisette.Data.Class.Bool
-import Grisette.Data.Class.SimpleMergeable
 import GHC.Generics
+import Grisette.Data.Class.Bool
+import Grisette.Data.Class.Error
 import Grisette.Data.Class.Mergeable
+import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
 

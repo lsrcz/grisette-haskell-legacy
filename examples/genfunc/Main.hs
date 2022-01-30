@@ -1,11 +1,4 @@
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
-{-# LANGUAGE DeriveAnyClass #-}
 
 module Main where
 
@@ -17,8 +10,8 @@ import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.PrimWrapper (conc)
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.SymGen
-import Grisette.Data.SymPrim
 import Grisette.Data.Functor
+import Grisette.Data.SymPrim
 
 data Coord = Coord SymInteger SymInteger deriving (Show, Generic, Mergeable SymBool)
 
@@ -68,7 +61,8 @@ extractArgFromUnionMBaseOfFunc l a = mrgFmap (\x -> x a) l
 
 instance
   (SymBoolOp bool, SymGenSimple bool () bool, SymGenSimple bool spec (a -> b), Mergeable bool b) =>
-  SymGen bool (ListSpec spec) (a -> UnionMBase bool [b]) where
+  SymGen bool (ListSpec spec) (a -> UnionMBase bool [b])
+  where
   genSymIndexed v = genSymSimpleIndexed @bool v
 
 instance
@@ -78,6 +72,7 @@ instance
   genSymSimpleIndexed spec = do
     l <- genSymIndexed @bool @(ListSpec spec) @[a -> b] spec
     return $ extractArgFromUnionMBaseOfFunc (extractArgFromListOfFunc <$> l)
+
 -- The previous section should lie in Grisette lib
 
 genSketch :: ListSpec Int -> String -> Coord -> UnionM [UnionM Move]

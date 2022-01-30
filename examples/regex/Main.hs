@@ -1,15 +1,5 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
-{-# LANGUAGE DeriveAnyClass #-}
 
 module Main where
 
@@ -310,7 +300,11 @@ sk :: Patt
 sk = runSymGenIndexed sks "a"
 
 r :: Patt
-r = toSym $ (ConcSeqPatt (ConcAltPatt (ConcPrimPatt "c") (ConcPrimPatt "d")) (ConcPlusPatt (ConcSeqPatt (ConcAltPatt (ConcPrimPatt "") (ConcPrimPatt "a")) (ConcPrimPatt "b")) True))
+r =
+  toSym $
+    ConcSeqPatt
+      (ConcAltPatt (ConcPrimPatt "c") (ConcPrimPatt "d"))
+      (ConcPlusPatt (ConcSeqPatt (ConcAltPatt (ConcPrimPatt "") (ConcPrimPatt "a")) (ConcPrimPatt "b")) True)
 
 {-
 t :: [Word8]

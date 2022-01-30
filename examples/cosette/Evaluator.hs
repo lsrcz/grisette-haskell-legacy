@@ -1,18 +1,13 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TupleSections #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE FlexibleContexts #-}
-
 module Evaluator where
 
+import Data.Bifunctor
+import qualified Data.ByteString as B
+import Grisette.Control.Monad.UnionM
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.SymPrim
 import Table
-import Data.Bifunctor
-import Grisette.Control.Monad.UnionM
-import qualified Data.ByteString as B
 
 xproduct :: Table -> Table -> Name -> Table
 xproduct a@(Table _ _ ca) b@(Table _ _ cb) name = Table name (schemaJoin a b) (xproductRaw ca cb)
@@ -24,23 +19,37 @@ cartesProd :: forall a b. [a] -> [b] -> [(a, b)]
 cartesProd a b = [(x, y) | x <- a, y <- b]
 
 equiJoin :: RawTable -> RawTable -> [(Int, Int)] -> Int -> RawTable
-equiJoin content1 content2 indexPairs schemaSize1 = foldr ( \(v, p) acc ->
-  let multiplicity = mrgIf @SymBool ( foldr (&&~) (conc True) $
-        fmap (\(i1, i2) -> v !! i1 ==~ v !! (i2 + schemaSize1)) indexPairs) p 0
-   in if multiplicity == 0 then acc else (v, multiplicity):acc) [] $ xproductRaw content1 content2
+equiJoin content1 content2 indexPairs schemaSize1 =
+  foldr
+    ( \(v, p) acc ->
+        let multiplicity =
+              mrgIf @SymBool
+                ( foldr (&&~) (conc True) $
+                    fmap (\(i1, i2) -> v !! i1 ==~ v !! (i2 + schemaSize1)) indexPairs
+                )
+                p
+                0
+         in if multiplicity == 0 then acc else (v, multiplicity) : acc
+    )
+    []
+    $ xproductRaw content1 content2
 
 unionAllRaw :: RawTable -> RawTable -> RawTable
 unionAllRaw = (++)
 
 leftOuterJoin :: Table -> Table -> Int -> Int -> Table
 leftOuterJoin t1@(Table n1 s1 c1) t2@(Table n2 s2 c2) index1 index2 =
-  Table (B.append n1 n2) (schemaJoin t1 t2)
-  (leftOuterJoinRaw c1 c2 index1 index2 (length s1) (length s2))
+  Table
+    (B.append n1 n2)
+    (schemaJoin t1 t2)
+    (leftOuterJoinRaw c1 c2 index1 index2 (length s1) (length s2))
 
 leftOuterJoin2 :: Table -> Table -> Table -> Table
 leftOuterJoin2 t1@(Table n1 s1 c1) t2@(Table n2 s2 _) (Table _ _ c12) =
-  Table (B.append n1 n2) (schemaJoin t1 t2)
-  (addingNullRows c1 c12 (length s1) (length s2))
+  Table
+    (B.append n1 n2)
+    (schemaJoin t1 t2)
+    (addingNullRows c1 c12 (length s1) (length s2))
 
 leftOuterJoinRaw :: RawTable -> RawTable -> Int -> Int -> Int -> Int -> RawTable
 leftOuterJoinRaw content1 content2 index1 index2 schemaSize1 =
@@ -48,17 +57,23 @@ leftOuterJoinRaw content1 content2 index1 index2 schemaSize1 =
 
 addingNullRows :: RawTable -> RawTable -> Int -> Int -> RawTable
 addingNullRows content1 content12 schemaSize1 schemaSize2 =
-  unionAllRaw content12 (fmap (first (++nullCols)) diffKeys)
+  unionAllRaw content12 (fmap (first (++ nullCols)) diffKeys)
   where
     nullCols :: [UnionM (Maybe SymInteger)]
-    nullCols = [mrgSingle Nothing | _ <- [0..schemaSize2-1]]
+    nullCols = [mrgSingle Nothing | _ <- [0 .. schemaSize2 -1]]
     diffKeys = removeSameKeys content1 (fmap (first (take schemaSize1)) content12)
 
 projection :: [Int] -> RawTable -> RawTable
 projection indices = fmap (first projSingle)
-  where projSingle r = fmap (r !!) indices
+  where
+    projSingle r = fmap (r !!) indices
 
 removeSameKeys :: RawTable -> RawTable -> RawTable
-removeSameKeys t1 t2 = foldr (\(v, p) acc ->
-  let multiplicity = mrgIf @SymBool (foldr (||~) (conc False) $ fmap (\(v1, r1) -> v ==~ v1 &&~ r1 /=~ 0) t2) 0 p
-    in if multiplicity == 0 {- using == here is intentional -} then acc else (v, multiplicity) : acc) [] t1
+removeSameKeys t1 t2 =
+  foldr
+    ( \(v, p) acc ->
+        let multiplicity = mrgIf @SymBool (foldr (||~) (conc False) $ fmap (\(v1, r1) -> v ==~ v1 &&~ r1 /=~ 0) t2) 0 p
+         in if multiplicity == 0 {- using == here is intentional -} then acc else (v, multiplicity) : acc
+    )
+    []
+    t1

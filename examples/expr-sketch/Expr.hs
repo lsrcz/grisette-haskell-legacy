@@ -1,26 +1,20 @@
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE LambdaCase #-}
 module Expr where
-import Grisette.Data.SymPrim
-import Grisette.Control.Monad.UnionM
-import Grisette.Data.Class.Mergeable
-import GHC.Generics
-import Grisette.Data.Class.Bool
-import Grisette.Data.Class.SymEval
-import Grisette.Data.Prim.Model
-import Grisette.Data.Class.ToSym
-import Grisette.Data.Class.ToCon
-import Grisette.Data.Class.SymGen
-import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.SMT.Solving
-import Grisette.Data.SMT.Config
-import Data.List.Unique
+
 import Data.List (sort)
+import Data.List.Unique
+import GHC.Generics
+import Grisette.Control.Monad.UnionM
+import Grisette.Data.Class.Bool
+import Grisette.Data.Class.Mergeable
+import Grisette.Data.Class.SimpleMergeable
+import Grisette.Data.Class.SymEval
+import Grisette.Data.Class.SymGen
+import Grisette.Data.Class.ToCon
+import Grisette.Data.Class.ToSym
+import Grisette.Data.Prim.Model
+import Grisette.Data.SMT.Config
+import Grisette.Data.SMT.Solving
+import Grisette.Data.SymPrim
 
 data ConcExpr
   = ConstantExpr Integer
@@ -44,14 +38,18 @@ instance SymGen SymBool [Op] (UnionM SymbExpr -> UnionM SymbExpr -> UnionM SymbE
 instance SymGenSimple SymBool [Op] (UnionM SymbExpr -> UnionM SymbExpr -> UnionM SymbExpr) where
   genSymSimpleIndexed s = getSingle <$> choose @SymBool (head ops) (tail ops)
     where
-      ops = (\op x y -> mrgSingle $ op x y) . (\case
-        Add -> SAddExpr
-        Sub -> SSubExpr
-        Mul -> SMulExpr
-        ) <$> uniq (sort s)
+      ops =
+        (\op x y -> mrgSingle $ op x y)
+          . ( \case
+                Add -> SAddExpr
+                Sub -> SSubExpr
+                Mul -> SMulExpr
+            )
+          <$> uniq (sort s)
 
 interpretU :: UnionM SymbExpr -> SymInteger
 interpretU u = getSingle $ interpret <$> u
+
 interpret :: SymbExpr -> SymInteger
 interpret (SConstantExpr s) = s
 interpret (SAddExpr a b) = interpretU a + interpretU b

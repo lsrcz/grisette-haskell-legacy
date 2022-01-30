@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeApplications #-}
 
 module Parser where
 
@@ -9,13 +8,13 @@ import qualified Data.ByteString as B
 import Data.Void
 import Expr
 import Grisette.Control.Monad.UnionM
+import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.SymGen
 import Grisette.Data.SymPrim
 import Text.Megaparsec
 import Text.Megaparsec.Byte
 import qualified Text.Megaparsec.Byte.Lexer as L
-import Grisette.Data.Class.PrimWrapper
 
 type Parser = ParsecT Void B.ByteString (ST.State SymGenState)
 

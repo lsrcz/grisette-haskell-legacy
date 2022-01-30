@@ -1,10 +1,3 @@
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TupleSections #-}
-
 module Interpreter where
 
 import Control.Monad.Except
@@ -144,4 +137,3 @@ synthesis method config s = do
   case m of
     Left _ -> return Nothing
     Right mo -> return $ toCon $ symeval True mo s
-

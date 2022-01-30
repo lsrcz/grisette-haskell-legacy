@@ -1,4 +1,7 @@
-module Grisette.Data.Functor (mrgFmap) where
+module Grisette.Data.Functor
+  ( mrgFmap,
+  )
+where
 
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.SimpleMergeable

@@ -1,10 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
+
 module Main where
 
-import Expr
-import Parser
-import Grisette.Data.SMT.Config
 import Data.SBV (z3)
+import Expr
+import Grisette.Data.SMT.Config
+import Parser
 
 main :: IO ()
 main = do

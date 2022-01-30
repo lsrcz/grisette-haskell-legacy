@@ -1,10 +1,3 @@
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Main where
@@ -13,15 +6,15 @@ import Control.Monad.Except
 import Control.Monad.Trans.Except
 import Data.Functor.Classes
 import GHC.Generics
+import Grisette.Control.Monad
 import Grisette.Control.Monad.UnionM
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.SimpleMergeable
+import Grisette.Data.Functor
 import Grisette.Data.SymPrim
 import Unsafe.Coerce
-import Grisette.Data.Functor
-import Grisette.Control.Monad
 
 newtype Either' a b = Either' {getEither' :: Either a b} deriving (Show, Generic)
 
@@ -126,16 +119,18 @@ test =
 test2 :: forall exceptT. (MonadError Exceptions (exceptT Exceptions UnionM), UnionMOp SymBool (exceptT Exceptions UnionM)) => exceptT Exceptions UnionM SymBool
 test2 = do
   assert $ ssymb "x"
-  r <- mrgGuard
-    (ssymb "c")
-    ( do
-        assert $ ssymb "a1"
-        return $ ssymb "r1")
-    ( do
-        assert $ ssymb "a2"
-        -- assume (ssymb "assume")
-        return $ ssymb "r2"
-    )
+  r <-
+    mrgGuard
+      (ssymb "c")
+      ( do
+          assert $ ssymb "a1"
+          return $ ssymb "r1"
+      )
+      ( do
+          assert $ ssymb "a2"
+          -- assume (ssymb "assume")
+          return $ ssymb "r2"
+      )
   assert $ ssymb "y"
   mrgReturn r
 
@@ -145,23 +140,21 @@ test3 = do
   assume $ ssymb "y"
   assert $ ssymb "z"
   assume $ ssymb "k"
-  
-
 
 main :: IO ()
 main = do
   -- ExceptT (UMrg (Guard (ite a (! assert) (! assume)) (Guard a (Single (Left AssertViolation)) (Single (Left AssumeViolation))) (Single (Right (ite a x y)))))
   print $ test @ExceptT
   -- UMrg (Single (&& (! (ite a (! assert) (! assume))) (ite a x y)))
-  print $ mrgFmap (\case; Left _ -> conc False; Right x -> x) $ runExceptT test
+  print $ mrgFmap (\case Left _ -> conc False; Right x -> x) $ runExceptT test
   -- ExceptT' (UMrg (Guard (ite a assert assume) (Single (Right (ite a x y))) (Guard a (Single (Left AssertViolation)) (Single (Left AssumeViolation)))))
   print $ test @ExceptT'
   -- UMrg (Single (&& (ite a assert assume) (ite a x y)))
-  print $ mrgFmap (\case; (Either' (Left _)) -> conc False; (Either' (Right x)) -> x) $ runExceptT' test
+  print $ mrgFmap (\case (Either' (Left _)) -> conc False; (Either' (Right x)) -> x) $ runExceptT' test
   putStrLn "2222"
   print $ test2 @ExceptT
   print $ test2 @ExceptT'
   print $ test3 @ExceptT
   print $ test3 @ExceptT'
-  print $ mrgFmap (\case; (Left AssertViolation) -> conc @SymBool True; _ -> conc False) $ runExceptT test3
-  print $ mrgFmap (\case; (Either' (Left AssertViolation)) -> conc @SymBool True; _ -> conc False) $ runExceptT' test3
+  print $ mrgFmap (\case (Left AssertViolation) -> conc @SymBool True; _ -> conc False) $ runExceptT test3
+  print $ mrgFmap (\case (Either' (Left AssertViolation)) -> conc @SymBool True; _ -> conc False) $ runExceptT' test3

@@ -1,20 +1,12 @@
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE DeriveLift #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-
 module DataStructures where
 
-import Data.List (sort, intercalate)
+import Data.List (intercalate, sort)
 import Data.List.Unique
 import GHC.Generics
 import Grisette.Control.Monad.UnionM
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
+import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.SymEval
 import Grisette.Data.Class.SymGen
@@ -22,7 +14,6 @@ import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
 import Grisette.Data.Prim.Model
 import Grisette.Data.SymPrim
-import Grisette.Data.Class.PrimWrapper
 import Language.Haskell.TH.Syntax (Lift)
 
 data ConcExpr
@@ -73,12 +64,20 @@ data SymbExpr
   | SAddExpr (UnionM SymbExpr) (UnionM SymbExpr)
   | SSubExpr (UnionM SymbExpr) (UnionM SymbExpr)
   | SMulExpr (UnionM SymbExpr) (UnionM SymbExpr)
-  deriving (Show, Eq, Generic, Mergeable SymBool,
-   SEq SymBool, SymEval Model, ToSym ConcExpr, Lift)
+  deriving
+    ( Show,
+      Eq,
+      Generic,
+      Mergeable SymBool,
+      SEq SymBool,
+      SymEval Model,
+      ToSym ConcExpr,
+      Lift
+    )
 
 data Op = Add | Sub | Mul | Lt | Eq | And | Or deriving (Show, Eq, Ord)
 
-instance SymGen SymBool [Op] (UnionM SymbExpr -> UnionM SymbExpr -> UnionM SymbExpr) where
+instance SymGen SymBool [Op] (UnionM SymbExpr -> UnionM SymbExpr -> UnionM SymbExpr)
 
 instance SymGenSimple SymBool [Op] (UnionM SymbExpr -> UnionM SymbExpr -> UnionM SymbExpr) where
   genSymSimpleIndexed s = simpleChoose @SymBool (head ops) (tail ops)
@@ -103,8 +102,17 @@ instance Show Identifier where
   show (Identifier i) = "v" ++ show i
 
 newtype SIdentifier = SIdentifier SymInteger
-  deriving (Show, Eq, Generic, Mergeable SymBool,
-   SimpleMergeable SymBool, SEq SymBool, SymEval Model, ToSym Identifier, Lift)
+  deriving
+    ( Show,
+      Eq,
+      Generic,
+      Mergeable SymBool,
+      SimpleMergeable SymBool,
+      SEq SymBool,
+      SymEval Model,
+      ToSym Identifier,
+      Lift
+    )
 
 instance SymGen SymBool () SIdentifier where
   genSymIndexed _ = genSymIndexedWithDerivedNoSpec
@@ -112,11 +120,12 @@ instance SymGen SymBool () SIdentifier where
 instance SymGenSimple SymBool () SIdentifier where
   genSymSimpleIndexed _ = genSymSimpleIndexedWithDerivedNoSpec @SymBool
 
-instance SymGen SymBool [Integer] SIdentifier where
+instance SymGen SymBool [Integer] SIdentifier
 
 instance SymGenSimple SymBool [Integer] SIdentifier where
-  genSymSimpleIndexed l = let l1 = SIdentifier . conc <$> l in
-    simpleChoose @SymBool (head l1) (tail l1)
+  genSymSimpleIndexed l =
+    let l1 = SIdentifier . conc <$> l
+     in simpleChoose @SymBool (head l1) (tail l1)
 
 data Stmt
   = AssignStmt Identifier ConcExpr
@@ -128,20 +137,40 @@ data SymbStmt
   = SAssignStmt SIdentifier (UnionM SymbExpr)
   | SIfStmt (UnionM SymbExpr) [SymbStmt] [SymbStmt]
   | SAssertStmt (UnionM SymbExpr)
-  deriving (Show, Eq, Generic, Mergeable SymBool,
-   SEq SymBool, SymEval Model, ToSym Stmt, Lift)
+  deriving
+    ( Show,
+      Eq,
+      Generic,
+      Mergeable SymBool,
+      SEq SymBool,
+      SymEval Model,
+      ToSym Stmt,
+      Lift
+    )
 
 newtype Program = Program [Stmt] deriving (Eq, Generic, ToCon SymbProgram)
+
 newtype SymbProgram = SymbProgram [SymbStmt]
-  deriving (Show, Eq, Generic, Mergeable SymBool,
-   SEq SymBool, SymEval Model, ToSym Program, Lift)
+  deriving
+    ( Show,
+      Eq,
+      Generic,
+      Mergeable SymBool,
+      SEq SymBool,
+      SymEval Model,
+      ToSym Program,
+      Lift
+    )
 
 instance Show Stmt where
   show (AssertStmt e) = "assert " ++ show e
   show (AssignStmt i e) = show i ++ " = " ++ show e
-  show (IfStmt cond l r) = "if (" ++ show cond ++ ") {\n" ++
-    unlines (showStmtIdent 1 <$> l) ++ "} else {\n" ++
-    unlines (showStmtIdent 1 <$> r) ++ "}"
+  show (IfStmt cond l r) =
+    "if (" ++ show cond ++ ") {\n"
+      ++ unlines (showStmtIdent 1 <$> l)
+      ++ "} else {\n"
+      ++ unlines (showStmtIdent 1 <$> r)
+      ++ "}"
 
 showStmtIdent :: Int -> Stmt -> String
 showStmtIdent i s = intercalate "\n" $ (\x -> concat (replicate i "  ") ++ x) <$> lines (show s)

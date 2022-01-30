@@ -1,14 +1,6 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE DeriveLift #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Grisette.Data.Prim.Num
   ( pattern NumConcTerm,
@@ -40,13 +32,13 @@ module Grisette.Data.Prim.Num
   )
 where
 
+import Control.DeepSeq
 import Data.Typeable
+import GHC.Generics
 import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.Helpers
 import Grisette.Data.Prim.InternedTerm
 import Language.Haskell.TH.Syntax
-import Control.DeepSeq
-import GHC.Generics
 
 numConcTermView :: (Num b, Typeable b) => Term a -> Maybe b
 numConcTermView (ConcTerm _ b) = cast b
@@ -70,7 +62,7 @@ instance Show (AddNum x) where
   show AddNum = "AddNum"
 
 instance Lift (AddNum x) where
-  lift AddNum = [| AddNum |]
+  lift AddNum = [|AddNum|]
   liftTyped = unsafeTExpCoerce . lift
 
 instance NFData (AddNum x) where

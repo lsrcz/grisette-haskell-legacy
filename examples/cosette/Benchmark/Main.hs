@@ -1,19 +1,20 @@
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TemplateHaskell #-}
+
 module Main where
-import Denotation
+
 import Benchmark.Queries
-import Grisette.Data.Class.SymEval
-import Grisette.Data.SMT.Solving
-import Grisette.Data.SMT.Config
 import Data.SBV
+import Denotation
 import Equal
+import Grisette.Data.Class.SymEval
+import Grisette.Data.SMT.Config
+import Grisette.Data.SMT.Solving
 import System.TimeIt
 
 main :: IO ()
-main = timeIt $ do
+main = timeIt $ do 
   let r1 = $$(denoteSql q4)
   let r1r = $$(denoteSql q4r)
   r <- solveWith (UnboundedReasoning z3{verbose=False, timing=PrintTiming}) $$(verifCondition q4 q4r)

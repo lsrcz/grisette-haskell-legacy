@@ -1,15 +1,5 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE DeriveLift #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DeriveAnyClass #-}
 
 module Grisette.Data.SymPrim
   ( Sym (..),
@@ -23,10 +13,15 @@ module Grisette.Data.SymPrim
   )
 where
 
+import Control.DeepSeq
 import Control.Monad.Except
 import Control.Monad.State
+import Data.BitVector.Sized (knownNat)
+import Data.BitVector.Sized.Signed (SignedBV, mkSignedBV)
+import Data.BitVector.Sized.Unsigned
 import Data.HashSet as S
 import Data.Hashable
+import GHC.Generics
 import Grisette.Control.Monad
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Error
@@ -41,6 +36,7 @@ import Grisette.Data.Class.SymEval
 import Grisette.Data.Class.SymGen
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
+import Grisette.Data.Prim.BV
 import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.Integer
 import Grisette.Data.Prim.InternedTerm
@@ -48,13 +44,7 @@ import Grisette.Data.Prim.Model
 import Grisette.Data.Prim.Num
 import Grisette.Data.Prim.TabularFunc
 import Grisette.Data.TabularFunc
-import Data.BitVector.Sized.Signed (SignedBV, mkSignedBV)
-import Data.BitVector.Sized (knownNat)
-import Grisette.Data.Prim.BV
-import Data.BitVector.Sized.Unsigned
 import Language.Haskell.TH.Syntax
-import GHC.Generics
-import Control.DeepSeq
 
 newtype Sym a = Sym {underlyingTerm :: Term a} deriving (Lift, Generic)
 
@@ -138,7 +128,6 @@ instance SymBoolOp (Sym Bool)
 instance SymConcView Bool where
   symConcView (Sym (BoolConcTerm t)) = Just t
   symConcView _ = Nothing
-
 
 -- integer
 type SymInteger = Sym Integer
@@ -232,7 +221,6 @@ instance (SupportedPrim (UnsignedBV n)) => SOrd (Sym Bool) (Sym (UnsignedBV n)) 
   (Sym a) <~ (Sym b) = Sym $ withPrim @(UnsignedBV n) $ ltNum a b
   (Sym a) >=~ (Sym b) = Sym $ withPrim @(UnsignedBV n) $ geNum a b
   (Sym a) >~ (Sym b) = Sym $ withPrim @(UnsignedBV n) $ gtNum a b
-
 
 -- tabular func
 type a =~> b = Sym (a =-> b)

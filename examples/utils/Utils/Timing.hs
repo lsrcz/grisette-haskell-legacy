@@ -1,9 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
+
 module Utils.Timing where
 
-import System.Clock
 import Formatting
 import Formatting.Clock
+import System.Clock
 
 timeItAll :: String -> IO a -> IO a
 timeItAll str x = do

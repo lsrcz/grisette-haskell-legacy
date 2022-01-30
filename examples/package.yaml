@@ -39,6 +39,29 @@ dependencies:
 - Unique
 - bv-sized
 
+default-extensions:
+- BangPatterns
+- ConstraintKinds
+- DataKinds
+- DefaultSignatures
+- DeriveAnyClass
+- DeriveGeneric
+- DeriveLift
+- DerivingStrategies
+- FlexibleContexts
+- FlexibleInstances
+- FunctionalDependencies
+- GADTs
+- KindSignatures
+- LambdaCase
+- MultiParamTypeClasses
+- RankNTypes
+- ScopedTypeVariables
+- TupleSections
+- TypeApplications
+- TypeFamilies
+- TypeOperators
+
 ghc-options: -Wall -ferror-spans -O2
 
 library:

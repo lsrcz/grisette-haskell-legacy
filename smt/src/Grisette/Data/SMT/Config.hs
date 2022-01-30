@@ -1,9 +1,4 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE StandaloneKindSignatures #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Grisette.Data.SMT.Config
@@ -13,11 +8,11 @@ module Grisette.Data.SMT.Config
   )
 where
 
+import Data.BitVector.Sized.Signed
+import Data.BitVector.Sized.Unsigned
 import qualified Data.SBV as SBV
 import GHC.TypeNats
 import Grisette.Data.TabularFunc
-import Data.BitVector.Sized.Signed
-import Data.BitVector.Sized.Unsigned
 
 type Aux :: Bool -> Nat -> *
 type family Aux o n where

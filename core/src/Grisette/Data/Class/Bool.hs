@@ -1,8 +1,3 @@
-{-# LANGUAGE DefaultSignatures #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
 
@@ -18,9 +13,9 @@ where
 
 import Control.Monad.Except
 import Control.Monad.Trans.Maybe
+import qualified Data.ByteString as B
 import Generics.Deriving
 import Grisette.Data.Class.PrimWrapper
-import qualified Data.ByteString as B
 
 class (SymBoolOp bool) => SEq' bool f where
   (==~~) :: f a -> f a -> bool
@@ -81,7 +76,6 @@ instance (SymBoolOp bool) => SEq bool Bool
 -- Integer
 instance (SymBoolOp bool) => SEq bool Integer where
   l ==~ r = conc $ l == r
-
 -- List
 instance (SymBoolOp bool, SEq bool a) => SEq bool [a]
 

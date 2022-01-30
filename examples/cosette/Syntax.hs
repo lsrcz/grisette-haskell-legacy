@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE EmptyDataDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 
@@ -7,8 +6,8 @@ module Syntax where
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C
 import Grisette.Data.SymPrim
-import Language.Haskell.TH.Syntax
 import Language.Haskell.TH
+import Language.Haskell.TH.Syntax
 import Table
 
 data FBinOp = FBinEq | FBinNEq deriving (Show, Lift)

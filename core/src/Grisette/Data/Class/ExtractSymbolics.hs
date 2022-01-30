@@ -1,18 +1,16 @@
-{-# LANGUAGE DefaultSignatures #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Grisette.Data.Class.ExtractSymbolics (ExtractSymbolics (..)) where
+module Grisette.Data.Class.ExtractSymbolics
+  ( ExtractSymbolics (..),
+  )
+where
 
 import Control.Monad.Coroutine
 import Control.Monad.Except
 import Control.Monad.Trans.Maybe
-import GHC.Generics
 import qualified Data.ByteString as B
 import Data.Functor.Sum
+import GHC.Generics
 
 class (Monoid symbolSet) => ExtractSymbolics symbolSet a where
   extractSymbolics :: a -> symbolSet

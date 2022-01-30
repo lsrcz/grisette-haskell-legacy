@@ -1,17 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE DefaultSignatures #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE QuantifiedConstraints #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
 
@@ -31,13 +19,13 @@ import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Monad.Except
 import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.State
+import qualified Data.ByteString as B
+import Data.Functor.Sum
 import Data.Typeable
 import Generics.Deriving
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.OrphanGeneric ()
 import Grisette.Data.Class.Utils.CConst
-import Data.Functor.Sum
-import qualified Data.ByteString as B
 
 data MergeStrategy bool a where
   SimpleStrategy :: (bool -> a -> a -> a) -> MergeStrategy bool a
@@ -235,9 +223,11 @@ instance
 instance (SymBoolOp bool, Mergeable bool s, Mergeable1 bool m) => Mergeable1 bool (StateT s m)
 
 -- Sum
-instance (SymBoolOp bool, Mergeable1 bool l, Mergeable1 bool r, Mergeable bool x) =>
-  Mergeable bool (Sum l r x) where
-    mergeStrategy =
-      withMergeable @bool @l @x $ withMergeable @bool @r @x $ derivedMergeStrategy
+instance
+  (SymBoolOp bool, Mergeable1 bool l, Mergeable1 bool r, Mergeable bool x) =>
+  Mergeable bool (Sum l r x)
+  where
+  mergeStrategy =
+    withMergeable @bool @l @x $ withMergeable @bool @r @x $ derivedMergeStrategy
 
 instance (SymBoolOp bool, Mergeable1 bool l, Mergeable1 bool r) => Mergeable1 bool (Sum l r)

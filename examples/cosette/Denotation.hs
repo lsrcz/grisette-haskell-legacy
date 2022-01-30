@@ -1,7 +1,5 @@
-{-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeApplications #-}
 
 module Denotation where
 

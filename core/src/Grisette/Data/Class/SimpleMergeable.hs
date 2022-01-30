@@ -1,15 +1,7 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE DefaultSignatures #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE QuantifiedConstraints #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE FlexibleContexts #-}
 
 module Grisette.Data.Class.SimpleMergeable
   ( UnionMOp (..),
@@ -27,11 +19,11 @@ import Control.Monad.Coroutine hiding (merge)
 import Control.Monad.Except
 import Control.Monad.State
 import Control.Monad.Trans.Maybe
+import GHC.Generics
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
-import Grisette.Data.Class.Utils.CConst
 import Grisette.Data.Class.UnionOp
-import GHC.Generics
+import Grisette.Data.Class.Utils.CConst
 
 class SimpleMergeable' bool f where
   mrgIf' :: bool -> f a -> f a -> f a

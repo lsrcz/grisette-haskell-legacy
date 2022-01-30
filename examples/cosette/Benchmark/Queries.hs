@@ -1,13 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TemplateHaskell #-}
+
 module Benchmark.Queries where
 
-import Table
 import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.SimpleMergeable
 import Quasiquote
 import Syntax
+import Table
 
 symt :: Table
 symt = Table "t" ["tid", "name"]
@@ -111,4 +112,3 @@ q4r = [cosette|
   SELECT t0.tid1 t0.name t0.status1 t0.status2
   FROM (${q3r})
   WHERE TRUE|]
-

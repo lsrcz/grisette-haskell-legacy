@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Parser where
@@ -7,6 +6,7 @@ module Parser where
 import Control.Monad.Combinators.Expr as E
 import Control.Monad.State as ST
 import qualified Data.ByteString as B
+import qualified Data.ByteString.Char8 as C
 import Data.Void
 import DataStructures
 import Grisette.Control.Monad.UnionM
@@ -14,12 +14,11 @@ import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.SymGen
 import Grisette.Data.SymPrim
+import Language.Haskell.TH
+import Language.Haskell.TH.Quote
 import Text.Megaparsec
 import Text.Megaparsec.Byte
 import qualified Text.Megaparsec.Byte.Lexer as L
-import Language.Haskell.TH
-import Language.Haskell.TH.Quote
-import qualified Data.ByteString.Char8 as C
 
 type Parser = ParsecT Void B.ByteString (ST.State SymGenState)
 
@@ -136,14 +135,15 @@ expr = makeExprParser exprInner operatorTable
 
 exprInner :: Parser (UnionM SymbExpr)
 exprInner =
-  choice $ try <$> 
-    [ parens expr,
-      concIntExpr,
-      intHoleExpr,
-      intHoleRangeExpr,
-      boolHoleExpr,
-      identExpr
-    ]
+  choice $
+    try
+      <$> [ parens expr,
+            concIntExpr,
+            intHoleExpr,
+            intHoleRangeExpr,
+            boolHoleExpr,
+            identExpr
+          ]
 
 exprWholeString :: Parser (UnionM SymbExpr)
 exprWholeString = do
@@ -192,12 +192,13 @@ getSketch code name = case runSymGenIndexed (runParserT program "a" code) name o
   Right i -> i
 
 sketch :: QuasiQuoter
-sketch = QuasiQuoter {
-    quoteExp = compile . C.pack
-  , quotePat = notHandled "patterns"
-  , quoteType = notHandled "types"
-  , quoteDec = notHandled "declarations"
-  }
+sketch =
+  QuasiQuoter
+    { quoteExp = compile . C.pack,
+      quotePat = notHandled "patterns",
+      quoteType = notHandled "types",
+      quoteDec = notHandled "declarations"
+    }
   where
     notHandled things =
       error $ things ++ " are not handled by the cosette quasiquoter"
@@ -206,7 +207,6 @@ compile :: B.ByteString -> Q Exp
 compile s = case runSymGenIndexed (runParserT program "input" $ B.tail y) (C.unpack n) of
   Left peb -> fail $ errorBundlePretty peb
   Right qu ->
-    [| qu |]
+    [|qu|]
   where
     (n, y) = C.break (== ':') s
-    

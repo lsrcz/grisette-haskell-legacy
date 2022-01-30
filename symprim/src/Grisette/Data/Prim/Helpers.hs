@@ -1,11 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE DefaultSignatures #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE GADTs #-}
 {-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ViewPatterns #-}
 
 module Grisette.Data.Prim.Helpers
@@ -27,9 +21,9 @@ module Grisette.Data.Prim.Helpers
   )
 where
 
+import Control.Monad.Except
 import Data.Typeable
 import Grisette.Data.Prim.InternedTerm
-import Control.Monad.Except
 
 unaryTermView :: forall a b tag. (Typeable tag, Typeable b) => Term a -> Maybe (tag, Term b)
 unaryTermView (UnaryTerm _ (tag :: tagt) t1) =
@@ -117,10 +111,10 @@ binaryPartial :: forall tag a b c. (BinaryPartialStrategy tag a b c) => PartialR
 binaryPartial a b = case (extractora @tag @a @b @c a, extractorb @tag @a @b @c b) of
   (Nothing, Nothing) -> nonBinaryConstantHandler @tag @a @b @c a b
   (Just a', Nothing) ->
-    leftConstantHandler @tag @a @b @c a' b `catchError`
-    \_ -> nonBinaryConstantHandler @tag @a @b @c a b
+    leftConstantHandler @tag @a @b @c a' b
+      `catchError` \_ -> nonBinaryConstantHandler @tag @a @b @c a b
   (Nothing, Just b') ->
-    rightConstantHandler @tag @a @b @c a b' `catchError`
-    \_ -> nonBinaryConstantHandler @tag @a @b @c a b
+    rightConstantHandler @tag @a @b @c a b'
+      `catchError` \_ -> nonBinaryConstantHandler @tag @a @b @c a b
   (Just a', Just b') ->
     allConstantHandler @tag @a @b @c a' b'

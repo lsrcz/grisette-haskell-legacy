@@ -1,19 +1,22 @@
 {-# LANGUAGE TemplateHaskell #-}
+
 module Quasiquote where
-import Language.Haskell.TH.Quote
+
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C
 import Language.Haskell.TH
-import Text.Megaparsec
+import Language.Haskell.TH.Quote
 import Parser
+import Text.Megaparsec
 
 cosette :: QuasiQuoter
-cosette = QuasiQuoter { 
-    quoteExp = compile . C.pack
-  , quotePat = notHandled "patterns"
-  , quoteType = notHandled "types"
-  , quoteDec = notHandled "declarations"
-  }
+cosette =
+  QuasiQuoter
+    { quoteExp = compile . C.pack,
+      quotePat = notHandled "patterns",
+      quoteType = notHandled "types",
+      quoteDec = notHandled "declarations"
+    }
   where
     notHandled things =
       error $ things ++ " are not handled by the cosette quasiquoter"
@@ -21,8 +24,7 @@ cosette = QuasiQuoter {
 compile :: B.ByteString -> Q Exp
 compile s = case runParser wholeStringQuery "input" s of
   Left peb ->
-    let msg = errorBundlePretty peb in
-    [| error msg |]
+    let msg = errorBundlePretty peb
+     in [|error msg|]
   Right qu ->
-    [| qu |]
-    
+    [|qu|]

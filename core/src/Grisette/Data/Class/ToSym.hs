@@ -1,20 +1,18 @@
-{-# LANGUAGE DefaultSignatures #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Grisette.Data.Class.ToSym (ToSym (..)) where
+module Grisette.Data.Class.ToSym
+  ( ToSym (..),
+  )
+where
 
 import Control.Monad.Coroutine
 import Control.Monad.State
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Maybe
-import Generics.Deriving
-import Grisette.Data.Class.OrphanGeneric ()
 import qualified Data.ByteString as B
 import Data.Functor.Sum
+import Generics.Deriving
+import Grisette.Data.Class.OrphanGeneric ()
 
 class ToSym a b where
   toSym :: a -> b

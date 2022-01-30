@@ -1,7 +1,9 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-
-module Grisette.Data.Class.Error (TransformError (..), gthrowError, gassertWithError) where
+module Grisette.Data.Class.Error
+  ( TransformError (..),
+    gthrowError,
+    gassertWithError,
+  )
+where
 
 import Control.Monad.Except
 import Grisette.Data.Class.Bool

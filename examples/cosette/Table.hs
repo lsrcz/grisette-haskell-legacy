@@ -1,23 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE DeriveLift #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DeriveAnyClass #-}
 
 module Table where
 
 import qualified Data.ByteString as B
-import Grisette.Data.SymPrim
-import qualified Language.Haskell.TH.Syntax as THSyntax
-import Instances.TH.Lift ()
+import GHC.Generics
 import Grisette.Control.Monad.UnionM
 import Grisette.Data.Class.Bool
-import Grisette.Data.Class.SOrd
 import Grisette.Data.Class.PrimWrapper
+import Grisette.Data.Class.SOrd
 import Grisette.Data.Class.SymEval
-import GHC.Generics
 import Grisette.Data.Prim.Model
+import Grisette.Data.SymPrim
+import Instances.TH.Lift ()
+import qualified Language.Haskell.TH.Syntax as THSyntax
 
 type Name = B.ByteString
 

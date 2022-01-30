@@ -1,30 +1,33 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DeriveLift #-}
+module Grisette.Data.UnionBase
+  ( UnionBase (..),
+    guardWithLeftMost,
+    guardWithStrategy,
+    fullReconstruct,
+  )
+where
 
-module Grisette.Data.UnionBase (UnionBase (..), guardWithLeftMost, guardWithStrategy, fullReconstruct) where
-
+import Control.DeepSeq
 import Data.Functor.Classes
-import Grisette.Data.Class.Bool
-import Grisette.Data.Class.UnionOp
-import Grisette.Data.Class.Mergeable
 import Data.Hashable
 import GHC.Generics
+import Grisette.Data.Class.Bool
+import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.PrimWrapper
+import Grisette.Data.Class.UnionOp
 import Language.Haskell.TH.Syntax
-import Control.DeepSeq
 
 data UnionBase b a
   = Single a
-  -- left most value / invariant maintained / cond / true branch / false branch
-  | Guard a Bool b (UnionBase b a) (UnionBase b a)
+  | -- left most value / invariant maintained / cond / true branch / false branch
+    Guard a Bool b (UnionBase b a) (UnionBase b a)
   deriving (Generic, Eq, Lift)
 
 instance (NFData b, NFData a) => NFData (UnionBase b a) where
   rnf = rnf1
+
 instance (NFData b) => NFData1 (UnionBase b) where
   liftRnf = liftRnf2 rnf
+
 instance NFData2 UnionBase where
   liftRnf2 _b _a (Single a) = _a a
   liftRnf2 _b _a (Guard a bo b l r) = _a a `seq` rnf bo `seq` _b b `seq` liftRnf2 _b _a l `seq` liftRnf2 _b _a r
@@ -44,9 +47,11 @@ instance SymBoolOp bool => UnionOp bool (UnionBase bool) where
 
 instance (Show b) => Show1 (UnionBase b) where
   liftShowsPrec sp _ i (Single a) = showsUnaryWith sp "Single" i a
-  liftShowsPrec sp sl i (Guard _ _ cond t f) = showParen (i > 10) $
-    showString "Guard" . showChar ' ' . showsPrec 11 cond . showChar ' ' . sp1 11 t . showChar ' ' . sp1 11 f
-    where sp1 = liftShowsPrec sp sl
+  liftShowsPrec sp sl i (Guard _ _ cond t f) =
+    showParen (i > 10) $
+      showString "Guard" . showChar ' ' . showsPrec 11 cond . showChar ' ' . sp1 11 t . showChar ' ' . sp1 11 f
+    where
+      sp1 = liftShowsPrec sp sl
 
 instance (Show b, Show a) => Show (UnionBase b a) where
   showsPrec = showsPrec1
@@ -60,8 +65,13 @@ fullReconstruct strategy (Guard _ False cond t f) =
   guardWithStrategy strategy cond (fullReconstruct strategy t) (fullReconstruct strategy f)
 fullReconstruct _ u = u
 
-guardWithStrategy :: (SymBoolOp bool) => MergeStrategy bool a ->
-   bool -> UnionBase bool a -> UnionBase bool a -> UnionBase bool a
+guardWithStrategy ::
+  (SymBoolOp bool) =>
+  MergeStrategy bool a ->
+  bool ->
+  UnionBase bool a ->
+  UnionBase bool a ->
+  UnionBase bool a
 guardWithStrategy strategy cond t@(Guard _ False _ _ _) f = guardWithStrategy strategy cond (fullReconstruct strategy t) f
 guardWithStrategy strategy cond t f@(Guard _ False _ _ _) = guardWithStrategy strategy cond t (fullReconstruct strategy f)
 guardWithStrategy _ (Conc True) t _ = t
