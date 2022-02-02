@@ -30,7 +30,7 @@ library
       Grisette.Data.Class.Bool
       Grisette.Data.Class.Error
       Grisette.Data.Class.ExtractSymbolics
-      Grisette.Data.Class.FiniteFunction
+      Grisette.Data.Class.Function
       Grisette.Data.Class.Integer
       Grisette.Data.Class.Mergeable
       Grisette.Data.Class.OrphanGeneric

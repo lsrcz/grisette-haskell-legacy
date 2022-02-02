@@ -7,6 +7,7 @@ module Grisette.Control.Monad.UnionMBase
   ( UnionMBase (..),
     underlyingUnion,
     isMerged,
+    (#~),
   )
 where
 
@@ -19,6 +20,7 @@ import GHC.IO
 import Grisette.Control.Monad
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.ExtractSymbolics
+import Grisette.Data.Class.Function
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.SymEval
@@ -189,3 +191,21 @@ instance (SymBoolOp bool, Num a, Mergeable bool a) => Num (UnionMBase bool a) wh
   x * y = x >>= \x1 -> y >>= \y1 -> mrgSingle $ x1 * y1
   abs x = x >>= mrgSingle . abs
   signum x = x >>= mrgSingle . signum
+
+instance
+  (SymBoolOp bool, Function f, Mergeable bool f, Mergeable bool a, Ret f ~ a) =>
+  Function (UnionMBase bool f)
+  where
+  type Arg (UnionMBase bool f) = Arg f
+  type Ret (UnionMBase bool f) = UnionMBase bool (Ret f)
+  f # a = do
+    f1 <- f
+    mrgSingle $ f1 # a
+
+(#~) ::
+  (SymBoolOp bool, Function f, SimpleMergeable bool (Ret f)) =>
+  f ->
+  UnionMBase bool (Arg f) ->
+  Ret f
+(#~) f u = getSingle $ mrgFmap (f #) u
+infixl 9 #~

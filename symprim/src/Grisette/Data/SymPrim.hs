@@ -26,7 +26,7 @@ import Grisette.Control.Monad
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Error
 import Grisette.Data.Class.ExtractSymbolics
-import Grisette.Data.Class.FiniteFunction
+import Grisette.Data.Class.Function
 import Grisette.Data.Class.Integer
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.PrimWrapper
@@ -225,10 +225,10 @@ instance (SupportedPrim (UnsignedBV n)) => SOrd (Sym Bool) (Sym (UnsignedBV n)) 
 -- tabular func
 type a =~> b = Sym (a =-> b)
 
-instance (SupportedPrim a, SupportedPrim b) => FiniteFunction (a =~> b) where
+instance (SupportedPrim a, SupportedPrim b) => Function (a =~> b) where
   type Arg (a =~> b) = Sym a
   type Ret (a =~> b) = Sym b
-  runFunc (Sym f) t = Sym $ applyf f (underlyingTerm t)
+  (Sym f) # t = Sym $ applyf f (underlyingTerm t)
 
 instance (SupportedPrim a, SupportedPrim b) => SymConcView (a =-> b) where
   symConcView (Sym (TabularFuncConcTerm t)) = Just t

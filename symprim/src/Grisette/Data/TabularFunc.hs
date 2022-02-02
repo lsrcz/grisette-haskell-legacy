@@ -6,7 +6,7 @@ where
 import Control.DeepSeq
 import Data.Hashable
 import GHC.Generics
-import Grisette.Data.Class.FiniteFunction
+import Grisette.Data.Class.Function
 import Grisette.Data.Prim.InternedTerm
 import Language.Haskell.TH.Syntax
 
@@ -21,10 +21,10 @@ instance
   type PrimConstraint (a =-> b) = (SupportedPrim a, SupportedPrim b)
   defaultValue = TabularFunc [] (defaultValue @b)
 
-instance (Eq a) => FiniteFunction (a =-> b) where
+instance (Eq a) => Function (a =-> b) where
   type Arg (a =-> b) = a
   type Ret (a =-> b) = b
-  runFunc (TabularFunc table d) a = go table
+  (TabularFunc table d) # a = go table
     where
       go [] = d
       go ((av, bv) : s)

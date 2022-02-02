@@ -11,7 +11,8 @@ module Grisette.Core
     UnsignedDivMod (..),
     SignedQuotRem (..),
     SymIntegerOp,
-    FiniteFunction (..),
+    Function (..),
+    (#~),
     TransformError (..),
     gthrowError,
     gassertWithError,
@@ -84,7 +85,7 @@ import Grisette.Control.Monad.UnionMBase
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Error
 import Grisette.Data.Class.ExtractSymbolics
-import Grisette.Data.Class.FiniteFunction
+import Grisette.Data.Class.Function
 import Grisette.Data.Class.Integer
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.OrphanGeneric ()

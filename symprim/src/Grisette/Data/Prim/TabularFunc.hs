@@ -13,7 +13,7 @@ where
 import Control.DeepSeq
 import Data.Data
 import GHC.Generics
-import Grisette.Data.Class.FiniteFunction
+import Grisette.Data.Class.Function
 import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.Helpers
 import Grisette.Data.Prim.InternedTerm
@@ -41,7 +41,7 @@ instance (Show a, Show b, SupportedPrim a, SupportedPrim b) => BinaryPartialStra
   extractorb = \case
     (ConcTerm _ b) -> cast b
     _ -> Nothing
-  allConstantHandler f a = Just $ concTerm $ runFunc f a
+  allConstantHandler f a = Just $ concTerm $ f # a
   leftConstantHandler (TabularFunc f d) a = Just $ go f
     where
       go [] = concTerm d
