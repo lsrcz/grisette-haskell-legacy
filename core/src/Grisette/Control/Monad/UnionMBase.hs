@@ -17,6 +17,7 @@ import Control.Monad.Identity (Identity (..))
 import Data.Functor.Classes
 import Data.Hashable
 import Data.IORef
+import Data.String
 import GHC.IO
 import Grisette.Control.Monad
 import Grisette.Data.Class.Bool
@@ -246,3 +247,6 @@ instance
   Ret f
 (#~) f u = getSingle $ mrgFmap (f #) u
 infixl 9 #~
+
+instance (SymBoolOp bool, IsString a, Mergeable bool a) => IsString (UnionMBase bool a) where
+  fromString = mrgSingle . fromString

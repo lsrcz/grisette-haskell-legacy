@@ -45,6 +45,7 @@ import Grisette.Data.Prim.Num
 import Grisette.Data.Prim.TabularFunc
 import Grisette.Data.TabularFunc
 import Language.Haskell.TH.Syntax
+import Data.String
 
 newtype Sym a = Sym {underlyingTerm :: Term a} deriving (Lift, Generic)
 
@@ -75,6 +76,9 @@ instance (SymConcView a) => PrimWrapper (Sym a) a where
   isymb i str = Sym $ isymbTerm i str
   concView (SymConc t) = Just t
   concView _ = Nothing
+
+instance (SymConcView t) => IsString (Sym t) where
+  fromString = ssymb
 
 instance (SupportedPrim a) => ToSym (Sym a) (Sym a) where
   toSym = id
