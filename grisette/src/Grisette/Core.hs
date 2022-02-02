@@ -75,6 +75,19 @@ module Grisette.Core
     UnionOp (..),
     pattern SingleU,
     pattern GuardU,
+    makeUnionMWrapper,
+    makeUnionMWrapper',
+    uTrue,
+    uFalse,
+    uunit,
+    uTuple2,
+    uTuple3,
+    uJust,
+    uNothing,
+    uLeft,
+    uRight,
+    uInL,
+    uInR,
   )
 where
 
@@ -99,3 +112,5 @@ import Grisette.Data.Class.ToSym
 import Grisette.Data.Class.UnionOp
 import Grisette.Data.Functor
 import Grisette.Data.MemoUtils
+import Grisette.TH
+import Grisette.BuiltinUnionMWrappers

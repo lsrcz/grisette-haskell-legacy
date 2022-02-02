@@ -23,6 +23,7 @@ source-repository head
 
 library
   exposed-modules:
+      Grisette.BuiltinUnionMWrappers
       Grisette.Control.Exception
       Grisette.Control.Monad
       Grisette.Control.Monad.Trans
@@ -46,6 +47,7 @@ library
       Grisette.Data.Functor
       Grisette.Data.MemoUtils
       Grisette.Data.UnionBase
+      Grisette.TH
   other-modules:
       Paths_grisette_core
   hs-source-dirs:
