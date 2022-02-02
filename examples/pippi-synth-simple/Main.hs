@@ -4,13 +4,18 @@
 module Main where
 
 import Control.Monad.Except
+import Control.Monad.State
+
+import Data.Maybe
 import Data.SBV
+import Grisette.Control.Monad
 import Grisette.Control.Monad.UnionM
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.SymEval (SymEval (symeval))
 import Grisette.Data.Class.SymGen
+import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.UnionOp
 import Grisette.Data.Functor
 import Grisette.Data.SMT.Config
@@ -39,10 +44,6 @@ e2 = Moving (MoveUp $ mrgSingle $ e1)
 sketchEmpty :: UnionM [UnionM MovingStmt]
 sketchEmpty = genSym (ListSpec 0 2 (MovingExprSpec 2)) "a"
 
-{-
-  var ?ident:a := CoordLit ?ident:b ?ident:c
-  return ?ident:a
--}
 sketchSimple :: UnionM [UnionM MovingStmt]
 sketchSimple = toSym
   [ MovingDefineStmt (ssymb "a") $
@@ -50,50 +51,38 @@ sketchSimple = toSym
     MovingValueStmt $ mrgSingle $ MovingVarExpr $ ssymb "a"
   ]
 
-{-
-  var ?ident:a := CoordLit 10 10
-  var ?ident:b := ?:Moving:x -- TODO how do i pass in an argument to this function?
-  return ?ident:a
--}
--- sketchMoveUp :: [MovingStmt]
--- sketchMoveUp = toSym
---   [ MovingDefineStmt (ssymb "a") $
---       mrgSingle $ Coord $ CoordLit (ssymb "b") (ssymb "c"),
---     MovingValueStmt $ mrgSingle $ Moving $ MovingVarExpr $ ssymb "a"
---   ]
+c2 :: MovingExpr 
+c2 = (Coord $ CoordLit 10 10)
 
-c2 :: CoordExpr 
-c2 = CoordLit 10 10
+var1 :: SymInteger
+var1 = conc 1
+
+c3 :: MovingExpr
+c3 = (MovingVarExpr var1)
 
 sketchWithArg :: UnionM [UnionM MovingStmt]
 sketchWithArg = toSym
-  [ MovingDefineStmt (conc 1) $
-      mrgSingle $ Coord $ c2,
-    MovingValueStmt $ Moving <$> genSym ((MovingExprSpec 2), c2) "b" 
+  [ MovingDefineStmt var1 $
+      mrgSingle $ c2,
+    -- MovingValueStmt $ Moving <$> genSym ((MovingExprSpec 2), c2) "b" 
+    MovingValueStmt $ Moving <$> genSym ((MovingExprSpec 5), c3) "b" 
   ]
 
-
-
 -- Sirui Argument Trial 
--- genSketch :: ListSpec Int -> String -> Coord -> UnionM [UnionM Move]
--- genSketch (ListSpec minl maxl sub) name coord = genSym (ListSpec minl maxl (sub, coord)) name
-
 genSketchBetter :: ListSpec MovingExprSpec -> String -> CoordExpr -> UnionM [UnionM MovingExpr]
 genSketchBetter (ListSpec minl maxl movingSpec) = genSymSimple @SymBool (ListSpec minl maxl movingSpec)
-
--- sketch :: Coord -> UnionM [UnionM Move]
--- sketch = genSketch (ListSpec 0 1 (MovingExprSpec 1)) "a"
 
 sketch1 :: CoordExpr -> UnionM [UnionM MovingExpr]
 sketch1 = genSketchBetter (ListSpec 0 1 (MovingExprSpec 2)) "a"
 
--- let arg = genSym @SymBool () "coord" :: UnionM CoordExpr
+arg :: UnionM CoordExpr
+arg = genSym @SymBool () "coord" 
 
--- fullArgSketch :: UnionM [UnionM MovingStmt]
--- fullArgSketch = toSym
---   [ MovingValueStmt $ (sketch1 <$> genSym @SymBool () "coord")
---   ]
-
+fullArgSketch :: UnionM [UnionM MovingStmt]
+fullArgSketch = do
+  l <- arg >>= sketch1 -- l :: [UnionM MovingExpr]
+  mrgReturn $ (mrgSingle . MovingValueStmt) <$> l
+  
 --
 -- | Main
 --
@@ -102,12 +91,8 @@ main = do
   -- printingVars
   -- verifyTypeChecker
   -- synthesisAttempt
-  -- print sketchWithArg
-  sketchArgumentTrial
-
-
-
-
+  -- sketchArgumentTrial
+  synthesisHoleWithArg
 
 
 --
@@ -160,48 +145,46 @@ synthesisAttempt = do
   case m of
     Right mm -> do
       printf "Found Solution:\n"
-      print $ symeval True mm sketchSimple
+      print $ fromJust (toCon $ symeval True mm sketchSimple :: Maybe [ConcMovingStmt])
     Left _ -> print "Couldn't find solution :("
   printEnd
 
+synthesisHoleWithArg :: IO ()
+synthesisHoleWithArg = do
+  printBeginning "Attempting Synthesis for Program With Hole with Arg"
+  m <- solveWith (UnboundedReasoning z3 {verbose = doVerbose}) $ case checkAndInterpretStmtUListU sketchWithArg of
+    ExceptT u -> case mrgFmap
+      ( \case
+          Left _ -> conc @SymBool False
+          Right v -> (v ==~ CoordLit 5 10)
+      )
+      u of
+      SingleU x -> x
+      _ -> error "Bad"
+  case m of
+    Right mm -> do
+      printf "Found Solution:\n"
+      printProgram $ fromJust (toCon $ symeval True mm sketchWithArg :: Maybe [ConcMovingStmt])
+    Left _ -> print "Couldn't find solution :("
+  printEnd
 
 sketchArgumentTrial :: IO ()
 sketchArgumentTrial = do
   printBeginning "Attempting Sketch Argument"
-
-  let arg :: UnionM CoordExpr
-      arg = genSym @SymBool () "coord" 
-      
-  let concSketch :: UnionM [UnionM MovingExpr]
-      concSketch = sketch1 (CoordLit (conc 0) (conc 0)) 
-
-  let argSketch :: UnionM [UnionM MovingExpr]
-      argSketch = arg >>= sketch1 
-
-  let argTypeTo_checkAndInterpretStmtUListU :: UnionM [UnionM MovingStmt]
-      argTypeTo_checkAndInterpretStmtUListU = undefined
-
-
-  -- printf "arg: %s\n\n" (show arg)
-  -- printf "argSketch: %s\n\n" (show argSketch)
-
-  -- let coord = getSingle arg
-  -- printf "coord: %s\n\n" (show <$> arg)
-
-  -- m <- solveWith (UnboundedReasoning z3 {verbose = doVerbose}) $ case checkAndInterpretStmtUListU (toSym argSketch) of
-  --   ExceptT u -> case mrgFmap
-  --     ( \case
-  --         Left _ -> conc @SymBool False
-  --         Right v -> (v ==~ CoordLit 1 1)
-  --     )
-  --     u of
-  --     SingleU x -> x
-  --     _ -> error "Bad"
-  -- case m of
-  --   Right mm -> do
-  --     printf "Found Solution:\n"
-  --     print $ symeval True mm sketchSimple
-  --   Left _ -> print "Couldn't find solution :("
+  m <- solveWith (UnboundedReasoning z3 {verbose = doVerbose}) $ case checkAndInterpretStmtUListU fullArgSketch of
+    ExceptT u -> case mrgFmap
+      ( \case
+          Left _ -> conc @SymBool False
+          Right v -> (v ==~ CoordLit 100 100)
+      )
+      u of
+      SingleU x -> x
+      _ -> error "Bad"
+  case m of
+    Right mm -> do
+      printf "Found Solution:\n"
+      print $ fromJust (toCon $ symeval True mm fullArgSketch :: Maybe [ConcMovingStmt])
+    Left _ -> print "Couldn't find solution :("
   printEnd
 
 --
@@ -212,3 +195,9 @@ printBeginning title = printf "\n\n===========\n%s...\n\n" title
 
 printEnd :: IO ()
 printEnd = printf "===========\n\n"
+
+printProgram :: [ConcMovingStmt] -> IO ()
+printProgram [] = printf "\n"
+printProgram (prog:progs) = do
+  printf "   %s\n" (show prog)
+  printProgram progs

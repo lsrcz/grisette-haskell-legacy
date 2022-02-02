@@ -6,6 +6,9 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
+{-# LANGUAGE DeriveAnyClass #-}
+-- {-# LANGUAGE OverlappingInstances #-}
+-- {-# LANGUAGE FlexibleInstances #-}
 
 module PippiInterpreter2 where
 
@@ -21,6 +24,7 @@ import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.SymEval
 import Grisette.Data.Class.SymGen
+import Grisette.Data.Class.ToCon
 import Grisette.Data.Functor
 import Grisette.Data.Prim.Model
 import Grisette.Data.SymPrim
@@ -36,12 +40,7 @@ data MovingExpr
    = Coord CoordExpr
    | Moving MovingOpExpr
    | MovingVarExpr   SymInteger -- (conc 1)
-   deriving (Generic)
-
-instance Show MovingExpr where
-  show (Coord c) = wrapInParens $ show c 
-  show (Moving op) = wrapInParens $ show op
-  show (MovingVarExpr v) = wrapInParens $ "var:" ++ show v
+   deriving (Generic, Show, Eq, ToSym ConcMovingExpr)
 
 instance Mergeable SymBool MovingExpr
 instance ToSym MovingExpr MovingExpr
@@ -49,12 +48,8 @@ instance SymEval Model MovingExpr
 
 data CoordExpr 
   = CoordLit SymInteger SymInteger
-  | UnitLit -- ()
-  deriving (Generic)
-
-instance Show CoordExpr where
-  show (CoordLit x y) = "Coord {x: " ++ (show x) ++ ", y: " ++ (show y) ++ ")"
-  show UnitLit = "UnitLit"
+  | UnitLit
+  deriving (Generic, Show, Eq, ToSym ConcCoordExpr)
 
 instance Mergeable SymBool CoordExpr
 instance ToSym CoordExpr CoordExpr
@@ -66,13 +61,7 @@ data MovingOpExpr
    | MoveDown  (UnionM MovingExpr)
    | MoveLeft  (UnionM MovingExpr)
    | MoveRight (UnionM MovingExpr)
-   deriving (Generic)
-
-instance Show MovingOpExpr where 
-  show (MoveUp e) = wrapInParens $ "MoveUp " ++ (wrapInParens $ show e)
-  show (MoveDown e) = wrapInParens $ "MoveDown" ++ (wrapInParens $ show e)
-  show (MoveLeft e) = wrapInParens $ "MoveLeft" ++ (wrapInParens $ show e)
-  show (MoveRight e) = wrapInParens $ "MoveRight" ++ (wrapInParens $ show e)
+   deriving (Generic, Show, Eq, ToSym ConcMovingOpExpr)
 
 instance Mergeable SymBool MovingOpExpr
 instance ToSym MovingOpExpr MovingOpExpr
@@ -81,22 +70,63 @@ instance SymEval Model MovingOpExpr
 data MovingStmt
   = MovingDefineStmt SymInteger (UnionM MovingExpr)
   | MovingValueStmt (UnionM MovingExpr)
-  deriving (Generic)
-
-instance Show MovingStmt where
-  show (MovingDefineStmt name e) = wrapInParens $ show name ++ " = " ++ show e 
-  show (MovingValueStmt e) = wrapInParens $ "return " ++ show e
+  deriving (Generic, Show, Eq, ToSym ConcMovingStmt)
 
 instance Mergeable SymBool MovingStmt
 instance ToSym MovingStmt MovingStmt
 instance SymEval Model MovingStmt
 
-data MovingExprSpec = MovingExprSpec
-  { mvmntExprDepth :: Integer }
+data MovingExprSpec = MovingExprSpec {mvmntExprDepth :: Integer}
   deriving (Show)
 
 type ExecutingEnv = [(SymInteger, UnionM CoordExpr)]
 type TypingEnv = [(SymInteger, UnionM MovingType)]
+
+
+--
+-- | Concrete Data Types
+--
+data ConcMovingExpr 
+   = ConcCoord ConcCoordExpr
+   | ConcMoving ConcMovingOpExpr
+   | ConcMovingVarExpr Integer
+   deriving (Generic, Eq, ToCon MovingExpr)
+
+instance Show ConcMovingExpr where
+  show (ConcCoord c) = show c 
+  show (ConcMoving op) = show op
+  show (ConcMovingVarExpr v) = "var:" ++ show v
+
+data ConcCoordExpr 
+  = ConcCoordLit Integer Integer
+  | ConcUnitLit -- ()
+  deriving (Generic, Eq, ToCon CoordExpr)
+
+instance Show ConcCoordExpr where
+  show (ConcCoordLit x y) = "Coord {x: " ++ (show x) ++ ", y: " ++ (show y) ++ "}"
+  show ConcUnitLit = "UnitLit"
+
+data ConcMovingOpExpr
+   = ConcMoveUp    ConcMovingExpr
+   | ConcMoveDown  ConcMovingExpr
+   | ConcMoveLeft  ConcMovingExpr
+   | ConcMoveRight ConcMovingExpr
+   deriving (Generic, Eq, ToCon MovingOpExpr)
+
+instance Show ConcMovingOpExpr where 
+  show (ConcMoveUp e) = "MoveUp " ++ (wrapInParens $ show e)
+  show (ConcMoveDown e) = "MoveDown " ++ (wrapInParens $ show e)
+  show (ConcMoveLeft e) = "MoveLeft " ++ (wrapInParens $ show e)
+  show (ConcMoveRight e) = "MoveRight " ++ (wrapInParens $ show e)
+
+data ConcMovingStmt
+  = ConcMovingDefineStmt Integer ConcMovingExpr
+  | ConcMovingValueStmt  ConcMovingExpr
+  deriving (Generic, ToCon MovingStmt)
+
+instance Show ConcMovingStmt where
+  show (ConcMovingDefineStmt name e) = "var:" ++ show name ++ " := " ++ show e 
+  show (ConcMovingValueStmt e) = "return " ++ (wrapInParens $ show e)
 
 --
 -- | SymGen Instances Without Arg
@@ -141,34 +171,65 @@ instance SymGen SymBool MovingExprSpec MovingStmt where
 --
 -- | SymGen Instances With Arg
 --
-instance SymGen SymBool (MovingExprSpec, CoordExpr) MovingOpExpr where
-  genSymIndexed ((MovingExprSpec d), arg) = do
-    e <- genSymIndexed ((MovingExprSpec (d - 1)), arg)
-    choose
-       (MoveUp e)
-      [ MoveDown e,
-        MoveLeft e,
-        MoveRight e
-      ]
 
-instance SymGen SymBool (MovingExprSpec, CoordExpr) MovingExpr where
-  genSymIndexed (e@(MovingExprSpec d), arg) =
-    merge
-      <$> if d <= 0
+-- TODO change the argument type to (MovingExpr ..) so that it can be variable
+--    or concrete value
+instance SymGen SymBool (MovingExprSpec, MovingExpr) MovingOpExpr where
+  genSymIndexed ((MovingExprSpec d), arg) = case arg of
+    (Coord coord) -> do
+      e <- genSymIndexed ((MovingExprSpec (d - 1)), (Coord coord))
+      choose
+        (MoveUp e)
+        [ MoveDown e,
+          MoveLeft e,
+          MoveRight e
+        ]
+    (MovingVarExpr var) -> do
+      e <- genSymIndexed ((MovingExprSpec (d - 1)), (MovingVarExpr var))
+      choose
+        (MoveUp e)
+        [ MoveDown e,
+          MoveLeft e,
+          MoveRight e
+        ]
+    _ -> error "shouldn't ever be here!"
+
+instance SymGen SymBool (MovingExprSpec, MovingExpr) MovingExpr where
+  genSymIndexed (e@(MovingExprSpec d), arg) = case arg of
+    (Coord coord) -> merge <$> 
+      if d <= 0
         then do
-          let coord = toSym arg
-          v <- genSymSimpleIndexed @SymBool ()
-          choose (Coord coord) [MovingVarExpr v]
+          -- let coord' = toSym coord
+          -- v <- genSymSimpleIndexed @SymBool ()
+          return $ mrgSingle $ Coord $ toSym coord
+          -- choose (Coord coord') [MovingVarExpr v]
         else do
-          let coord = toSym arg
-          moving <- genSymIndexed (e, arg)
-          chooseU (Coord <$> coord) [Moving <$> moving]
-
-instance SymGen SymBool (MovingExprSpec, CoordExpr) MovingStmt where
-  genSymIndexed (e, arg) = do
-    expr <- genSymIndexed @SymBool (e, arg)
-    vari <- genSymSimpleIndexed @SymBool ()
-    choose (MovingDefineStmt vari expr) [MovingValueStmt expr]
+          let coord' = toSym coord
+          moving <- genSymIndexed (e, (Coord coord))
+          chooseU (Coord <$> coord') [Moving <$> moving]
+    (MovingVarExpr var) -> merge <$> 
+      if d <= 0
+        then do
+          -- let coord' = toSym coord
+          -- v <- genSymSimpleIndexed @SymBool ()
+          return $ mrgSingle $ MovingVarExpr var
+          -- choose (Coord coord') [MovingVarExpr v]
+        else do
+          let var' = toSym var
+          moving <- genSymIndexed (e, MovingVarExpr var)
+          chooseU (MovingVarExpr <$> var') [Moving <$> moving]
+    _ -> error "shouldn't ever be here!"
+    
+-- TODO this might need to be implemented later
+-- instance SymGen SymBool (MovingExprSpec, MovingExpr) MovingStmt where
+--   genSymIndexed (e, arg) = case arg of
+--     (Coord coord) -> do
+--       ex <- genSymIndexed @SymBool (e, (Coord coord))
+--       varName <- genSymSimpleIndexed @SymBool ()
+--       choose (MovingDefineStmt varName ex) [MovingValueStmt ex]
+--     (MovingVarExpr var) -> undefined
+--     _ -> error "shouldn't ever be here!"
+    
 
 --
 -- | SymGen Instances With Function Arguments
@@ -202,31 +263,39 @@ instance SymGen SymBool MovingExprSpec (CoordExpr -> UnionM MovingExpr) where
 instance SymGenSimple SymBool MovingExprSpec (CoordExpr -> UnionM MovingExpr) where
   genSymSimpleIndexed e@(MovingExprSpec d) =
    if d <= 0
-        then do
-          v <- genSymSimpleIndexed @SymBool ()
+    then do
+      v <- genSymSimpleIndexed @SymBool ()
 
-          r <- choose (mrgSingle . Coord) 
-                      [mrgSingle . MovingVarExpr . v]
-          return $ getSingle @SymBool r
+      r <- choose (mrgSingle . Coord) 
+                  [mrgSingle . MovingVarExpr . v]
+      return $ getSingle @SymBool r
 
-        else do
-          
-          moving <- genSymSimpleIndexed @SymBool e
-          v <- genSymSimpleIndexed @SymBool ()
+    else do
+      moving <- genSymSimpleIndexed @SymBool e
+      v <- genSymSimpleIndexed @SymBool ()
 
-          r <- choose
-                  ( mrgSingle . Coord)
-                  [ mrgSingle . MovingVarExpr . v,
-                    (mrgFmap    Moving)       . moving
-                  ]
-          return $ getSingle @SymBool r
+      r <- choose
+              ( mrgSingle . Coord)
+              [ mrgSingle . MovingVarExpr . v,
+                (mrgFmap    Moving)       . moving
+              ]
+      return $ getSingle @SymBool r
+
+instance SymGen SymBool MovingExprSpec (CoordExpr -> UnionM MovingStmt) where
+  genSymIndexed v = genSymSimpleIndexed @SymBool v
 
 -- might need to figure out later.... <3 
--- instance SymGen SymBool MovingExprSpec (CoordExpr -> MovingStmt) where
---   genSymIndexed e = do
+-- instance SymGenSimple SymBool MovingExprSpec (CoordExpr -> UnionM MovingStmt) where
+--   genSymSimpleIndexed e = do
+
 --     expr <- genSymIndexed @SymBool e
 --     vari <- genSymSimpleIndexed @SymBool ()
---     choose (MovingDefineStmt vari expr) [MovingValueStmt expr]
+
+--     r <- choose 
+--           (mrgSingle . MovingDefineStmt . vari . expr) 
+--           [mrgSingle . MovingValueStmt expr]
+
+--     return $ getSingle @SymBool r
 
 
 --
@@ -409,3 +478,23 @@ instance
     l <- genSymIndexed @bool @(ListSpec spec) @[a -> b] spec
     return $ extractArgFromUnionMBaseOfFunc (extractArgFromListOfFunc <$> l)
 -- The previous section should lie in Grisette lib
+
+
+{-
+
+• Overlapping instances for ToCon
+                              (UnionMBase SymBool MovingExpr)
+                              (UnionMBase SymBool ConcMovingExpr)
+    arising from the 'deriving' clause of a data type declaration
+  Matching instances:
+    instance (SymBoolOp bool, ToCon a b) => ToCon (UnionMBase bool a) b
+      
+      -- Defined in ‘Grisette.Control.Monad.UnionMBase’
+    
+    instance (SymBoolOp bool, ToCon a b, Mergeable bool b) =>
+              ToCon (UnionMBase bool a) (UnionMBase bool b)
+      
+      -- Defined in ‘Grisette.Control.Monad.UnionMBase’
+
+
+-}
