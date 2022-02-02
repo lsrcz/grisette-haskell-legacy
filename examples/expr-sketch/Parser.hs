@@ -49,24 +49,24 @@ binary name f = InfixL (f <$ symbol name)
 opHoleOperator :: Operator Parser (UnionM SymbExpr)
 opHoleOperator = InfixL $ do
   _ <- symbol "??op"
-  genSymSimpleIndexed @SymBool [Add, Sub, Mul]
+  simpleChoose @SymBool uSAddExpr [uSSubExpr, uSMulExpr]
 
-addOp :: Parser Op
-addOp = symbol "+" >> return Add
+addOp :: Parser (UnionM SymbExpr -> UnionM SymbExpr -> UnionM SymbExpr)
+addOp = symbol "+" >> return uSAddExpr
 
-subOp :: Parser Op
-subOp = symbol "-" >> return Sub
+subOp :: Parser (UnionM SymbExpr -> UnionM SymbExpr -> UnionM SymbExpr)
+subOp = symbol "-" >> return uSSubExpr
 
-mulOp :: Parser Op
-mulOp = symbol "*" >> return Mul
+mulOp :: Parser (UnionM SymbExpr -> UnionM SymbExpr -> UnionM SymbExpr)
+mulOp = symbol "*" >> return uSMulExpr
 
-oplst :: Parser [Op]
+oplst :: Parser [UnionM SymbExpr -> UnionM SymbExpr -> UnionM SymbExpr]
 oplst = between (symbol "??{") (symbol "}") (sepBy (choice [addOp, subOp, mulOp]) (symbol ","))
 
 opBetterHole :: Operator Parser (UnionM SymbExpr)
 opBetterHole = InfixL $ do
   ops <- oplst
-  genSymSimpleIndexed @SymBool ops
+  simpleChoose @SymBool (head ops) (tail ops)
 
 -- hole op is handled separately
 operatorTable :: [[Operator Parser (UnionM SymbExpr)]]

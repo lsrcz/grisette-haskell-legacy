@@ -1,3 +1,4 @@
+{-# LANGUAGE TemplateHaskell #-}
 module Interpreter where
 
 import Control.Monad.Except
@@ -13,6 +14,8 @@ data SValue
   | SBool SymBool
   | SUnit
   deriving (Show, Eq, Generic, Mergeable SymBool, SEq SymBool)
+
+$(makeUnionMWrapper "u" ''SValue)
 
 type Env = [(SIdentifier, UnionM SValue)]
 
@@ -47,36 +50,36 @@ interpretBop env l r f = do
   f lv rv
 
 interpretExpr :: UnionM Env -> SymbExpr -> ExceptT Errors UnionM SValue
-interpretExpr _ (SIntConstantExpr i) = mrgReturn $ SInt i
-interpretExpr _ (SBoolConstantExpr b) = mrgReturn $ SBool b
+interpretExpr _ (SIntConstantExpr i) = uSInt i
+interpretExpr _ (SBoolConstantExpr b) = uSBool b
 interpretExpr env (SLtExpr l r) = interpretBop env l r $
   curry $ \case
-    (SInt x, SInt y) -> mrgReturn $ SBool $ x <~ y
+    (SInt x, SInt y) -> uSBool $ x <~ y
     _ -> throwError BadType
 interpretExpr env (SEqExpr l r) = interpretBop env l r $
   curry $ \case
-    (SInt x, SInt y) -> mrgReturn $ SBool $ x ==~ y
-    (SBool x, SBool y) -> mrgReturn $ SBool $ x ==~ y
+    (SInt x, SInt y) -> uSBool $ x ==~ y
+    (SBool x, SBool y) -> uSBool $ x ==~ y
     _ -> throwError BadType
 interpretExpr env (SAndExpr l r) = interpretBop env l r $
   curry $ \case
-    (SBool x, SBool y) -> mrgReturn $ SBool $ x &&~ y
+    (SBool x, SBool y) -> uSBool $ x &&~ y
     _ -> throwError BadType
 interpretExpr env (SOrExpr l r) = interpretBop env l r $
   curry $ \case
-    (SBool x, SBool y) -> mrgReturn $ SBool $ x ||~ y
+    (SBool x, SBool y) -> uSBool $ x ||~ y
     _ -> throwError BadType
 interpretExpr env (SAddExpr l r) = interpretBop env l r $
   curry $ \case
-    (SInt x, SInt y) -> mrgReturn $ SInt $ x + y
+    (SInt x, SInt y) -> uSInt $ x + y
     _ -> throwError BadType
 interpretExpr env (SSubExpr l r) = interpretBop env l r $
   curry $ \case
-    (SInt x, SInt y) -> mrgReturn $ SInt $ x - y
+    (SInt x, SInt y) -> uSInt $ x - y
     _ -> throwError BadType
 interpretExpr env (SMulExpr l r) = interpretBop env l r $
   curry $ \case
-    (SInt x, SInt y) -> mrgReturn $ SInt $ x * y
+    (SInt x, SInt y) -> uSInt $ x * y
     _ -> throwError BadType
 interpretExpr env (SVarExpr v) = lookupEnvU env v
 

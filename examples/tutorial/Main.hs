@@ -1,3 +1,6 @@
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE OverloadedStrings #-}
+
 module Main where
 
 import Control.Monad.Except
@@ -10,11 +13,19 @@ import Grisette.SymPrim.Term
 
 -- Symbolic primitives
 symbBool :: Sym Bool
-symbBool = ssymb "a"
+symbBool = ssymb "a" -- simple symbolic
+-- similar to Rosette's define-symbolic (without *).
+-- We can implement something similart to rosette's
+-- define-symbolic with template haskell
+
+-- $(define-symbolic a Bool) := a = ssymb "a"
+
+symbBoolOverloadedStr :: Sym Bool
+symbBoolOverloadedStr = "a" -- simple symbolic
 
 -- Indexed names
 isymbBool :: Sym Bool
-isymbBool = isymb 0 "a"
+isymbBool = isymb 0 "a" -- indexed symbolic "a#0"
 
 -- Symbolic primitives can hold concrete values for partial evaluation
 concBool :: Sym Bool
@@ -22,28 +33,29 @@ concBool = conc True
 
 -- Symbolic integers
 symbInteger :: Sym Integer
-symbInteger = ssymb "b"
+symbInteger = "b"
 
--- Symbolic integers with concrete value. You don't have to use 1 here because Sym Integer has a Num instance
+-- Symbolic integers with concrete value.
+-- You don't have to use 1 here because Sym Integer has a Num instance
 concInteger :: Sym Integer
 concInteger = 1
 
 -- Symbolic Signed BitVector
 symbSignedBV :: Sym (SignedBV 4)
-symbSignedBV = ssymb "a"
+symbSignedBV = "a"
 
 concSignedBV :: Sym (SignedBV 4)
 concSignedBV = 3
 
 concSignedBV' :: Sym (SignedBV 4)
-concSignedBV' = 9
+concSignedBV' = 9 -- -7
 
 concSignedBVCmpWith0' :: Sym Bool
-concSignedBVCmpWith0' = concSignedBV' <~ 0
+concSignedBVCmpWith0' = concSignedBV' <~ 0 -- true <~ SOrd
 
 -- Symbolic Unsigned BitVector
 symbUnsignedBV :: Sym (UnsignedBV 4)
-symbUnsignedBV = ssymb "a"
+symbUnsignedBV = "a"
 
 concUnsignedBV :: Sym (UnsignedBV 4)
 concUnsignedBV = 3
@@ -54,27 +66,30 @@ concUnsignedBV' = 9
 concUnsignedBVCmpWith0' :: Sym Bool
 concUnsignedBVCmpWith0' = concUnsignedBV' <~ 0
 
+-- bvult bvslt
+
 -- Basic operations
 -- Symbolic equivalence (SEq type class)
-concEq :: Bool -- The result type is Bool, you cannot encode the symbolic equivalence with it
-concEq = (ssymb "a" :: Sym Integer) == ssymb "b"
+concEq :: Bool -- The result type is Bool,
+-- you cannot encode the symbolic equivalence with it
+concEq = ("a" :: Sym Integer) == "b" -- False
 
 symbEq :: Sym Bool
-symbEq = (ssymb "a" :: Sym Integer) ==~ ssymb "b"
+symbEq = ("a" :: Sym Integer) ==~ "b" -- (= a b)
 
 symbNeq :: Sym Bool
-symbNeq = (ssymb "a" :: Sym Integer) /=~ ssymb "b"
+symbNeq = ("a" :: Sym Integer) /=~ "b"
 
 symbEqPartialEval :: Sym Bool
-symbEqPartialEval = (ssymb "a" :: Sym Integer) ==~ ssymb "a"
+symbEqPartialEval = ("a" :: Sym Integer) ==~ "a"
 
 -- Symbolic ordering (SOrd type class)
-symbLt :: Sym Bool
-symbLt = (ssymb "a" :: Sym Integer) <=~ ssymb "b"
+symbLe :: Sym Bool
+symbLe = ("a" :: Sym Integer) <=~ "b"
 
 -- Symbolic number-like types (Haskell's standard Num type class)
 symbAdd :: Sym Integer
-symbAdd = ssymb "a" + ssymb "b"
+symbAdd = "a" + "b"
 
 -- Symbolic composite data type
 -- The UnionM monad
@@ -85,16 +100,16 @@ symbList1 :: UnionM [Sym Bool]
 symbList1 = mrgSingle []
 
 symbList2 :: UnionM [Sym Bool]
-symbList2 = mrgSingle [ssymb "x"]
+symbList2 = mrgSingle ["x"]
 
 symbList3 :: UnionM [Sym Bool]
-symbList3 = mrgSingle [ssymb "y"]
+symbList3 = mrgSingle ["y"]
 
 symbList4 :: UnionM [Sym Bool]
-symbList4 = mrgGuard (ssymb "a") symbList1 symbList3
+symbList4 = mrgGuard "a" symbList1 symbList3
 
 symbList5 :: UnionM [Sym Bool]
-symbList5 = mrgGuard (ssymb "a") symbList2 symbList3
+symbList5 = mrgGuard "a" symbList2 symbList3
 
 -- UnionM can propagate path conditions correctly
 isEmpty :: [Sym Bool] -> Sym Bool
@@ -106,6 +121,7 @@ isEmpty _ = conc False
 -- return (isEmpty symbList4)
 testIsEmpty :: Sym Bool
 testIsEmpty = getSingle $ do
+  -- getSingle extracts SymBool from (UnionM (SymBool))
   l <- symbList4
   return $ isEmpty l
 
@@ -115,11 +131,13 @@ getitem :: (Mergeable SymBool a) => SymInteger -> [a] -> ExceptT AssertionError 
 getitem _ [] = throwError AssertionError
 getitem i (x : xs) = mrgGuard (i ==~ 0) (mrgReturn x) (getitem (i - 1) xs)
 
+-- getitem if i is in range, return list[i], or return AssertionError
 list :: [SymBool]
-list = [ssymb "a", ssymb "b"]
+list = ["a", "b"]
 
 correctResult :: ExceptT AssertionError UnionM SymBool
-correctResult = mrgGuard (ssymb "c") (getitem (ssymb "d") list) (getitem 1 list)
+-- UnionM (Either AssertionError SymBool)
+correctResult = mrgGuard "c" (getitem "d" list) (getitem 1 list)
 
 -- Working with user-defined types
 data ConcExpr
@@ -129,13 +147,21 @@ data ConcExpr
   | ConcEqv ConcExpr ConcExpr
   deriving (Show, Eq, Generic, ToCon Expr)
 
+-- a + b - 2 == 10
 data Expr
   = Const SymInteger
   | Add (UnionM Expr) (UnionM Expr)
   | Sub (UnionM Expr) (UnionM Expr)
   | Eqv (UnionM Expr) (UnionM Expr)
   deriving (Show, Eq, Generic)
-  deriving anyclass (Mergeable SymBool, SEq SymBool, SymEval Model, ToSym ConcExpr)
+  deriving anyclass
+    ( Mergeable SymBool,
+      SEq SymBool,
+      SymEval Model,
+      ToSym ConcExpr
+    )
+
+$(makeUnionMWrapper "u" ''Expr)
 
 -- you can write this as deriving (Show, Eq, Generic, Mergeable SymBool ...)
 
@@ -157,23 +183,19 @@ concExpr' = toCon symbExpr
 mergedSymbExpr1 :: UnionM Expr
 mergedSymbExpr1 =
   mrgGuard
-    (ssymb "cond")
-    (mrgSingle (Const (ssymb "a")))
-    (mrgSingle (Add (mrgSingle (Const (ssymb "b"))) (mrgSingle (Const (ssymb "c")))))
+    "cond"
+    (uConst "a")
+    (uAdd (uConst "b") (uConst "c"))
 
 mergedSymbExpr2 :: UnionM Expr
 mergedSymbExpr2 =
-  mrgGuard
-    (ssymb "cond1")
-    (mrgSingle (Const (ssymb "a1")))
-    (mrgSingle (Const (ssymb "a2")))
+  mrgGuard "cond1" (uConst "a1") (uConst "a2")
 
 mergedSymbExpr3 :: UnionM Expr
 mergedSymbExpr3 =
-  mrgGuard
-    (ssymb "cond1")
-    (mrgSingle (Add (mrgSingle (Const (ssymb "b1"))) (mrgSingle (Const (ssymb "c1")))))
-    (mrgSingle (Add (mrgSingle (Const (ssymb "b2"))) (mrgSingle (Const (ssymb "c2")))))
+  mrgGuard "cond1"
+    (uAdd (uConst "b1") (uConst "c1"))
+    (uAdd (uConst "b2") (uConst "c2"))
 
 -- SymEval will be discussed later
 
@@ -198,8 +220,15 @@ instance SymGen SymBool Integer Expr where
     if i <= 0
       then do
         f <- genSymSimpleIndexed @SymBool ()
-        return $ mrgSingle $ Const f
-      else do
+        return $ uConst f
+      else -- You still need to write this mrgSingle.
+      -- I realized that forcing the user to insert mrgSingle/mrgReturn everywhere is not a good idea
+      -- probably in the future we can automatically generate functions like
+      -- singleConst = mrgSingle . Const with Template Haskell
+
+      -- In scala we can use implicit conversions.
+      -- No need for metaprogramming
+      do
         f <- genSymSimpleIndexed @SymBool ()
         l <- genSymSimpleIndexed @SymBool (i - 1)
         r <- genSymSimpleIndexed @SymBool (i - 1)
@@ -220,9 +249,7 @@ sketch2 = genSym (2 :: Integer) "b"
 instance SymGen SymBool () (UnionM Expr -> UnionM Expr -> UnionM Expr)
 
 instance SymGenSimple SymBool () (UnionM Expr -> UnionM Expr -> UnionM Expr) where
-  genSymSimpleIndexed _ =
-    let ops = (\op x y -> mrgSingle $ op x y) <$> [Add, Sub, Eqv]
-     in simpleChoose @SymBool (head ops) (tail ops)
+  genSymSimpleIndexed _ = simpleChoose @SymBool uAdd [uSub, uEqv]
 
 sketch3 :: UnionM Expr
 sketch3 =
@@ -255,6 +282,8 @@ data Value
   | VI SymInteger
   deriving (Eq, Show, Generic, Mergeable SymBool, SEq SymBool)
 
+$(makeUnionMWrapper "u" ''Value)
+
 -- A monadic interpreter. Nothing special
 interpretBop ::
   UnionM Expr ->
@@ -273,16 +302,16 @@ interpretExpr :: Expr -> ExceptT Errors UnionM Value
 interpretExpr (Const i) = mrgReturn $ VI i
 interpretExpr (Add l r) = interpretBop l r $
   curry $ \case
-    (VI x, VI y) -> mrgReturn $ VI $ x + y
+    (VI x, VI y) -> uVI $ x + y -- a lot of mrgReturns
     _ -> throwError InvalidProgram
 interpretExpr (Sub l r) = interpretBop l r $
   curry $ \case
-    (VI x, VI y) -> mrgReturn $ VI $ x - y
+    (VI x, VI y) -> uVI $ x - y
     _ -> throwError InvalidProgram
 interpretExpr (Eqv l r) = interpretBop l r $
   curry $ \case
-    (VI x, VI y) -> mrgReturn $ VB $ x ==~ y
-    (VB x, VB y) -> mrgReturn $ VB $ x ==~ y
+    (VI x, VI y) -> uVB $ x ==~ y -- mrgSingle
+    (VB x, VB y) -> uVB $ x ==~ y
     _ -> throwError InvalidProgram
 
 -- The user can translate the errors with SolverTranslation type class
@@ -300,10 +329,7 @@ sketch4 =
   runSymGenIndexed
     ( do
         op <- genSymSimpleIndexed @SymBool ()
-        return $
-          op
-            (mrgSingle $ Const $ conc 1 :: UnionM Expr)
-            (mrgSingle $ Const $ conc 2 :: UnionM Expr)
+        return $ op (uConst 1 :: UnionM Expr) (uConst 2 :: UnionM Expr)
     )
     "a"
 
@@ -313,7 +339,7 @@ result :: Integer -> IO ()
 result i = do
   m <- solveWithTranslation (RefResult i) (UnboundedReasoning z3) $ interpretExprU sketch4
   case m of
-    Left _ -> print "No such expression"
+    Left _ -> putStrLn "No such expression"
     Right mo -> print (toCon $ symeval True mo sketch4 :: Maybe ConcExpr)
 
 -- True means that for all values that are not mentioned in the model, we should fill in a default value.

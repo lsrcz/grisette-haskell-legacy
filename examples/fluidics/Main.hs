@@ -37,7 +37,6 @@ data Point = Point SymInteger SymInteger
   deriving (Show, Generic, SymEval Model, Mergeable SymBool)
 
 instance SymGen SymBool () Point where
-  genSymIndexed = fmap mrgSingle . genSymSimpleIndexed @SymBool
 
 instance SymGenSimple SymBool () Point where
   genSymSimpleIndexed () = do
@@ -90,9 +89,6 @@ move g p d = do
 assert :: SymBool -> ExceptT () UnionM ()
 assert = gassertWithError ()
 
-assertU :: UnionM SymBool -> ExceptT () UnionM ()
-assertU = assert . getSingle . merge
-
 performN :: (Monad m) => (a -> m a) -> Int -> a -> m a
 performN f 0 a = f a
 performN f x a = f a >>= performN f (x - 1)
@@ -105,10 +101,10 @@ mix g p = do
    in do
         a <- gridRef g p
         b <- gridRef g e
-        assertU $ mrgFmap (conc . isJust) a
-        assertU $ mrgFmap (conc . isJust) b
-        g1 <- gridSet g p (mrgSingle $ Just "c")
-        g2 <- gridSet g1 e (mrgSingle $ Just "c")
+        assert #~ mrgFmap (conc . isJust) a
+        assert #~ mrgFmap (conc . isJust) b
+        g1 <- gridSet g p (uJust "c")
+        g2 <- gridSet g1 e (uJust "c")
         performN
           ( \gx -> do
               gx1 <- move gx p E
@@ -166,13 +162,13 @@ synthesizeProgram config i initst f = go 0 (mrgReturn initst)
                   Right m -> return $ toCon $ symeval True m $ take (num + 1) lst
 
 initSt :: Grid
-initSt = unsafeSet (unsafeSet (makeGrid 5 5) 0 0 (mrgSingle $ Just "a")) 0 2 (mrgSingle $ Just "b")
+initSt = unsafeSet (unsafeSet (makeGrid 5 5) 0 0 (uJust "a")) 0 2 (uJust "b")
 
 spec :: Grid -> ExceptT () UnionM SymBool
 spec g = do
   r <- gridRef g (Point 4 2)
   r2 <- gridRef g (Point 0 0)
-  return $ r ==~ mrgSingle (Just "a") &&~ r2 ==~ mrgSingle (Just "b")
+  return $ r ==~ uJust "a" &&~ r2 ==~ uJust "b"
 
 main :: IO ()
 main = timeItAll "overall" $ do

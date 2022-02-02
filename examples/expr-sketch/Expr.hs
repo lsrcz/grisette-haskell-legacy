@@ -1,7 +1,6 @@
+{-# LANGUAGE TemplateHaskell #-}
 module Expr where
 
-import Data.List (sort)
-import Data.List.Unique
 import GHC.Generics
 import Grisette.Backend.SBV
 import Grisette.Core
@@ -21,35 +20,17 @@ data SymbExpr
   | SMulExpr (UnionM SymbExpr) (UnionM SymbExpr)
   deriving (Show, Eq, Generic, Mergeable SymBool, SEq SymBool, SymEval Model, ToSym ConcExpr)
 
-data Op = Add | Sub | Mul deriving (Show, Eq, Ord)
-
-instance SymGen SymBool [Op] (UnionM SymbExpr -> UnionM SymbExpr -> UnionM SymbExpr) where
-  genSymIndexed s = mrgSingle <$> genSymSimpleIndexed @SymBool s
-
-instance SymGenSimple SymBool [Op] (UnionM SymbExpr -> UnionM SymbExpr -> UnionM SymbExpr) where
-  genSymSimpleIndexed s = getSingle <$> choose @SymBool (head ops) (tail ops)
-    where
-      ops =
-        (\op x y -> mrgSingle $ op x y)
-          . ( \case
-                Add -> SAddExpr
-                Sub -> SSubExpr
-                Mul -> SMulExpr
-            )
-          <$> uniq (sort s)
-
-interpretU :: UnionM SymbExpr -> SymInteger
-interpretU u = getSingle $ interpret <$> u
+$(makeUnionMWrapper "u" ''SymbExpr)
 
 interpret :: SymbExpr -> SymInteger
 interpret (SConstantExpr s) = s
-interpret (SAddExpr a b) = interpretU a + interpretU b
-interpret (SSubExpr a b) = interpretU a - interpretU b
-interpret (SMulExpr a b) = interpretU a * interpretU b
+interpret (SAddExpr a b) = interpret #~ a + interpret #~ b
+interpret (SSubExpr a b) = interpret #~ a - interpret #~ b
+interpret (SMulExpr a b) = interpret #~ a * interpret #~ b
 
 synthesis :: GrisetteSMTConfig i -> UnionM SymbExpr -> Integer -> IO (Maybe ConcExpr)
 synthesis config s i = do
-  m <- solveWith config (interpretU s ==~ toSym i)
+  m <- solveWith config (interpret #~ s ==~ toSym i)
   case m of
     Left _ -> return Nothing
     Right mo -> return $ toCon $ symeval True mo s

@@ -29,7 +29,7 @@ parens :: Parser a -> Parser a
 parens = between (symbol "(") (symbol ")")
 
 concIntExpr :: Parser (UnionM SymbExpr)
-concIntExpr = mrgSingle . SIntConstantExpr <$> lexeme L.decimal
+concIntExpr = uSIntConstantExpr <$> lexeme L.decimal
 
 intlst :: Parser [Integer]
 intlst = between (symbol "??[") (symbol "]") (sepBy1 L.decimal (symbol ","))
@@ -39,19 +39,19 @@ intHoleRangeExpr = do
   l <- intlst
   let x = conc @SymInteger <$> l
   i <- choose @SymBool (head x) (tail x)
-  return $ mrgSingle $ SIntConstantExpr $ getSingle i
+  return $ uSIntConstantExpr $ getSingle i
 
 intHoleExpr :: Parser (UnionM SymbExpr)
 intHoleExpr = do
   _ <- symbol "??i"
   i <- genSymSimpleIndexed @SymBool ()
-  return $ mrgSingle $ SIntConstantExpr i
+  return $ uSIntConstantExpr i
 
 boolHoleExpr :: Parser (UnionM SymbExpr)
 boolHoleExpr = do
   _ <- symbol "??b"
   b <- genSymSimpleIndexed @SymBool ()
-  return $ mrgSingle $ SBoolConstantExpr b
+  return $ uSBoolConstantExpr b
 
 identHole :: Parser SIdentifier
 identHole = do
@@ -67,7 +67,7 @@ ident :: Parser SIdentifier
 ident = lexeme $ choice [identHole, concIdent]
 
 identExpr :: Parser (UnionM SymbExpr)
-identExpr = mrgSingle . SVarExpr <$> ident
+identExpr = uSVarExpr <$> ident
 
 binary :: B.ByteString -> (a -> a -> a) -> Operator Parser a
 binary name f = E.InfixL (f <$ symbol name)
@@ -75,52 +75,54 @@ binary name f = E.InfixL (f <$ symbol name)
 opHoleOperator :: Operator Parser (UnionM SymbExpr)
 opHoleOperator = E.InfixL $ do
   _ <- symbol "??op"
-  genSymSimpleIndexed @SymBool [Add, Sub, Mul]
+  simpleChoose @SymBool uSAddExpr [uSSubExpr, uSMulExpr, uSLtExpr,
+    uSEqExpr, uSAndExpr, uSOrExpr]
 
-addOp :: Parser Op
-addOp = symbol "+" >> return Add
+addOp :: Parser (UnionM SymbExpr -> UnionM SymbExpr -> UnionM SymbExpr)
+addOp = symbol "+" >> return uSAddExpr
 
-subOp :: Parser Op
-subOp = symbol "-" >> return Sub
+subOp :: Parser (UnionM SymbExpr -> UnionM SymbExpr -> UnionM SymbExpr)
+subOp = symbol "-" >> return uSSubExpr
 
-mulOp :: Parser Op
-mulOp = symbol "*" >> return Mul
+mulOp :: Parser (UnionM SymbExpr -> UnionM SymbExpr -> UnionM SymbExpr)
+mulOp = symbol "*" >> return uSMulExpr
 
-ltOp :: Parser Op
-ltOp = symbol "<" >> return Lt
+ltOp :: Parser (UnionM SymbExpr -> UnionM SymbExpr -> UnionM SymbExpr)
+ltOp = symbol "<" >> return uSLtExpr
 
-eqOp :: Parser Op
-eqOp = symbol "==" >> return Eq
+eqOp :: Parser (UnionM SymbExpr -> UnionM SymbExpr -> UnionM SymbExpr)
+eqOp = symbol "==" >> return uSEqExpr
 
-andOp :: Parser Op
-andOp = symbol "&&" >> return And
+andOp :: Parser (UnionM SymbExpr -> UnionM SymbExpr -> UnionM SymbExpr)
+andOp = symbol "&&" >> return uSAndExpr
 
-orOp :: Parser Op
-orOp = symbol "||" >> return Or
+orOp :: Parser (UnionM SymbExpr -> UnionM SymbExpr -> UnionM SymbExpr)
+orOp = symbol "||" >> return uSOrExpr
 
-oplst :: Parser [Op]
+oplst :: Parser [UnionM SymbExpr -> UnionM SymbExpr -> UnionM SymbExpr]
 oplst =
   between (symbol "??{") (symbol "}") $
     sepBy (choice [addOp, subOp, mulOp, ltOp, eqOp, andOp, orOp]) (symbol ",")
 
 opBetterHole :: Operator Parser (UnionM SymbExpr)
 opBetterHole = E.InfixL $ do
-  ops <- oplst
-  genSymSimpleIndexed @SymBool ops
+  ops <- between (symbol "??{") (symbol "}") $
+    sepBy (choice [addOp, subOp, mulOp, ltOp, eqOp, andOp, orOp]) (symbol ",")
+  simpleChoose @SymBool (head ops) (tail ops)
 
 -- hole op is handled separately
 operatorTable :: [[Operator Parser (UnionM SymbExpr)]]
 operatorTable =
-  [ [binary "*" (\a b -> mrgSingle $ SMulExpr a b)],
-    [ binary "+" (\a b -> mrgSingle $ SAddExpr a b),
-      binary "-" (\a b -> mrgSingle $ SSubExpr a b)
+  [ [binary "*" uSMulExpr],
+    [ binary "+" uSAddExpr,
+      binary "-" uSSubExpr
     ],
-    [ binary "<" (\a b -> mrgSingle $ SLtExpr a b),
-      binary "==" (\a b -> mrgSingle $ SEqExpr a b)
+    [ binary "<" uSLtExpr,
+      binary "==" uSEqExpr
     ],
-    [ binary "&&" (\a b -> mrgSingle $ SAndExpr a b)
+    [ binary "&&" uSAndExpr
     ],
-    [ binary "||" (\a b -> mrgSingle $ SOrExpr a b)
+    [ binary "||" uSOrExpr
     ],
     [ opHoleOperator,
       opBetterHole

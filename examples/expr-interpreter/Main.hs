@@ -1,9 +1,9 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Main where
 
-import Control.Monad.Except
 import Grisette.Backend.SBV
 import Grisette.Core
 import Grisette.SymPrim.Term
@@ -11,41 +11,39 @@ import Interpreter
 
 p1 :: [Stmt]
 p1 =
-  [ ValueStmt $ mrgSingle $ Ops $ VarExpr $ ssymb "a"
+  [ ValueStmt $ uOps $ VarExpr "a"
   ]
 
 p2 :: [Stmt]
 p2 =
   [ ValueStmt $
-      mrgSingle $
-        Ops $
-          AndExpr (mrgSingle $ Lit $ BoolLit $ conc True) (mrgSingle $ Lit $ BoolLit $ conc False)
+      uOps $
+        AndExpr (uLit $ BoolLit $ conc True) (uLit $ BoolLit $ conc False)
   ]
 
 p3 :: [Stmt]
 p3 =
-  [ DefineStmt (ssymb "a") $
-      mrgSingle $ Lit $ BoolLit $ ssymb "b",
-    ValueStmt $ mrgSingle $ Ops $ VarExpr $ ssymb "c"
+  [ DefineStmt "a" $ uLit $ BoolLit "b",
+    ValueStmt $ uOps $ VarExpr "c"
   ]
 
 sketch :: UnionM [UnionM Stmt]
 sketch = genSym (ListSpec 0 2 (ExprSpec 2 1)) "a"
 
+data FindRuntimeTypeMismatch = FindRuntimeTypeMismatch
+
+instance SolverTranslation FindRuntimeTypeMismatch Error LitExpr where
+  errorTranslation _ (Runtime RuntimeTypeMismatch) = True
+  errorTranslation _ _ = False
+  valueTranslation _ _ = conc False
+
+
 main :: IO ()
 main = do
-  m <- solveWith (UnboundedReasoning z3 {verbose = True}) $ case checkAndInterpretStmtUListU sketch of
-    ExceptT u -> case mrgFmap
-      ( \case
-          Left (Runtime RuntimeTypeMismatch) -> conc @SymBool True
-          _ -> conc False
-      )
-      u of
-      SingleU x -> x
-      _ -> error "Bad"
+  m <- solveWithTranslation FindRuntimeTypeMismatch (UnboundedReasoning z3 {verbose = True}) $ checkAndInterpretStmtUListU sketch
   case m of
     Right mm -> do
-      print "Not verified, counter example: "
+      putStrLn "Not verified, counter example: "
       print $ symeval False mm sketch
       print $ symeval True mm sketch
-    Left _ -> print "Verified"
+    Left _ -> putStrLn "Verified"

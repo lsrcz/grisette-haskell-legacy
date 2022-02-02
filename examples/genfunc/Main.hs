@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Main where
 
@@ -6,7 +7,8 @@ import GHC.Generics
 import Grisette.Core
 import Grisette.SymPrim.Term
 
-data Coord = Coord SymInteger SymInteger deriving (Show, Generic, Mergeable SymBool)
+data Coord = Coord SymInteger SymInteger
+  deriving (Show, Generic, Mergeable SymBool, SymGen SymBool ())
 
 data Move
   = ExactCoord Coord
@@ -14,36 +16,30 @@ data Move
   | MoveRight (UnionM Move)
   deriving (Show, Generic, Mergeable SymBool)
 
-instance SymGen (Sym Bool) () Coord where
-  genSymIndexed v = genSymSimpleIndexed @SymBool v
-
 instance SymGenSimple (Sym Bool) () Coord where
-  genSymSimpleIndexed _ = do
-    x <- genSymSimpleIndexed @SymBool ()
-    y <- genSymSimpleIndexed @SymBool ()
-    return $ Coord x y
+  genSymSimpleIndexed _ = genSymSimpleIndexedWithDerivedNoSpec @SymBool
+
+$(makeUnionMWrapper "u" ''Move)
 
 instance SymGen (Sym Bool) (Int, Coord) Move where
   genSymIndexed (v, coord) =
     if v <= 0
       then do
-        return $ mrgSingle $ ExactCoord coord
+        return $ uExactCoord coord
       else do
         m <- genSymIndexed @SymBool (v - 1, coord)
         choose (ExactCoord coord) [MoveLeft m, MoveRight m]
 
 instance SymGen (Sym Bool) Int (Coord -> UnionM Move) where
-  genSymIndexed v = genSymSimpleIndexed @SymBool v
 
 instance SymGenSimple (Sym Bool) Int (Coord -> UnionM Move) where
   genSymSimpleIndexed v =
     if v <= 0
       then do
-        return $ \coord -> mrgSingle $ ExactCoord coord
+        return uExactCoord 
       else do
         m <- genSymSimpleIndexed @SymBool (v - 1)
-        r <- choose (mrgSingle . ExactCoord) [mrgSingle . MoveLeft . m, mrgSingle . MoveRight . m]
-        return $ getSingle @SymBool r
+        simpleChoose @SymBool uExactCoord [uMoveLeft . m, uMoveRight . m]
 
 -- The following should lie in Grisette lib
 extractArgFromListOfFunc :: [a -> b] -> a -> [b]
@@ -56,7 +52,6 @@ instance
   (SymBoolOp bool, SymGenSimple bool () bool, SymGenSimple bool spec (a -> b), Mergeable bool b) =>
   SymGen bool (ListSpec spec) (a -> UnionMBase bool [b])
   where
-  genSymIndexed v = genSymSimpleIndexed @bool v
 
 instance
   (SymBoolOp bool, SymGenSimple bool () bool, SymGenSimple bool spec (a -> b), Mergeable bool b) =>
