@@ -1,4 +1,5 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-cse #-}
 
 -- {-# OPTIONS_GHC -fno-full-laziness #-}
@@ -22,6 +23,8 @@ import Grisette.Data.Class.Bool
 import Grisette.Data.Class.ExtractSymbolics
 import Grisette.Data.Class.Function
 import Grisette.Data.Class.Mergeable
+import Grisette.Data.Class.PrimWrapper
+import Grisette.Data.Class.SOrd
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.SymEval
 import Grisette.Data.Class.ToCon
@@ -121,14 +124,17 @@ instance SymBoolOp bool => UnionMOp bool (UnionMBase bool) where
   mrgGuard cond l r =
     merge $ guard cond l r
 
-instance (SymBoolOp bool, SEq bool a, Mergeable bool bool) => SEq bool (UnionMBase bool a) where
-  x ==~ y = case ( do
-                     x1 <- x
-                     y1 <- y
-                     mrgReturn $ x1 ==~ y1
-                 ) of
-    UMrg (Single v) -> v
-    _ -> error "Should not happen"
+instance (SymBoolOp bool, SEq bool a, SimpleMergeable bool bool) => SEq bool (UnionMBase bool a) where
+  x ==~ y = getSingle $ do
+    x1 <- x
+    y1 <- y
+    mrgReturn $ x1 ==~ y1
+
+instance (SymBoolOp bool, SOrd bool a, SimpleMergeable bool bool) => SOrd bool (UnionMBase bool a) where
+  x <=~ y = getSingle $ do
+    x1 <- x
+    y1 <- y
+    mrgReturn $ x1 <=~ y1
 
 instance {-# OVERLAPPABLE #-} (SymBoolOp bool, ToSym a b, Mergeable bool b) => ToSym a (UnionMBase bool b) where
   toSym = mrgSingle . toSym
@@ -191,6 +197,37 @@ instance (SymBoolOp bool, Num a, Mergeable bool a) => Num (UnionMBase bool a) wh
   x * y = x >>= \x1 -> y >>= \y1 -> mrgSingle $ x1 * y1
   abs x = x >>= mrgSingle . abs
   signum x = x >>= mrgSingle . signum
+
+instance (SymBoolOp bool, ITEOp bool a, Mergeable bool a) => ITEOp bool (UnionMBase bool a) where
+  ites = mrgGuard
+
+instance (SymBoolOp bool, LogicalOp a, Mergeable bool a) => LogicalOp (UnionMBase bool a) where
+  a ||~ b = do
+    a1 <- a
+    b1 <- b
+    mrgReturn $ a1 ||~ b1
+  a &&~ b = do
+    a1 <- a
+    b1 <- b
+    mrgReturn $ a1 &&~ b1
+  nots x = do
+    x1 <- x
+    mrgReturn $ nots x1
+  xors a b = do
+    a1 <- a
+    b1 <- b
+    mrgReturn $ a1 `xors` b1
+  implies a b = do
+    a1 <- a
+    b1 <- b
+    mrgReturn $ a1 `implies` b1
+
+instance (SymBoolOp bool, PrimWrapper t c, Mergeable bool t) => PrimWrapper (UnionMBase bool t) c where
+  conc = mrgSingle . conc
+  ssymb = mrgSingle . ssymb
+  isymb i s = mrgSingle $ isymb i s
+  concView (SingleU (Conc b)) = Just b
+  concView _ = Nothing
 
 instance
   (SymBoolOp bool, Function f, Mergeable bool f, Mergeable bool a, Ret f ~ a) =>
