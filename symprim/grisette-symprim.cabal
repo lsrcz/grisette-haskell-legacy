@@ -32,6 +32,7 @@ library
       Grisette.Data.Prim.Model
       Grisette.Data.Prim.Num
       Grisette.Data.Prim.TabularFunc
+      Grisette.Data.Prim.Utils
       Grisette.Data.SymPrim
       Grisette.Data.TabularFunc
       Grisette.Data.Union
