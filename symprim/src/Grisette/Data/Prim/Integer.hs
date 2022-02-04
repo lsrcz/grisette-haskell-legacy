@@ -42,18 +42,18 @@ divi :: Term Integer -> Term Integer -> Term Integer
 divi = partialEvalBinary DivI
 
 instance BinaryPartialStrategy DivI Integer Integer Integer where
-  extractora = integerConcTermView
-  extractorb = integerConcTermView
-  allConstantHandler i j
+  extractora _ = integerConcTermView
+  extractorb _ = integerConcTermView
+  allConstantHandler _ i j
     | j /= 0 = Just $ concTerm $ i `div` j
-  allConstantHandler _ _ = Nothing
-  leftConstantHandler _ _ = Nothing
-  rightConstantHandler i 1 = Just i
-  rightConstantHandler _ _ = Nothing
-  nonBinaryConstantHandler _ _ = Nothing
+  allConstantHandler _ _ _ = Nothing
+  leftConstantHandler _ _ _ = Nothing
+  rightConstantHandler _ i 1 = Just i
+  rightConstantHandler _ _ _ = Nothing
+  nonBinaryConstantHandler _ _ _ = Nothing
 
 instance BinaryOp DivI Integer Integer Integer where
-  partialEvalBinary _ l r = binaryUnfoldOnce (binaryPartial @DivI) (constructBinary DivI) l r
+  partialEvalBinary tag l r = binaryUnfoldOnce (binaryPartial @DivI tag) (constructBinary tag) l r
   pformatBinary l r = "(/I " ++ pformat l ++ " " ++ pformat r ++ ")"
 
 pattern DivITerm :: Term Integer -> Term Integer -> Term a
@@ -66,18 +66,18 @@ modi :: Term Integer -> Term Integer -> Term Integer
 modi = partialEvalBinary ModI
 
 instance BinaryPartialStrategy ModI Integer Integer Integer where
-  extractora = integerConcTermView
-  extractorb = integerConcTermView
-  allConstantHandler i j
+  extractora _ = integerConcTermView
+  extractorb _ = integerConcTermView
+  allConstantHandler _ i j
     | j /= 0 = Just $ concTerm $ i `mod` j
-  allConstantHandler _ _ = Nothing
-  leftConstantHandler _ _ = Nothing
-  rightConstantHandler i 1 = Just i
-  rightConstantHandler _ _ = Nothing
-  nonBinaryConstantHandler _ _ = Nothing
+  allConstantHandler _ _ _ = Nothing
+  leftConstantHandler _ _ _ = Nothing
+  rightConstantHandler _ i 1 = Just i
+  rightConstantHandler _ _ _ = Nothing
+  nonBinaryConstantHandler _ _ _ = Nothing
 
 instance BinaryOp ModI Integer Integer Integer where
-  partialEvalBinary _ l r = binaryUnfoldOnce (binaryPartial @ModI) (constructBinary ModI) l r
+  partialEvalBinary tag l r = binaryUnfoldOnce (binaryPartial tag) (constructBinary tag) l r
   pformatBinary l r = "(%I " ++ pformat l ++ " " ++ pformat r ++ ")"
 
 pattern ModITerm :: Term Integer -> Term Integer -> Term a

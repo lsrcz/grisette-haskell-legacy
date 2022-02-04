@@ -83,38 +83,38 @@ totalize2 partial fallback a b =
     Nothing -> fallback a b
 
 class UnaryPartialStrategy tag a b | tag a -> b where
-  extractor :: Term a -> Maybe a
-  constantHandler :: a -> Maybe (Term b)
-  nonConstantHandler :: Term a -> Maybe (Term b)
+  extractor :: tag -> Term a -> Maybe a
+  constantHandler :: tag -> a -> Maybe (Term b)
+  nonConstantHandler :: tag -> Term a -> Maybe (Term b)
 
-unaryPartial :: forall tag a b. (UnaryPartialStrategy tag a b) => PartialRuleUnary a b
-unaryPartial a = case extractor @tag @a @b a of
-  Nothing -> nonConstantHandler @tag @a @b a
-  Just a' -> constantHandler @tag @a @b a'
+unaryPartial :: forall tag a b. (UnaryPartialStrategy tag a b) => tag -> PartialRuleUnary a b
+unaryPartial tag a = case extractor tag a of
+  Nothing -> nonConstantHandler tag a
+  Just a' -> constantHandler tag a'
 
 class BinaryCommPartialStrategy tag a c | tag a -> c where
-  singleConstantHandler :: a -> Term a -> Maybe (Term c)
+  singleConstantHandler :: tag -> a -> Term a -> Maybe (Term c)
 
 class BinaryPartialStrategy tag a b c | tag a b -> c where
-  extractora :: Term a -> Maybe a
-  extractorb :: Term b -> Maybe b
-  allConstantHandler :: a -> b -> Maybe (Term c)
-  leftConstantHandler :: a -> Term b -> Maybe (Term c)
-  default leftConstantHandler :: (a ~ b, BinaryCommPartialStrategy tag a c) => a -> Term b -> Maybe (Term c)
+  extractora :: tag -> Term a -> Maybe a
+  extractorb :: tag -> Term b -> Maybe b
+  allConstantHandler :: tag -> a -> b -> Maybe (Term c)
+  leftConstantHandler :: tag -> a -> Term b -> Maybe (Term c)
+  default leftConstantHandler :: (a ~ b, BinaryCommPartialStrategy tag a c) => tag -> a -> Term b -> Maybe (Term c)
   leftConstantHandler = singleConstantHandler @tag @a
-  rightConstantHandler :: Term a -> b -> Maybe (Term c)
-  default rightConstantHandler :: (a ~ b, BinaryCommPartialStrategy tag a c) => Term a -> b -> Maybe (Term c)
-  rightConstantHandler = flip $ singleConstantHandler @tag @a
-  nonBinaryConstantHandler :: Term a -> Term b -> Maybe (Term c)
+  rightConstantHandler :: tag -> Term a -> b -> Maybe (Term c)
+  default rightConstantHandler :: (a ~ b, BinaryCommPartialStrategy tag a c) => tag -> Term a -> b -> Maybe (Term c)
+  rightConstantHandler tag = flip $ singleConstantHandler @tag @a tag
+  nonBinaryConstantHandler :: tag -> Term a -> Term b -> Maybe (Term c)
 
-binaryPartial :: forall tag a b c. (BinaryPartialStrategy tag a b c) => PartialRuleBinary a b c
-binaryPartial a b = case (extractora @tag @a @b @c a, extractorb @tag @a @b @c b) of
-  (Nothing, Nothing) -> nonBinaryConstantHandler @tag @a @b @c a b
+binaryPartial :: forall tag a b c. (BinaryPartialStrategy tag a b c) => tag -> PartialRuleBinary a b c
+binaryPartial tag a b = case (extractora @tag @a @b @c tag a, extractorb @tag @a @b @c tag b) of
+  (Nothing, Nothing) -> nonBinaryConstantHandler @tag @a @b @c tag a b
   (Just a', Nothing) ->
-    leftConstantHandler @tag @a @b @c a' b
-      `catchError` \_ -> nonBinaryConstantHandler @tag @a @b @c a b
+    leftConstantHandler @tag @a @b @c tag a' b
+      `catchError` \_ -> nonBinaryConstantHandler @tag @a @b @c tag a b
   (Nothing, Just b') ->
-    rightConstantHandler @tag @a @b @c a b'
-      `catchError` \_ -> nonBinaryConstantHandler @tag @a @b @c a b
+    rightConstantHandler @tag @a @b @c tag a b'
+      `catchError` \_ -> nonBinaryConstantHandler @tag @a @b @c tag a b
   (Just a', Just b') ->
-    allConstantHandler @tag @a @b @c a' b'
+    allConstantHandler @tag @a @b @c tag a' b'

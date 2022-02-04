@@ -37,20 +37,20 @@ pattern TabularFuncTerm b <- (tabularFuncTermView -> Just b)
 data ApplyF = ApplyF deriving (Show, Lift, Generic, NFData)
 
 instance (Show a, Show b, SupportedPrim a, SupportedPrim b) => BinaryPartialStrategy ApplyF (a =-> b) a b where
-  extractora = tabularFuncConcTermView
-  extractorb = \case
+  extractora _ = tabularFuncConcTermView
+  extractorb _ = \case
     (ConcTerm _ b) -> cast b
     _ -> Nothing
-  allConstantHandler f a = Just $ concTerm $ f # a
-  leftConstantHandler (TabularFunc f d) a = Just $ go f
+  allConstantHandler _ f a = Just $ concTerm $ f # a
+  leftConstantHandler _ (TabularFunc f d) a = Just $ go f
     where
       go [] = concTerm d
       go ((x, y) : xs) = iteterm (eqterm a (concTerm x)) (concTerm y) (go xs)
-  rightConstantHandler _ _ = Nothing
-  nonBinaryConstantHandler _ _ = Nothing
+  rightConstantHandler _ _ _ = Nothing
+  nonBinaryConstantHandler _ _ _ = Nothing
 
 instance (Show a, Show b, SupportedPrim a, SupportedPrim b) => BinaryOp ApplyF (a =-> b) a b where
-  partialEvalBinary _ l r = totalize2 (binaryPartial @ApplyF) (constructBinary ApplyF) l r
+  partialEvalBinary tag l r = totalize2 (binaryPartial tag) (constructBinary tag) l r
   pformatBinary l r = "(" ++ pformat l ++ " " ++ pformat r ++ ")"
 
 applyf :: (Show a, Show b, SupportedPrim a, SupportedPrim b) => Term (a =-> b) -> Term a -> Term b
