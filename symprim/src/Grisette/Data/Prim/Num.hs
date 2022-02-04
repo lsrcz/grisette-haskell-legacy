@@ -96,7 +96,7 @@ instance (Num a, SupportedPrim a) => BinaryPartialStrategy (AddNum a) a a a wher
 
 instance (Num a, SupportedPrim a) => BinaryOp (AddNum a) a a a where
   partialEvalBinary tag l r = binaryUnfoldOnce (binaryPartial tag) (constructBinary tag) l r
-  pformatBinary l r = "(+ " ++ pformat l ++ " " ++ pformat r ++ ")"
+  pformatBinary _ l r = "(+ " ++ pformat l ++ " " ++ pformat r ++ ")"
 
 normalizeAddNum :: forall a. (Num a, Typeable a) => Term a -> Term a
 normalizeAddNum (AddNumTerm (l :: Term a) r@(ConcTerm _ _)) = addNum r l
@@ -130,7 +130,7 @@ instance (Num a, SupportedPrim a) => UnaryPartialStrategy UMinusNum a a where
 
 instance (Num a, SupportedPrim a) => UnaryOp UMinusNum a a where
   partialEvalUnary tag v = unaryUnfoldOnce (unaryPartial tag) (constructUnary tag) v
-  pformatUnary v = "(- " ++ pformat v ++ ")"
+  pformatUnary _ v = "(- " ++ pformat v ++ ")"
 
 pattern UMinusNumTerm :: (Num b, Typeable b) => Term b -> Term a
 pattern UMinusNumTerm v <- UnaryTermPatt UMinusNum v
@@ -168,7 +168,7 @@ instance (Num a, SupportedPrim a) => BinaryPartialStrategy TimesNum a a a where
 
 instance (Num a, SupportedPrim a) => BinaryOp TimesNum a a a where
   partialEvalBinary tag l r = binaryUnfoldOnce (binaryPartial tag) (constructBinary tag) l r
-  pformatBinary l r = "(* " ++ pformat l ++ " " ++ pformat r ++ ")"
+  pformatBinary _ l r = "(* " ++ pformat l ++ " " ++ pformat r ++ ")"
 
 pattern TimesNumTerm :: (Num b, Typeable b) => Term b -> Term b -> Term a
 pattern TimesNumTerm l r <- BinaryTermPatt TimesNum l r
@@ -190,7 +190,7 @@ instance (Num a, SupportedPrim a) => UnaryPartialStrategy AbsNum a a where
 
 instance (Num a, SupportedPrim a) => UnaryOp AbsNum a a where
   partialEvalUnary tag v = unaryUnfoldOnce (unaryPartial tag) (constructUnary tag) v
-  pformatUnary v = "(absI " ++ pformat v ++ ")"
+  pformatUnary _ v = "(absI " ++ pformat v ++ ")"
 
 pattern AbsNumTerm :: (Num b, SupportedPrim b) => Term b -> Term a
 pattern AbsNumTerm v <- UnaryTermPatt AbsNum v
@@ -211,7 +211,7 @@ instance (Num a, SupportedPrim a) => UnaryPartialStrategy SignumNum a a where
 
 instance (Num a, SupportedPrim a) => UnaryOp SignumNum a a where
   partialEvalUnary tag v = unaryUnfoldOnce (unaryPartial tag) (constructUnary tag) v
-  pformatUnary v = "(signumI " ++ pformat v ++ ")"
+  pformatUnary _ v = "(signumI " ++ pformat v ++ ")"
 
 pattern SignumNumTerm :: (Num b, SupportedPrim b) => Term b -> Term a
 pattern SignumNumTerm v <- UnaryTermPatt SignumNum v
@@ -243,7 +243,7 @@ instance (Num a, Ord a, SupportedPrim a) => BinaryPartialStrategy LTNum a a Bool
 
 instance (Num a, Ord a, SupportedPrim a) => BinaryOp LTNum a a Bool where
   partialEvalBinary tag l r = binaryUnfoldOnce (binaryPartial tag) (constructBinary tag) l r
-  pformatBinary l r = "(< " ++ pformat l ++ " " ++ pformat r ++ ")"
+  pformatBinary _ l r = "(< " ++ pformat l ++ " " ++ pformat r ++ ")"
 
 pattern LTNumTerm :: (Num a, Ord a, SupportedPrim a) => Term a -> Term a -> Term Bool
 pattern LTNumTerm l r <- BinaryTermPatt LTNum l r
@@ -274,7 +274,7 @@ instance (Num a, Ord a, SupportedPrim a) => BinaryPartialStrategy LENum a a Bool
 
 instance (Num a, Ord a, SupportedPrim a) => BinaryOp LENum a a Bool where
   partialEvalBinary tag l r = binaryUnfoldOnce (binaryPartial tag) (constructBinary tag) l r
-  pformatBinary l r = "(<= " ++ pformat l ++ " " ++ pformat r ++ ")"
+  pformatBinary _ l r = "(<= " ++ pformat l ++ " " ++ pformat r ++ ")"
 
 pattern LENumTerm :: (Num a, Ord a, SupportedPrim a) => Term a -> Term a -> Term Bool
 pattern LENumTerm l r <- BinaryTermPatt LENum l r

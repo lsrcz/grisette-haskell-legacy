@@ -51,7 +51,7 @@ instance (Show a, Show b, SupportedPrim a, SupportedPrim b) => BinaryPartialStra
 
 instance (Show a, Show b, SupportedPrim a, SupportedPrim b) => BinaryOp ApplyF (a =-> b) a b where
   partialEvalBinary tag l r = totalize2 (binaryPartial tag) (constructBinary tag) l r
-  pformatBinary l r = "(" ++ pformat l ++ " " ++ pformat r ++ ")"
+  pformatBinary _ l r = "(" ++ pformat l ++ " " ++ pformat r ++ ")"
 
 applyf :: (Show a, Show b, SupportedPrim a, SupportedPrim b) => Term (a =-> b) -> Term a -> Term b
 applyf = partialEvalBinary ApplyF

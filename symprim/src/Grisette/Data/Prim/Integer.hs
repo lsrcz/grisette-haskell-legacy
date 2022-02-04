@@ -54,7 +54,7 @@ instance BinaryPartialStrategy DivI Integer Integer Integer where
 
 instance BinaryOp DivI Integer Integer Integer where
   partialEvalBinary tag l r = binaryUnfoldOnce (binaryPartial @DivI tag) (constructBinary tag) l r
-  pformatBinary l r = "(/I " ++ pformat l ++ " " ++ pformat r ++ ")"
+  pformatBinary _ l r = "(/I " ++ pformat l ++ " " ++ pformat r ++ ")"
 
 pattern DivITerm :: Term Integer -> Term Integer -> Term a
 pattern DivITerm l r <- BinaryTermPatt DivI l r
@@ -78,7 +78,7 @@ instance BinaryPartialStrategy ModI Integer Integer Integer where
 
 instance BinaryOp ModI Integer Integer Integer where
   partialEvalBinary tag l r = binaryUnfoldOnce (binaryPartial tag) (constructBinary tag) l r
-  pformatBinary l r = "(%I " ++ pformat l ++ " " ++ pformat r ++ ")"
+  pformatBinary _ l r = "(%I " ++ pformat l ++ " " ++ pformat r ++ ")"
 
 pattern ModITerm :: Term Integer -> Term Integer -> Term a
 pattern ModITerm l r <- BinaryTermPatt ModI l r

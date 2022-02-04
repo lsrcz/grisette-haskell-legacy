@@ -54,7 +54,7 @@ import Language.Haskell.TH.Syntax
 
 class (SupportedPrim arg, SupportedPrim t, Lift tag, NFData tag) => UnaryOp tag arg t | tag arg -> t where
   partialEvalUnary :: (Typeable tag, Typeable t) => tag -> Term arg -> Term t
-  pformatUnary :: Term arg -> String
+  pformatUnary :: tag -> Term arg -> String
 
 class
   (SupportedPrim arg1, SupportedPrim arg2, SupportedPrim t, Lift tag, NFData tag) =>
@@ -62,7 +62,7 @@ class
     | tag arg1 arg2 -> t
   where
   partialEvalBinary :: (Typeable tag, Typeable t) => tag -> Term arg1 -> Term arg2 -> Term t
-  pformatBinary :: Term arg1 -> Term arg2 -> String
+  pformatBinary :: tag -> Term arg1 -> Term arg2 -> String
 
 class
   (SupportedPrim arg1, SupportedPrim arg2, SupportedPrim arg3, SupportedPrim t, Lift tag, NFData tag) =>
@@ -70,7 +70,7 @@ class
     | tag arg1 arg2 arg3 -> t
   where
   partialEvalTernary :: (Typeable tag, Typeable t) => tag -> Term arg1 -> Term arg2 -> Term arg3 -> Term t
-  pformatTernary :: Term arg1 -> Term arg2 -> Term arg3 -> String
+  pformatTernary :: tag -> Term arg1 -> Term arg2 -> Term arg3 -> String
 
 data Symbol
   = SimpleSymbol String
@@ -341,11 +341,9 @@ castTerm t@TernaryTerm {} = cast t
 pformat :: forall t. (SupportedPrim t) => Term t -> String
 pformat (ConcTerm _ t) = pformatConc t
 pformat (SymbTerm _ (TermSymbol _ symb)) = pformatSymb @t symb
-pformat (UnaryTerm _ (_ :: tagt) (arg1 :: Term arg1t)) = pformatUnary @tagt @arg1t @t arg1
-pformat (BinaryTerm _ (_ :: tagt) (arg1 :: Term arg1t) (arg2 :: Term arg2t)) =
-  pformatBinary @tagt @arg1t @arg2t @t arg1 arg2
-pformat (TernaryTerm _ (_ :: tagt) (arg1 :: Term arg1t) (arg2 :: Term arg2t) (arg3 :: Term arg3t)) =
-  pformatTernary @tagt @arg1t @arg2t @arg3t @t arg1 arg2 arg3
+pformat (UnaryTerm _ tag arg1) = pformatUnary tag arg1
+pformat (BinaryTerm _ tag arg1 arg2) = pformatBinary tag arg1 arg2
+pformat (TernaryTerm _ tag arg1 arg2 arg3) = pformatTernary tag arg1 arg2 arg3
 
 constructUnary ::
   forall tag arg t.

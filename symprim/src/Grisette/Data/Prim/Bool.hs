@@ -80,7 +80,7 @@ instance UnaryOp Not Bool Bool where
   partialEvalUnary _ (AndTerm (NotTerm n1) n2) = orb n1 (notb n2)
   partialEvalUnary _ (AndTerm n1 (NotTerm n2)) = orb (notb n1) n2
   partialEvalUnary _ tm = constructUnary Not tm
-  pformatUnary t = "(! " ++ pformat t ++ ")"
+  pformatUnary _ t = "(! " ++ pformat t ++ ")"
 
 pattern NotTerm :: Term Bool -> Term a
 pattern NotTerm t <- UnaryTermPatt Not t
@@ -114,7 +114,7 @@ instance SupportedPrim a => BinaryOp Eqv a a Bool where
   partialEvalBinary _ l r
     | l == r = trueTerm
     | otherwise = constructBinary Eqv l r
-  pformatBinary l r = "(== " ++ pformat l ++ " " ++ pformat r ++ ")"
+  pformatBinary _ l r = "(== " ++ pformat l ++ " " ++ pformat r ++ ")"
 
 pattern EqvTerm :: (Typeable a) => Term a -> Term a -> Term Bool
 pattern EqvTerm l r <- BinaryTermPatt Eqv l r
@@ -204,7 +204,7 @@ instance BinaryOp Or Bool Bool Bool where
     | orEqFirst r l2 = r
   partialEvalBinary _ (NotTerm nl) (NotTerm nr) = notb $ andb nl nr
   partialEvalBinary _ l r = constructBinary Or l r
-  pformatBinary l r = "(|| " ++ pformat l ++ " " ++ pformat r ++ ")"
+  pformatBinary _ l r = "(|| " ++ pformat l ++ " " ++ pformat r ++ ")"
 
 pattern OrTerm :: Term Bool -> Term Bool -> Term a
 pattern OrTerm l r <- BinaryTermPatt Or l r
@@ -246,7 +246,7 @@ instance BinaryOp And Bool Bool Bool where
     | andEqFirst r l2 = r
   partialEvalBinary _ (NotTerm nl) (NotTerm nr) = notb $ orb nl nr
   partialEvalBinary _ l r = constructBinary And l r
-  pformatBinary l r = "(&& " ++ pformat l ++ " " ++ pformat r ++ ")"
+  pformatBinary _ l r = "(&& " ++ pformat l ++ " " ++ pformat r ++ ")"
 
 pattern AndTerm :: Term Bool -> Term Bool -> Term a
 pattern AndTerm l r <- BinaryTermPatt And l r
@@ -376,7 +376,7 @@ instance (SupportedPrim a) => TernaryOp ITE Bool a a a where
     ifFalse
       | ea == eb && c1 /= c2 = fromJust $ castTerm $ iteterm cond t1 (fromJust $ castTerm ifFalse)
   partialEvalTernary _ cond ifTrue ifFalse = constructTernary ITE cond ifTrue ifFalse
-  pformatTernary cond l r = "(ite " ++ pformat cond ++ " " ++ pformat l ++ " " ++ pformat r ++ ")"
+  pformatTernary _ cond l r = "(ite " ++ pformat cond ++ " " ++ pformat l ++ " " ++ pformat r ++ ")"
 
 iteterm :: (SupportedPrim a) => Term Bool -> Term a -> Term a -> Term a
 iteterm = partialEvalTernary ITE
