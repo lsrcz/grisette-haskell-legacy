@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
 module Grisette.Data.MemoUtils
   ( MemoHashMap (..),
     emptyMemoHashMap,
@@ -10,6 +11,8 @@ import qualified Data.HashMap.Lazy as M
 import Data.Hashable
 import Data.MemoTrie
 import Data.Bifunctor
+import qualified Data.ByteString as B
+import qualified Data.ByteString.Char8 as C
 
 newtype MemoHashMap k v = MemoHashMap {unMemoHashMap :: M.HashMap k v}
 
@@ -23,3 +26,8 @@ instance (Eq a, Hashable a) => MapLike (MemoHashMap a b) a b where
 enum' :: (HasTrie a) => (a -> a') -> (a :->: b) -> [(a', b)]
 enum' f = (fmap . first) f . enumerate
 
+instance HasTrie B.ByteString where
+  newtype (B.ByteString :->: x) = ByteStringTrie (String :->: x)
+  trie f = ByteStringTrie $ trie (f . C.pack)
+  untrie (ByteStringTrie t) = untrie t . C.unpack
+  enumerate (ByteStringTrie t) = enum' C.pack t
