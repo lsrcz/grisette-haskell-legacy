@@ -27,7 +27,6 @@ import Grisette.SymPrim.Term ()
 import Data.Hashable
 import GHC.Generics
 import Data.MemoTrie
-import Grisette.Core
 
 data Rule
   = SymRule B.ByteString

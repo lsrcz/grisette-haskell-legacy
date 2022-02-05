@@ -51,6 +51,12 @@ bonsaiMatchHandler stx h@(PatternHandler2 p _) tree = do
 bonsaiMatchHandler stx h@(PatternHandler3 p _) tree = do
   b <- bonsaiMatchPattern stx p tree
   merge $ withExceptT transformError $ applyHandler b h
+bonsaiMatchHandler stx h@(PatternHandler4 p _) tree = do
+  b <- bonsaiMatchPattern stx p tree
+  merge $ withExceptT transformError $ applyHandler b h
+bonsaiMatchHandler stx h@(PatternHandler5 p _) tree = do
+  b <- bonsaiMatchPattern stx p tree
+  merge $ withExceptT transformError $ applyHandler b h
 
 bonsaiMatchPattern ::
   (KnownNat m, 1 <= m, Mergeable SymBool e) =>

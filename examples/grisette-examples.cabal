@@ -82,11 +82,15 @@ executable bonsai
   main-is: Main.hs
   other-modules:
       BonsaiTree
+      Env
       Error
       Match
       MatchSyntax
+      NanoScala
+      NanoScalaMain
       Pattern
       STLC
+      STLCMain
       SyntaxSpec
       Paths_grisette_examples
   hs-source-dirs:

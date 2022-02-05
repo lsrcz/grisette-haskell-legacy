@@ -17,6 +17,7 @@ import Pattern
 import SyntaxSpec
 import MatchSyntax
 import Control.DeepSeq
+import Env
 -- import Debug.Trace
 
 stlcSyntax :: OptimSyntaxSpec 14
@@ -99,28 +100,6 @@ availableNames = [simpleNode "a", simpleNode "b", simpleNode "c"]
 isAvailableNameNode :: BonsaiTree 14 -> SymBool
 isAvailableNameNode node = foldl (\acc v -> node ==~ v ||~ acc) (conc False) availableNames
 
-type EnvSingle t = [(SymUnsignedBV 14, UnionM t)]
-
-type Env t = UnionM (EnvSingle t)
-
-envAdd :: (Mergeable SymBool t) => Env t -> SymUnsignedBV 14 -> UnionM t -> Env t
-envAdd env k v = do
-  e <- env
-  mrgReturn $ (k, v) : e
-
-envResolve ::
-  (Mergeable SymBool t) =>
-  BonsaiError ->
-  Env t ->
-  SymUnsignedBV 14 ->
-  ExceptT BonsaiError UnionM t
-envResolve err env k = do
-  e <- lift env
-  envResolveSingle e
-  where
-    envResolveSingle [] = throwError err
-    envResolveSingle ((n, v) : xs) = mrgGuard (n ==~ k) (lift v) $ envResolveSingle xs
-
 asLeaf :: BonsaiError -> BonsaiTree 14 -> ExceptT BonsaiError UnionM (BonsaiTree 14)
 asLeaf _ x@(BonsaiLeaf _) = mrgReturn x
 asLeaf e _ = throwError e
@@ -129,7 +108,7 @@ asNode :: BonsaiError -> BonsaiTree 14 -> ExceptT BonsaiError UnionM (BonsaiTree
 asNode _ x@(BonsaiNode _ _) = mrgReturn x
 asNode e _ = throwError e
 
-typer' :: BonsaiTree 14 -> Env (BonsaiTree 14) -> ExceptT BonsaiError UnionM (BonsaiTree 14)
+typer' :: BonsaiTree 14 -> Env 14 (BonsaiTree 14) -> ExceptT BonsaiError UnionM (BonsaiTree 14)
 typer' = memo2 $ \tree env -> {-trace (show tree) $ trace (show env) $-}
   bonsaiMatchCustomError
     BonsaiTypeError
@@ -184,7 +163,7 @@ data STLCValue
   | STLCList (UnionM [SymInteger])
   | STLCBuiltin (SymUnsignedBV 14)
   | STLCPartiallyAppliedBuiltin (SymUnsignedBV 14) (UnionM STLCValue)
-  | STLCLambda (SymUnsignedBV 14) (UnionM (BonsaiTree 14)) (Env STLCValue)
+  | STLCLambda (SymUnsignedBV 14) (UnionM (BonsaiTree 14)) (Env 14 STLCValue)
   deriving (Show, Eq, Generic, Mergeable SymBool, NFData)
 
 instance HasTrie STLCValue where
@@ -246,7 +225,7 @@ applyBuiltin (STLCPartiallyAppliedBuiltin v arg1) arg2 =
     )
 applyBuiltin _ _ = throwError BonsaiExecError
 
-interpreter' :: BonsaiTree 14 -> Env STLCValue -> Int -> ExceptT BonsaiError UnionM STLCValue
+interpreter' :: BonsaiTree 14 -> Env 14 STLCValue -> Int -> ExceptT BonsaiError UnionM STLCValue
 interpreter' = memo3 $ \tree env reccount -> {-trace (show tree) $ trace (show env) $ trace (show reccount) $-}
   if reccount >= 2
     then throwError BonsaiRecursionError

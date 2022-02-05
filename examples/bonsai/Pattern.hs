@@ -36,12 +36,31 @@ data PatternHandler m e t
         UnionM (BonsaiTree m) ->
         ExceptT e UnionM t
       )
+  | PatternHandler4
+      (Pattern 4)
+      ( UnionM (BonsaiTree m) ->
+        UnionM (BonsaiTree m) ->
+        UnionM (BonsaiTree m) ->
+        UnionM (BonsaiTree m) ->
+        ExceptT e UnionM t
+      )
+  | PatternHandler5
+      (Pattern 5)
+      ( UnionM (BonsaiTree m) ->
+        UnionM (BonsaiTree m) ->
+        UnionM (BonsaiTree m) ->
+        UnionM (BonsaiTree m) ->
+        UnionM (BonsaiTree m) ->
+        ExceptT e UnionM t
+      )
 
 applyHandler :: [UnionM (BonsaiTree m)] -> PatternHandler m e t -> ExceptT e UnionM t
-applyHandler [] (PatternHandler0 _ e) = e
-applyHandler [a] (PatternHandler1 _ e) = e a
-applyHandler [a, b] (PatternHandler2 _ e) = e a b
-applyHandler [a, b, c] (PatternHandler3 _ e) = e a b c
+applyHandler [] (PatternHandler0 _ h) = h
+applyHandler [a] (PatternHandler1 _ h) = h a
+applyHandler [a, b] (PatternHandler2 _ h) = h a b
+applyHandler [a, b, c] (PatternHandler3 _ h) = h a b c
+applyHandler [a, b, c, d] (PatternHandler4 _ h) = h a b c d
+applyHandler [a, b, c, d, e] (PatternHandler5 _ h) = h a b c d e
 applyHandler _ _ = undefined
 
 class GetPatternHandler n m e f t | n m e t -> f where
@@ -79,4 +98,35 @@ instance
     t
   where
   (==>) = PatternHandler3
+
+instance
+  GetPatternHandler
+    4
+    m
+    e
+    ( UnionM (BonsaiTree m) ->
+      UnionM (BonsaiTree m) ->
+      UnionM (BonsaiTree m) ->
+      UnionM (BonsaiTree m) ->
+      ExceptT e UnionM t
+    )
+    t
+  where
+  (==>) = PatternHandler4
+
+instance
+  GetPatternHandler
+    5
+    m
+    e
+    ( UnionM (BonsaiTree m) ->
+      UnionM (BonsaiTree m) ->
+      UnionM (BonsaiTree m) ->
+      UnionM (BonsaiTree m) ->
+      UnionM (BonsaiTree m) ->
+      ExceptT e UnionM t
+    )
+    t
+  where
+  (==>) = PatternHandler5
 
