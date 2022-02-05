@@ -23,6 +23,7 @@ dependencies:
 - monad-memo
 - template-haskell
 - deepseq
+- MemoTrie
 
 default-extensions:
 - BangPatterns

@@ -43,7 +43,7 @@ import Data.Function (on)
 import Data.HashMap.Strict as M
 import Data.HashSet as S
 import Data.Hashable (Hashable (hashWithSalt))
-import Data.IORef (IORef, atomicModifyIORef', newIORef)
+import Data.IORef (IORef, atomicModifyIORef', newIORef, readIORef)
 import Data.Interned
 import Data.Typeable
 import GHC.Generics
@@ -51,6 +51,8 @@ import GHC.IO (unsafeDupablePerformIO)
 import GHC.TypeNats
 import Grisette.Data.Prim.Orphan ()
 import Language.Haskell.TH.Syntax
+import Data.MemoTrie
+import Data.Maybe
 
 class (SupportedPrim arg, SupportedPrim t, Lift tag, NFData tag) => UnaryOp tag arg t | tag arg -> t where
   partialEvalUnary :: (Typeable tag, Typeable t) => tag -> Term arg -> Term t
@@ -224,6 +226,30 @@ typeMemoizedCache = unsafeDupablePerformIO $
           !r = (newDynamicCache @a)
 {-# NOINLINE typeMemoizedCache #-}
 
+newtype ReverseCache t = ReverseCache { getReverseCache :: IORef (M.HashMap Id t) }
+
+mkReverseCache :: (Typeable t) => ReverseCache t
+mkReverseCache = ReverseCache (unsafeDupablePerformIO $ newIORef M.empty)
+{-# NOINLINE mkReverseCache #-}
+
+newDynamicReverseCache :: forall (a :: *). (Typeable a) => Dynamic
+newDynamicReverseCache = toDyn (mkReverseCache :: ReverseCache a)
+{-# NOINLINE newDynamicReverseCache #-}
+
+termReverseCacheCell :: IORef (M.HashMap TypeRep Dynamic)
+termReverseCacheCell = unsafeDupablePerformIO $ newIORef M.empty
+{-# NOINLINE termReverseCacheCell #-}
+
+typeMemoizedReverseCache :: forall a. Typeable a => ReverseCache a
+typeMemoizedReverseCache = unsafeDupablePerformIO $ do
+  atomicModifyIORef' termReverseCacheCell $ \m ->
+    case M.lookup (typeRep (Proxy @a)) m of
+      Just d -> (m, fromDyn d undefined)
+      Nothing -> (M.insert (typeRep (Proxy @a)) r m, fromDyn r undefined)
+        where
+          !r = (newDynamicReverseCache @a)
+{-# NOINLINE typeMemoizedReverseCache #-}
+
 class (Lift t, Typeable t, Hashable t, Eq t, Show t, NFData t) => SupportedPrim t where
   type PrimConstraint t :: Constraint
   type PrimConstraint t = ()
@@ -232,6 +258,8 @@ class (Lift t, Typeable t, Hashable t, Eq t, Show t, NFData t) => SupportedPrim 
   withPrim i = i
   termCache :: Cache (Term t)
   termCache = typeMemoizedCache
+  termReverseCache :: ReverseCache (Term t)
+  termReverseCache = typeMemoizedReverseCache
   pformatConc :: t -> String
   default pformatConc :: (Show t) => t -> String
   pformatConc = show
@@ -240,6 +268,15 @@ class (Lift t, Typeable t, Hashable t, Eq t, Show t, NFData t) => SupportedPrim 
   defaultValue :: t
   defaultValueDynamic :: Dynamic
   defaultValueDynamic = toDyn (defaultValue @t)
+
+addToReverseCache :: forall t. (SupportedPrim t) => Term t -> Id
+addToReverseCache t = unsafeDupablePerformIO $ atomicModifyIORef' (getReverseCache (termReverseCache @t)) $ \m ->
+  (M.insert (identity t) t m, identity t)
+
+findInReverseCache :: forall t. (SupportedPrim t) => Id -> Maybe (Term t)
+findInReverseCache i = unsafeDupablePerformIO $ do
+  m <- readIORef (getReverseCache termReverseCache)
+  return $ M.lookup i m
 
 instance (SupportedPrim t) => Interned (Term t) where
   type Uninterned (Term t) = UTerm t
@@ -322,6 +359,12 @@ instance (SupportedPrim t) => Eq (Term t) where
 instance (SupportedPrim t) => Hashable (Term t) where
   hashWithSalt s t = hashWithSalt s $ identity t
 
+instance (SupportedPrim t) => HasTrie (Term t) where
+  newtype (Term t) :->: x = TermTrie (Id :->: x)
+  trie f = TermTrie (trie $ \i -> f (fromJust $ findInReverseCache i))
+  untrie (TermTrie i) t = untrie i (identity t)
+  enumerate _ = error "Don't try to enumerate Terms. We implemented the MemoTrie for it with black magic"--[undefined | (i, b) <- enumerate tt]
+
 instance Eq SomeTerm where
   (SomeTerm t1) == (SomeTerm t2) = identityWithTypeRep t1 == identityWithTypeRep t2
 
@@ -351,7 +394,9 @@ constructUnary ::
   tag ->
   Term arg ->
   Term t
-constructUnary tag tm = intern $ UUnaryTerm tag tm
+constructUnary tag tm = let
+  ret = intern $ UUnaryTerm tag tm
+  in addToReverseCache ret `seq` ret
 
 constructBinary ::
   forall tag arg1 arg2 t.
@@ -360,7 +405,9 @@ constructBinary ::
   Term arg1 ->
   Term arg2 ->
   Term t
-constructBinary tag tm1 tm2 = intern $ UBinaryTerm tag tm1 tm2
+constructBinary tag tm1 tm2 = let
+  ret = intern $ UBinaryTerm tag tm1 tm2
+  in addToReverseCache ret `seq` ret
 
 constructTernary ::
   forall tag arg1 arg2 arg3 t.
@@ -370,13 +417,19 @@ constructTernary ::
   Term arg2 ->
   Term arg3 ->
   Term t
-constructTernary tag tm1 tm2 tm3 = intern $ UTernaryTerm tag tm1 tm2 tm3
+constructTernary tag tm1 tm2 tm3 = let
+  ret = intern $ UTernaryTerm tag tm1 tm2 tm3
+  in addToReverseCache ret `seq` ret
 
 concTerm :: (SupportedPrim t, Typeable t, Hashable t, Eq t, Show t) => t -> Term t
-concTerm t = intern $ UConcTerm t
+concTerm t = let
+  ret = intern $ UConcTerm t
+  in addToReverseCache ret `seq` ret
 
 symbTerm :: forall t. (SupportedPrim t, Typeable t) => Symbol -> Term t
-symbTerm t = intern $ USymbTerm (TermSymbol (Proxy @t) t)
+symbTerm t = let
+  ret = intern $ USymbTerm (TermSymbol (Proxy @t) t)
+  in addToReverseCache ret `seq` ret
 
 ssymbTerm :: (SupportedPrim t, Typeable t) => String -> Term t
 ssymbTerm = symbTerm . SimpleSymbol

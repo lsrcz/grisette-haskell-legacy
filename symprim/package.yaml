@@ -21,6 +21,7 @@ dependencies:
 - constraints
 - template-haskell
 - deepseq
+- MemoTrie
 
 default-extensions:
 - BangPatterns

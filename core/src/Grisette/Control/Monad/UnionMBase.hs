@@ -34,10 +34,18 @@ import Grisette.Data.Class.UnionOp
 import Grisette.Data.Functor (mrgFmap)
 import Grisette.Data.UnionBase
 import Language.Haskell.TH.Syntax
+import Data.MemoTrie
+import Grisette.Data.MemoUtils
 
 data UnionMBase bool a where
   UAny :: IORef (Either (UnionBase bool a) (UnionMBase bool a)) -> UnionBase bool a -> UnionMBase bool a
   UMrg :: (Mergeable bool a) => UnionBase bool a -> UnionMBase bool a
+
+instance (SymBoolOp b, HasTrie b, HasTrie a, Mergeable b a) => HasTrie (UnionMBase b a) where
+  newtype (UnionMBase b a) :->: x = UnionMBaseTrie (UnionBase b a :->: x)
+  trie f = UnionMBaseTrie (trie (f . merge . freshUAny))
+  untrie (UnionMBaseTrie t) = untrie t . underlyingUnion
+  enumerate (UnionMBaseTrie t) = enum' (merge . freshUAny) t
 
 instance (NFData bool, NFData a) => NFData (UnionMBase bool a) where
   rnf = rnf1

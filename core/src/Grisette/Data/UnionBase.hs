@@ -15,12 +15,29 @@ import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.UnionOp
 import Language.Haskell.TH.Syntax
+import Data.MemoTrie
+import Grisette.Data.MemoUtils
 
 data UnionBase b a
   = Single a
   | -- left most value / invariant maintained / cond / true branch / false branch
     Guard a Bool b (UnionBase b a) (UnionBase b a)
   deriving (Generic, Eq, Lift)
+
+instance (SymBoolOp b, HasTrie b, HasTrie a) => HasTrie (UnionBase b a) where
+  newtype (UnionBase b a) :->: x = UnionBaseTrie
+    (Either a ((Bool, b), (UnionBase b a, UnionBase b a)) :->: x)
+  trie f = UnionBaseTrie (trie (f . unionIso))
+  untrie (UnionBaseTrie t) = untrie t . deUnionIso
+  enumerate (UnionBaseTrie t) = enum' unionIso t
+  
+unionIso :: SymBoolOp b => Either a ((Bool, b), (UnionBase b a, UnionBase b a)) -> UnionBase b a
+unionIso (Left x) = Single x
+unionIso (Right ((i, c), (t, f))) = Guard (leftMost t) i c t f
+
+deUnionIso :: SymBoolOp b => UnionBase b a -> Either a ((Bool, b), (UnionBase b a, UnionBase b a))
+deUnionIso (Single x) = Left x
+deUnionIso (Guard _ i c t f) = Right ((i, c), (t, f))
 
 instance (NFData b, NFData a) => NFData (UnionBase b a) where
   rnf = rnf1

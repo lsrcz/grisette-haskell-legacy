@@ -61,6 +61,7 @@ module Grisette.Core
     mrgFmap,
     MemoHashMap (..),
     emptyMemoHashMap,
+    enum',
     mrgLift,
     UnionMBase,
     AssertionError (..),

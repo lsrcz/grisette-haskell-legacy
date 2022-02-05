@@ -50,8 +50,16 @@ import Grisette.Data.Prim.Bits
 import GHC.TypeLits
 import Data.Proxy
 import Data.String
+import Data.MemoTrie
+import Grisette.Data.MemoUtils
 
 newtype Sym a = Sym {underlyingTerm :: Term a} deriving (Lift, Generic)
+
+instance (SupportedPrim a) => HasTrie (Sym a) where
+  newtype Sym a :->: b = SymTrie (Term a :->: b)
+  trie f = SymTrie (trie (f . Sym))
+  untrie (SymTrie t) = untrie t . underlyingTerm
+  enumerate (SymTrie t) = enum' Sym t
 
 instance NFData (Sym a) where
   rnf (Sym t) = rnf t

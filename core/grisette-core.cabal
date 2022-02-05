@@ -72,7 +72,8 @@ library
       TypeOperators
   ghc-options: -Wall -ferror-spans -O2
   build-depends:
-      base >4.7 && <5
+      MemoTrie
+    , base >4.7 && <5
     , bytestring
     , constraints
     , deepseq
