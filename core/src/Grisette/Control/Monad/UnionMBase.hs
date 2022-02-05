@@ -258,3 +258,17 @@ infixl 9 #~
 
 instance (SymBoolOp bool, IsString a, Mergeable bool a) => IsString (UnionMBase bool a) where
   fromString = mrgSingle . fromString
+
+foldMapUnion :: (Monoid m) => (a -> m) -> UnionBase bool a -> m
+foldMapUnion f (Single v) = f v
+foldMapUnion f (Guard _ _ _ l r) = foldMapUnion f l <> foldMapUnion f r
+
+instance Foldable (UnionMBase bool) where
+  foldMap f u = foldMapUnion f (underlyingUnion u)
+
+sequenceAUnion :: (Applicative m, SymBoolOp bool) => UnionBase bool (m a) -> m (UnionBase bool a)
+sequenceAUnion (Single v) = single <$> v
+sequenceAUnion (Guard _ _ cond l r) = guard cond <$> sequenceAUnion l <*> sequenceAUnion r
+
+instance (SymBoolOp bool) => Traversable (UnionMBase bool) where
+  sequenceA u = freshUAny <$> sequenceAUnion (underlyingUnion u)
