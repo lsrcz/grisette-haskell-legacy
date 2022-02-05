@@ -4,7 +4,6 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# OPTIONS_GHC -Wno-orphans #-}
 {-# OPTIONS_GHC -fno-cse #-}
 
 module Grisette.Data.Prim.InternedTerm
@@ -50,6 +49,7 @@ import Data.Typeable
 import GHC.Generics
 import GHC.IO (unsafeDupablePerformIO)
 import GHC.TypeNats
+import Grisette.Data.Prim.Orphan ()
 import Language.Haskell.TH.Syntax
 
 class (SupportedPrim arg, SupportedPrim t, Lift tag, NFData tag) => UnaryOp tag arg t | tag arg -> t where
@@ -453,12 +453,6 @@ instance SupportedPrim Integer where
   defaultValueDynamic = defaultValueForIntegerDyn
 
 -- Signed BV
-instance (KnownNat w, 1 <= w) => Hashable (SignedBV w) where
-  s `hashWithSalt` (SignedBV b) = s `hashWithSalt` b
-
-deriving instance (Lift (SignedBV v))
-
-deriving instance (NFData (SignedBV v))
 
 instance (KnownNat w, 1 <= w) => SupportedPrim (SignedBV w) where
   type PrimConstraint (SignedBV w) = (KnownNat w, 1 <= w)
@@ -466,13 +460,6 @@ instance (KnownNat w, 1 <= w) => SupportedPrim (SignedBV w) where
   defaultValue = mkSignedBV knownNat 0
 
 -- Unsigned BV
-instance (KnownNat w, 1 <= w) => Hashable (UnsignedBV w) where
-  s `hashWithSalt` (UnsignedBV b) = s `hashWithSalt` b
-
-deriving instance (Lift (UnsignedBV v))
-
-deriving instance (NFData (UnsignedBV v))
-
 instance (KnownNat w, 1 <= w) => SupportedPrim (UnsignedBV w) where
   type PrimConstraint (UnsignedBV w) = (KnownNat w, 1 <= w)
   pformatConc i = show i
