@@ -125,33 +125,8 @@ data Term t where
     !(Term arg3) ->
     Term t
 
-doTermRnf :: Term a -> M.HashMap SomeTerm () -> (M.HashMap SomeTerm (), ())
-doTermRnf (ConcTerm i t) o = (o, rnf i `seq` rnf t)
-doTermRnf (SymbTerm i n) o = (o, rnf i `seq` rnf n)
-doTermRnf u@(UnaryTerm i tag t1) o = case M.lookup (SomeTerm u) o of
-  Nothing ->
-    let (o1, u1) = doTermRnf t1 o
-        r = rnf i `seq` rnf tag `seq` u1
-     in (M.insert (SomeTerm u) r o1, r)
-  Just v -> (o, v)
-doTermRnf u@(BinaryTerm i tag t1 t2) o = case M.lookup (SomeTerm u) o of
-  Nothing ->
-    let (o1, u1) = doTermRnf t1 o
-        (o2, u2) = doTermRnf t2 o1
-        r = rnf i `seq` rnf tag `seq` u1 `seq` u2
-     in (M.insert (SomeTerm u) r o2, r)
-  Just v -> (o, v)
-doTermRnf u@(TernaryTerm i tag t1 t2 t3) o = case M.lookup (SomeTerm u) o of
-  Nothing ->
-    let (o1, u1) = doTermRnf t1 o
-        (o2, u2) = doTermRnf t2 o1
-        (o3, u3) = doTermRnf t3 o2
-        r = rnf i `seq` rnf tag `seq` u1 `seq` u2 `seq` u3
-     in (M.insert (SomeTerm u) r o3, r)
-  Just v -> (o, v)
-
 instance NFData (Term a) where
-  rnf a = snd $ doTermRnf a M.empty
+  rnf i = identity i `seq` ()
 
 instance Lift (Term t) where
   liftTyped x = unsafeTExpCoerce (Language.Haskell.TH.Syntax.lift x)
@@ -269,9 +244,9 @@ class (Lift t, Typeable t, Hashable t, Eq t, Show t, NFData t) => SupportedPrim 
   defaultValueDynamic :: Dynamic
   defaultValueDynamic = toDyn (defaultValue @t)
 
-addToReverseCache :: forall t. (SupportedPrim t) => Term t -> Id
+addToReverseCache :: forall t. (SupportedPrim t) => Term t -> ()
 addToReverseCache t = unsafeDupablePerformIO $ atomicModifyIORef' (getReverseCache (termReverseCache @t)) $ \m ->
-  (M.insert (identity t) t m, identity t)
+  (M.insert (identity t) t m, ())
 
 findInReverseCache :: forall t. (SupportedPrim t) => Id -> Maybe (Term t)
 findInReverseCache i = unsafeDupablePerformIO $ do

@@ -6,6 +6,8 @@ module Grisette.Data.Prim.Helpers
   ( pattern UnaryTermPatt,
     pattern BinaryTermPatt,
     pattern TernaryTermPatt,
+    pattern UnsafeUnaryTermPatt,
+    pattern UnsafeBinaryTermPatt,
     PartialFunc,
     PartialRuleUnary,
     TotalRuleUnary,
@@ -24,6 +26,18 @@ where
 import Control.Monad.Except
 import Data.Typeable
 import Grisette.Data.Prim.InternedTerm
+import Unsafe.Coerce
+
+unsafeUnaryTermView :: forall a b tag. (Typeable tag) => Term a -> Maybe (tag, Term b)
+unsafeUnaryTermView (UnaryTerm _ (tag :: tagt) t1) =
+  case cast tag of
+    Just t -> Just (t, unsafeCoerce t1)
+    Nothing -> Nothing
+  -- (,) <$> cast tag <*> castTerm t1
+unsafeUnaryTermView _ = Nothing
+
+pattern UnsafeUnaryTermPatt :: forall a b tag. (Typeable tag) => tag -> Term b -> Term a
+pattern UnsafeUnaryTermPatt tag t <- (unsafeUnaryTermView @a @b @tag -> Just (tag, t))
 
 unaryTermView :: forall a b tag. (Typeable tag, Typeable b) => Term a -> Maybe (tag, Term b)
 unaryTermView (UnaryTerm _ (tag :: tagt) t1) =
@@ -32,6 +46,17 @@ unaryTermView _ = Nothing
 
 pattern UnaryTermPatt :: forall a b tag. (Typeable tag, Typeable b) => tag -> Term b -> Term a
 pattern UnaryTermPatt tag t <- (unaryTermView @a @b @tag -> Just (tag, t))
+
+unsafeBinaryTermView :: forall a b c tag. (Typeable tag) => Term a -> Maybe (tag, Term b, Term c)
+unsafeBinaryTermView (BinaryTerm _ (tag :: tagt) t1 t2) =
+  case cast tag of
+    Just t -> Just (t, unsafeCoerce t1, unsafeCoerce t2)
+    Nothing -> Nothing
+  -- (,) <$> cast tag <*> castTerm t1
+unsafeBinaryTermView _ = Nothing
+
+pattern UnsafeBinaryTermPatt :: forall a b c tag. (Typeable tag) => tag -> Term b -> Term c -> Term a
+pattern UnsafeBinaryTermPatt tag t1 t2 <- (unsafeBinaryTermView @a @b @c @tag -> Just (tag, t1, t2))
 
 binaryTermView :: forall a b c tag. (Typeable tag, Typeable b, Typeable c) => Term a -> Maybe (tag, Term b, Term c)
 binaryTermView (BinaryTerm _ (tag :: tagt) t1 t2) =

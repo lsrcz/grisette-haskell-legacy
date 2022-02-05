@@ -83,7 +83,7 @@ instance UnaryOp Not Bool Bool where
   pformatUnary _ t = "(! " ++ pformat t ++ ")"
 
 pattern NotTerm :: Term Bool -> Term a
-pattern NotTerm t <- UnaryTermPatt Not t
+pattern NotTerm t <- UnsafeUnaryTermPatt Not t
 
 -- Eqv
 data Eqv = Eqv deriving (Show, Lift, Generic, NFData)
@@ -207,7 +207,7 @@ instance BinaryOp Or Bool Bool Bool where
   pformatBinary _ l r = "(|| " ++ pformat l ++ " " ++ pformat r ++ ")"
 
 pattern OrTerm :: Term Bool -> Term Bool -> Term a
-pattern OrTerm l r <- BinaryTermPatt Or l r
+pattern OrTerm l r <- UnsafeBinaryTermPatt Or l r
 
 -- And
 data And = And deriving (Show, Lift, Generic, NFData)
@@ -249,7 +249,7 @@ instance BinaryOp And Bool Bool Bool where
   pformatBinary _ l r = "(&& " ++ pformat l ++ " " ++ pformat r ++ ")"
 
 pattern AndTerm :: Term Bool -> Term Bool -> Term a
-pattern AndTerm l r <- BinaryTermPatt And l r
+pattern AndTerm l r <- UnsafeBinaryTermPatt And l r
 
 data ITE = ITE deriving (Show, Lift, Generic, NFData)
 
