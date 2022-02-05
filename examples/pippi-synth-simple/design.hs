@@ -36,3 +36,43 @@ exmaple
   return x
 
 -}
+
+instance SymGen SymBool MovingExprSpec MovingOpExpr where
+  genSymIndexed _ = ...
+
+instance SymGen SymBool MovingExprSpec MovingExpr where
+  genSymIndexed _ = ...
+
+
+
+
+instance SymGen SymBool (MovingExprSpec, MovingExpr) MovingOpExpr where
+  genSymIndexed _ = ...
+
+instance SymGen SymBool (MovingExprSpec, MovingExpr) MovingExpr where
+  genSymIndexed _ = ...
+
+
+instance SymGen SymBool () (CoordExpr -> SymInteger) where
+  genSymIndexed v = genSymSimpleIndexed @SymBool v
+
+instance SymGenSimple SymBool () (CoordExpr -> SymInteger) where
+  genSymSimpleIndexed _ = do
+    v <- genSymSimpleIndexed @SymBool ()
+    return $ const v
+
+
+instance SymGen SymBool MovingExprSpec (CoordExpr -> UnionM MovingOpExpr) where
+  genSymIndexed spec = genSymSimpleIndexed @SymBool v
+
+instance SymGenSimple SymBool MovingExprSpec (CoordExpr -> UnionM MovingOpExpr) where
+  genSymSimpleIndexed spec = ...
+
+instance SymGen SymBool MovingExprSpec (CoordExpr -> UnionM MovingExpr) where
+  genSymIndexed spec = genSymSimpleIndexed @SymBool v
+
+instance SymGenSimple SymBool MovingExprSpec (CoordExpr -> UnionM MovingExpr) where
+  genSymSimpleIndexed spec = ...
+
+
+genSymIndexed, genSymSimpleIndexed, genSym

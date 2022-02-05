@@ -39,7 +39,7 @@ wrapInParens input = "(" ++ input ++ ")"
 data MovingExpr 
    = Coord CoordExpr
    | Moving MovingOpExpr
-   | MovingVarExpr   SymInteger -- (conc 1)
+   | MovingVarExpr SymInteger
    deriving (Generic, Show, Eq, ToSym ConcMovingExpr)
 
 instance Mergeable SymBool MovingExpr
@@ -99,7 +99,7 @@ instance Show ConcMovingExpr where
 
 data ConcCoordExpr 
   = ConcCoordLit Integer Integer
-  | ConcUnitLit -- ()
+  | ConcUnitLit
   deriving (Generic, Eq, ToCon CoordExpr)
 
 instance Show ConcCoordExpr where
@@ -141,83 +141,69 @@ instance SymGen SymBool () CoordExpr where
 instance SymGen SymBool MovingExprSpec MovingOpExpr where
   genSymIndexed (MovingExprSpec d) = do
     e <- genSymIndexed (MovingExprSpec (d - 1))
-    choose
-       (MoveUp e)
-      [ MoveDown e,
-        MoveLeft e,
-        MoveRight e
-      ]
+    
+    choose (MoveUp e)
+          [ MoveDown e,
+            MoveLeft e,
+            MoveRight e
+          ]
 
 instance SymGen SymBool MovingExprSpec MovingExpr where
-  genSymIndexed e@(MovingExprSpec d) =
-    merge
-      <$> if d <= 0
-        then do
-          coord <- genSymSimpleIndexed @SymBool ()
-          v <- genSymSimpleIndexed @SymBool ()
-          chooseU (Coord <$> coord) [MovingVarExpr <$> v]
-        else do
-          coord <- genSymIndexed ()
-          moving <- genSymIndexed e
-          v <- genSymSimpleIndexed @SymBool ()
-          chooseU (Coord <$> coord) [Moving <$> moving, MovingVarExpr <$> v]
+  genSymIndexed spec@(MovingExprSpec d) = merge <$> 
+    if d <= 0
+      then do
+        coord   <- genSymSimpleIndexed @SymBool ()
+        varName <- genSymSimpleIndexed @SymBool ()
+        
+        chooseU (Coord <$> coord) [MovingVarExpr <$> varName]
+      
+      else do
+        coord   <- genSymIndexed @SymBool ()
+        moving  <- genSymIndexed @SymBool spec
+        varName <- genSymSimpleIndexed @SymBool ()
+        
+        chooseU (Coord <$> coord) [Moving <$> moving, MovingVarExpr <$> varName]
 
 instance SymGen SymBool MovingExprSpec MovingStmt where
-  genSymIndexed e = do
-    expr <- genSymIndexed @SymBool e
-    vari <- genSymSimpleIndexed @SymBool ()
-    choose (MovingDefineStmt vari expr) [MovingValueStmt expr]
+  genSymIndexed spec = do
+    e       <- genSymIndexed @SymBool spec
+    varName <- genSymSimpleIndexed @SymBool ()
+    
+    choose (MovingDefineStmt varName e) [MovingValueStmt e]
 
 --
 -- | SymGen Instances With Arg
 --
-
--- TODO change the argument type to (MovingExpr ..) so that it can be variable
---    or concrete value
 instance SymGen SymBool (MovingExprSpec, MovingExpr) MovingOpExpr where
-  genSymIndexed ((MovingExprSpec d), arg) = case arg of
-    (Coord coord) -> do
-      e <- genSymIndexed ((MovingExprSpec (d - 1)), (Coord coord))
-      choose
-        (MoveUp e)
-        [ MoveDown e,
-          MoveLeft e,
-          MoveRight e
-        ]
-    (MovingVarExpr var) -> do
-      e <- genSymIndexed ((MovingExprSpec (d - 1)), (MovingVarExpr var))
-      choose
-        (MoveUp e)
-        [ MoveDown e,
-          MoveLeft e,
-          MoveRight e
-        ]
-    _ -> error "shouldn't ever be here!"
+  genSymIndexed ((MovingExprSpec d), arg) = do
+    e <- genSymIndexed ((MovingExprSpec (d - 1)), arg)
+    
+    choose (MoveUp e)
+          [ MoveDown e,
+            MoveLeft e,
+            MoveRight e
+          ]
 
 instance SymGen SymBool (MovingExprSpec, MovingExpr) MovingExpr where
-  genSymIndexed (e@(MovingExprSpec d), arg) = case arg of
-    (Coord coord) -> merge <$> 
+  genSymIndexed (spec@(MovingExprSpec d), arg) = case arg of
+    (Coord coord) -> merge <$>
       if d <= 0
         then do
-          -- let coord' = toSym coord
-          -- v <- genSymSimpleIndexed @SymBool ()
           return $ mrgSingle $ Coord $ toSym coord
-          -- choose (Coord coord') [MovingVarExpr v]
         else do
-          let coord' = toSym coord
-          moving <- genSymIndexed (e, (Coord coord))
-          chooseU (Coord <$> coord') [Moving <$> moving]
+          moving <- genSymIndexed @SymBool (spec, (Coord coord))
+          
+          chooseU (Coord <$> (toSym coord)) [Moving <$> moving]
+    
     (MovingVarExpr var) -> merge <$> 
       if d <= 0
         then do
-          -- let coord' = toSym coord
-          -- v <- genSymSimpleIndexed @SymBool ()
           return $ mrgSingle $ MovingVarExpr var
-          -- choose (Coord coord') [MovingVarExpr v]
         else do
-          let var' = toSym var
-          moving <- genSymIndexed (e, MovingVarExpr var)
-          chooseU (MovingVarExpr <$> var') [Moving <$> moving]
+          moving <- genSymIndexed @SymBool (spec, MovingVarExpr var)
+          
+          chooseU (MovingVarExpr <$> (toSym var)) [Moving <$> moving]
+    
     _ -> error "shouldn't ever be here!"
     
 -- TODO this might need to be implemented later
@@ -261,7 +247,7 @@ instance SymGen SymBool MovingExprSpec (CoordExpr -> UnionM MovingExpr) where
   genSymIndexed v = genSymSimpleIndexed @SymBool v
 
 instance SymGenSimple SymBool MovingExprSpec (CoordExpr -> UnionM MovingExpr) where
-  genSymSimpleIndexed e@(MovingExprSpec d) =
+  genSymSimpleIndexed spec@(MovingExprSpec d) =
    if d <= 0
     then do
       v <- genSymSimpleIndexed @SymBool ()
@@ -271,7 +257,7 @@ instance SymGenSimple SymBool MovingExprSpec (CoordExpr -> UnionM MovingExpr) wh
       return $ getSingle @SymBool r
 
     else do
-      moving <- genSymSimpleIndexed @SymBool e
+      moving <- genSymSimpleIndexed @SymBool spec
       v <- genSymSimpleIndexed @SymBool ()
 
       r <- choose
@@ -284,7 +270,7 @@ instance SymGenSimple SymBool MovingExprSpec (CoordExpr -> UnionM MovingExpr) wh
 instance SymGen SymBool MovingExprSpec (CoordExpr -> UnionM MovingStmt) where
   genSymIndexed v = genSymSimpleIndexed @SymBool v
 
--- might need to figure out later.... <3 
+-- TODO might need to figure out later.... <3 
 -- instance SymGenSimple SymBool MovingExprSpec (CoordExpr -> UnionM MovingStmt) where
 --   genSymSimpleIndexed e = do
 

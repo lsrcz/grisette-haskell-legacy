@@ -4,8 +4,6 @@
 module Main where
 
 import Control.Monad.Except
-import Control.Monad.State
-
 import Data.Maybe
 import Data.SBV
 import Grisette.Control.Monad
@@ -89,7 +87,7 @@ fullArgSketch = do
 main :: IO ()
 main = do
   -- printingVars
-  -- verifyTypeChecker
+  verifyTypeChecker
   -- synthesisAttempt
   -- sketchArgumentTrial
   synthesisHoleWithArg
