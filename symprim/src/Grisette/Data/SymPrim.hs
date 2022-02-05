@@ -45,6 +45,10 @@ import Grisette.Data.Prim.Num
 import Grisette.Data.Prim.TabularFunc
 import Grisette.Data.TabularFunc
 import Language.Haskell.TH.Syntax
+import Data.Bits
+import Grisette.Data.Prim.Bits
+import GHC.TypeLits
+import Data.Proxy
 import Data.String
 
 newtype Sym a = Sym {underlyingTerm :: Term a} deriving (Lift, Generic)
@@ -200,6 +204,21 @@ instance (SupportedPrim (SignedBV n)) => SOrd (Sym Bool) (Sym (SignedBV n)) wher
   (Sym a) >=~ (Sym b) = Sym $ withPrim @(SignedBV n) $ geNum a b
   (Sym a) >~ (Sym b) = Sym $ withPrim @(SignedBV n) $ gtNum a b
 
+instance (SupportedPrim (SignedBV n)) => Bits (Sym (SignedBV n)) where
+  Sym l .&. Sym r = Sym $ withPrim @(SignedBV n) $ bitand l r
+  Sym l .|. Sym r = Sym $ withPrim @(SignedBV n) $ bitor l r
+  Sym l `xor` Sym r = Sym $ withPrim @(SignedBV n) $ bitxor l r
+  complement (Sym n) = Sym $ withPrim @(SignedBV n) $ bitneg n
+  shift (Sym n) i = Sym $ withPrim @(SignedBV n) $ bitshift n i
+  rotate (Sym n) i = Sym $ withPrim @(SignedBV n) $ bitrotate n i
+  bitSize _ = fromInteger $ withPrim @(SignedBV n) $ natVal (Proxy @n)
+  bitSizeMaybe _ = Just $ fromInteger $ withPrim @(SignedBV n) $ natVal (Proxy @n)
+  isSigned _ = True
+  testBit (Conc n) = withPrim @(SignedBV n) $ testBit n
+  testBit _ = error "You cannot call testBit on symbolic variables"
+  bit = withPrim @(SignedBV n) $ conc . bit
+  popCount _ = error "You cannot call popCount on symbolic variables"
+
 -- unsigned bv
 type SymUnsignedBV n = Sym (UnsignedBV n)
 
@@ -247,3 +266,18 @@ instance
   ExtractSymbolics (S.HashSet TermSymbol) (a =~> b)
   where
   extractSymbolics (Sym t) = extractSymbolicsTerm t
+
+instance (SupportedPrim (UnsignedBV n)) => Bits (Sym (UnsignedBV n)) where
+  Sym l .&. Sym r = Sym $ withPrim @(UnsignedBV n) $ bitand l r
+  Sym l .|. Sym r = Sym $ withPrim @(UnsignedBV n) $ bitor l r
+  Sym l `xor` Sym r = Sym $ withPrim @(UnsignedBV n) $ bitxor l r
+  complement (Sym n) = Sym $ withPrim @(UnsignedBV n) $ bitneg n
+  shift (Sym n) i = Sym $ withPrim @(UnsignedBV n) $ bitshift n i
+  rotate (Sym n) i = Sym $ withPrim @(UnsignedBV n) $ bitrotate n i
+  bitSize _ = fromInteger $ withPrim @(UnsignedBV n) $ natVal (Proxy @n)
+  bitSizeMaybe _ = Just $ fromInteger $ withPrim @(UnsignedBV n) $ natVal (Proxy @n)
+  isSigned _ = True
+  testBit (Conc n) = withPrim @(UnsignedBV n) $ testBit n
+  testBit _ = error "You cannot call testBit on symbolic variables"
+  bit = withPrim @(UnsignedBV n) $ conc . bit
+  popCount _ = error "You cannot call popCount on symbolic variables"

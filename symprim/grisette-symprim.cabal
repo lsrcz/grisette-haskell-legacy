@@ -24,6 +24,7 @@ source-repository head
 library
   exposed-modules:
       Grisette.Control.Monad.UnionM
+      Grisette.Data.Prim.Bits
       Grisette.Data.Prim.Bool
       Grisette.Data.Prim.BV
       Grisette.Data.Prim.Helpers
@@ -31,6 +32,7 @@ library
       Grisette.Data.Prim.InternedTerm
       Grisette.Data.Prim.Model
       Grisette.Data.Prim.Num
+      Grisette.Data.Prim.Orphan
       Grisette.Data.Prim.TabularFunc
       Grisette.Data.Prim.Utils
       Grisette.Data.SymPrim

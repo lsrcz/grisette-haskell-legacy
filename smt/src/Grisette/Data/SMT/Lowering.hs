@@ -37,6 +37,8 @@ import Grisette.Data.SMT.Config
 import Grisette.Data.TabularFunc
 import qualified Type.Reflection as R
 import Unsafe.Coerce
+import Data.Bits
+import Grisette.Data.Prim.Bits
 
 data SymBiMap = SymBiMap
   { biMapToSBV :: M.HashMap SomeTerm Dynamic,
@@ -183,7 +185,7 @@ lowerSinglePrimImpl config t@(SymbTerm _ ts) m =
     ufunc :: (Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a)))
     ufunc = lowerSinglePrimUFunc config t m
 lowerSinglePrimImpl config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) m =
-  fromMaybe errorMsg $ asum [numType, boolType {-, integerType-}]
+  fromMaybe errorMsg $ asum [numType, boolType, bitsType {-, integerType-}]
   where
     errorMsg :: forall t1. t1
     errorMsg =
@@ -201,6 +203,15 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) m 
           AbsNumTerm (t1 :: Term a) -> Just $ lowerUnaryTerm config t t1 abs m
           _ -> Nothing
       _ -> Nothing
+    bitsType :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
+    bitsType = case (config, R.typeRep @a) of
+      ResolvedBitsType ->
+        case t of
+          ComplementBitsTerm (t1 :: Term a) -> Just $ lowerUnaryTerm config t t1 complement m
+          ShiftBitsTerm (t1 :: Term a) i -> Just $ lowerUnaryTerm config t t1 (`shift` i) m
+          RotateBitsTerm (t1 :: Term a) i -> Just $ lowerUnaryTerm config t t1 (`rotate` i) m
+          _ -> Nothing
+      _ -> Nothing
     boolType :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
     boolType = case R.typeRep @a of
       BoolType -> case t of
@@ -208,7 +219,7 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) m 
         _ -> Nothing
       _ -> Nothing
 lowerSinglePrimImpl config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_ :: Term y)) m =
-  fromMaybe errorMsg $ asum [numType, numOrdCmp, simpleBoolType, eqTerm, funcApply]
+  fromMaybe errorMsg $ asum [numType, numOrdCmp, bitsType, simpleBoolType, eqTerm, funcApply]
   where
     errorMsg :: forall t1. t1
     errorMsg =
@@ -245,6 +256,15 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_
         case t of
           AddNumTerm (t1' :: Term a) t2' -> Just $ lowerBinaryTerm config t t1' t2' (+) m
           TimesNumTerm (t1' :: Term a) t2' -> Just $ lowerBinaryTerm config t t1' t2' (*) m
+          _ -> Nothing
+      _ -> Nothing
+    bitsType :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
+    bitsType = case (config, R.typeRep @a) of
+      ResolvedBitsType ->
+        case t of
+          AndBitsTerm (t1 :: Term a) t2 -> Just $ lowerBinaryTerm config t t1 t2 (.&.) m
+          OrBitsTerm (t1 :: Term a) t2 -> Just $ lowerBinaryTerm config t t1 t2 (.|.) m
+          XorBitsTerm (t1 :: Term a) t2 -> Just $ lowerBinaryTerm config t t1 t2 xor m
           _ -> Nothing
       _ -> Nothing
     funcApply :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
@@ -649,3 +669,31 @@ pattern ResolvedNumOrdType ::
   NumOrdTypeConstraint integerBitWidth s s' =>
   (GrisetteSMTConfig integerBitWidth, R.TypeRep s)
 pattern ResolvedNumOrdType <- (resolveNumOrdTypeView -> Just DictNumOrdType)
+
+type BitsTypeConstraint integerBitWidth s s' =
+  ( SimpleTypeConstraint integerBitWidth s s',
+    Bits (SBV.SBV s'),
+    Bits s',
+    Bits s
+  )
+
+data DictBitsType integerBitWidth s where
+  DictBitsType ::
+    forall integerBitWidth s s'.
+    (BitsTypeConstraint integerBitWidth s s') =>
+    DictBitsType integerBitWidth s
+
+resolveBitsTypeView :: TypeResolver DictBitsType
+resolveBitsTypeView (ResolvedConfig {}, s) = case s of
+  SignedBVType _ -> Just DictBitsType
+  UnsignedBVType _ -> Just DictBitsType
+  _ -> Nothing
+resolveBitsTypeView _ = error "Should never happen, make compiler happy"
+
+pattern ResolvedBitsType ::
+  forall integerBitWidth s.
+  (SupportedPrim s) =>
+  forall s'.
+  BitsTypeConstraint integerBitWidth s s' =>
+  (GrisetteSMTConfig integerBitWidth, R.TypeRep s)
+pattern ResolvedBitsType <- (resolveBitsTypeView -> Just DictBitsType)
