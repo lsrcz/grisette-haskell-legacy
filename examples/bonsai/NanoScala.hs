@@ -84,7 +84,7 @@ $(makeUnionMWrapper "u" ''DotValue)
 $(makeUnionMWrapper "u" ''DotType)
 
 eval' :: DotTree -> Env DotBitWidth DotValue -> ExceptT BonsaiError UnionM (UnionM DotValue)
-eval' = memo2 $ \tree env ->
+eval' = {-memo2 $-} \tree env ->
   bonsaiMatchCustomError
     BonsaiExecError
     dotSyntax
@@ -136,7 +136,7 @@ reduceType ::
   Bool ->
   DotTree ->
   ExceptT BonsaiError UnionM (UnionM DotType)
-reduceType = mup memo3 $ \reccount env strict tree ->
+reduceType = {-mup memo3 $ -}\reccount env strict tree ->
   let reduceTypeR = reduceType (reccount + 1)
    in if reccount >= 3
         then throwError BonsaiTypeError
@@ -176,7 +176,7 @@ reduceType = mup memo3 $ \reccount env strict tree ->
             tree
 
 subType :: Int -> UnionM DotType -> UnionM DotType -> ExceptT BonsaiError UnionM SymBool
-subType = memo3 $ \reccount sub sup ->
+subType = {-memo3 $ -}\reccount sub sup ->
   let subTypeR = subType (reccount + 1)
    in if reccount >= 3
         then throwError BonsaiTypeError
