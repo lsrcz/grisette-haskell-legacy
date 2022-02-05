@@ -117,7 +117,7 @@ instance SupportedPrim a => BinaryOp Eqv a a Bool where
   pformatBinary _ l r = "(== " ++ pformat l ++ " " ++ pformat r ++ ")"
 
 pattern EqvTerm :: (Typeable a) => Term a -> Term a -> Term Bool
-pattern EqvTerm l r <- BinaryTermPatt Eqv l r
+pattern EqvTerm l r <- Unsafe1t21BinaryTermPatt Eqv l r
 
 impliesTerm :: Term Bool -> Term Bool -> Bool
 impliesTerm TrueTerm _ = True
@@ -382,7 +382,7 @@ iteterm :: (SupportedPrim a) => Term Bool -> Term a -> Term a -> Term a
 iteterm = partialEvalTernary ITE
 
 pattern ITETerm :: (Typeable a) => Term Bool -> Term a -> Term a -> Term a
-pattern ITETerm cond ifTrue ifFalse <- TernaryTermPatt ITE cond ifTrue ifFalse
+pattern ITETerm cond ifTrue ifFalse <- Unsafe1u2t32TernaryTermPatt ITE cond ifTrue ifFalse
 
 implyb :: Term Bool -> Term Bool -> Term Bool
 implyb l = orb (notb l)
