@@ -32,12 +32,6 @@ time a = do
   printf "Computation time: %0.3f sec\n" (diff :: Double)
   return v
 
-instance HasTrie B.ByteString where
-  newtype B.ByteString :->: a = ByteStringTrie (Either () (Char, B.ByteString) :->: a)
-  trie f = ByteStringTrie (trie (f . bs))
-  untrie (ByteStringTrie t) = untrie t . debs
-  enumerate (ByteStringTrie t) = ((fmap . first) bs . enumerate) t
-
 bs :: Either () (Char, B.ByteString) -> B.ByteString
 bs = either (const B.empty) (uncurry B.cons)
 
