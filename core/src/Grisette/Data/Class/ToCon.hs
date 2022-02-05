@@ -84,6 +84,12 @@ instance
   where
   toCon (ExceptT v) = ExceptT <$> toCon v
 
+instance
+  ToCon (m1 (Either e1 a)) (Either e2 b) =>
+  ToCon (ExceptT e1 m1 a) (Either e2 b)
+  where
+  toCon (ExceptT v) = toCon v
+
 -- Coroutine
 instance
   (ToCon (m1 (Either (sus (Coroutine sus m1 a)) a)) (m2 (Either (sus (Coroutine sus m2 b)) b))) =>
