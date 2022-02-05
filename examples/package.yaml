@@ -95,5 +95,9 @@ executables:
   tutorial:
     source-dirs: tutorial
     main: Main.hs
+  bonsai:
+    source-dirs: bonsai
+    main: Main.hs
+    dependencies: grisette-examples
 
 

@@ -78,6 +78,70 @@ library
     , utf8-string
   default-language: Haskell2010
 
+executable bonsai
+  main-is: Main.hs
+  other-modules:
+      BonsaiTree
+      Error
+      Match
+      MatchSyntax
+      Pattern
+      STLC
+      SyntaxSpec
+      Paths_grisette_examples
+  hs-source-dirs:
+      bonsai
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+  ghc-options: -Wall -ferror-spans -O2
+  build-depends:
+      MemoTrie
+    , Unique
+    , base >4.7 && <5
+    , bv-sized
+    , bytestring
+    , clock
+    , deepseq
+    , formatting
+    , grisette
+    , grisette-examples
+    , hashable
+    , loch-th
+    , megaparsec
+    , monad-coroutine
+    , monad-memo
+    , mtl
+    , parser-combinators
+    , regex-base
+    , regex-pcre
+    , template-haskell
+    , th-lift-instances
+    , timeit
+    , transformers
+    , unordered-containers
+    , utf8-string
+  default-language: Haskell2010
+
 executable cosette
   main-is: Benchmark/Main.hs
   other-modules:
