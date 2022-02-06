@@ -26,10 +26,13 @@ import Generics.Deriving
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.OrphanGeneric ()
 import Grisette.Data.Class.Utils.CConst
+import Data.MemoTrie
+import Grisette.Data.MemoUtils ()
 
 data MergeStrategy bool a where
   SimpleStrategy :: (bool -> a -> a -> a) -> MergeStrategy bool a
-  OrderedStrategy :: (Ord idx, Typeable idx) => (a -> idx) -> (idx -> MergeStrategy bool a) -> MergeStrategy bool a
+  OrderedStrategy :: (Ord idx, Typeable idx, HasTrie idx) =>
+    (a -> idx) -> (idx -> MergeStrategy bool a) -> MergeStrategy bool a
   NoStrategy :: MergeStrategy bool a
 
 wrapMergeStrategy :: MergeStrategy bool a -> (a -> b) -> (b -> a) -> MergeStrategy bool b
@@ -41,7 +44,7 @@ wrapMergeStrategy (SimpleStrategy m) wrap unwrap =
 wrapMergeStrategy (OrderedStrategy idxFun substrategy) wrap unwrap =
   OrderedStrategy
     (idxFun . unwrap)
-    (\idx -> wrapMergeStrategy (substrategy idx) wrap unwrap)
+    (memo $ \idx -> wrapMergeStrategy (substrategy idx) wrap unwrap)
 wrapMergeStrategy NoStrategy _ _ = NoStrategy
 
 class Mergeable bool a where
@@ -88,7 +91,7 @@ instance (Mergeable' bool a, Mergeable' bool b) => Mergeable' bool (a :+: b) whe
           L1 _ -> False
           R1 _ -> True
       )
-      ( \idx ->
+      ( memo $ \idx ->
           if not idx
             then wrapMergeStrategy mergeStrategy' L1 (\(L1 v) -> v)
             else wrapMergeStrategy mergeStrategy' R1 (\(R1 v) -> v)
@@ -109,9 +112,9 @@ wrapMergeStrategy2 wrap unwrap strategy1 strategy2 =
         ((hdt, tlt), (hdf, tlf)) ->
           wrap (m1 cond hdt hdf) (m2 cond tlt tlf)
     (s1@(SimpleStrategy _), OrderedStrategy idxf subf) ->
-      OrderedStrategy (idxf . snd . unwrap) (wrapMergeStrategy2 wrap unwrap s1 . subf)
+      OrderedStrategy (idxf . snd . unwrap) (memo $ wrapMergeStrategy2 wrap unwrap s1 . subf)
     (OrderedStrategy idxf subf, s2) ->
-      OrderedStrategy (idxf . fst . unwrap) (\idx -> wrapMergeStrategy2 wrap unwrap (subf idx) s2)
+      OrderedStrategy (idxf . fst . unwrap) (memo $ \idx -> wrapMergeStrategy2 wrap unwrap (subf idx) s2)
 
 instance (Mergeable' bool a, Mergeable' bool b) => Mergeable' bool (a :*: b) where
   mergeStrategy' = wrapMergeStrategy2 (:*:) (\(a :*: b) -> (a, b)) mergeStrategy' mergeStrategy'

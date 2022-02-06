@@ -15,6 +15,7 @@ dependencies:
 - grisette-symprim
 - transformers
 - mtl
+- MemoTrie
 
 default-extensions:
 - BangPatterns

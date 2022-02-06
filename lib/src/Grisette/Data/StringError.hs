@@ -10,6 +10,7 @@ import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
+import Data.MemoTrie
 
 newtype StringError = StringError String deriving (Eq, Ord)
 
@@ -17,7 +18,7 @@ instance Show StringError where
   show (StringError str) = str
 
 instance (SymBoolOp bool) => Mergeable bool StringError where
-  mergeStrategy = OrderedStrategy id (\_ -> SimpleStrategy $ \_ t _ -> t)
+  mergeStrategy = OrderedStrategy (\(StringError s) -> s) (memo $ \_ -> SimpleStrategy $ \_ t _ -> t)
 
 instance (SymBoolOp bool) => SEq bool StringError where
   l ==~ r = conc $ l == r
