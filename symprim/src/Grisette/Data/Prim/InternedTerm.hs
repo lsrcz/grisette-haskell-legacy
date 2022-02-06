@@ -4,7 +4,6 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# OPTIONS_GHC -fno-cse #-}
 
 module Grisette.Data.Prim.InternedTerm
   ( UnaryOp (..),
@@ -45,21 +44,45 @@ import Data.HashSet as S
 import Data.Hashable (Hashable (hashWithSalt))
 import Data.IORef (IORef, atomicModifyIORef', newIORef, readIORef)
 import Data.Interned
+import Data.Maybe
+import Data.MemoTrie
 import Data.Typeable
 import GHC.Generics
 import GHC.IO (unsafeDupablePerformIO)
 import GHC.TypeNats
 import Grisette.Data.Prim.Orphan ()
 import Language.Haskell.TH.Syntax
-import Data.MemoTrie
-import Data.Maybe
+import Grisette.Data.Prim.Caches
 
-class (SupportedPrim arg, SupportedPrim t, Lift tag, NFData tag) => UnaryOp tag arg t | tag arg -> t where
+class (Lift t, Typeable t, Hashable t, Eq t, Show t, NFData t) => SupportedPrim t where
+  type PrimConstraint t :: Constraint
+  type PrimConstraint t = ()
+  default withPrim :: PrimConstraint t => (PrimConstraint t => a) -> a
+  withPrim :: (PrimConstraint t => a) -> a
+  withPrim i = i
+  termCache :: Cache (Term t)
+  termCache = typeMemoizedCache
+  termReverseCache :: ReverseCache (Term t)
+  termReverseCache = typeMemoizedReverseCache
+  pformatConc :: t -> String
+  default pformatConc :: (Show t) => t -> String
+  pformatConc = show
+  pformatSymb :: Symbol -> String
+  pformatSymb = show
+  defaultValue :: t
+  defaultValueDynamic :: Dynamic
+  defaultValueDynamic = toDyn (defaultValue @t)
+
+class
+  (SupportedPrim arg, SupportedPrim t, Lift tag, NFData tag, Show tag, Typeable tag) =>
+  UnaryOp tag arg t
+    | tag arg -> t
+  where
   partialEvalUnary :: (Typeable tag, Typeable t) => tag -> Term arg -> Term t
   pformatUnary :: tag -> Term arg -> String
 
 class
-  (SupportedPrim arg1, SupportedPrim arg2, SupportedPrim t, Lift tag, NFData tag) =>
+  (SupportedPrim arg1, SupportedPrim arg2, SupportedPrim t, Lift tag, NFData tag, Show tag, Typeable tag) =>
   BinaryOp tag arg1 arg2 t
     | tag arg1 arg2 -> t
   where
@@ -67,7 +90,15 @@ class
   pformatBinary :: tag -> Term arg1 -> Term arg2 -> String
 
 class
-  (SupportedPrim arg1, SupportedPrim arg2, SupportedPrim arg3, SupportedPrim t, Lift tag, NFData tag) =>
+  ( SupportedPrim arg1,
+    SupportedPrim arg2,
+    SupportedPrim arg3,
+    SupportedPrim t,
+    Lift tag,
+    NFData tag,
+    Show tag,
+    Typeable tag
+  ) =>
   TernaryOp tag arg1 arg2 arg3 t
     | tag arg1 arg2 arg3 -> t
   where
@@ -104,20 +135,20 @@ data Term t where
   ConcTerm :: (SupportedPrim t) => {-# UNPACK #-} !Id -> !t -> Term t
   SymbTerm :: (SupportedPrim t) => {-# UNPACK #-} !Id -> !TermSymbol -> Term t
   UnaryTerm ::
-    (UnaryOp tag arg t, Typeable tag, Show tag) =>
+    (UnaryOp tag arg t) =>
     {-# UNPACK #-} !Id ->
     !tag ->
     !(Term arg) ->
     Term t
   BinaryTerm ::
-    (BinaryOp tag arg1 arg2 t, Typeable tag, Show tag) =>
+    (BinaryOp tag arg1 arg2 t) =>
     {-# UNPACK #-} !Id ->
     !tag ->
     !(Term arg1) ->
     !(Term arg2) ->
     Term t
   TernaryTerm ::
-    (TernaryOp tag arg1 arg2 arg3 t, Typeable tag, Show tag) =>
+    (TernaryOp tag arg1 arg2 arg3 t) =>
     {-# UNPACK #-} !Id ->
     !tag ->
     !(Term arg1) ->
@@ -167,106 +198,37 @@ instance Show (Term ty) where
       ++ "}"
 
 data UTerm t where
-  UConcTerm :: (SupportedPrim t) => t -> UTerm t
-  USymbTerm :: (SupportedPrim t) => TermSymbol -> UTerm t
-  UUnaryTerm :: (UnaryOp tag arg t, Typeable tag, Show tag) => tag -> Term arg -> UTerm t
+  UConcTerm :: (SupportedPrim t) => !t -> UTerm t
+  USymbTerm :: (SupportedPrim t) => !TermSymbol -> UTerm t
+  UUnaryTerm :: (UnaryOp tag arg t) => !tag -> !(Term arg) -> UTerm t
   UBinaryTerm ::
-    (BinaryOp tag arg1 arg2 t, Typeable tag, Show tag) =>
-    tag ->
-    Term arg1 ->
-    Term arg2 ->
+    (BinaryOp tag arg1 arg2 t) =>
+    !tag ->
+    !(Term arg1) ->
+    !(Term arg2) ->
     UTerm t
   UTernaryTerm ::
-    (TernaryOp tag arg1 arg2 arg3 t, Typeable tag, Show tag) =>
-    tag ->
-    Term arg1 ->
-    Term arg2 ->
-    Term arg3 ->
+    (TernaryOp tag arg1 arg2 arg3 t) =>
+    !tag ->
+    !(Term arg1) ->
+    !(Term arg2) ->
+    !(Term arg3) ->
     UTerm t
-
-newDynamicCache :: forall a. (Interned a, Typeable a) => Dynamic
-newDynamicCache = toDyn $ mkCache @a
-
-termCacheCell :: IORef (M.HashMap TypeRep Dynamic)
-termCacheCell = unsafeDupablePerformIO $ newIORef M.empty
-{-# NOINLINE termCacheCell #-}
-
-typeMemoizedCache :: forall a. (Interned a, Typeable a) => Cache a
-typeMemoizedCache = unsafeDupablePerformIO $
-  atomicModifyIORef' termCacheCell $ \m ->
-    case M.lookup (typeRep (Proxy @a)) m of
-      Just d -> (m, fromDyn d undefined)
-      Nothing -> (M.insert (typeRep (Proxy @a)) r m, fromDyn r undefined)
-        where
-          !r = (newDynamicCache @a)
-{-# NOINLINE typeMemoizedCache #-}
-
-newtype ReverseCache t = ReverseCache { getReverseCache :: IORef (M.HashMap Id t) }
-
-mkReverseCache :: (Typeable t) => ReverseCache t
-mkReverseCache = ReverseCache (unsafeDupablePerformIO $ newIORef M.empty)
-{-# NOINLINE mkReverseCache #-}
-
-newDynamicReverseCache :: forall (a :: *). (Typeable a) => Dynamic
-newDynamicReverseCache = toDyn (mkReverseCache :: ReverseCache a)
-{-# NOINLINE newDynamicReverseCache #-}
-
-termReverseCacheCell :: IORef (M.HashMap TypeRep Dynamic)
-termReverseCacheCell = unsafeDupablePerformIO $ newIORef M.empty
-{-# NOINLINE termReverseCacheCell #-}
-
-typeMemoizedReverseCache :: forall a. Typeable a => ReverseCache a
-typeMemoizedReverseCache = unsafeDupablePerformIO $ do
-  atomicModifyIORef' termReverseCacheCell $ \m ->
-    case M.lookup (typeRep (Proxy @a)) m of
-      Just d -> (m, fromDyn d undefined)
-      Nothing -> (M.insert (typeRep (Proxy @a)) r m, fromDyn r undefined)
-        where
-          !r = (newDynamicReverseCache @a)
-{-# NOINLINE typeMemoizedReverseCache #-}
-
-class (Lift t, Typeable t, Hashable t, Eq t, Show t, NFData t) => SupportedPrim t where
-  type PrimConstraint t :: Constraint
-  type PrimConstraint t = ()
-  default withPrim :: PrimConstraint t => (PrimConstraint t => a) -> a
-  withPrim :: (PrimConstraint t => a) -> a
-  withPrim i = i
-  termCache :: Cache (Term t)
-  termCache = typeMemoizedCache
-  termReverseCache :: ReverseCache (Term t)
-  termReverseCache = typeMemoizedReverseCache
-  pformatConc :: t -> String
-  default pformatConc :: (Show t) => t -> String
-  pformatConc = show
-  pformatSymb :: Symbol -> String
-  pformatSymb = show
-  defaultValue :: t
-  defaultValueDynamic :: Dynamic
-  defaultValueDynamic = toDyn (defaultValue @t)
-
-addToReverseCache :: forall t. (SupportedPrim t) => Term t -> ()
-addToReverseCache t = unsafeDupablePerformIO $ atomicModifyIORef' (getReverseCache (termReverseCache @t)) $ \m ->
-  (M.insert (identity t) t m, ())
-
-findInReverseCache :: forall t. (SupportedPrim t) => Id -> Maybe (Term t)
-findInReverseCache i = unsafeDupablePerformIO $ do
-  m <- readIORef (getReverseCache termReverseCache)
-  return $ M.lookup i m
 
 instance (SupportedPrim t) => Interned (Term t) where
   type Uninterned (Term t) = UTerm t
   data Description (Term t) where
     DConcTerm :: t -> Description (Term t)
     DSymbTerm :: TermSymbol -> Description (Term t)
-    DUnaryTerm :: (UnaryOp tag arg t, Typeable tag, Show tag) => tag -> (TypeRep, Id) -> Description (Term t)
+    DUnaryTerm :: (UnaryOp tag arg t) => !tag -> (TypeRep, Id) -> Description (Term t)
     DBinaryTerm ::
-      (BinaryOp tag arg1 arg2 t, Typeable tag, Show tag) =>
+      (BinaryOp tag arg1 arg2 t) =>
       tag ->
       (TypeRep, Id) ->
       (TypeRep, Id) ->
       Description (Term t)
     DTernaryTerm ::
-      (TernaryOp tag arg1 arg2 arg3 t, Typeable tag, Show tag) =>
+      (TernaryOp tag arg1 arg2 arg3 t) =>
       tag ->
       (TypeRep, Id) ->
       (TypeRep, Id) ->
@@ -334,11 +296,21 @@ instance (SupportedPrim t) => Eq (Term t) where
 instance (SupportedPrim t) => Hashable (Term t) where
   hashWithSalt s t = hashWithSalt s $ identity t
 
+addToReverseCache :: forall t. (SupportedPrim t) => Term t -> ()
+addToReverseCache t = unsafeDupablePerformIO $
+  atomicModifyIORef' (getReverseCache (termReverseCache @t)) $ \m ->
+    (M.insert (identity t) t m, ())
+
+findInReverseCache :: forall t. (SupportedPrim t) => Id -> Maybe (Term t)
+findInReverseCache i = unsafeDupablePerformIO $ do
+  m <- readIORef (getReverseCache termReverseCache)
+  return $ M.lookup i m
+
 instance (SupportedPrim t) => HasTrie (Term t) where
   newtype (Term t) :->: x = TermTrie (Id :->: x)
   trie f = TermTrie (trie $ \i -> f (fromJust $ findInReverseCache i))
   untrie (TermTrie i) t = untrie i (identity t)
-  enumerate _ = error "Don't try to enumerate Terms. We implemented the MemoTrie for it with black magic"--[undefined | (i, b) <- enumerate tt]
+  enumerate _ = error "Don't try to enumerate Terms. We implemented the MemoTrie for it with black magic" --[undefined | (i, b) <- enumerate tt]
 
 instance Eq SomeTerm where
   (SomeTerm t1) == (SomeTerm t2) = identityWithTypeRep t1 == identityWithTypeRep t2
@@ -369,9 +341,9 @@ constructUnary ::
   tag ->
   Term arg ->
   Term t
-constructUnary tag tm = let
-  ret = intern $ UUnaryTerm tag tm
-  in addToReverseCache ret `seq` ret
+constructUnary tag tm =
+  let ret = intern $ UUnaryTerm tag tm
+   in addToReverseCache ret `seq` ret
 
 constructBinary ::
   forall tag arg1 arg2 t.
@@ -380,9 +352,9 @@ constructBinary ::
   Term arg1 ->
   Term arg2 ->
   Term t
-constructBinary tag tm1 tm2 = let
-  ret = intern $ UBinaryTerm tag tm1 tm2
-  in addToReverseCache ret `seq` ret
+constructBinary tag tm1 tm2 =
+  let ret = intern $ UBinaryTerm tag tm1 tm2
+   in addToReverseCache ret `seq` ret
 
 constructTernary ::
   forall tag arg1 arg2 arg3 t.
@@ -392,19 +364,19 @@ constructTernary ::
   Term arg2 ->
   Term arg3 ->
   Term t
-constructTernary tag tm1 tm2 tm3 = let
-  ret = intern $ UTernaryTerm tag tm1 tm2 tm3
-  in addToReverseCache ret `seq` ret
+constructTernary tag tm1 tm2 tm3 =
+  let ret = intern $ UTernaryTerm tag tm1 tm2 tm3
+   in addToReverseCache ret `seq` ret
 
 concTerm :: (SupportedPrim t, Typeable t, Hashable t, Eq t, Show t) => t -> Term t
-concTerm t = let
-  ret = intern $ UConcTerm t
-  in addToReverseCache ret `seq` ret
+concTerm t =
+  let ret = intern $ UConcTerm t
+   in addToReverseCache ret `seq` ret
 
 symbTerm :: forall t. (SupportedPrim t, Typeable t) => Symbol -> Term t
-symbTerm t = let
-  ret = intern $ USymbTerm (TermSymbol (Proxy @t) t)
-  in addToReverseCache ret `seq` ret
+symbTerm t =
+  let ret = intern $ USymbTerm (TermSymbol (Proxy @t) t)
+   in addToReverseCache ret `seq` ret
 
 ssymbTerm :: (SupportedPrim t, Typeable t) => String -> Term t
 ssymbTerm = symbTerm . SimpleSymbol
