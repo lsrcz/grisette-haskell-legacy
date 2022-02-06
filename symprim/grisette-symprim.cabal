@@ -66,6 +66,7 @@ library
   ghc-options: -Wall -ferror-spans -O2
   build-depends:
       MemoTrie
+    , array
     , base >4.7 && <5
     , bv-sized
     , constraints

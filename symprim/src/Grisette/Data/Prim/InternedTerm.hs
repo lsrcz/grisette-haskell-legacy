@@ -33,17 +33,19 @@ where
 
 import Control.DeepSeq
 import Control.Monad.State
+import Data.Array
 import Data.BitVector.Sized
 import Data.BitVector.Sized.Signed as BVS
 import Data.BitVector.Sized.Unsigned as BVU
 import Data.Constraint
 import Data.Dynamic
 import Data.Function (on)
-import Data.HashMap.Strict as M
+import qualified Data.HashMap.Strict as M
 import Data.HashSet as S
-import Data.Hashable (Hashable (hashWithSalt))
+import Data.Hashable (Hashable (hashWithSalt, hash))
 import Data.IORef (IORef, atomicModifyIORef', newIORef, readIORef)
 import Data.Interned
+import Data.Interned.Internal
 import Data.Maybe
 import Data.MemoTrie
 import Data.Typeable
@@ -335,15 +337,30 @@ pformat (UnaryTerm _ tag arg1) = pformatUnary tag arg1
 pformat (BinaryTerm _ tag arg1 arg2) = pformatBinary tag arg1 arg2
 pformat (TernaryTerm _ tag arg1 arg2 arg3) = pformatTernary tag arg1 arg2 arg3
 
+internTerm :: forall t. (SupportedPrim t) => Uninterned (Term t) -> Term t
+internTerm !bt = unsafeDupablePerformIO $ do
+  (b, t) <- atomicModifyIORef' slot go
+  when b $
+    atomicModifyIORef' (getReverseCache (termReverseCache @t)) $ \m ->
+      (M.insert (identity t) t m, ())
+  return t
+  where
+  slot = getCache cache ! r
+  !dt = describe bt
+  !hdt = hash dt
+  !wid = cacheWidth dt
+  r = hdt `mod` wid
+  go (CacheState i m) = case M.lookup dt m of
+    Nothing -> let t = identify (wid * i + r) bt in (CacheState (i + 1) (M.insert dt t m), (True, t))
+    Just t -> (CacheState i m, (False, t))
+
 constructUnary ::
   forall tag arg t.
   (SupportedPrim t, UnaryOp tag arg t, Typeable tag, Typeable t, Show tag) =>
   tag ->
   Term arg ->
   Term t
-constructUnary tag tm =
-  let ret = intern $ UUnaryTerm tag tm
-   in addToReverseCache ret `seq` ret
+constructUnary tag tm = internTerm $ UUnaryTerm tag tm
 
 constructBinary ::
   forall tag arg1 arg2 t.
@@ -352,9 +369,7 @@ constructBinary ::
   Term arg1 ->
   Term arg2 ->
   Term t
-constructBinary tag tm1 tm2 =
-  let ret = intern $ UBinaryTerm tag tm1 tm2
-   in addToReverseCache ret `seq` ret
+constructBinary tag tm1 tm2 = internTerm $ UBinaryTerm tag tm1 tm2
 
 constructTernary ::
   forall tag arg1 arg2 arg3 t.
@@ -364,19 +379,13 @@ constructTernary ::
   Term arg2 ->
   Term arg3 ->
   Term t
-constructTernary tag tm1 tm2 tm3 =
-  let ret = intern $ UTernaryTerm tag tm1 tm2 tm3
-   in addToReverseCache ret `seq` ret
+constructTernary tag tm1 tm2 tm3 = internTerm $ UTernaryTerm tag tm1 tm2 tm3
 
 concTerm :: (SupportedPrim t, Typeable t, Hashable t, Eq t, Show t) => t -> Term t
-concTerm t =
-  let ret = intern $ UConcTerm t
-   in addToReverseCache ret `seq` ret
+concTerm t = internTerm $ UConcTerm t
 
 symbTerm :: forall t. (SupportedPrim t, Typeable t) => Symbol -> Term t
-symbTerm t =
-  let ret = intern $ USymbTerm (TermSymbol (Proxy @t) t)
-   in addToReverseCache ret `seq` ret
+symbTerm t = internTerm $ USymbTerm (TermSymbol (Proxy @t) t)
 
 ssymbTerm :: (SupportedPrim t, Typeable t) => String -> Term t
 ssymbTerm = symbTerm . SimpleSymbol
