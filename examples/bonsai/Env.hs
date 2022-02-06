@@ -51,6 +51,19 @@ envResolve err env k = do
     envResolveSingle [] = throwError err
     envResolveSingle ((n, v) : xs) = mrgGuard (n ==~ k) (lift v) $ envResolveSingle xs
 
+envResolveU ::
+  (Mergeable SymBool t, KnownNat n, 1 <= n) =>
+  BonsaiError ->
+  Env n t ->
+  SymUnsignedBV n ->
+  ExceptT BonsaiError UnionM (UnionM t)
+envResolveU err env k = do
+  e <- lift env
+  envResolveSingle e
+  where
+    envResolveSingle [] = throwError err
+    envResolveSingle ((n, v) : xs) = mrgGuard (n ==~ k) (return v) $ envResolveSingle xs
+
 envResolve' ::
   forall n t.
   (Mergeable SymBool t, KnownNat n, 1 <= n) =>

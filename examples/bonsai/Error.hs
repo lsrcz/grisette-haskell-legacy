@@ -9,7 +9,7 @@ data BonsaiError
   = BonsaiTypeError
   | BonsaiExecError
   | BonsaiRecursionError
-  deriving (Show, Eq, Generic, Mergeable SymBool, ToCon BonsaiError, NFData)
+  deriving (Show, Eq, Generic, Mergeable SymBool, ToCon BonsaiError, NFData, SymEval Model)
 
 instance TransformError BonsaiError BonsaiError where
   transformError = id

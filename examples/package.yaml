@@ -73,9 +73,9 @@ executables:
   order:
     source-dirs: order
     main: Main.hs
-  location:
-    source-dirs: location
-    main: Main.hs
+  #location:
+  #  source-dirs: location
+  #  main: Main.hs
   genfunc:
     source-dirs: genfunc
     main: Main.hs
@@ -83,9 +83,9 @@ executables:
     source-dirs: fluidics
     main: Main.hs
     dependencies: grisette-examples
-  cosette:
-    source-dirs: cosette
-    main: Benchmark/Main.hs
+  #cosette:
+  #  source-dirs: cosette
+  #  main: Benchmark/Main.hs
   expr-sketch:
     source-dirs: expr-sketch
     main: Main.hs

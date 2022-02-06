@@ -5,11 +5,17 @@ import Control.Monad.Except
 import qualified Data.ByteString as B
 import GHC.TypeLits
 import Grisette.SymPrim.Term
+import qualified Data.ByteString.Char8 as C
 
 data Pattern n where
   LiteralPattern :: B.ByteString -> Pattern 0
   PlaceHolder :: Pattern 1
   PairPattern :: Pattern n -> Pattern m -> Pattern (n + m)
+
+instance Show (Pattern n) where
+  show (LiteralPattern x) = C.unpack x
+  show PlaceHolder = "_"
+  show (PairPattern l r) = "(" ++ show l ++ ", " ++ show r ++ ")"
 
 (*=) :: Pattern n -> Pattern m -> Pattern (n + m)
 (*=) = PairPattern
