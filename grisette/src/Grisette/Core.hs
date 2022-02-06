@@ -64,6 +64,7 @@ module Grisette.Core
     enum',
     mrgLift,
     UnionMBase,
+    IsConcrete,
     AssertionError (..),
     VerificationConditions (..),
     mrgReturn,

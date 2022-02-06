@@ -6,6 +6,7 @@
 
 module Grisette.Control.Monad.UnionMBase
   ( UnionMBase (..),
+    IsConcrete,
     underlyingUnion,
     isMerged,
     (#~),
@@ -36,6 +37,7 @@ import Grisette.Data.UnionBase
 import Language.Haskell.TH.Syntax
 import Data.MemoTrie
 import Grisette.Data.MemoUtils
+import qualified Data.HashMap.Lazy as HML
 
 data UnionMBase bool a where
   UAny :: IORef (Either (UnionBase bool a) (UnionMBase bool a)) -> UnionBase bool a -> UnionMBase bool a
@@ -272,3 +274,16 @@ sequenceAUnion (Guard _ _ cond l r) = guard cond <$> sequenceAUnion l <*> sequen
 
 instance (SymBoolOp bool) => Traversable (UnionMBase bool) where
   sequenceA u = freshUAny <$> sequenceAUnion (underlyingUnion u)
+
+class (Eq t, Ord t, Hashable t) => IsConcrete t
+
+instance IsConcrete Bool
+
+instance IsConcrete Integer
+
+instance (SymBoolOp bool, IsConcrete k, Mergeable bool t) => Mergeable bool (HML.HashMap k (UnionMBase bool t)) where
+  mergeStrategy = SimpleStrategy mrgIf
+
+instance (SymBoolOp bool, IsConcrete k, Mergeable bool t) => SimpleMergeable bool (HML.HashMap k (UnionMBase bool t)) where
+  mrgIf cond l r = HML.unionWith (mrgGuard cond) l r
+
