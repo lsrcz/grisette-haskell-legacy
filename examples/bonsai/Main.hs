@@ -6,9 +6,9 @@ import LetPolyMain
 
 main :: IO ()
 main = do
-  --putStrLn "SLTC"
-  --stlcMain
-  --putStrLn "DOT"
-  --dotMain
+  putStrLn "SLTC"
+  stlcMain
+  putStrLn "DOT"
+  dotMain
   putStrLn "LetPoly"
   letPolyMain

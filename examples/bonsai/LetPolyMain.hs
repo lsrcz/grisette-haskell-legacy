@@ -27,7 +27,7 @@ testTyperAndEval t = do
   print $ eval t
 
 f7 :: UnionM LetPolyTree
-f7 = genSym (6 :: Int) "a"
+f7 = genSym (7 :: Int) "a"
 
 
 letPolyMain :: IO ()

@@ -117,9 +117,9 @@ tyMatch = bonsaiMatchCustomError BonsaiTypeError letPolySyntax
 typeCompatible :: LetPolyTree -> LetPolyTree -> ExceptT BonsaiError UnionM ()
 typeCompatible = memo2 $ \current expect ->
   tyMatch
-    [ literal "int" ==> tyassert (current ==~ intTy),
-      literal "bool" ==> tyassert (current ==~ boolTy),
-      literal "any" ==> return (),
+    [ literal "int" ==> (tyassert $! current ==~ intTy),
+      literal "bool" ==> (tyassert $! current ==~ boolTy),
+      literal "any" ==> (return $! ()),
       literal "ref" *= placeHolder ==> \t1 ->
         tyMatch
           [ literal "ref" *= placeHolder ==> \t2 ->
@@ -154,19 +154,19 @@ derefTy = tyMatch [literal "ref" *= placeHolder ==> return]
 typer' :: LetPolyTree -> Env LetPolyWidth LetPolyTree -> ExceptT BonsaiError UnionM (UnionM LetPolyTree)
 typer' = memo2 $ \tree env ->
   tyMatch
-    [ literal "true" ==> return (mrgSingle boolTy),
-      literal "one" ==> return (mrgSingle intTy),
+    [ literal "true" ==> (return $! mrgSingle boolTy),
+      literal "one" ==> (return $! mrgSingle intTy),
       literal "!" *= placeHolder ==> \v -> do
         t <- typer' #~ v # env
         typeCompatible #~ t # boolTy
-        return $ mrgSingle boolTy,
+        return $! mrgSingle boolTy,
       literal "-" *= placeHolder ==> \v -> do
         t <- typer' #~ v # env
         typeCompatible #~ t # intTy
-        return $ mrgSingle intTy,
+        return $! mrgSingle intTy,
       literal "&" *= placeHolder ==> \v -> do
         t <- typer' #~ v # env
-        return $ mrgSingle $ refTyU t,
+        return $! mrgSingle $ refTyU t,
       literal "*" *= placeHolder ==> \v -> do
         t <- typer' #~ v # env
         derefTy #~ t,
@@ -188,7 +188,7 @@ typer' = memo2 $ \tree env ->
         isValidName BonsaiTypeError n
         let newenv = envAdd env n ty
         exprTy <- typer' #~ expr # newenv
-        return $ mrgSingle $ arrowTyU ty exprTy,
+        return $! mrgSingle $ arrowTyU ty exprTy,
       literal "call" *= (placeHolder *= placeHolder) ==> \func arg -> do
         ft <- typer' #~ func # env
         ftx <- lift ft
@@ -196,8 +196,8 @@ typer' = memo2 $ \tree env ->
           BonsaiNode funcArgTy funcResTy -> do
             argTy <- typer' #~ arg # env
             typeCompatible #~ argTy #~ funcArgTy
-            return funcResTy
-          _ -> throwError BonsaiTypeError,
+            return $! funcResTy
+          _ -> throwError $! BonsaiTypeError,
       placeHolder ==> \v -> do
         n <- extractName BonsaiTypeError v
         envResolveU BonsaiTypeError env n
