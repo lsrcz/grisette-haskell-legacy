@@ -76,3 +76,8 @@ instance SymGenSimple SymBool MovingExprSpec (CoordExpr -> UnionM MovingExpr) wh
 
 
 genSymIndexed, genSymSimpleIndexed, genSym
+
+symCoord = genSym @SymBool () "coord" 
+doSynthesis (someSketch symCoord)
+...
+    Right v -> output_x ==~ input_x + 1 &&~ ouptput_y ==~ input_y

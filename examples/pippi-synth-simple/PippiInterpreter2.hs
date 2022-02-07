@@ -245,7 +245,8 @@ instance SymGen SymBool (MovingExprSpec, MovingExpr) MovingExpr where
 
 -- instance SymGenSimple SymBool MovingExprSpec (CoordExpr -> UnionM MovingOpExpr) where
 --   genSymSimpleIndexed (MovingExprSpec d) = do
---     e <- genSymSimpleIndexed @SymBool (MovingExprSpec (d - 1))
+--     -- e <- genSymSimpleIndexed @SymBool (MovingExprSpec (d - 1))
+--     e <- genSymIndexed @SymBool (MovingExprSpec (d - 1))
 --     r <- choose
 --             ( mrgSingle . MoveUp    . e)
 --             [ mrgSingle . MoveDown  . e,
@@ -265,6 +266,7 @@ instance SymGen SymBool (MovingExprSpec, MovingExpr) MovingExpr where
 
 --       r <- choose (mrgSingle . Coord) 
 --                   [mrgSingle . MovingVarExpr . v]
+      
 --       return $ getSingle @SymBool r
 
 --     else do
@@ -278,10 +280,11 @@ instance SymGen SymBool (MovingExprSpec, MovingExpr) MovingExpr where
 --               ]
 --       return $ getSingle @SymBool r
 
+
+-- TODO might need to figure out later.... <3 
 -- instance SymGen SymBool MovingExprSpec (CoordExpr -> UnionM MovingStmt) where
 --   genSymIndexed v = genSymSimpleIndexed @SymBool v
 
--- TODO might need to figure out later.... <3 
 -- instance SymGenSimple SymBool MovingExprSpec (CoordExpr -> UnionM MovingStmt) where
 --   genSymSimpleIndexed e = do
 

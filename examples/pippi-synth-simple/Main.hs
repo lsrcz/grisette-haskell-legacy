@@ -73,8 +73,13 @@ sketchWithArg = toSym
 -- sketch1 :: CoordExpr -> UnionM [UnionM MovingExpr]
 -- sketch1 = genSketchBetter (ListSpec 0 1 (MovingExprSpec 2)) "a"
 
--- arg :: UnionM CoordExpr
--- arg = genSym @SymBool () "coord" 
+arg :: UnionM CoordExpr
+arg = genSym @SymBool () "coord" 
+
+-- getCoordinates = do
+--   argConc <- lift arg
+--   case argConc of
+--     _ -> printf "arg: ~s\n" (show argConc)
 
 -- fullArgSketch :: UnionM [UnionM MovingStmt]
 -- fullArgSketch = do
@@ -86,11 +91,12 @@ sketchWithArg = toSym
 --
 main :: IO ()
 main = do
-  -- printingVars
-  verifyTypeChecker
+  -- getCoordinates
+  printingVars
+  -- verifyTypeChecker
   -- synthesisAttempt
   -- sketchArgumentTrial
-  synthesisHoleWithArg
+  -- synthesisHoleWithArg
 
 
 --
@@ -106,6 +112,7 @@ printingVars = do
   printf "e1: %s\n" (show e1)
   printf "e2: %s\n" (show e2)
   printf "sketchSimple: %s\n" (show sketchSimple)
+  printf "arg: %s\n" (show arg)
   printEnd
 
 verifyTypeChecker :: IO ()
@@ -136,6 +143,25 @@ synthesisAttempt = do
       ( \case
           Left _ -> conc @SymBool False
           Right v -> (v ==~ CoordLit 1 1)
+      )
+      u of
+      SingleU x -> x
+      _ -> error "Bad"
+  case m of
+    Right mm -> do
+      printf "Found Solution:\n"
+      print $ fromJust (toCon $ symeval True mm sketchSimple :: Maybe [ConcMovingStmt])
+    Left _ -> print "Couldn't find solution :("
+  printEnd
+
+synthesisAttempt2 :: IO ()
+synthesisAttempt2 = do
+  printBeginning "Attempting Synthesis 2"
+  m <- solveWith (UnboundedReasoning z3 {verbose = doVerbose}) $ case checkAndInterpretStmtUListU sketchSimple of
+    ExceptT u -> case mrgFmap
+      ( \case
+          Left _ -> conc @SymBool False
+          Right (CoordLit x y) -> conc @SymBool True -- (v ==~ CoordLit 1 1)
       )
       u of
       SingleU x -> x
