@@ -31,10 +31,10 @@ c1 :: CoordExpr
 c1 = CoordLit (ssymb "a") (ssymb "b")
 
 e1 :: MovingExpr
-e1 = Coord c1
+e1 = Coord $ mrgSingle c1
 
 e2 :: MovingExpr
-e2 = Moving (MoveUp $ mrgSingle $ e1)
+e2 = Moving $ mrgSingle $ MoveUp $ mrgSingle $ e1
 
 --
 -- | Sketches
@@ -45,12 +45,12 @@ sketchEmpty = genSym (ListSpec 0 2 (MovingExprSpec 2)) "a"
 sketchSimple :: UnionM [UnionM MovingStmt]
 sketchSimple = toSym
   [ MovingDefineStmt (ssymb "a") $
-      mrgSingle $ Coord $ CoordLit (ssymb "b") (ssymb "c"),
+      mrgSingle $ Coord $ mrgSingle $ CoordLit (ssymb "b") (ssymb "c"),
     MovingValueStmt $ mrgSingle $ MovingVarExpr $ ssymb "a"
   ]
 
 c2 :: MovingExpr 
-c2 = (Coord $ CoordLit 10 10)
+c2 = (Coord $ mrgSingle $ CoordLit 10 10)
 
 var1 :: SymInteger
 var1 = conc 1
@@ -62,24 +62,24 @@ sketchWithArg :: UnionM [UnionM MovingStmt]
 sketchWithArg = toSym
   [ MovingDefineStmt var1 $
       mrgSingle $ c2,
-    -- MovingValueStmt $ Moving <$> genSym ((MovingExprSpec 2), c2) "b" 
-    MovingValueStmt $ Moving <$> genSym ((MovingExprSpec 5), c3) "b" 
+    -- MovingValueStmt $ Moving $ genSym ((MovingExprSpec 2), c2) "b" 
+    MovingValueStmt $ mrgSingle $ Moving $ genSym ((MovingExprSpec 5), c3) "b" 
   ]
 
 -- Sirui Argument Trial 
-genSketchBetter :: ListSpec MovingExprSpec -> String -> CoordExpr -> UnionM [UnionM MovingExpr]
-genSketchBetter (ListSpec minl maxl movingSpec) = genSymSimple @SymBool (ListSpec minl maxl movingSpec)
+-- genSketchBetter :: ListSpec MovingExprSpec -> String -> CoordExpr -> UnionM [UnionM MovingExpr]
+-- genSketchBetter (ListSpec minl maxl movingSpec) = genSymSimple @SymBool (ListSpec minl maxl movingSpec)
 
-sketch1 :: CoordExpr -> UnionM [UnionM MovingExpr]
-sketch1 = genSketchBetter (ListSpec 0 1 (MovingExprSpec 2)) "a"
+-- sketch1 :: CoordExpr -> UnionM [UnionM MovingExpr]
+-- sketch1 = genSketchBetter (ListSpec 0 1 (MovingExprSpec 2)) "a"
 
-arg :: UnionM CoordExpr
-arg = genSym @SymBool () "coord" 
+-- arg :: UnionM CoordExpr
+-- arg = genSym @SymBool () "coord" 
 
-fullArgSketch :: UnionM [UnionM MovingStmt]
-fullArgSketch = do
-  l <- arg >>= sketch1 -- l :: [UnionM MovingExpr]
-  mrgReturn $ (mrgSingle . MovingValueStmt) <$> l
+-- fullArgSketch :: UnionM [UnionM MovingStmt]
+-- fullArgSketch = do
+--   l <- arg >>= sketch1 -- l :: [UnionM MovingExpr]
+--   mrgReturn $ (mrgSingle . MovingValueStmt) <$> l
   
 --
 -- | Main
@@ -166,24 +166,24 @@ synthesisHoleWithArg = do
     Left _ -> print "Couldn't find solution :("
   printEnd
 
-sketchArgumentTrial :: IO ()
-sketchArgumentTrial = do
-  printBeginning "Attempting Sketch Argument"
-  m <- solveWith (UnboundedReasoning z3 {verbose = doVerbose}) $ case checkAndInterpretStmtUListU fullArgSketch of
-    ExceptT u -> case mrgFmap
-      ( \case
-          Left _ -> conc @SymBool False
-          Right v -> (v ==~ CoordLit 100 100)
-      )
-      u of
-      SingleU x -> x
-      _ -> error "Bad"
-  case m of
-    Right mm -> do
-      printf "Found Solution:\n"
-      print $ fromJust (toCon $ symeval True mm fullArgSketch :: Maybe [ConcMovingStmt])
-    Left _ -> print "Couldn't find solution :("
-  printEnd
+-- sketchArgumentTrial :: IO ()
+-- sketchArgumentTrial = do
+--   printBeginning "Attempting Sketch Argument"
+--   m <- solveWith (UnboundedReasoning z3 {verbose = doVerbose}) $ case checkAndInterpretStmtUListU fullArgSketch of
+--     ExceptT u -> case mrgFmap
+--       ( \case
+--           Left _ -> conc @SymBool False
+--           Right v -> (v ==~ CoordLit 100 100)
+--       )
+--       u of
+--       SingleU x -> x
+--       _ -> error "Bad"
+--   case m of
+--     Right mm -> do
+--       printf "Found Solution:\n"
+--       print $ fromJust (toCon $ symeval True mm fullArgSketch :: Maybe [ConcMovingStmt])
+--     Left _ -> print "Couldn't find solution :("
+--   printEnd
 
 --
 -- | Printing

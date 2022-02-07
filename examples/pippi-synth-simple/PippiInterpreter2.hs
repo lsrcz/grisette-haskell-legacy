@@ -37,8 +37,10 @@ wrapInParens input = "(" ++ input ++ ")"
 -- | Data Types
 --
 data MovingExpr 
-   = Coord CoordExpr
-   | Moving MovingOpExpr
+   = Coord (UnionM CoordExpr)
+   | Moving (UnionM MovingOpExpr)
+  --  = Coord CoordExpr
+  --  | Moving MovingOpExpr
    | MovingVarExpr SymInteger
    deriving (Generic, Show, Eq, ToSym ConcMovingExpr)
 
@@ -149,20 +151,24 @@ instance SymGen SymBool MovingExprSpec MovingOpExpr where
           ]
 
 instance SymGen SymBool MovingExprSpec MovingExpr where
-  genSymIndexed spec@(MovingExprSpec d) = merge <$> 
+  genSymIndexed spec@(MovingExprSpec d) = -- merge <$> 
     if d <= 0
       then do
-        coord   <- genSymSimpleIndexed @SymBool ()
-        varName <- genSymSimpleIndexed @SymBool ()
+        -- coord   <- genSymSimpleIndexed @SymBool ()
+        -- varName <- genSymSimpleIndexed @SymBool ()
+        -- chooseU (Coord <$> coord) [MovingVarExpr <$> varName]
         
-        chooseU (Coord <$> coord) [MovingVarExpr <$> varName]
+        coord   <- genSymIndexed @SymBool ()
+        varName <- genSymSimpleIndexed @SymBool ()
+
+        choose (Coord coord) [MovingVarExpr varName]
       
       else do
         coord   <- genSymIndexed @SymBool ()
         moving  <- genSymIndexed @SymBool spec
         varName <- genSymSimpleIndexed @SymBool ()
         
-        chooseU (Coord <$> coord) [Moving <$> moving, MovingVarExpr <$> varName]
+        choose (Coord coord) [Moving moving, MovingVarExpr varName]
 
 instance SymGen SymBool MovingExprSpec MovingStmt where
   genSymIndexed spec = do
@@ -186,23 +192,28 @@ instance SymGen SymBool (MovingExprSpec, MovingExpr) MovingOpExpr where
 
 instance SymGen SymBool (MovingExprSpec, MovingExpr) MovingExpr where
   genSymIndexed (spec@(MovingExprSpec d), arg) = case arg of
-    (Coord coord) -> merge <$>
+    (Coord coord) -> -- merge <$>
       if d <= 0
         then do
-          return $ mrgSingle $ Coord $ toSym coord
+          -- mrgReturn $ Coord coord
+          choose (Coord coord) []
+          -- return $ mrgSingle $ Coord $ toSym coord
         else do
           moving <- genSymIndexed @SymBool (spec, (Coord coord))
           
-          chooseU (Coord <$> (toSym coord)) [Moving <$> moving]
+          -- chooseU (Coord <$> (toSym coord)) [Moving <$> moving]
+          choose (Coord coord) [Moving moving]
     
-    (MovingVarExpr var) -> merge <$> 
+    (MovingVarExpr var) -> -- merge <$> 
       if d <= 0
         then do
-          return $ mrgSingle $ MovingVarExpr var
+          -- mrgReturn $ MovingVarExpr var
+          choose (MovingVarExpr var) []
         else do
           moving <- genSymIndexed @SymBool (spec, MovingVarExpr var)
           
-          chooseU (MovingVarExpr <$> (toSym var)) [Moving <$> moving]
+          -- chooseU (MovingVarExpr <$> (toSym var)) [Moving <$> moving]
+          choose (MovingVarExpr var) [Moving moving]
     
     _ -> error "shouldn't ever be here!"
     
@@ -220,55 +231,55 @@ instance SymGen SymBool (MovingExprSpec, MovingExpr) MovingExpr where
 --
 -- | SymGen Instances With Function Arguments
 --
-instance SymGen SymBool () (CoordExpr -> SymInteger) where
-  genSymIndexed v = genSymSimpleIndexed @SymBool v
+-- instance SymGen SymBool () (CoordExpr -> SymInteger) where
+--   genSymIndexed v = genSymSimpleIndexed @SymBool v
 
-instance SymGenSimple SymBool () (CoordExpr -> SymInteger) where
-  genSymSimpleIndexed _ = do
-    v <- genSymSimpleIndexed @SymBool ()
-    return $ const v
+-- instance SymGenSimple SymBool () (CoordExpr -> SymInteger) where
+--   genSymSimpleIndexed _ = do
+--     v <- genSymSimpleIndexed @SymBool ()
+--     return $ const v
 
 
-instance SymGen SymBool MovingExprSpec (CoordExpr -> UnionM MovingOpExpr) where
-  genSymIndexed v = genSymSimpleIndexed @SymBool v
+-- instance SymGen SymBool MovingExprSpec (CoordExpr -> UnionM MovingOpExpr) where
+--   genSymIndexed v = genSymSimpleIndexed @SymBool v
 
-instance SymGenSimple SymBool MovingExprSpec (CoordExpr -> UnionM MovingOpExpr) where
-  genSymSimpleIndexed (MovingExprSpec d) = do
-    e <- genSymSimpleIndexed @SymBool (MovingExprSpec (d - 1))
-    r <- choose
-            ( mrgSingle . MoveUp    . e)
-            [ mrgSingle . MoveDown  . e,
-              mrgSingle . MoveLeft  . e,
-              mrgSingle . MoveRight . e
-            ]
-    return $ getSingle @SymBool r
+-- instance SymGenSimple SymBool MovingExprSpec (CoordExpr -> UnionM MovingOpExpr) where
+--   genSymSimpleIndexed (MovingExprSpec d) = do
+--     e <- genSymSimpleIndexed @SymBool (MovingExprSpec (d - 1))
+--     r <- choose
+--             ( mrgSingle . MoveUp    . e)
+--             [ mrgSingle . MoveDown  . e,
+--               mrgSingle . MoveLeft  . e,
+--               mrgSingle . MoveRight . e
+--             ]
+--     return $ getSingle @SymBool r
 
-instance SymGen SymBool MovingExprSpec (CoordExpr -> UnionM MovingExpr) where
-  genSymIndexed v = genSymSimpleIndexed @SymBool v
+-- instance SymGen SymBool MovingExprSpec (CoordExpr -> UnionM MovingExpr) where
+--   genSymIndexed v = genSymSimpleIndexed @SymBool v
 
-instance SymGenSimple SymBool MovingExprSpec (CoordExpr -> UnionM MovingExpr) where
-  genSymSimpleIndexed spec@(MovingExprSpec d) =
-   if d <= 0
-    then do
-      v <- genSymSimpleIndexed @SymBool ()
+-- instance SymGenSimple SymBool MovingExprSpec (CoordExpr -> UnionM MovingExpr) where
+--   genSymSimpleIndexed spec@(MovingExprSpec d) =
+--    if d <= 0
+--     then do
+--       v <- genSymSimpleIndexed @SymBool ()
 
-      r <- choose (mrgSingle . Coord) 
-                  [mrgSingle . MovingVarExpr . v]
-      return $ getSingle @SymBool r
+--       r <- choose (mrgSingle . Coord) 
+--                   [mrgSingle . MovingVarExpr . v]
+--       return $ getSingle @SymBool r
 
-    else do
-      moving <- genSymSimpleIndexed @SymBool spec
-      v <- genSymSimpleIndexed @SymBool ()
+--     else do
+--       moving <- genSymSimpleIndexed @SymBool spec
+--       v <- genSymSimpleIndexed @SymBool ()
 
-      r <- choose
-              ( mrgSingle . Coord)
-              [ mrgSingle . MovingVarExpr . v,
-                (mrgFmap    Moving)       . moving
-              ]
-      return $ getSingle @SymBool r
+--       r <- choose
+--               ( mrgSingle . Coord)
+--               [ mrgSingle . MovingVarExpr . v,
+--                 (mrgFmap    Moving)       . moving
+--               ]
+--       return $ getSingle @SymBool r
 
-instance SymGen SymBool MovingExprSpec (CoordExpr -> UnionM MovingStmt) where
-  genSymIndexed v = genSymSimpleIndexed @SymBool v
+-- instance SymGen SymBool MovingExprSpec (CoordExpr -> UnionM MovingStmt) where
+--   genSymIndexed v = genSymSimpleIndexed @SymBool v
 
 -- TODO might need to figure out later.... <3 
 -- instance SymGenSimple SymBool MovingExprSpec (CoordExpr -> UnionM MovingStmt) where
@@ -321,26 +332,64 @@ instance Mergeable (Sym Bool) MovingType
 
 typeCheckU :: TypingEnv -> UnionM MovingExpr -> ExceptT MovingError UnionM MovingType
 typeCheckU env u = lift u >>= typeCheck env
+-- typeCheckU env e = do
+--   concE <- lift e
+--   case concE of
+--     _ -> typeCheck env concE
 
 typeCheck :: TypingEnv -> MovingExpr -> ExceptT MovingError UnionM MovingType
-typeCheck _ (Coord (CoordLit _ _)) = mrgReturn CoordType
-typeCheck _ (Coord UnitLit) = mrgReturn UnitType
-typeCheck env (Moving (MoveUp e)) = do
-  et <- typeCheckU env e
-  merge $ if et == CoordType then return CoordType else throwError $ MovingTyper TypeMismatch
-typeCheck env (Moving (MoveDown e)) = do
-  et <- typeCheckU env e
-  merge $ if et == CoordType then return CoordType else throwError $ MovingTyper TypeMismatch
-typeCheck env (Moving (MoveLeft e)) = do
-  et <- typeCheckU env e
-  merge $ if et == CoordType then return CoordType else throwError $ MovingTyper TypeMismatch
-typeCheck env (Moving (MoveRight e)) = do
-  et <- typeCheckU env e
-  merge $ if et == CoordType then return CoordType else throwError $ MovingTyper TypeMismatch
+typeCheck _ (Coord coord) = do
+  concCoord <- lift coord
+  case concCoord of
+    UnitLit -> mrgReturn UnitType
+    (CoordLit _ _) -> mrgReturn CoordType
+typeCheck env (Moving symExpr) = do
+  concMove <- lift symExpr
+  case concMove of 
+    (MoveUp e) -> movementTypeCheck env e
+    (MoveDown e) -> movementTypeCheck env e
+    (MoveLeft e) -> movementTypeCheck env e
+    (MoveRight e) -> movementTypeCheck env e
 typeCheck env (MovingVarExpr i) = resolveEnv env i
+-- typeCheck _ (Coord UnitLit) = mrgReturn UnitType
+-- typeCheck env (Moving (MoveDown e)) = do
+--   et <- typeCheckU env e
+--   merge $ if et == CoordType then return CoordType else throwError $ MovingTyper TypeMismatch
+-- typeCheck env (Moving (MoveLeft e)) = do
+--   et <- typeCheckU env e
+--   merge $ if et == CoordType then return CoordType else throwError $ MovingTyper TypeMismatch
+-- typeCheck env (Moving (MoveRight e)) = do
+--   et <- typeCheckU env e
+--   merge $ if et == CoordType then return CoordType else throwError $ MovingTyper TypeMismatch
+-- typeCheck env (MovingVarExpr i) = resolveEnv env i
   where
     resolveEnv [] _ = merge $ throwError $ MovingTyper MovingTypeVarNotFound
     resolveEnv ((hdi, hdt) : tl) i1 = mrgIf @SymBool (hdi ==~ i1) (lift hdt) $ resolveEnv tl i1
+
+movementTypeCheck :: TypingEnv -> UnionM MovingExpr -> ExceptT MovingError UnionM MovingType
+movementTypeCheck env e = do
+  et <- typeCheckU env e
+  merge $ if et == CoordType then return CoordType else throwError $ MovingTyper TypeMismatch
+
+-- typeCheckOld :: TypingEnv -> MovingExpr -> ExceptT MovingError UnionM MovingType
+-- typeCheckOld _ (Coord (CoordLit _ _)) = mrgReturn CoordType
+-- typeCheckOld _ (Coord UnitLit) = mrgReturn UnitType
+-- typeCheckOld env (Moving (MoveUp e)) = do
+--   et <- typeCheckU env e
+--   merge $ if et == CoordType then return CoordType else throwError $ MovingTyper TypeMismatch
+-- typeCheckOld env (Moving (MoveDown e)) = do
+--   et <- typeCheckU env e
+--   merge $ if et == CoordType then return CoordType else throwError $ MovingTyper TypeMismatch
+-- typeCheckOld env (Moving (MoveLeft e)) = do
+--   et <- typeCheckU env e
+--   merge $ if et == CoordType then return CoordType else throwError $ MovingTyper TypeMismatch
+-- typeCheckOld env (Moving (MoveRight e)) = do
+--   et <- typeCheckU env e
+--   merge $ if et == CoordType then return CoordType else throwError $ MovingTyper TypeMismatch
+-- typeCheckOld env (MovingVarExpr i) = resolveEnv env i
+--   where
+--     resolveEnv [] _ = merge $ throwError $ MovingTyper MovingTypeVarNotFound
+--     resolveEnv ((hdi, hdt) : tl) i1 = mrgIf @SymBool (hdi ==~ i1) (lift hdt) $ resolveEnv tl i1
 
 typeCheckStmt :: MovingStmt -> StateT TypingEnv (ExceptT MovingError UnionM) MovingType
 typeCheckStmt (MovingDefineStmt i expr) = StateT $ \st -> mrgFmap (\t -> (UnitType, (i, mrgSingle t) : st)) $ typeCheckU st expr
@@ -397,20 +446,72 @@ interpretU :: ExecutingEnv -> UnionM MovingExpr -> ExceptT MovingError UnionM Co
 interpretU env u = mrgLift u >>= interpret env
 
 interpret :: ExecutingEnv -> MovingExpr -> ExceptT MovingError UnionM CoordExpr
-interpret _ (Coord c) = mrgReturn c
-interpret env (Moving (MoveUp e)) = do
+interpret _ (Coord c) = lift c >>= return
+interpret env (Moving e) = do
+  concMove <- mrgLift e
+  interpretMovement env concMove
+interpret env (MovingVarExpr i) = reduceValue env i
+
+interpretMovement :: ExecutingEnv -> MovingOpExpr -> ExceptT MovingError UnionM CoordExpr
+interpretMovement env (MoveUp e) = do
   ev <- interpretU env e
   reduceMoveUp ev
-interpret env (Moving (MoveDown e)) = do
+interpretMovement env (MoveDown e) = do
   ev <- interpretU env e
   reduceMoveDown ev
-interpret env (Moving (MoveLeft e)) = do
+interpretMovement env (MoveLeft e) = do
   ev <- interpretU env e
   reduceMoveLeft ev
-interpret env (Moving (MoveRight e)) = do
+interpretMovement env (MoveRight e) = do
   ev <- interpretU env e
   reduceMoveRight ev
-interpret env (MovingVarExpr i) = reduceValue env i
+
+
+-- interpret env (Moving (MoveUp e)) = do
+--   ev <- interpretU env e
+--   reduceMoveUp ev
+-- interpret env (Moving (MoveDown e)) = do
+--   ev <- interpretU env e
+--   reduceMoveDown ev
+-- interpret env (Moving (MoveLeft e)) = do
+--   ev <- interpretU env e
+--   reduceMoveLeft ev
+-- interpret env (Moving (MoveRight e)) = do
+--   ev <- interpretU env e
+--   reduceMoveRight ev
+-- interpret env (MovingVarExpr i) = reduceValue env i
+
+-- typeCheck env (Coord coord) = do
+--   concCoord <- lift coord
+--   case concCoord of
+--     UnitLit -> mrgReturn UnitType
+--     (CoordLit _ _) -> mrgReturn CoordType
+-- typeCheck env (Moving e) = do
+--   concMove <- lift e
+--   case concMove of 
+--     (MoveUp e) -> movementTypeCheck env e
+--     (MoveDown e) -> movementTypeCheck env e
+--     (MoveLeft e) -> movementTypeCheck env e
+--     (MoveRight e) -> movementTypeCheck env e
+-- typeCheck env (MovingVarExpr i) = resolveEnv env i
+
+
+
+-- interpretOld :: ExecutingEnv -> MovingExpr -> ExceptT MovingError UnionM CoordExpr
+-- interpretOld _ (Coord c) = mrgReturn c
+-- interpretOld env (Moving (MoveUp e)) = do
+--   ev <- interpretU env e
+--   reduceMoveUp ev
+-- interpretOld env (Moving (MoveDown e)) = do
+--   ev <- interpretU env e
+--   reduceMoveDown ev
+-- interpretOld env (Moving (MoveLeft e)) = do
+--   ev <- interpretU env e
+--   reduceMoveLeft ev
+-- interpretOld env (Moving (MoveRight e)) = do
+--   ev <- interpretU env e
+--   reduceMoveRight ev
+-- interpretOld env (MovingVarExpr i) = reduceValue env i
 
 interpretStmt :: MovingStmt -> StateT ExecutingEnv (ExceptT MovingError UnionM) CoordExpr
 interpretStmt (MovingDefineStmt i expr) = StateT $ \st -> mrgFmap (\t -> (UnitLit, (i, mrgSingle t) : st)) $ interpretU st expr
