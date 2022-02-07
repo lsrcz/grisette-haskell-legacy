@@ -46,14 +46,17 @@ wrapMergeStrategy (OrderedStrategy idxFun substrategy) wrap unwrap =
     (idxFun . unwrap)
     (memo $ \idx -> wrapMergeStrategy (substrategy idx) wrap unwrap)
 wrapMergeStrategy NoStrategy _ _ = NoStrategy
+{-# INLINE wrapMergeStrategy #-}
 
 class Mergeable bool a where
   mergeStrategy :: MergeStrategy bool a
   default mergeStrategy :: (Generic a, Mergeable' bool (Rep a)) => MergeStrategy bool a
   mergeStrategy = derivedMergeStrategy
+  {-# NOINLINE mergeStrategy #-}
 
 derivedMergeStrategy :: (Generic a, Mergeable' bool (Rep a)) => MergeStrategy bool a
 derivedMergeStrategy = wrapMergeStrategy mergeStrategy' to from
+{-# INLINE derivedMergeStrategy #-}
 
 class Mergeable1 bool (u :: * -> *) where
   withMergeableT :: forall a t. (Mergeable bool a) => (Mergeable bool (u a) => t a) -> t a
@@ -74,15 +77,19 @@ class Mergeable' bool f where
 
 instance Mergeable' bool U1 where
   mergeStrategy' = SimpleStrategy (\_ t _ -> t)
+  {-# INLINE mergeStrategy' #-}
 
 instance Mergeable' bool V1 where
   mergeStrategy' = SimpleStrategy (\_ t _ -> t)
+  {-# INLINE mergeStrategy' #-}
 
 instance (Mergeable bool c) => Mergeable' bool (K1 i c) where
   mergeStrategy' = wrapMergeStrategy mergeStrategy K1 unK1
+  {-# INLINE mergeStrategy' #-}
 
 instance (Mergeable' bool a) => Mergeable' bool (M1 i c a) where
   mergeStrategy' = wrapMergeStrategy mergeStrategy' M1 unM1
+  {-# INLINE mergeStrategy' #-}
 
 instance (Mergeable' bool a, Mergeable' bool b) => Mergeable' bool (a :+: b) where
   mergeStrategy' =
@@ -96,6 +103,7 @@ instance (Mergeable' bool a, Mergeable' bool b) => Mergeable' bool (a :+: b) whe
             then wrapMergeStrategy mergeStrategy' L1 (\(L1 v) -> v)
             else wrapMergeStrategy mergeStrategy' R1 (\(R1 v) -> v)
       )
+  {-# INLINE mergeStrategy' #-}
 
 wrapMergeStrategy2 ::
   (a -> b -> r) ->
@@ -115,9 +123,11 @@ wrapMergeStrategy2 wrap unwrap strategy1 strategy2 =
       OrderedStrategy (idxf . snd . unwrap) (memo $ wrapMergeStrategy2 wrap unwrap s1 . subf)
     (OrderedStrategy idxf subf, s2) ->
       OrderedStrategy (idxf . fst . unwrap) (memo $ \idx -> wrapMergeStrategy2 wrap unwrap (subf idx) s2)
+{-# INLINE wrapMergeStrategy2 #-}
 
 instance (Mergeable' bool a, Mergeable' bool b) => Mergeable' bool (a :*: b) where
   mergeStrategy' = wrapMergeStrategy2 (:*:) (\(a :*: b) -> (a, b)) mergeStrategy' mergeStrategy'
+  {-# INLINE mergeStrategy' #-}
 
 -- instances
 
