@@ -212,7 +212,21 @@ data LetPolyValue
   | LetPolyBool SymBool
   | LetPolyRefCell (UnionM Integer)
   | LetPolyLambda (SymUnsignedBV LetPolyWidth) (UnionM LetPolyTree) (Env LetPolyWidth LetPolyValue)
-  deriving (Show, Eq, Generic, Mergeable SymBool, SEq SymBool, NFData, SymEval Model)
+  deriving (Show, Eq, Generic, SEq SymBool, NFData, SymEval Model)
+
+instance Mergeable SymBool LetPolyValue where
+  mergeStrategy = OrderedStrategy (\case
+    LetPolyInt _ -> 0 :: Int
+    LetPolyBool _ -> 1
+    LetPolyRefCell _ -> 2
+    LetPolyLambda _ _ _ -> 3)
+    (memo $ \case
+      0 -> SimpleStrategy $ \cond (LetPolyInt l) (LetPolyInt r) -> LetPolyInt $ mrgIf @SymBool cond l r
+      1 -> SimpleStrategy $ \cond (LetPolyBool l) (LetPolyBool r) -> LetPolyBool $ mrgIf @SymBool cond l r
+      2 -> SimpleStrategy $ \cond (LetPolyRefCell l) (LetPolyRefCell r) -> LetPolyRefCell $ mrgIf @SymBool cond l r
+      3 -> SimpleStrategy $ \cond (LetPolyLambda n1 v1 e1) (LetPolyLambda n2 v2 e2) ->
+        LetPolyLambda (mrgIf @SymBool cond n1 n2) (mrgIf @SymBool cond v1 v2) (mrgIf @SymBool cond e1 e2))
+    
 
 instance HasTrie LetPolyValue where
   newtype LetPolyValue :->: x = LetPolyValueTrie {unLetPolyValueTrie :: Reg LetPolyValue :->: x}
