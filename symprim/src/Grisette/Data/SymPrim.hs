@@ -3,8 +3,8 @@
 
 module Grisette.Data.SymPrim
   ( Sym (..),
-    SymConcView (..),
-    pattern SymConc,
+    --SymConcView (..),
+    --pattern SymConc,
     SymBool,
     SymInteger,
     type (=~>),
@@ -64,6 +64,7 @@ instance (SupportedPrim a) => HasTrie (Sym a) where
 instance NFData (Sym a) where
   rnf (Sym t) = rnf t
 
+{-
 class SupportedPrim a => SymConcView a where
   symConcView :: Sym a -> Maybe a
 
@@ -72,6 +73,7 @@ pattern SymConc c <-
   (Sym (ConcTerm _ c))
   where
     SymConc c = conc c
+    -}
 
 instance (SupportedPrim a) => ITEOp (Sym Bool) (Sym a) where
   ites (Sym c) (Sym t) (Sym f) = Sym $ iteterm c t f
@@ -82,27 +84,27 @@ instance (SupportedPrim a) => Mergeable (Sym Bool) (Sym a) where
 instance (SupportedPrim a) => SimpleMergeable (Sym Bool) (Sym a) where
   mrgIf = ites
 
-instance (SymConcView a) => PrimWrapper (Sym a) a where
+instance (SupportedPrim a) => PrimWrapper (Sym a) a where
   conc = Sym . concTerm
   ssymb = Sym . ssymbTerm
   isymb i str = Sym $ isymbTerm i str
-  concView (SymConc t) = Just t
+  concView (Sym (ConcTerm _ t)) = Just t
   concView _ = Nothing
 
-instance (SymConcView t) => IsString (Sym t) where
+instance (SupportedPrim t) => IsString (Sym t) where
   fromString = ssymb
 
 instance (SupportedPrim a) => ToSym (Sym a) (Sym a) where
   toSym = id
 
-instance (SymConcView a) => ToSym a (Sym a) where
+instance (SupportedPrim a) => ToSym a (Sym a) where
   toSym = conc
 
 instance (SupportedPrim a) => ToCon (Sym a) (Sym a) where
   toCon = Just
 
-instance (SymConcView a) => ToCon (Sym a) a where
-  toCon = symConcView
+instance (SupportedPrim a) => ToCon (Sym a) a where
+  toCon = concView
 
 instance (SupportedPrim a) => SymEval Model (Sym a) where
   symeval fillDefault model (Sym t) = Sym $ evaluateTerm fillDefault model t
@@ -110,10 +112,10 @@ instance (SupportedPrim a) => SymEval Model (Sym a) where
 instance (SupportedPrim a) => ExtractSymbolics (S.HashSet TermSymbol) (Sym a) where
   extractSymbolics (Sym t) = extractSymbolicsTerm t
 
-instance (SymBoolOp (Sym Bool), SupportedPrim a, SymConcView a) => SymGen (Sym Bool) () (Sym a) where
+instance (SymBoolOp (Sym Bool), SupportedPrim a) => SymGen (Sym Bool) () (Sym a) where
   genSymIndexed _ = mrgSingle <$> genSymSimpleIndexed @(Sym Bool) ()
 
-instance (SymBoolOp (Sym Bool), SupportedPrim a, SymConcView a) => SymGenSimple (Sym Bool) () (Sym a) where
+instance (SymBoolOp (Sym Bool), SupportedPrim a) => SymGenSimple (Sym Bool) () (Sym a) where
   genSymSimpleIndexed _ = do
     (i, s) <- get
     put (i + 1, s)
@@ -141,9 +143,11 @@ instance LogicalOp (Sym Bool) where
 
 instance SymBoolOp (Sym Bool)
 
+{-
 instance SymConcView Bool where
-  symConcView (Sym (BoolConcTerm t)) = Just t
+  symConcView (Sym (ConcTerm _ t)) = Just t
   symConcView _ = Nothing
+  -}
 
 -- integer
 type SymInteger = Sym Integer
@@ -160,9 +164,11 @@ instance Num (Sym Integer) where
   signum (Sym v) = Sym $ signumNum v
   fromInteger i = conc i
 
+{-
 instance SymConcView Integer where
   symConcView (Sym (IntegerConcTerm t)) = Just t
   symConcView _ = Nothing
+  -}
 
 instance SignedDivMod (Sym Bool) (Sym Integer) where
   divs (Sym l) rs@(Sym r) =
@@ -192,10 +198,12 @@ type SymSignedBV n = Sym (SignedBV n)
 instance (SupportedPrim (SignedBV n)) => SEq (Sym Bool) (Sym (SignedBV n)) where
   (Sym l) ==~ (Sym r) = Sym $ eqterm l r
 
+{-
 instance (SupportedPrim (SignedBV n)) => SymConcView (SignedBV n) where
   symConcView (Sym x) = withPrim @(SignedBV n) $ case x of
     SignedBVConcTerm t -> Just t
     _ -> Nothing
+    -}
 
 instance (SupportedPrim (SignedBV n)) => Num (Sym (SignedBV n)) where
   (Sym l) + (Sym r) = Sym $ withPrim @(SignedBV n) $ addNum l r
@@ -233,10 +241,12 @@ type SymUnsignedBV n = Sym (UnsignedBV n)
 instance (SupportedPrim (UnsignedBV n)) => SEq (Sym Bool) (Sym (UnsignedBV n)) where
   (Sym l) ==~ (Sym r) = Sym $ eqterm l r
 
+{-
 instance (SupportedPrim (UnsignedBV n)) => SymConcView (UnsignedBV n) where
   symConcView (Sym x) = withPrim @(UnsignedBV n) $ case x of
     UnsignedBVConcTerm t -> Just t
     _ -> Nothing
+    -}
 
 instance (SupportedPrim (UnsignedBV n)) => Num (Sym (UnsignedBV n)) where
   (Sym l) + (Sym r) = Sym $ withPrim @(UnsignedBV n) $ addNum l r
@@ -261,9 +271,11 @@ instance (SupportedPrim a, SupportedPrim b) => Function (a =~> b) where
   type Ret (a =~> b) = Sym b
   (Sym f) # t = Sym $ applyf f (underlyingTerm t)
 
+{-
 instance (SupportedPrim a, SupportedPrim b) => SymConcView (a =-> b) where
   symConcView (Sym (TabularFuncConcTerm t)) = Just t
   symConcView _ = Nothing
+  -}
 
 instance
   ( SupportedPrim a,

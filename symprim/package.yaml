@@ -23,6 +23,7 @@ dependencies:
 - deepseq
 - MemoTrie
 - array
+- typerep-map
 
 default-extensions:
 - BangPatterns
