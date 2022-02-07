@@ -298,19 +298,15 @@ instance (SupportedPrim t) => Eq (Term t) where
 instance (SupportedPrim t) => Hashable (Term t) where
   hashWithSalt s t = hashWithSalt s $ identity t
 
-addToReverseCache :: forall t. (SupportedPrim t) => Term t -> ()
-addToReverseCache t = unsafeDupablePerformIO $
-  atomicModifyIORef' (getReverseCache (termReverseCache @t)) $ \m ->
-    (M.insert (identity t) t m, ())
+addTermToReverseCache :: forall t. (SupportedPrim t) => Term t -> IO ()
+addTermToReverseCache t = addToReverseCache (identity t) t (termReverseCache @t)
 
-findInReverseCache :: forall t. (SupportedPrim t) => Id -> Maybe (Term t)
-findInReverseCache i = unsafeDupablePerformIO $ do
-  m <- readIORef (getReverseCache termReverseCache)
-  return $ M.lookup i m
+findTermInReverseCache :: forall t. (SupportedPrim t) => Id -> Maybe (Term t)
+findTermInReverseCache i = unsafeDupablePerformIO $ findInReverseCache i (termReverseCache @t)
 
 instance (SupportedPrim t) => HasTrie (Term t) where
   newtype (Term t) :->: x = TermTrie (Id :->: x)
-  trie f = TermTrie (trie $ \i -> f (fromJust $ findInReverseCache i))
+  trie f = TermTrie (trie $ \i -> f (fromJust $ findTermInReverseCache i))
   untrie (TermTrie i) t = untrie i (identity t)
   enumerate _ = error "Don't try to enumerate Terms. We implemented the MemoTrie for it with black magic" --[undefined | (i, b) <- enumerate tt]
 
@@ -340,9 +336,11 @@ pformat (TernaryTerm _ tag arg1 arg2 arg3) = pformatTernary tag arg1 arg2 arg3
 internTerm :: forall t. (SupportedPrim t) => Uninterned (Term t) -> Term t
 internTerm !bt = unsafeDupablePerformIO $ do
   (b, t) <- atomicModifyIORef' slot go
-  when b $
+  when b $ addTermToReverseCache t
+  {-
     atomicModifyIORef' (getReverseCache (termReverseCache @t)) $ \m ->
       (M.insert (identity t) t m, ())
+      -}
   return t
   where
   slot = getCache cache ! r
