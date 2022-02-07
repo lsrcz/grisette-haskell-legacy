@@ -129,6 +129,7 @@ impliesTerm
 impliesTerm a b
   | a == b = True
   | otherwise = False
+{-# INLINE impliesTerm #-}
 
 orEqFirst :: Term Bool -> Term Bool -> Bool
 orEqFirst _ FalseTerm = True
@@ -139,6 +140,7 @@ orEqFirst
 orEqFirst x y
   | x == y = True
   | otherwise = False
+{-# INLINE orEqFirst #-}
 
 orEqTrue :: Term Bool -> Term Bool -> Bool
 orEqTrue TrueTerm _ = True
@@ -147,6 +149,7 @@ orEqTrue (NotTerm e1) (NotTerm e2) = andEqFalse e1 e2
 orEqTrue l r
   | l == notb r = True
   | otherwise = False
+{-# INLINE orEqTrue #-}
 
 andEqFirst :: Term Bool -> Term Bool -> Bool
 andEqFirst _ TrueTerm = True
@@ -154,6 +157,7 @@ andEqFirst x (NotTerm y) = andEqFalse x y
 andEqFirst x y
   | x == y = True
   | otherwise = False
+{-# INLINE andEqFirst #-}
 
 andEqFalse :: Term Bool -> Term Bool -> Bool
 andEqFalse FalseTerm _ = True
@@ -166,6 +170,7 @@ andEqFalse
 andEqFalse x y
   | x == notb y = True
   | otherwise = False
+{-# INLINE andEqFalse #-}
 
 -- Or
 data Or = Or deriving (Show, Lift, Generic, NFData)
