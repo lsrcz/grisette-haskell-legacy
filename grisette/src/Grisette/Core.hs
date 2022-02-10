@@ -16,6 +16,7 @@ module Grisette.Core
     TransformError (..),
     gthrowError,
     gassertWithError,
+    gassert,
     ExtractSymbolics (..),
     MergeStrategy (..),
     derivedMergeStrategy,
