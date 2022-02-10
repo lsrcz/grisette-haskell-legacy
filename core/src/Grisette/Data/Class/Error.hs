@@ -15,7 +15,7 @@ class TransformError from to where
 instance TransformError a () where
   transformError _ = ()
 
-gthrowError :: (TransformError from to, MonadError to erm) => from -> erm ()
+gthrowError :: (TransformError from to, MonadError to erm) => from -> erm a
 gthrowError = throwError . transformError
 
 gassertWithError ::
