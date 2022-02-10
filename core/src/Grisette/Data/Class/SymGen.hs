@@ -41,6 +41,7 @@ import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.UnionOp
 import Grisette.Data.Functor
+import Grisette.Data.UnionBase
 
 type SymGenState = (Int, String)
 
@@ -528,3 +529,10 @@ instance (SymBoolOp bool, SymGen bool spec a) => SymGenSimple bool spec (UnionMB
   genSymSimpleIndexed spec = do
     res <- genSymIndexed spec
     if not (isMerged res) then error "Not merged" else return res
+
+instance (SymBoolOp bool, SymGen bool a a, SymGenSimple bool () bool, Mergeable bool a) =>
+  SymGen bool (UnionMBase bool a) a where
+  genSymIndexed spec = go (underlyingUnion $ merge spec)
+    where
+      go (Single x) = genSymIndexed x
+      go (Guard _ _ _ t f) = mrgGuard <$> genSymSimpleIndexed @bool () <*> go t <*> go f
