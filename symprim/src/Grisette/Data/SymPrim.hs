@@ -121,6 +121,11 @@ instance (SymBoolOp (Sym Bool), SupportedPrim a) => SymGenSimple (Sym Bool) () (
     put (i + 1, s)
     return $ isymb i s
 
+instance (SymBoolOp (Sym Bool), SupportedPrim a) => SymGen (Sym Bool) (Sym a) (Sym a)
+
+instance (SymBoolOp (Sym Bool), SupportedPrim a) => SymGenSimple (Sym Bool) (Sym a) (Sym a) where
+  genSymSimpleIndexed _ = genSymSimpleIndexed @SymBool ()
+
 instance (SupportedPrim a) => Show (Sym a) where
   show (Sym t) = pformat t
 
