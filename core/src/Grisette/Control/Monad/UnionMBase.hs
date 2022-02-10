@@ -132,6 +132,7 @@ instance SymBoolOp bool => UnionMOp bool (UnionMBase bool) where
           !r = UMrg $ fullReconstruct mergeStrategy u --m >>= mrgSingle
   {-# NOINLINE merge #-}
   mrgSingle = UMrg . single
+  mrgGuard (Conc c) l r = if c then merge l else merge r
   mrgGuard cond l r =
     merge $ guard cond l r
 
