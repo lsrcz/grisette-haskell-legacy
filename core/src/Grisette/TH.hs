@@ -109,4 +109,13 @@ mkSingleWrapper name (NormalC oriName b) = do
     [ SigD retName augmentedTyp,
       FunD retName [Clause [] (NormalB expr) []]
     ]
+mkSingleWrapper name (RecC oriName b) = do
+  DataConI _ constructorTyp _ <- reify oriName
+  augmentedTyp <- augmentNormalCType constructorTyp
+  let retName = mkName name
+  expr <- augmentNormalCExpr (length b) (ConE oriName)
+  return
+    [ SigD retName augmentedTyp,
+      FunD retName [Clause [] (NormalB expr) []]
+    ]
 mkSingleWrapper _ v = fail $ "Unsupported constructor" ++ pprint v
