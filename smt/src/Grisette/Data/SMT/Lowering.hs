@@ -10,8 +10,8 @@ module Grisette.Data.SMT.Lowering
     lowerSinglePrim',
     parseModel,
     SymBiMap (..),
-    collectPrims,
-    emptySymBiMap,
+    -- collectPrims,
+    -- emptySymBiMap,
   )
 where
 
@@ -24,7 +24,7 @@ import Data.Bits
 import Data.Dynamic
 import Data.Foldable
 import qualified Data.HashMap.Strict as M
-import qualified Data.HashSet as S
+-- import qualified Data.HashSet as S
 import Data.Maybe (fromMaybe)
 import Data.Parameterized.Axiom (unsafeAxiom)
 import Data.Parameterized.NatRepr
@@ -52,8 +52,10 @@ data SymBiMap = SymBiMap
   }
   deriving (Show)
 
+{-
 emptySymBiMap :: SymBiMap
 emptySymBiMap = SymBiMap M.empty M.empty
+-}
 
 addBiMap :: SomeTerm -> Dynamic -> String -> TermSymbol -> SymBiMap -> SymBiMap
 addBiMap s d n sb (SymBiMap t f) = SymBiMap (M.insert s d t) (M.insert n sb f)
@@ -64,6 +66,7 @@ addBiMapIntermediate s d (SymBiMap t f) = SymBiMap (M.insert s d t) f
 findStringToSymbol :: String -> SymBiMap -> Maybe TermSymbol
 findStringToSymbol s (SymBiMap _ f) = M.lookup s f
 
+{-
 visited :: (SupportedPrim a) => Term a -> StateT (S.HashSet SomeTerm, SymBiMap) SBV.Symbolic Bool
 visited tm = gets $ \(s, _) -> S.member (SomeTerm tm) s
 
@@ -141,6 +144,7 @@ collectPrimsImpl config term = do
         TernaryTerm _ _ t1 t2 t3 ->
           collectPrimsImpl config t1 >> collectPrimsImpl config t2
             >> collectPrimsImpl config t3
+-}
 
 cachedResult ::
   forall integerBitWidth a.
@@ -196,7 +200,7 @@ lowerUnaryTerm' config orig t1 f = do
   return g
 
 lowerBinaryTerm' ::
-  forall integerBitWidth a b a1 b1 x x1.
+  forall integerBitWidth a b a1 b1 x.
   (Typeable (TermTy integerBitWidth x), a1 ~ TermTy integerBitWidth a, b1 ~ TermTy integerBitWidth b, SupportedPrim x) =>
   GrisetteSMTConfig integerBitWidth ->
   Term x ->

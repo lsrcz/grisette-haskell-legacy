@@ -29,15 +29,14 @@ solveTermWith ::
   Term Bool ->
   IO (Either SBVC.CheckSatResult PM.Model)
 solveTermWith config term = SBV.runSMTWith (sbvConfig config) $ do
-  x <- collectPrims config term
-  let (a, _) = lowerSinglePrim' config term x
+  (m, a) <- lowerSinglePrim config term
   SBVC.query $ do
     SBV.constrain a
     r <- SBVC.checkSat
     case r of
       SBVC.Sat -> do
         md <- SBVC.getModel
-        return $ Right $ parseModel config md x
+        return $ Right $ parseModel config md m
       _ -> return $ Left r
 
 solveWith ::
