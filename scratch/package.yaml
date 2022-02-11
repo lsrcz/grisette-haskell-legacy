@@ -24,12 +24,20 @@ dependencies:
 - loch-th
 - template-haskell
 - utf8-string
+- unordered-containers
+- vector
 
 ghc-options: -Wall -ferror-spans -O2
 
 executables:
   list-union:
     source-dirs: list-union
+    main: Main.hs
+  interned-trie:
+    source-dirs: interned-trie
+    main: Main.hs
+  cegis:
+    source-dirs: cegis
     main: Main.hs
   
 

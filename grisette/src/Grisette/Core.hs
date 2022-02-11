@@ -91,6 +91,8 @@ module Grisette.Core
     uRight,
     uInL,
     uInR,
+    uAssertionViolation,
+    uAssumptionViolation,
   )
 where
 
