@@ -43,6 +43,7 @@ import Grisette.Data.Prim.InternedTerm
 import {-# SOURCE #-} Grisette.Data.Prim.Num
 import Grisette.Data.Prim.Utils
 import Language.Haskell.TH.Syntax
+import Unsafe.Coerce
 
 trueTerm :: Term Bool
 trueTerm = concTerm True
@@ -74,7 +75,7 @@ notb = partialEvalUnary Not
 
 instance UnaryOp Not Bool Bool where
   partialEvalUnary _ (NotTerm tm) = tm
-  partialEvalUnary _ (BoolConcTerm a) = if a then falseTerm else trueTerm
+  partialEvalUnary _ (ConcTerm _ a) = if a then falseTerm else trueTerm
   partialEvalUnary _ (OrTerm (NotTerm n1) n2) = andb n1 (notb n2)
   partialEvalUnary _ (OrTerm n1 (NotTerm n2)) = andb (notb n1) n2
   partialEvalUnary _ (AndTerm (NotTerm n1) n2) = orb n1 (notb n2)
@@ -96,12 +97,14 @@ neterm l r = notb $ eqterm l r
 
 instance SupportedPrim a => BinaryOp Eqv a a Bool where
   partialEvalBinary _ l@ConcTerm {} r@ConcTerm {} = concTerm $ l == r
-  partialEvalBinary _ (NotTerm lv) (BoolTerm r)
-    | lv == r = falseTerm
-  partialEvalBinary _ (BoolTerm l) (NotTerm rv)
-    | l == rv = falseTerm
-  partialEvalBinary _ (BoolConcTerm l) (BoolConcTerm r) =
+  partialEvalBinary _ (NotTerm lv) r 
+    | lv == unsafeCoerce r = falseTerm
+  partialEvalBinary _ l (NotTerm rv)
+    | unsafeCoerce l == rv = falseTerm
+    {-
+  partialEvalBinary _ (ConcTerm l) (ConcTerm r) =
     if l == r then trueTerm else falseTerm
+    -}
   partialEvalBinary _ (BinaryTerm _ (Dyn (AddNum :: AddNum a))
     (Dyn (ConcTerm _ c :: Term a)) (Dyn (v :: Term a))) (Dyn (ConcTerm _ c2 :: Term a)) =
     eqterm v (concTerm $ c2 - c)

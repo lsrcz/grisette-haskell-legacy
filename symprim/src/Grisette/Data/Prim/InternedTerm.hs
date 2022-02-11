@@ -28,6 +28,12 @@ module Grisette.Data.Prim.InternedTerm
     extractSymbolicsTerm,
     TermSymbol (..),
     -- termSymbolTypeRep,
+    Id'(..),
+    packId',
+    unpackId',
+    Word8List'(..),
+    Word8'(..),
+    Word8List'(..),
   )
 where
 
@@ -55,6 +61,9 @@ import GHC.TypeNats
 import Grisette.Data.Prim.Orphan ()
 import Language.Haskell.TH.Syntax
 import Grisette.Data.Prim.Caches
+import Data.Word
+import qualified Data.Vector as V
+import Data.Bits
 
 class (Lift t, Typeable t, Hashable t, Eq t, Show t, NFData t) => SupportedPrim t where
   type PrimConstraint t :: Constraint
@@ -304,10 +313,71 @@ addTermToReverseCache t = addToReverseCache (identity t) t (termReverseCache @t)
 findTermInReverseCache :: forall t. (SupportedPrim t) => Id -> Maybe (Term t)
 findTermInReverseCache i = unsafeDupablePerformIO $ findInReverseCache i (termReverseCache @t)
 
+word8BitWidth :: (Num a, Bits a) => a
+word8BitWidth = 3
+word8LevelNum :: (Num a, Bits a) => a
+word8LevelNum = 1 `shiftL` word8BitWidth
+
+newtype Word8' = Word8' Word8 deriving (Show)
+instance HasTrie Word8' where
+  newtype Word8' :->: x = Word8Trie' (V.Vector x)
+  trie f = Word8Trie' $ V.generate word8LevelNum (f . Word8' . fromIntegral)
+  untrie (Word8Trie' t) = \(Word8' w) -> V.unsafeIndex t $ fromIntegral w
+  enumerate (Word8Trie' t) = [(Word8' $ fromIntegral i, V.unsafeIndex t i) | i <- [0..word8LevelNum-1]]
+
+data Word8List' = W8Nil | W8Cons Word8' Word8List' deriving (Show)
+
+instance HasTrie Word8List' where
+  data Word8List' :->: x = BLTrie x (Word8' :->: (Word8List' :->: x))
+  trie f = BLTrie (f W8Nil) (trie $ \w8 -> trie $ \bl -> f $ W8Cons w8 bl)
+  untrie (BLTrie x t) = \case
+    W8Nil -> x
+    W8Cons w8 tl -> untrie (untrie t w8) tl
+  enumerate (BLTrie x t) = (W8Nil, x) :
+    [(W8Cons w8 bl, v) | (w8, tt) <- enumerate t, (bl, v) <- enumerate tt]
+
+newtype Id' = Id' Id deriving (Show)
+
+instance HasTrie Id' where
+  newtype Id' :->: x = MTrie (Word8List' :->: x)
+  trie f = MTrie $ trie (f . unpackId')
+  untrie (MTrie t) = untrie t . packId'
+  enumerate (MTrie t) = [(unpackId' i, v) | (i, v) <- enumerate t]
+
+packId' :: Id' -> Word8List'
+packId' (Id' i) = go $ fromIntegral i
+  where
+    mask = word8LevelNum - 1 :: Word
+    go :: Word -> Word8List'
+    go 0 = W8Nil
+    go x = W8Cons (Word8' $ fromIntegral $ x .&. mask) $ go (x `shiftR` word8BitWidth)
+unpackId' :: Word8List' -> Id'
+unpackId' l = Id' $ fromIntegral $ go l 0 0
+  where
+    go :: Word8List' -> Int -> Word -> Word
+    go W8Nil _ acc = acc
+    go (W8Cons (Word8' x) tl) n acc = go tl (n + word8BitWidth) $ (fromIntegral x `shiftL` n) .|. acc
+{-
+packId' :: Id' -> Word8List'
+packId' (Id' i) = go (fromIntegral i) W8Nil
+  where
+    mask = word8LevelNum - 1 :: Word
+    go :: Word -> Word8List' -> Word8List'
+    go 0 acc = acc
+    go x acc = go (x `shiftR` word8BitWidth) (W8Cons (Word8' $ fromIntegral $ x .&. mask) acc)
+
+unpackId' :: Word8List' -> Id'
+unpackId' l = Id' $ fromIntegral $ go l 0
+  where
+    go :: Word8List' -> Word -> Word
+    go W8Nil acc = acc
+    go (W8Cons (Word8' x) tl) acc = go tl $ (acc `shiftL` word8BitWidth) .|. fromIntegral x
+    -}
+
 instance (SupportedPrim t) => HasTrie (Term t) where
-  newtype (Term t) :->: x = TermTrie (Id :->: x)
-  trie f = TermTrie (trie $ \i -> f (fromJust $ findTermInReverseCache i))
-  untrie (TermTrie i) t = untrie i (identity t)
+  newtype (Term t) :->: x = TermTrie (Id' :->: x)
+  trie f = TermTrie (trie $ \(Id' i) -> f (fromJust $ findTermInReverseCache i))
+  untrie (TermTrie i) t = untrie i (Id' $ identity t)
   enumerate _ = error "Don't try to enumerate Terms. We implemented the MemoTrie for it with black magic" --[undefined | (i, b) <- enumerate tt]
 
 instance Eq SomeTerm where

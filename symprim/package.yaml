@@ -24,6 +24,7 @@ dependencies:
 - MemoTrie
 - array
 - typerep-map
+- vector
 
 default-extensions:
 - BangPatterns
