@@ -56,6 +56,8 @@ module Grisette.Core
     chooseU,
     runSymGenIndexed,
     runSymGenIndexed',
+    IntegerGenBound(..),
+    IntegerGenUpperBound(..),
     ListSpec (..),
     SimpleListSpec (..),
     ToCon (..),

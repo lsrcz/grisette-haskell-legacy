@@ -29,6 +29,8 @@ module Grisette.Data.Class.SymGen
     runSymGenIndexed',
     ListSpec (..),
     SimpleListSpec (..),
+    IntegerGenBound(..),
+    IntegerGenUpperBound(..),
   )
 where
 
@@ -298,6 +300,16 @@ instance (SymBoolOp bool, SymGenSimple bool () bool) => SymGen bool Integer Inte
 
 instance (SymBoolOp bool, SymGenSimple bool () bool) => SymGenSimple bool Integer Integer where
   genSymSimpleIndexed v = return v
+
+newtype IntegerGenUpperBound = IntegerGenUpperBound Integer
+
+data IntegerGenBound = IntegerGenBound Integer Integer
+-- Integer
+instance (SymBoolOp bool, SymGenSimple bool () bool) => SymGen bool IntegerGenUpperBound Integer where
+  genSymIndexed (IntegerGenUpperBound upperBound) = choose 0 [1..upperBound - 1]
+
+instance (SymBoolOp bool, SymGenSimple bool () bool) => SymGen bool IntegerGenBound Integer where
+  genSymIndexed (IntegerGenBound l u) = choose l [l+1..u - 1]
 
 -- Either
 instance
