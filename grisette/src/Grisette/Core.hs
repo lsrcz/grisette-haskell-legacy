@@ -55,6 +55,7 @@ module Grisette.Core
     simpleChoose,
     chooseU,
     runSymGenIndexed,
+    runSymGenIndexed',
     ListSpec (..),
     SimpleListSpec (..),
     ToCon (..),

@@ -26,6 +26,7 @@ module Grisette.Data.Class.SymGen
     simpleChoose,
     chooseU,
     runSymGenIndexed,
+    runSymGenIndexed',
     ListSpec (..),
     SimpleListSpec (..),
   )
@@ -33,6 +34,7 @@ where
 
 import Control.Monad.Except
 import Control.Monad.State
+import qualified Control.Monad.State.Strict as S
 import Control.Monad.Trans.Maybe
 import Generics.Deriving
 import Grisette.Control.Monad.UnionMBase
@@ -47,6 +49,9 @@ type SymGenState = (Int, String)
 
 runSymGenIndexed :: State (Int, String) a -> String -> a
 runSymGenIndexed st s = evalState st (0, s)
+
+runSymGenIndexed' :: S.State (Int, String) a -> String -> a
+runSymGenIndexed' st s = S.evalState st (0, s)
 
 class (SymBoolOp bool, Mergeable bool a) => SymGen bool spec a where
   genSymIndexed :: (MonadState SymGenState m) => spec -> m (UnionMBase bool a)
