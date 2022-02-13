@@ -24,6 +24,9 @@ dependencies:
 - template-haskell
 - deepseq
 - MemoTrie
+- vector-sized
+- vector
+- parameterized-utils
 
 default-extensions:
 - BangPatterns

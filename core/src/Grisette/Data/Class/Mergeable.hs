@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
@@ -22,7 +23,11 @@ import qualified Control.Monad.State.Lazy as StateLazy
 import qualified Control.Monad.State.Strict as StateStrict
 import qualified Data.ByteString as B
 import Data.Functor.Sum
+import Data.Parameterized
 import Data.Typeable
+import qualified Data.Vector.Generic as VGeneric
+import qualified Data.Vector.Generic.Sized as VSized
+import GHC.TypeLits
 import Generics.Deriving
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.OrphanGeneric ()
@@ -160,7 +165,14 @@ instance (SymBoolOp bool, Mergeable bool a) => Mergeable bool (Maybe a)
 instance (SymBoolOp bool) => Mergeable1 bool Maybe
 
 -- List
-instance (SymBoolOp bool, Mergeable bool a) => Mergeable bool [a]
+instance (SymBoolOp bool, Mergeable bool a) => Mergeable bool [a] where
+  mergeStrategy = case mergeStrategy :: MergeStrategy bool a of
+    SimpleStrategy m ->
+      OrderedStrategy length $ \_ ->
+        SimpleStrategy $ \cond -> zipWith (m cond)
+    NoStrategy ->
+      OrderedStrategy length $ const NoStrategy
+    _ -> derivedMergeStrategy
 
 --mergeStrategy = OrderedStrategy length $ \_ -> case mergeStrategy of
 --  SimpleStrategy m -> SimpleStrategy $ \cond t f -> zipWith (m cond) t f
@@ -261,3 +273,23 @@ instance
     withMergeable @bool @l @x $ withMergeable @bool @r @x $ derivedMergeStrategy
 
 instance (SymBoolOp bool, Mergeable1 bool l, Mergeable1 bool r) => Mergeable1 bool (Sum l r)
+
+-- Sized vector
+instance
+  (SymBoolOp bool, Mergeable bool t, KnownNat m, VGeneric.Vector v t) =>
+  Mergeable bool (VSized.Vector v m t)
+  where
+  mergeStrategy = case (isZeroOrGT1 (knownNat @m), mergeStrategy :: MergeStrategy bool t) of
+    (Left Refl, _) -> SimpleStrategy $ \_ v _ -> v
+    (Right LeqProof, SimpleStrategy m) -> SimpleStrategy $ \cond -> VSized.zipWith (m cond)
+    (Right LeqProof, OrderedStrategy _ _) ->
+      let dec = decNat (knownNat @m)
+       in case ( isZeroOrGT1 dec,
+                 plusComm (Proxy @1) (Proxy @(m - 1)),
+                 minusPlusCancel (Proxy @m) (Proxy @1)
+               ) of
+            (Left Refl, Refl, Refl) -> wrapMergeStrategy mergeStrategy VSized.singleton VSized.head
+            (Right LeqProof, Refl, Refl) ->
+              withKnownNat dec $
+                wrapMergeStrategy mergeStrategy (uncurry VSized.cons) (\v -> (VSized.head v, VSized.tail v))
+    (Right LeqProof, NoStrategy) -> NoStrategy
