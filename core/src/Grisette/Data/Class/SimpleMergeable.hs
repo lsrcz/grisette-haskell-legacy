@@ -17,7 +17,8 @@ where
 
 import Control.Monad.Coroutine hiding (merge)
 import Control.Monad.Except
-import Control.Monad.State
+import qualified Control.Monad.State.Lazy as StateLazy
+import qualified Control.Monad.State.Strict as StateStrict
 import Control.Monad.Trans.Maybe
 import GHC.Generics
 import Grisette.Data.Class.Bool
@@ -163,21 +164,45 @@ instance
 
 instance
   (SymBoolOp bool, Mergeable bool s, Mergeable bool a, UnionMOp bool m) =>
-  SimpleMergeable bool (StateT s m a)
+  SimpleMergeable bool (StateLazy.StateT s m a)
   where
-  mrgIf cond (StateT t) (StateT f) =
+  mrgIf cond (StateLazy.StateT t) (StateLazy.StateT f) =
     withUnionMSimpleMergeable @bool @m @(a, s) $
       withSimpleMergeable @bool @((->) s) @(m (a, s)) $
-        StateT $ mrgIf cond t f
+        StateLazy.StateT $ mrgIf cond t f
 
 instance
   (SymBoolOp bool, Mergeable bool s, UnionMOp bool m) =>
-  SimpleMergeable1 bool (StateT s m)
+  SimpleMergeable1 bool (StateLazy.StateT s m)
 
 instance
   (SymBoolOp bool, Mergeable bool s, UnionMOp bool m) =>
-  UnionMOp bool (StateT s m)
+  UnionMOp bool (StateLazy.StateT s m)
   where
-  merge (StateT f) = StateT $ \v -> merge $ f v
-  mrgSingle v = StateT $ \s -> mrgSingle (v, s)
-  mrgGuard cond (StateT t) (StateT f) = StateT $ \s -> mrgGuard cond (t s) (f s)
+  merge (StateLazy.StateT f) = StateLazy.StateT $ \v -> merge $ f v
+  mrgSingle v = StateLazy.StateT $ \s -> mrgSingle (v, s)
+  mrgGuard cond (StateLazy.StateT t) (StateLazy.StateT f) =
+    StateLazy.StateT $ \s -> mrgGuard cond (t s) (f s)
+
+instance
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool a, UnionMOp bool m) =>
+  SimpleMergeable bool (StateStrict.StateT s m a)
+  where
+  mrgIf cond (StateStrict.StateT t) (StateStrict.StateT f) =
+    withUnionMSimpleMergeable @bool @m @(a, s) $
+      withSimpleMergeable @bool @((->) s) @(m (a, s)) $
+        StateStrict.StateT $ mrgIf cond t f
+
+instance
+  (SymBoolOp bool, Mergeable bool s, UnionMOp bool m) =>
+  SimpleMergeable1 bool (StateStrict.StateT s m)
+
+instance
+  (SymBoolOp bool, Mergeable bool s, UnionMOp bool m) =>
+  UnionMOp bool (StateStrict.StateT s m)
+  where
+  merge (StateStrict.StateT f) = StateStrict.StateT $ \v -> merge $ f v
+  mrgSingle v = StateStrict.StateT $ \s -> mrgSingle (v, s)
+  mrgGuard cond (StateStrict.StateT t) (StateStrict.StateT f) =
+    StateStrict.StateT $ \s -> mrgGuard cond (t s) (f s)
+

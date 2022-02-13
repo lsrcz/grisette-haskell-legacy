@@ -18,7 +18,8 @@ import Control.Monad.Coroutine hiding (merge)
 import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Monad.Except
 import Control.Monad.Trans.Maybe
-import Control.Monad.Trans.State
+import qualified Control.Monad.State.Lazy as StateLazy
+import qualified Control.Monad.State.Strict as StateStrict
 import qualified Data.ByteString as B
 import Data.Functor.Sum
 import Data.Typeable
@@ -31,8 +32,11 @@ import Grisette.Data.MemoUtils ()
 
 data MergeStrategy bool a where
   SimpleStrategy :: (bool -> a -> a -> a) -> MergeStrategy bool a
-  OrderedStrategy :: (Ord idx, Typeable idx, HasTrie idx) =>
-    (a -> idx) -> (idx -> MergeStrategy bool a) -> MergeStrategy bool a
+  OrderedStrategy ::
+    (Ord idx, Typeable idx, HasTrie idx) =>
+    (a -> idx) ->
+    (idx -> MergeStrategy bool a) ->
+    MergeStrategy bool a
   NoStrategy :: MergeStrategy bool a
 
 wrapMergeStrategy :: MergeStrategy bool a -> (a -> b) -> (b -> a) -> MergeStrategy bool b
@@ -226,14 +230,27 @@ instance (SymBoolOp bool, Mergeable bool req, Mergeable bool res) => Mergeable1 
 -- state
 instance
   (SymBoolOp bool, Mergeable bool s, Mergeable bool a, Mergeable1 bool m) =>
-  Mergeable bool (StateT s m a)
+  Mergeable bool (StateLazy.StateT s m a)
   where
   mergeStrategy =
     withMergeable @bool @m @(a, s) $
       withMergeable @bool @((->) s) @(m (a, s)) $
-        wrapMergeStrategy mergeStrategy StateT runStateT
+        wrapMergeStrategy mergeStrategy StateLazy.StateT StateLazy.runStateT
 
-instance (SymBoolOp bool, Mergeable bool s, Mergeable1 bool m) => Mergeable1 bool (StateT s m)
+instance (SymBoolOp bool, Mergeable bool s, Mergeable1 bool m) => Mergeable1 bool (StateLazy.StateT s m)
+
+instance
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool a, Mergeable1 bool m) =>
+  Mergeable bool (StateStrict.StateT s m a)
+  where
+  mergeStrategy =
+    withMergeable @bool @m @(a, s) $
+      withMergeable @bool @((->) s) @(m (a, s)) $
+        wrapMergeStrategy mergeStrategy StateStrict.StateT StateStrict.runStateT
+
+instance (SymBoolOp bool, Mergeable bool s, Mergeable1 bool m) => Mergeable1 bool (StateStrict.StateT s m)
+
+
 
 -- Sum
 instance
