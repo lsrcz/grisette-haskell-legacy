@@ -9,13 +9,16 @@ import Denotation
 import Equal
 import Grisette.Backend.SBV
 import Grisette.Core
-import System.TimeIt
+import Control.DeepSeq
+import Utils.Timing
 
 main :: IO ()
-main = timeIt $ do 
+main = do 
   let r1 = $$(denoteSql q4)
   let r1r = $$(denoteSql q4r)
-  r <- solveWith (UnboundedReasoning z3{verbose=False, timing=PrintTiming}) $$(verifCondition q4 q4r)
+  let cond = $$(verifCondition q4 q4r)
+  _ <- timeItAll "all" $ cond `deepseq` return ()
+  r <- timeItAll "solve" $ solveWith (UnboundedReasoning z3{verbose=False, timing=PrintTiming}) cond
   case r of
     Left _ -> putStrLn "Verified"
     Right m -> do

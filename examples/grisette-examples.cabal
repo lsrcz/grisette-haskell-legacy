@@ -195,6 +195,7 @@ executable cosette
     , deepseq
     , formatting
     , grisette
+    , grisette-examples
     , hashable
     , loch-th
     , megaparsec
