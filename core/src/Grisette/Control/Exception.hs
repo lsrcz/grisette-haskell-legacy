@@ -51,5 +51,8 @@ instance TransformError AssertionError VerificationConditions where
 instance TransformError ArrayException AssertionError where
   transformError _ = AssertionError
 
+instance TransformError AssertionError AssertionError where
+  transformError = id
+
 gassert :: (TransformError AssertionError to, MonadError to erm, SymBoolOp bool, UnionMOp bool erm) => bool -> erm ()
 gassert = gassertWithError AssertionError
