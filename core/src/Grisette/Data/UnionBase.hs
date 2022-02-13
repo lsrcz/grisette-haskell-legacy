@@ -103,11 +103,11 @@ guardWithStrategyInv ::
 guardWithStrategyInv _ (Conc v) t f
   | v = t
   | otherwise = f
-guardWithStrategyInv strategy cond t@(Guard _ True condTrue tt ft) f@(Guard _ True condFalse tf ff)
+guardWithStrategyInv strategy cond t@(Guard _ True condTrue tt _) f@(Guard _ True condFalse _ ff)
   | cond == condTrue = guardWithStrategyInv strategy cond tt f
-  -- | nots cond == condTrue || cond == nots condTrue = guardWithStrategyInv strategy cond ft f
+  -- {| nots cond == condTrue || cond == nots condTrue = guardWithStrategyInv strategy cond ft f
   | cond == condFalse = guardWithStrategyInv strategy cond t ff
-  -- | nots cond == condTrue || cond == nots condTrue = guardWithStrategyInv strategy cond t tf -- buggy here condTrue
+  -- {| nots cond == condTrue || cond == nots condTrue = guardWithStrategyInv strategy cond t tf -- buggy here condTrue
 guardWithStrategyInv (SimpleStrategy m) cond (Single l) (Single r) = Single $ m cond l r
 guardWithStrategyInv strategy@(OrderedStrategy idxFun substrategy) cond ifTrue ifFalse = case (ifTrue, ifFalse) of
   (Single _, Single _) -> ssGuard cond ifTrue ifFalse

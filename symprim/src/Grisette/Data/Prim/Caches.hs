@@ -5,14 +5,14 @@ module Grisette.Data.Prim.Caches where
 import Data.Interned
 import Data.Data
 import Data.Dynamic
-import Data.Array
+-- import Data.Array
 import qualified Data.HashMap.Strict as M
 -- import qualified Data.HashTable.IO as H
 import qualified Data.TypeRepMap as TM
 import Data.IORef
 import GHC.IO
-import Data.Typeable
-import Debug.Trace
+-- import Data.Typeable
+-- import Debug.Trace
 
 newDynamicCache :: forall a. (Interned a, Typeable a) => Dynamic
 newDynamicCache = toDyn $ mkCache @a

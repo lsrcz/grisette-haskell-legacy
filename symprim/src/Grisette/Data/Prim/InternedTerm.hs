@@ -33,7 +33,6 @@ module Grisette.Data.Prim.InternedTerm
     unpackId',
     Word8List'(..),
     Word8'(..),
-    Word8List'(..),
   )
 where
 
@@ -49,7 +48,7 @@ import Data.Function (on)
 import qualified Data.HashMap.Strict as M
 import Data.HashSet as S
 import Data.Hashable (Hashable (hashWithSalt, hash))
-import Data.IORef (IORef, atomicModifyIORef', newIORef, readIORef)
+import Data.IORef (atomicModifyIORef')
 import Data.Interned
 import Data.Interned.Internal
 import Data.Maybe

@@ -8,7 +8,6 @@ import Value
 import Prelude hiding (read)
 import Grisette.Lib
 import Instructions
-import Debug.Trace
 
 haltInst :: Machine -> Program -> ExceptT Errors UnionM Machine
 haltInst m p = mrgReturn $ goto (PCValue (fromIntegral $ loc p) (label $ pc m)) m

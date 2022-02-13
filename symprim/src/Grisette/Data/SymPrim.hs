@@ -36,7 +36,6 @@ import Grisette.Data.Class.SymEval
 import Grisette.Data.Class.SymGen
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
-import Grisette.Data.Prim.BV
 import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.Integer
 import Grisette.Data.Prim.InternedTerm

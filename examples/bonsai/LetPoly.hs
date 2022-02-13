@@ -225,7 +225,8 @@ instance Mergeable SymBool LetPolyValue where
       1 -> SimpleStrategy $ \cond (LetPolyBool l) (LetPolyBool r) -> LetPolyBool $ mrgIf @SymBool cond l r
       2 -> SimpleStrategy $ \cond (LetPolyRefCell l) (LetPolyRefCell r) -> LetPolyRefCell $ mrgIf @SymBool cond l r
       3 -> SimpleStrategy $ \cond (LetPolyLambda n1 v1 e1) (LetPolyLambda n2 v2 e2) ->
-        LetPolyLambda (mrgIf @SymBool cond n1 n2) (mrgIf @SymBool cond v1 v2) (mrgIf @SymBool cond e1 e2))
+        LetPolyLambda (mrgIf @SymBool cond n1 n2) (mrgIf @SymBool cond v1 v2) (mrgIf @SymBool cond e1 e2)
+      _ -> error "Should not happen")
     
 
 instance HasTrie LetPolyValue where
