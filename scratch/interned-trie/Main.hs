@@ -4,7 +4,7 @@
 module Main where
 
 import Data.MemoTrie
-import Data.HashMap.Lazy as H
+-- import Data.HashMap.Lazy as H
 import Data.Word
 import Data.Vector
 import Data.Bits
@@ -48,8 +48,8 @@ unpackM l = M $ fromIntegral $ go l 0
     go BNil acc = acc
     go (BCons (W8 x) tl) acc = go tl ((acc `shiftL` 8) .|. fromIntegral x)
 
-f :: M -> M
-f = memo $ \x -> trace "x" x
+func :: M -> M
+func = memo $ \x -> trace "x" x
 
 {-
 
