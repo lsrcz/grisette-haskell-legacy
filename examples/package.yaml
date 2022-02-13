@@ -103,5 +103,10 @@ executables:
     source-dirs: ifcl
     main: Main.hs
     dependencies: grisette-examples
+  ferrite:
+    source-dirs: ferrite
+    main: Main.hs
+    dependencies: grisette-examples
+
 
 

@@ -327,6 +327,70 @@ executable expr-sketch
     , utf8-string
   default-language: Haskell2010
 
+executable ferrite
+  main-is: Main.hs
+  other-modules:
+      Ext4
+      Fs
+      Interpret
+      Lang
+      Litmus
+      Synth
+      Verifier
+      Paths_grisette_examples
+  hs-source-dirs:
+      ferrite
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+  ghc-options: -Wall -ferror-spans -O2
+  build-depends:
+      MemoTrie
+    , Unique
+    , base >4.7 && <5
+    , bv-sized
+    , bytestring
+    , clock
+    , deepseq
+    , formatting
+    , grisette
+    , grisette-examples
+    , hashable
+    , loch-th
+    , megaparsec
+    , monad-coroutine
+    , monad-memo
+    , mtl
+    , parser-combinators
+    , regex-base
+    , regex-pcre
+    , template-haskell
+    , th-lift-instances
+    , timeit
+    , transformers
+    , unordered-containers
+    , utf8-string
+  default-language: Haskell2010
+
 executable fluidics
   main-is: Main.hs
   other-modules:
