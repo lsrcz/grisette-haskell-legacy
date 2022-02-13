@@ -98,3 +98,7 @@ class (SEq bool a) => SOrd bool a where
   x <~ y = x <=~ y &&~ x /=~ y
   x >~ y = y <~ x
   x >=~ y = y <=~ x
+
+instance (SymBoolOp bool) => SOrd bool Integer where
+  l <=~ r = conc $ l < r
+
