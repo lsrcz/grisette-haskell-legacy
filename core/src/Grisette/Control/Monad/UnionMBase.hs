@@ -163,18 +163,6 @@ instance (SymBoolOp bool, ToCon a b) => ToCon (UnionMBase bool a) b where
       go (Single x) = toCon x
       go _ = Nothing
 
-instance (SymBoolOp bool, ToCon a b, Mergeable bool b) => ToCon (UnionMBase bool a) (UnionMBase bool b) where
-  toCon v = go $ underlyingUnion v
-    where
-      go (Single x) = mrgSingle <$> toCon x
-      go (Guard _ _ cond t f) = do
-        t1 <- go t
-        f1 <- go f
-        return $ guard cond t1 f1
-
-instance (SymBoolOp bool, ToCon a b) => ToCon (UnionMBase bool a) (Identity b) where
-  toCon v = Identity <$> (toCon v :: Maybe b)
-
 instance (SymBoolOp bool, Mergeable bool a, SymEval model a, SymEval model bool) => SymEval model (UnionMBase bool a) where
   symeval fillDefault model x = go $ underlyingUnion x
     where
