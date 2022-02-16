@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module STLCMain (stlcMain) where
+module STLCMain where
 
 import Grisette.Core
 import Grisette.SymPrim.Term
@@ -39,30 +39,30 @@ stlcMain = do
   print f1
   print f2
   print f3
-  print $ bonsaiMatchCustomError BonsaiTypeError stlcSyntax [
+  print $ bonsaiMatchCustomError BonsaiTypeError [
     placeHolder ==> mrgLift
     ] #~ f1
-  print $ bonsaiMatchCustomError BonsaiTypeError stlcSyntax [
-    literal "+" ==> mrgReturn (1 :: Integer)
+  print $ bonsaiMatchCustomError BonsaiTypeError [
+    stlcLiteral "+" ==> mrgReturn (1 :: Integer)
     ] #~ f1
-  print $ bonsaiMatchCustomError BonsaiTypeError stlcSyntax [
+  print $ bonsaiMatchCustomError BonsaiTypeError [
     placeHolder *= placeHolder ==> (\a _ -> mrgLift a)
     ] #~ f1
-  print $ bonsaiMatchCustomError BonsaiTypeError stlcSyntax [
-    literal "+" ==> mrgReturn (1 :: Integer)
+  print $ bonsaiMatchCustomError BonsaiTypeError [
+    stlcLiteral "+" ==> mrgReturn (1 :: Integer)
     ] #~ f2
-  print $ bonsaiMatchCustomError BonsaiTypeError stlcSyntax [
+  print $ bonsaiMatchCustomError BonsaiTypeError [
     placeHolder *= placeHolder ==> (\a _ -> mrgLift a)
     ] #~ f2
-  print $ bonsaiMatchCustomError BonsaiTypeError stlcSyntax [
-    literal "+" *= placeHolder ==> lift
+  print $ bonsaiMatchCustomError BonsaiTypeError [
+    stlcLiteral "+" *= placeHolder ==> lift
     ] #~ f3
-  print $ bonsaiMatchCustomError BonsaiTypeError stlcSyntax [
-    literal "cons" *= (literal "one" *= literal "nil") ==> mrgReturn (1 :: Integer)
+  print $ bonsaiMatchCustomError BonsaiTypeError [
+    stlcLiteral "cons" *= (stlcLiteral "one" *= stlcLiteral "nil") ==> mrgReturn (1 :: Integer)
     ] #~ f3
-  print $ bonsaiMatchCustomError BonsaiTypeError stlcSyntax [
-    literal "a" ==> mrgReturn (1 :: Integer),
-    literal "b" ==> mrgReturn (2 :: Integer)
+  print $ bonsaiMatchCustomError BonsaiTypeError [
+    stlcLiteral "a" ==> mrgReturn (1 :: Integer),
+    stlcLiteral "b" ==> mrgReturn (2 :: Integer)
     ] #~ f3
   print ((fmap . fmap) (showConcTree stlcSyntax)
     (toCon $ typer oneNode  :: Maybe (Either BonsaiError (ConcSTLCTree))))

@@ -2,48 +2,48 @@ module Pattern where
 
 import BonsaiTree
 import Control.Monad.Except
-import qualified Data.ByteString as B
+-- import qualified Data.ByteString as B
 import GHC.TypeLits
 import Grisette.SymPrim.Term
-import qualified Data.ByteString.Char8 as C
+-- import qualified Data.ByteString.Char8 as C
 
-data Pattern n where
-  LiteralPattern :: B.ByteString -> Pattern 0
-  PlaceHolder :: Pattern 1
-  PairPattern :: Pattern n -> Pattern m -> Pattern (n + m)
+data Pattern a n where
+  LiteralPattern :: a -> Pattern a 0
+  PlaceHolder :: Pattern a 1
+  PairPattern :: Pattern a n -> Pattern a m -> Pattern a (n + m)
 
-instance Show (Pattern n) where
-  show (LiteralPattern x) = C.unpack x
+instance (Show x) => Show (Pattern x n) where
+  show (LiteralPattern x) = show x
   show PlaceHolder = "_"
   show (PairPattern l r) = "(" ++ show l ++ ", " ++ show r ++ ")"
 
-(*=) :: Pattern n -> Pattern m -> Pattern (n + m)
+(*=) :: Pattern a n -> Pattern a m -> Pattern a (n + m)
 (*=) = PairPattern
 
-literal :: B.ByteString -> Pattern 0
+literal :: a -> Pattern a 0
 literal = LiteralPattern
 
-placeHolder :: Pattern 1 
+placeHolder :: Pattern a 1 
 placeHolder = PlaceHolder
 
 data PatternHandler m e t
-  = PatternHandler0 (Pattern 0) (ExceptT e UnionM t)
-  | PatternHandler1 (Pattern 1) (UnionM (BonsaiTree m) -> ExceptT e UnionM t)
+  = PatternHandler0 (Pattern m 0) (ExceptT e UnionM t)
+  | PatternHandler1 (Pattern m 1) (UnionM (BonsaiTree m) -> ExceptT e UnionM t)
   | PatternHandler2
-      (Pattern 2)
+      (Pattern m 2)
       ( UnionM (BonsaiTree m) ->
         UnionM (BonsaiTree m) ->
         ExceptT e UnionM t
       )
   | PatternHandler3
-      (Pattern 3)
+      (Pattern m 3)
       ( UnionM (BonsaiTree m) ->
         UnionM (BonsaiTree m) ->
         UnionM (BonsaiTree m) ->
         ExceptT e UnionM t
       )
   | PatternHandler4
-      (Pattern 4)
+      (Pattern m 4)
       ( UnionM (BonsaiTree m) ->
         UnionM (BonsaiTree m) ->
         UnionM (BonsaiTree m) ->
@@ -51,7 +51,7 @@ data PatternHandler m e t
         ExceptT e UnionM t
       )
   | PatternHandler5
-      (Pattern 5)
+      (Pattern m 5)
       ( UnionM (BonsaiTree m) ->
         UnionM (BonsaiTree m) ->
         UnionM (BonsaiTree m) ->
@@ -70,7 +70,7 @@ applyHandler [a, b, c, d, e] (PatternHandler5 _ h) = h a b c d e
 applyHandler _ _ = undefined
 
 class GetPatternHandler n m e f t | n m e t -> f where
-  (==>) :: Pattern n -> f -> PatternHandler m e t
+  (==>) :: Pattern m n -> f -> PatternHandler m e t
 
 instance GetPatternHandler 0 m e (ExceptT e UnionM t) t where
   (==>) = PatternHandler0

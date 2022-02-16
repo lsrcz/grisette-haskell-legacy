@@ -18,6 +18,7 @@ import MatchSyntax
 import Pattern
 import SyntaxSpec
 import Data.BitVector.Sized.Unsigned
+import Data.Maybe
 
 type LetPolyWidth = 19
 
@@ -51,6 +52,9 @@ letPolySyntax =
       "op-type" --> ["!", "-", "&", "*"],
       "name" --> ["a", "b", "c", "d", "e"]
     ]
+
+letPolyLiteral :: B.ByteString -> Pattern (SymUnsignedBV LetPolyWidth) 0
+letPolyLiteral s = literal $ fromJust $ toSym $ terminalToBV letPolySyntax s 
 
 simpleNode :: B.ByteString -> LetPolyTree
 simpleNode = unsafeLeaf letPolySyntax
@@ -113,23 +117,23 @@ tyMatch ::
   [PatternHandler (SymUnsignedBV LetPolyWidth) BonsaiError t] ->
   LetPolyTree ->
   ExceptT BonsaiError UnionM t
-tyMatch = bonsaiMatchCustomError BonsaiTypeError letPolySyntax
+tyMatch = bonsaiMatchCustomError BonsaiTypeError
 
 typeCompatible :: LetPolyTree -> LetPolyTree -> ExceptT BonsaiError UnionM ()
 typeCompatible = memo2 $ \current expect ->
   tyMatch
-    [ literal "int" ==> (tyassert $! current ==~ intTy),
-      literal "bool" ==> (tyassert $! current ==~ boolTy),
-      literal "any" ==> (return $! ()),
-      literal "ref" *= placeHolder ==> \t1 ->
+    [ letPolyLiteral "int" ==> (tyassert $! current ==~ intTy),
+      letPolyLiteral "bool" ==> (tyassert $! current ==~ boolTy),
+      letPolyLiteral "any" ==> (return $! ()),
+      letPolyLiteral "ref" *= placeHolder ==> \t1 ->
         tyMatch
-          [ literal "ref" *= placeHolder ==> \t2 ->
+          [ letPolyLiteral "ref" *= placeHolder ==> \t2 ->
               typeCompatible #~ t2 #~ t1
           ]
           current,
       placeHolder *= placeHolder ==> \i o ->
         tyMatch
-          [ literal "ref" *= placeHolder ==> \_ -> tyassert $ conc False,
+          [ letPolyLiteral "ref" *= placeHolder ==> \_ -> tyassert $ conc False,
             placeHolder *= placeHolder ==> \i1 o1 -> do
               typeCompatible #~ i1 #~ i
               typeCompatible #~ o1 #~ o
@@ -150,47 +154,47 @@ isValidName err sym =
       ["a", "b", "c", "d", "e"]
 
 derefTy :: LetPolyTree -> ExceptT BonsaiError UnionM (UnionM LetPolyTree)
-derefTy = tyMatch [literal "ref" *= placeHolder ==> return]
+derefTy = tyMatch [letPolyLiteral "ref" *= placeHolder ==> return]
 
 typer' :: LetPolyTree -> Env LetPolyWidth LetPolyTree -> ExceptT BonsaiError UnionM (UnionM LetPolyTree)
 typer' = memo2 $ \tree env ->
   tyMatch
-    [ literal "true" ==> (return $! mrgSingle boolTy),
-      literal "one" ==> (return $! mrgSingle intTy),
-      literal "!" *= placeHolder ==> \v -> do
+    [ letPolyLiteral "true" ==> (return $! mrgSingle boolTy),
+      letPolyLiteral "one" ==> (return $! mrgSingle intTy),
+      letPolyLiteral "!" *= placeHolder ==> \v -> do
         t <- typer' #~ v # env
         typeCompatible #~ t # boolTy
         return $! mrgSingle boolTy,
-      literal "-" *= placeHolder ==> \v -> do
+      letPolyLiteral "-" *= placeHolder ==> \v -> do
         t <- typer' #~ v # env
         typeCompatible #~ t # intTy
         return $! mrgSingle intTy,
-      literal "&" *= placeHolder ==> \v -> do
+      letPolyLiteral "&" *= placeHolder ==> \v -> do
         t <- typer' #~ v # env
         return $! mrgSingle $ refTyU t,
-      literal "*" *= placeHolder ==> \v -> do
+      letPolyLiteral "*" *= placeHolder ==> \v -> do
         t <- typer' #~ v # env
         derefTy #~ t,
-      ((literal "let" *= placeHolder) *= placeHolder) *= placeHolder ==> \name v expr -> do
+      ((letPolyLiteral "let" *= placeHolder) *= placeHolder) *= placeHolder ==> \name v expr -> do
         n <- extractName BonsaiTypeError name
         isValidName BonsaiTypeError n
         t <- typer' #~ v # env
         let newenv = envAdd env n t
         typer' #~ expr # newenv,
-      ((literal ":=" *= placeHolder) *= placeHolder) *= placeHolder ==> \name expr1 expr2 -> do
+      ((letPolyLiteral ":=" *= placeHolder) *= placeHolder) *= placeHolder ==> \name expr1 expr2 -> do
         rt <- typer' #~ name # env
         dt <- derefTy #~ rt
         e1ty <- typer' #~ expr1 # env
 
         typeCompatible #~ e1ty #~ dt
         typer' #~ expr2 # env,
-      (literal "lambda" *= placeHolder) *= (placeHolder *= placeHolder) ==> \name ty expr -> do
+      (letPolyLiteral "lambda" *= placeHolder) *= (placeHolder *= placeHolder) ==> \name ty expr -> do
         n <- extractName BonsaiTypeError name
         isValidName BonsaiTypeError n
         let newenv = envAdd env n ty
         exprTy <- typer' #~ expr # newenv
         return $! mrgSingle $ arrowTyU ty exprTy,
-      literal "call" *= (placeHolder *= placeHolder) ==> \func arg -> do
+      letPolyLiteral "call" *= (placeHolder *= placeHolder) ==> \func arg -> do
         ft <- typer' #~ func # env
         ftx <- lift ft
         case ftx of
@@ -299,25 +303,25 @@ simpleEvalList ::
   RefEnv ->
   [PatternHandler (SymUnsignedBV LetPolyWidth) BonsaiError (UnionM LetPolyValue, RefEnv)]
 simpleEvalList evalFunc named ref =
-  [ literal "true" ==> uTuple2 (uLetPolyBool $ conc True) ref,
-    literal "one" ==> uTuple2 (uLetPolyInt 1) ref,
-    literal "!" *= placeHolder ==> \t -> do
+  [ letPolyLiteral "true" ==> uTuple2 (uLetPolyBool $ conc True) ref,
+    letPolyLiteral "one" ==> uTuple2 (uLetPolyInt 1) ref,
+    letPolyLiteral "!" *= placeHolder ==> \t -> do
       (v, newRef) <- evalFunc named ref #~ t
       v1 <- lift v
       case v1 of
         LetPolyBool sym -> uTuple2 (uLetPolyBool (nots sym)) newRef
         _ -> throwError BonsaiExecError,
-    literal "-" *= placeHolder ==> \t -> do
+    letPolyLiteral "-" *= placeHolder ==> \t -> do
       (v, newRef) <- evalFunc named ref #~ t
       v1 <- lift v
       case v1 of
         LetPolyInt sym -> uTuple2 (uLetPolyInt (negate sym)) newRef
         _ -> throwError BonsaiExecError,
-    literal "&" *= placeHolder ==> \t -> do
+    letPolyLiteral "&" *= placeHolder ==> \t -> do
       (v, newRef) <- evalFunc named ref #~ t
       let ptr = minimumAvailableNum newRef
       uTuple2 (uLetPolyRefCell $ mrgSingle ptr) (updateRefEnv ptr v newRef),
-    literal "*" *= placeHolder ==> \t -> do
+    letPolyLiteral "*" *= placeHolder ==> \t -> do
       (v, newRef) <- evalFunc named ref #~ t
       v1 <- lift v
       case v1 of
@@ -325,11 +329,11 @@ simpleEvalList evalFunc named ref =
           res <- getRefEnv #~ ptr # newRef
           uTuple2 res newRef
         _ -> throwError BonsaiExecError,
-    (literal "lambda" *= placeHolder) *= (placeHolder *= placeHolder) ==> \name _ expr -> do
+    (letPolyLiteral "lambda" *= placeHolder) *= (placeHolder *= placeHolder) ==> \name _ expr -> do
       n <- extractName BonsaiExecError name
       isValidName BonsaiExecError n
       uTuple2 (uLetPolyLambda n expr named) ref,
-    ((literal ":=" *= placeHolder) *= placeHolder) *= placeHolder ==> \cell v1 expr -> do
+    ((letPolyLiteral ":=" *= placeHolder) *= placeHolder) *= placeHolder ==> \cell v1 expr -> do
       (c, newRef) <- evalFunc named ref #~ cell
       (v, newRef2) <- evalFunc named newRef #~ v1
       c1 <- lift c
@@ -350,7 +354,7 @@ evalMatch ::
   [PatternHandler (SymUnsignedBV LetPolyWidth) BonsaiError t] ->
   LetPolyTree ->
   ExceptT BonsaiError UnionM t
-evalMatch = bonsaiMatchCustomError BonsaiExecError letPolySyntax
+evalMatch = bonsaiMatchCustomError BonsaiExecError
 
 simpleEval' :: EvalType
 simpleEval' = memo3 $ \named ref tree ->
@@ -361,13 +365,13 @@ simpleEval' = memo3 $ \named ref tree ->
 eval' :: EvalType
 eval' = memo3 $ \named ref tree ->
   evalMatch
-    ( [ ((literal "let" *= placeHolder) *= placeHolder) *= placeHolder ==> \name v1 v2 -> do
+    ( [ ((letPolyLiteral "let" *= placeHolder) *= placeHolder) *= placeHolder ==> \name v1 v2 -> do
           n <- extractName BonsaiExecError name
           isValidName BonsaiExecError n
           (v1r, newRef) <- eval' named ref #~ v1
           let newNamed = envAdd named n v1r
           eval' newNamed newRef #~ v2,
-        literal "call" *= (placeHolder *= placeHolder) ==> \func arg -> do
+        letPolyLiteral "call" *= (placeHolder *= placeHolder) ==> \func arg -> do
           (funcv, newRef) <- eval' named ref #~ func
           x <- lift arg
           (argv, newRef1) <- eval' named newRef x

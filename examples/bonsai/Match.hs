@@ -5,11 +5,11 @@ module Match where
 import BonsaiTree
 import Control.Monad.Except
 import GHC.Generics
-import GHC.TypeLits
+-- import GHC.TypeLits
 import Grisette.Core
 import Grisette.SymPrim.Term
 import Pattern
-import SyntaxSpec
+-- import SyntaxSpec
 
 data PrivateMatchError e
   = PrivateMatchError
@@ -22,13 +22,12 @@ instance TransformError e (PrivateMatchError e) where
 deriving instance (Mergeable SymBool e) => Mergeable SymBool (PrivateMatchError e)
 
 bonsaiMatchCustomError ::
-  (KnownNat m, 1 <= m, Mergeable SymBool e, Mergeable SymBool t) =>
+  (SEq SymBool m, Mergeable SymBool m, Mergeable SymBool e, Mergeable SymBool t) =>
   e ->
-  OptimSyntaxSpec m ->
-  [PatternHandler (SymUnsignedBV m) e t] ->
-  BonsaiTree (SymUnsignedBV m) ->
+  [PatternHandler m e t] ->
+  BonsaiTree m ->
   ExceptT e UnionM t
-bonsaiMatchCustomError e stx handlers tree =
+bonsaiMatchCustomError e handlers tree =
   merge $
     withExceptT
       ( \case
@@ -38,51 +37,49 @@ bonsaiMatchCustomError e stx handlers tree =
       $ foldl
         ( \acc handler ->
             acc `catchError` \case
-              PrivateMatchError -> bonsaiMatchHandler stx handler tree
+              PrivateMatchError -> bonsaiMatchHandler handler tree
               e1 -> throwError e1
         )
         (throwError PrivateMatchError)
         handlers
 
 bonsaiMatchHandler ::
-  (KnownNat m, 1 <= m, Mergeable SymBool e, Mergeable SymBool t) =>
-  OptimSyntaxSpec m ->
-  PatternHandler (SymUnsignedBV m) e t ->
-  BonsaiTree (SymUnsignedBV m) ->
+  (SEq SymBool m, Mergeable SymBool m, Mergeable SymBool e, Mergeable SymBool t) =>
+  PatternHandler m e t ->
+  BonsaiTree m ->
   ExceptT (PrivateMatchError e) UnionM t
-bonsaiMatchHandler stx h@(PatternHandler0 p _) tree = do
-  b <- bonsaiMatchPattern stx p tree
+bonsaiMatchHandler h@(PatternHandler0 p _) tree = do
+  b <- bonsaiMatchPattern p tree
   merge $ withExceptT transformError $ applyHandler b h
-bonsaiMatchHandler stx h@(PatternHandler1 p _) tree = do
-  b <- bonsaiMatchPattern stx p tree
+bonsaiMatchHandler h@(PatternHandler1 p _) tree = do
+  b <- bonsaiMatchPattern p tree
   merge $ withExceptT transformError $ applyHandler b h
-bonsaiMatchHandler stx h@(PatternHandler2 p _) tree = do
-  b <- bonsaiMatchPattern stx p tree
+bonsaiMatchHandler h@(PatternHandler2 p _) tree = do
+  b <- bonsaiMatchPattern p tree
   merge $ withExceptT transformError $ applyHandler b h
-bonsaiMatchHandler stx h@(PatternHandler3 p _) tree = do
-  b <- bonsaiMatchPattern stx p tree
+bonsaiMatchHandler h@(PatternHandler3 p _) tree = do
+  b <- bonsaiMatchPattern p tree
   merge $ withExceptT transformError $ applyHandler b h
-bonsaiMatchHandler stx h@(PatternHandler4 p _) tree = do
-  b <- bonsaiMatchPattern stx p tree
+bonsaiMatchHandler h@(PatternHandler4 p _) tree = do
+  b <- bonsaiMatchPattern p tree
   merge $ withExceptT transformError $ applyHandler b h
-bonsaiMatchHandler stx h@(PatternHandler5 p _) tree = do
-  b <- bonsaiMatchPattern stx p tree
+bonsaiMatchHandler h@(PatternHandler5 p _) tree = do
+  b <- bonsaiMatchPattern p tree
   merge $ withExceptT transformError $ applyHandler b h
 
 bonsaiMatchPattern ::
-  (KnownNat m, 1 <= m, Mergeable SymBool e) =>
-  OptimSyntaxSpec m ->
-  Pattern n ->
-  BonsaiTree (SymUnsignedBV m) ->
-  ExceptT (PrivateMatchError e) UnionM [UnionM (BonsaiTree (SymUnsignedBV m))]
-bonsaiMatchPattern stx (LiteralPattern str) (BonsaiLeaf sym) =
+  (SEq SymBool m, Mergeable SymBool m, Mergeable SymBool e) =>
+  Pattern m n ->
+  BonsaiTree m ->
+  ExceptT (PrivateMatchError e) UnionM [UnionM (BonsaiTree m)]
+bonsaiMatchPattern (LiteralPattern lit) (BonsaiLeaf sym) =
   mrgGuard
-    (Just sym ==~ (conc <$> terminalToBV stx str))
+    (sym ==~ lit)
     (mrgSingle [])
     (throwError PrivateMatchError)
-bonsaiMatchPattern stx (PairPattern leftp rightp) (BonsaiNode left right) = do
-  l <- bonsaiMatchPattern stx leftp #~ left
-  r <- bonsaiMatchPattern stx rightp #~ right
+bonsaiMatchPattern (PairPattern leftp rightp) (BonsaiNode left right) = do
+  l <- bonsaiMatchPattern leftp #~ left
+  r <- bonsaiMatchPattern rightp #~ right
   mrgReturn $ l ++ r
-bonsaiMatchPattern _ PlaceHolder t = mrgReturn [mrgSingle t]
-bonsaiMatchPattern _ _ _ = throwError PrivateMatchError
+bonsaiMatchPattern PlaceHolder t = mrgReturn [mrgSingle t]
+bonsaiMatchPattern _ _ = throwError PrivateMatchError

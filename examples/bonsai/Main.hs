@@ -1,15 +1,15 @@
 module Main where
 
--- import STLCMain
+import STLCMain
 import NanoScalaMain
--- import LetPolyMain
+import LetPolyMain
 import Utils.Timing
 
 main :: IO ()
 main = timeItAll "Overall" $ do
-  -- putStrLn "SLTC"
-  -- stlcMain
+  putStrLn "SLTC"
+  stlcMain
   putStrLn "DOT"
   dotMain
-  -- putStrLn "LetPoly"
-  -- letPolyMain
+  putStrLn "LetPoly"
+  letPolyMain

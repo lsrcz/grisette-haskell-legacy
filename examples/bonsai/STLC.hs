@@ -45,6 +45,9 @@ stlcSyntax =
       "name" --> ["a", "b", "c"]
     ]
 
+stlcLiteral :: B.ByteString -> Pattern (SymUnsignedBV STLCBitWidth) 0
+stlcLiteral s = literal $ fromJust $ toSym $ terminalToBV stlcSyntax s 
+
 simpleNode :: B.ByteString -> STLCTree
 simpleNode = unsafeLeaf stlcSyntax
 
@@ -119,14 +122,13 @@ typer' :: STLCTree -> Env 14 (STLCTree) -> ExceptT BonsaiError UnionM (STLCTree)
 typer' = memo2 $ \tree env -> {-trace (show tree) $ trace (show env) $-}
   bonsaiMatchCustomError
     BonsaiTypeError
-    stlcSyntax
-    [ literal "one" ==> mrgReturn intTy,
-      literal "nil" ==> mrgReturn listOfIntTy,
-      literal "cons" ==> mrgReturn (arrowTy intTy (arrowTy listOfIntTy listOfIntTy)),
-      literal "hd" ==> mrgReturn (arrowTy listOfIntTy intTy),
-      literal "tl" ==> mrgReturn (arrowTy listOfIntTy listOfIntTy),
-      literal "+" ==> mrgReturn (arrowTy intTy (arrowTy intTy intTy)),
-      ((literal "lambda" *= (placeHolder *= placeHolder)) *= placeHolder)
+    [ stlcLiteral "one" ==> mrgReturn intTy,
+      stlcLiteral "nil" ==> mrgReturn listOfIntTy,
+      stlcLiteral "cons" ==> mrgReturn (arrowTy intTy (arrowTy listOfIntTy listOfIntTy)),
+      stlcLiteral "hd" ==> mrgReturn (arrowTy listOfIntTy intTy),
+      stlcLiteral "tl" ==> mrgReturn (arrowTy listOfIntTy listOfIntTy),
+      stlcLiteral "+" ==> mrgReturn (arrowTy intTy (arrowTy intTy intTy)),
+      ((stlcLiteral "lambda" *= (placeHolder *= placeHolder)) *= placeHolder)
         ==> ( \name ty expr -> do
                 n <- lift name
                 _ <- gassertWithError BonsaiTypeError (isAvailableNameNode n)
@@ -134,7 +136,7 @@ typer' = memo2 $ \tree env -> {-trace (show tree) $ trace (show env) $-}
                 res <- typer' #~ expr # envAdd env sym ty
                 mrgReturn $ arrowTyU ty res
             ),
-      (literal "call" *= (placeHolder *= placeHolder))
+      (stlcLiteral "call" *= (placeHolder *= placeHolder))
         ==> ( \func arg -> do
                 tres <- typer' #~ func # env
                 case tres of
@@ -239,21 +241,20 @@ interpreter' = memo3 $ \tree env reccount -> {-trace (show tree) $ trace (show e
     else
       bonsaiMatchCustomError
         BonsaiExecError
-        stlcSyntax
-        [ literal "one" ==> uSTLCInt 1,
-          literal "nil" ==> uSTLCList (mrgSingle []),
-          literal "hd" ==> uSTLCBuiltin (conc (fromJust (terminalToBV stlcSyntax "hd"))),
-          literal "tl" ==> uSTLCBuiltin (conc (fromJust (terminalToBV stlcSyntax "tl"))),
-          literal "cons" ==> uSTLCBuiltin (conc (fromJust (terminalToBV stlcSyntax "cons"))),
-          literal "+" ==> uSTLCBuiltin (conc (fromJust (terminalToBV stlcSyntax "+"))),
-          ((literal "lambda" *= (placeHolder *= placeHolder)) *= placeHolder)
+        [ stlcLiteral "one" ==> uSTLCInt 1,
+          stlcLiteral "nil" ==> uSTLCList (mrgSingle []),
+          stlcLiteral "hd" ==> uSTLCBuiltin (conc (fromJust (terminalToBV stlcSyntax "hd"))),
+          stlcLiteral "tl" ==> uSTLCBuiltin (conc (fromJust (terminalToBV stlcSyntax "tl"))),
+          stlcLiteral "cons" ==> uSTLCBuiltin (conc (fromJust (terminalToBV stlcSyntax "cons"))),
+          stlcLiteral "+" ==> uSTLCBuiltin (conc (fromJust (terminalToBV stlcSyntax "+"))),
+          ((stlcLiteral "lambda" *= (placeHolder *= placeHolder)) *= placeHolder)
             ==> ( \name _ expr -> do
                     l <- lift name
                     gassertWithError BonsaiExecError (isAvailableNameNode l)
                     let BonsaiLeaf sym = l
                     uSTLCLambda sym expr env
                 ),
-          (literal "call" *= (placeHolder *= placeHolder))
+          (stlcLiteral "call" *= (placeHolder *= placeHolder))
             ==> ( \func arg -> do
               argv <- mrgFmap (mrgSingle @SymBool) $ interpreter' #~ arg # env # reccount
               funcv <- interpreter' #~ func # env # reccount
