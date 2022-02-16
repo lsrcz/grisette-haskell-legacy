@@ -17,12 +17,13 @@ import Match
 import MatchSyntax
 import Pattern
 import SyntaxSpec
+import Data.BitVector.Sized.Unsigned
 
 type LetPolyWidth = 19
 
-type LetPolyTree = BonsaiTree LetPolyWidth
+type LetPolyTree = BonsaiTree (SymUnsignedBV LetPolyWidth)
 
-type ConcLetPolyTree = ConcBonsaiTree LetPolyWidth
+type ConcLetPolyTree = ConcBonsaiTree (UnsignedBV LetPolyWidth)
 
 letPolySyntax :: OptimSyntaxSpec LetPolyWidth
 letPolySyntax =
@@ -109,7 +110,7 @@ tyassert = gassertWithError BonsaiTypeError
 
 tyMatch ::
   (Mergeable SymBool t, Show t) =>
-  [PatternHandler LetPolyWidth BonsaiError t] ->
+  [PatternHandler (SymUnsignedBV LetPolyWidth) BonsaiError t] ->
   LetPolyTree ->
   ExceptT BonsaiError UnionM t
 tyMatch = bonsaiMatchCustomError BonsaiTypeError letPolySyntax
@@ -296,7 +297,7 @@ simpleEvalList ::
   EvalType ->
   Env LetPolyWidth LetPolyValue ->
   RefEnv ->
-  [PatternHandler LetPolyWidth BonsaiError (UnionM LetPolyValue, RefEnv)]
+  [PatternHandler (SymUnsignedBV LetPolyWidth) BonsaiError (UnionM LetPolyValue, RefEnv)]
 simpleEvalList evalFunc named ref =
   [ literal "true" ==> uTuple2 (uLetPolyBool $ conc True) ref,
     literal "one" ==> uTuple2 (uLetPolyInt 1) ref,
@@ -346,7 +347,7 @@ simpleEvalList evalFunc named ref =
 
 evalMatch ::
   (Mergeable SymBool t, Show t) =>
-  [PatternHandler LetPolyWidth BonsaiError t] ->
+  [PatternHandler (SymUnsignedBV LetPolyWidth) BonsaiError t] ->
   LetPolyTree ->
   ExceptT BonsaiError UnionM t
 evalMatch = bonsaiMatchCustomError BonsaiExecError letPolySyntax

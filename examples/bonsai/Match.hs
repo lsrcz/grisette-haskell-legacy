@@ -21,23 +21,34 @@ instance TransformError e (PrivateMatchError e) where
 
 deriving instance (Mergeable SymBool e) => Mergeable SymBool (PrivateMatchError e)
 
-bonsaiMatchCustomError :: 
+bonsaiMatchCustomError ::
   (KnownNat m, 1 <= m, Mergeable SymBool e, Mergeable SymBool t) =>
-  e -> OptimSyntaxSpec m -> [PatternHandler m e t] -> BonsaiTree m -> ExceptT e UnionM t
+  e ->
+  OptimSyntaxSpec m ->
+  [PatternHandler (SymUnsignedBV m) e t] ->
+  BonsaiTree (SymUnsignedBV m) ->
+  ExceptT e UnionM t
 bonsaiMatchCustomError e stx handlers tree =
-  merge $ withExceptT (\case 
-    PrivateMatchError -> e
-    OriginalError e1 -> e1) $
-  foldl (\acc handler -> acc `catchError` \case
-    PrivateMatchError -> bonsaiMatchHandler stx handler tree
-    e1 -> throwError e1
-  ) (throwError PrivateMatchError) handlers
+  merge $
+    withExceptT
+      ( \case
+          PrivateMatchError -> e
+          OriginalError e1 -> e1
+      )
+      $ foldl
+        ( \acc handler ->
+            acc `catchError` \case
+              PrivateMatchError -> bonsaiMatchHandler stx handler tree
+              e1 -> throwError e1
+        )
+        (throwError PrivateMatchError)
+        handlers
 
 bonsaiMatchHandler ::
   (KnownNat m, 1 <= m, Mergeable SymBool e, Mergeable SymBool t) =>
   OptimSyntaxSpec m ->
-  PatternHandler m e t ->
-  BonsaiTree m ->
+  PatternHandler (SymUnsignedBV m) e t ->
+  BonsaiTree (SymUnsignedBV m) ->
   ExceptT (PrivateMatchError e) UnionM t
 bonsaiMatchHandler stx h@(PatternHandler0 p _) tree = do
   b <- bonsaiMatchPattern stx p tree
@@ -62,8 +73,8 @@ bonsaiMatchPattern ::
   (KnownNat m, 1 <= m, Mergeable SymBool e) =>
   OptimSyntaxSpec m ->
   Pattern n ->
-  BonsaiTree m ->
-  ExceptT (PrivateMatchError e) UnionM [UnionM (BonsaiTree m)]
+  BonsaiTree (SymUnsignedBV m) ->
+  ExceptT (PrivateMatchError e) UnionM [UnionM (BonsaiTree (SymUnsignedBV m))]
 bonsaiMatchPattern stx (LiteralPattern str) (BonsaiLeaf sym) =
   mrgGuard
     (Just sym ==~ (conc <$> terminalToBV stx str))

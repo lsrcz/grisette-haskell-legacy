@@ -5,7 +5,7 @@ module NanoScalaMain where
 import BonsaiTree
 import qualified Data.ByteString as B
 import Grisette.Core
-import NanoScala
+import NanoScalaOptimized
 import SyntaxSpec
 import Error
 import Grisette.SymPrim.Term

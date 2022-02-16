@@ -88,8 +88,8 @@ executable bonsai
       LetPolyMain
       Match
       MatchSyntax
-      NanoScala
       NanoScalaMain
+      NanoScalaOptimized
       Pattern
       STLC
       STLCMain

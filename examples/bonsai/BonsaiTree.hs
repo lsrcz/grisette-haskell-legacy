@@ -1,6 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE UndecidableInstances #-}
 module BonsaiTree where
 import Grisette.Core
 import Grisette.SymPrim.Term
@@ -14,16 +15,23 @@ import Data.Maybe
 import Data.MemoTrie
 import Control.DeepSeq
 
-data ConcBonsaiTree n
-  = ConcBonsaiLeaf (UnsignedBV n)
-  | ConcBonsaiNode (ConcBonsaiTree n) (ConcBonsaiTree n)
+data ConcBonsaiTree leaf
+  = ConcBonsaiLeaf leaf 
+  | ConcBonsaiNode (ConcBonsaiTree leaf) (ConcBonsaiTree leaf)
   deriving (Show, Generic)
 
-data BonsaiTree n
-  = BonsaiLeaf (SymUnsignedBV n)
-  | BonsaiNode (UnionM (BonsaiTree n)) (UnionM (BonsaiTree n))
-  deriving Generic
+data BonsaiTree leaf
+  = BonsaiLeaf leaf
+  | BonsaiNode (UnionM (BonsaiTree leaf)) (UnionM (BonsaiTree leaf))
+  deriving (Generic, Show, Eq, Hashable, NFData)
 
+deriving instance (SEq SymBool leaf) => SEq SymBool (BonsaiTree leaf)
+deriving instance (Mergeable SymBool leaf) => Mergeable SymBool (BonsaiTree leaf)
+deriving instance (Mergeable SymBool leaf, SymEval Model leaf) => SymEval Model (BonsaiTree leaf)
+deriving instance (ToCon leaf cleaf) => ToCon (BonsaiTree leaf) (ConcBonsaiTree cleaf)
+deriving instance (Mergeable SymBool leaf, ToSym cleaf leaf) =>
+  ToSym (ConcBonsaiTree cleaf) (BonsaiTree leaf)
+{-
 deriving instance (KnownNat n, 1 <= n) => Show (BonsaiTree n)
 deriving instance (KnownNat n, 1 <= n) => Eq (BonsaiTree n)
 deriving instance (KnownNat n, 1 <= n) => SEq SymBool (BonsaiTree n)
@@ -33,23 +41,33 @@ deriving instance (KnownNat n, 1 <= n) => ToSym (ConcBonsaiTree n) (BonsaiTree n
 deriving instance (KnownNat n, 1 <= n) => SymEval Model (BonsaiTree n)
 deriving instance (KnownNat n, 1 <= n) => Hashable (BonsaiTree n)
 deriving instance (KnownNat n, 1 <= n) => NFData (BonsaiTree n)
+-}
 
+{-
 instance (KnownNat n, 1 <= n) => HasTrie (BonsaiTree n) where
   newtype (BonsaiTree n :->: b) = BonsaiTreeTrie { unBonsaiTreeTrie :: Reg (BonsaiTree n) :->: b}
   trie = trieGeneric BonsaiTreeTrie
   untrie = untrieGeneric unBonsaiTreeTrie
   enumerate = enumerateGeneric unBonsaiTreeTrie
+  -}
+
+instance (Mergeable SymBool leaf, HasTrie leaf) => HasTrie (BonsaiTree leaf) where
+  newtype (BonsaiTree leaf :->: b) = BonsaiTreeTrie { unBonsaiTreeTrie :: Reg (BonsaiTree leaf) :->: b}
+  trie = trieGeneric BonsaiTreeTrie
+  untrie = untrieGeneric unBonsaiTreeTrie
+  enumerate = enumerateGeneric unBonsaiTreeTrie
+
 
 $(makeUnionMWrapper "u" ''BonsaiTree)
 
-showConcTree :: OptimSyntaxSpec n -> ConcBonsaiTree n -> Maybe B.ByteString
+showConcTree :: OptimSyntaxSpec n -> ConcBonsaiTree (UnsignedBV n) -> Maybe B.ByteString
 showConcTree stx (ConcBonsaiLeaf sym) = bvToTerminal stx sym
 showConcTree stx (ConcBonsaiNode l r) = do
   ls <- showConcTree stx l
   rs <- showConcTree stx r
   return $ B.append "[ " (B.append ls (B.append " " (B.append rs " ]")))
 
-instance (KnownNat n, 1 <= n) => SymGen SymBool Int (BonsaiTree n) where
+instance (KnownNat n, 1 <= n) => SymGen SymBool Int (BonsaiTree (SymUnsignedBV n)) where
   genSymIndexed depth = if depth <= 1 then
     uBonsaiLeaf <$> genSymSimpleIndexed @SymBool ()
     else do
@@ -58,5 +76,5 @@ instance (KnownNat n, 1 <= n) => SymGen SymBool Int (BonsaiTree n) where
       sym <- genSymSimpleIndexed @SymBool ()
       choose (BonsaiLeaf sym) [BonsaiNode l r]
 
-unsafeLeaf :: (KnownNat n, 1 <= n) => OptimSyntaxSpec n -> B.ByteString -> BonsaiTree n
+unsafeLeaf :: (KnownNat n, 1 <= n) => OptimSyntaxSpec n -> B.ByteString -> BonsaiTree (SymUnsignedBV n)
 unsafeLeaf stx name = BonsaiLeaf $ conc $ fromJust $ terminalToBV stx name
