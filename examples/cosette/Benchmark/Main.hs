@@ -13,7 +13,7 @@ import Control.DeepSeq
 import Utils.Timing
 
 main :: IO ()
-main = do 
+main = timeItAll "Overall" $ do 
   let r1 = $$(denoteSql q4)
   let r1r = $$(denoteSql q4r)
   let cond = $$(verifCondition q4 q4r)

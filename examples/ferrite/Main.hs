@@ -35,7 +35,7 @@ createRenameAllow _ fs2 =
     new1 ==~ uNothing ||~ new1 ==~ uJust [conc True, conc True]
 
 main :: IO ()
-main = timeItAll "all" $ do
+main = timeItAll "Overall" $ do
   {-
   print fs
   print $ crack fs incorrect

@@ -171,7 +171,7 @@ spec g = do
   return $ r ==~ uJust "a" &&~ r2 ==~ uJust "b"
 
 main :: IO ()
-main = timeItAll "overall" $ do
+main = timeItAll "Overall" $ do
   let x = genSym @SymBool @() @Instruction () "a"
   -- let y = genSym @SymBool @() @Instruction () "b"
   print x

@@ -90,7 +90,8 @@ runValidCase name config end steps progSpec = do
       error $ "Found cex: " ++ show v
 
 main :: IO ()
-main = do
+main = timeItAll "Overall" $ do
+{-
   print (genSymSimple @SymBool NoopIns "a" :: Instruction)
   print (genSym @SymBool NoopIns "a" :: UnionM Instruction)
   print (genSym @SymBool (ListSpec 0 2 [NoopIns, PushIns]) "a" :: UnionM [UnionM Instruction])
@@ -213,6 +214,7 @@ main = do
           uStoreCR
         ]
   print $ step 10 (freshMachine 2) p8
+  -}
 
   let config = BoundedReasoning @5 boolector {verbose = False}
 

@@ -31,7 +31,7 @@ f7 = genSym (7 :: Int) "a"
 
 
 letPolyMain :: IO ()
-letPolyMain = do
+letPolyMain = timeItAll "Overall" $ do
   print $ terminals letPolySyntax
   {-
   print $ typeCompatible intTy intTy
