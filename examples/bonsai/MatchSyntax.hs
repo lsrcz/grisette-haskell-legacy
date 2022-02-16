@@ -12,8 +12,8 @@ import SyntaxSpec
 matchSyntax ::
   (KnownNat n, 1 <= n) =>
   OptimSyntaxSpec n ->
-  (Rule -> BonsaiTree n -> SymBool) ->
-  BonsaiTree n ->
+  (Rule -> BonsaiTree (SymUnsignedBV n) -> SymBool) ->
+  BonsaiTree (SymUnsignedBV n) ->
   B.ByteString ->
   SymBool
 matchSyntax stx fR = memo2 $ \tree sym -> case getRules stx sym of
@@ -28,10 +28,10 @@ matchSyntax stx fR = memo2 $ \tree sym -> case getRules stx sym of
 matchRule ::
   (KnownNat n, 1 <= n) =>
   OptimSyntaxSpec n ->
-  (BonsaiTree n -> B.ByteString -> SymBool) ->
-  (Rule -> BonsaiTree n -> SymBool) ->
+  (BonsaiTree (SymUnsignedBV n) -> B.ByteString -> SymBool) ->
+  (Rule -> BonsaiTree (SymUnsignedBV n) -> SymBool) ->
   Rule ->
-  BonsaiTree n ->
+  BonsaiTree (SymUnsignedBV n) ->
   SymBool
 matchRule stx fS fR = memo2 $ \rule tree -> case (tree, rule) of
   (_, SymRule sym)

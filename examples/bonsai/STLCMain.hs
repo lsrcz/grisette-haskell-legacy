@@ -17,19 +17,19 @@ import Utils.Timing
 import Control.Monad.Except
 import STLC
 
-x1 :: BonsaiTree 14
+x1 :: STLCTree
 x1 = BonsaiNode (mrgGuard "cond" (mrgSingle (simpleNode "call")) (mrgSingle $ simpleNode "+"))
        (uBonsaiNode (mrgSingle $ simpleNode "+") (mrgSingle $ simpleNode "one"))
 
-f1 :: UnionM (BonsaiTree 14)
+f1 :: UnionM (STLCTree)
 f1 = genSym (1 :: Int) "a"
-f2 :: UnionM (BonsaiTree 14)
+f2 :: UnionM (STLCTree)
 f2 = genSym (2 :: Int) "b"
-f3 :: UnionM (BonsaiTree 14)
+f3 :: UnionM (STLCTree)
 f3 = genSym (3 :: Int) "c"
---f5 :: UnionM (BonsaiTree 14)
+--f5 :: UnionM (STLCTree)
 --f5 = genSym (5 :: Int) "e"
-f8 :: UnionM (BonsaiTree 14)
+f8 :: UnionM (STLCTree)
 f8 = genSym (8 :: Int) "h"
 
 stlcMain :: IO ()
@@ -65,34 +65,34 @@ stlcMain = do
     literal "b" ==> mrgReturn (2 :: Integer)
     ] #~ f3
   print ((fmap . fmap) (showConcTree stlcSyntax)
-    (toCon $ typer oneNode  :: Maybe (Either BonsaiError (ConcBonsaiTree 14))))
+    (toCon $ typer oneNode  :: Maybe (Either BonsaiError (ConcSTLCTree))))
   print ((fmap . fmap) (showConcTree stlcSyntax)
-    (toCon $ typer nilNode  :: Maybe (Either BonsaiError (ConcBonsaiTree 14))))
+    (toCon $ typer nilNode  :: Maybe (Either BonsaiError (ConcSTLCTree))))
   print ((fmap . fmap) (showConcTree stlcSyntax)
-    (toCon $ typer (simpleNode "cons")  :: Maybe (Either BonsaiError (ConcBonsaiTree 14))))
+    (toCon $ typer (simpleNode "cons")  :: Maybe (Either BonsaiError (ConcSTLCTree))))
   print ((fmap . fmap) (showConcTree stlcSyntax)
-    (toCon $ typer (simpleNode "hd")  :: Maybe (Either BonsaiError (ConcBonsaiTree 14))))
+    (toCon $ typer (simpleNode "hd")  :: Maybe (Either BonsaiError (ConcSTLCTree))))
   print ((fmap . fmap) (showConcTree stlcSyntax)
-    (toCon $ typer (simpleNode "tl")  :: Maybe (Either BonsaiError (ConcBonsaiTree 14))))
+    (toCon $ typer (simpleNode "tl")  :: Maybe (Either BonsaiError (ConcSTLCTree))))
   print ((fmap . fmap) (showConcTree stlcSyntax)
-    (toCon $ typer (simpleNode "+")  :: Maybe (Either BonsaiError (ConcBonsaiTree 14))))
+    (toCon $ typer (simpleNode "+")  :: Maybe (Either BonsaiError (ConcSTLCTree))))
   print ((fmap . fmap) (showConcTree stlcSyntax)
-    (toCon $ typer (simpleNode "a")  :: Maybe (Either BonsaiError (ConcBonsaiTree 14))))
+    (toCon $ typer (simpleNode "a")  :: Maybe (Either BonsaiError (ConcSTLCTree))))
   print ((fmap . fmap) (showConcTree stlcSyntax)
     (toCon $ typer (lambdaNode "a" intTy (simpleNode "a"))
-       :: Maybe (Either BonsaiError (ConcBonsaiTree 14))))
+       :: Maybe (Either BonsaiError (ConcSTLCTree))))
   print ((fmap . fmap) (showConcTree stlcSyntax)
     (toCon $ typer (lambdaNode "a" intTy (simpleNode "b"))
-       :: Maybe (Either BonsaiError (ConcBonsaiTree 14))))
+       :: Maybe (Either BonsaiError (ConcSTLCTree))))
   print ((fmap . fmap) (showConcTree stlcSyntax)
     (toCon $ typer (callNode (simpleNode "+") (simpleNode "one"))
-       :: Maybe (Either BonsaiError (ConcBonsaiTree 14))))
+       :: Maybe (Either BonsaiError (ConcSTLCTree))))
   print ((fmap . fmap) (showConcTree stlcSyntax)
     (toCon $ typer (callNode (simpleNode "+") (simpleNode "one"))
-       :: Maybe (Either BonsaiError (ConcBonsaiTree 14))))
+       :: Maybe (Either BonsaiError (ConcSTLCTree))))
   print ((fmap . fmap) (showConcTree stlcSyntax)
     (toCon $ typer (callNode (lambdaNode "a" intTy (simpleNode "a")) (simpleNode "one"))
-       :: Maybe (Either BonsaiError (ConcBonsaiTree 14))))
+       :: Maybe (Either BonsaiError (ConcSTLCTree))))
   print $ interpreter oneNode
   print $ interpreter nilNode
   print $ interpreter (simpleNode "cons")
@@ -119,4 +119,4 @@ stlcMain = do
     Left _ -> putStrLn "Verified"
     Right mo -> do
       putStrLn "Found bad"
-      print $ showConcTree stlcSyntax <$> (toCon $ symeval True mo f8 :: Maybe (ConcBonsaiTree 14))
+      print $ showConcTree stlcSyntax <$> (toCon $ symeval True mo f8 :: Maybe (ConcSTLCTree))

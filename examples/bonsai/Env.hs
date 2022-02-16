@@ -19,7 +19,7 @@ envAdd env k v = do
 extractName ::
   (KnownNat n, 1 <= n) =>
   BonsaiError ->
-  UnionM (BonsaiTree n) ->
+  UnionM (BonsaiTree (SymUnsignedBV n)) ->
   ExceptT BonsaiError UnionM (SymUnsignedBV n)
 extractName err m = do
   t <- lift m
@@ -31,7 +31,7 @@ envAddTree ::
   (Mergeable SymBool t, KnownNat n, 1 <= n) =>
   BonsaiError ->
   Env n t ->
-  UnionM (BonsaiTree n) ->
+  UnionM (BonsaiTree (SymUnsignedBV n)) ->
   UnionM t ->
   ExceptT BonsaiError UnionM (Env n t)
 envAddTree err env t v = do

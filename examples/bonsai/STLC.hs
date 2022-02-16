@@ -18,9 +18,16 @@ import SyntaxSpec
 import MatchSyntax
 import Control.DeepSeq
 import Env
+import Data.BitVector.Sized.Unsigned
 -- import Debug.Trace
 
-stlcSyntax :: OptimSyntaxSpec 14
+type STLCBitWidth = 14
+
+type STLCTree = BonsaiTree (SymUnsignedBV STLCBitWidth)
+
+type ConcSTLCTree = ConcBonsaiTree (UnsignedBV STLCBitWidth)
+
+stlcSyntax :: OptimSyntaxSpec STLCBitWidth
 stlcSyntax =
   buildSyntax
     [ "term"
@@ -38,22 +45,22 @@ stlcSyntax =
       "name" --> ["a", "b", "c"]
     ]
 
-simpleNode :: B.ByteString -> BonsaiTree 14
+simpleNode :: B.ByteString -> STLCTree
 simpleNode = unsafeLeaf stlcSyntax
 
-oneNode :: BonsaiTree 14
+oneNode :: STLCTree
 oneNode = simpleNode "one"
 
-nilNode :: BonsaiTree 14
+nilNode :: STLCTree
 nilNode = simpleNode "nil"
 
-pairNode :: BonsaiTree 14 -> BonsaiTree 14 -> BonsaiTree 14
+pairNode :: STLCTree -> STLCTree -> STLCTree
 pairNode l r = BonsaiNode (mrgSingle l) (mrgSingle r)
 
-callNode :: BonsaiTree 14 -> BonsaiTree 14 -> BonsaiTree 14
+callNode :: STLCTree -> STLCTree -> STLCTree
 callNode l r = pairNode (simpleNode "call") $ pairNode l r
 
-lambdaNode :: B.ByteString -> BonsaiTree 14 -> BonsaiTree 14 -> BonsaiTree 14
+lambdaNode :: B.ByteString -> STLCTree -> STLCTree -> STLCTree
 lambdaNode name ty =
   pairNode
     ( pairNode
@@ -64,51 +71,51 @@ lambdaNode name ty =
         )
     )
 
-uopNode :: B.ByteString -> BonsaiTree 14 -> BonsaiTree 14
+uopNode :: B.ByteString -> STLCTree -> STLCTree
 uopNode name = callNode (simpleNode name)
 
-bopNode :: B.ByteString -> BonsaiTree 14 -> BonsaiTree 14 -> BonsaiTree 14
+bopNode :: B.ByteString -> STLCTree -> STLCTree -> STLCTree
 bopNode name l = callNode (callNode (unsafeLeaf stlcSyntax name) l)
 
-consNode :: BonsaiTree 14 -> BonsaiTree 14 -> BonsaiTree 14
+consNode :: STLCTree -> STLCTree -> STLCTree
 consNode = bopNode "cons"
 
-hdNode :: BonsaiTree 14 -> BonsaiTree 14
+hdNode :: STLCTree -> STLCTree
 hdNode = uopNode "hd"
 
-tlNode :: BonsaiTree 14 -> BonsaiTree 14
+tlNode :: STLCTree -> STLCTree
 tlNode = uopNode "tl"
 
-plusNode :: BonsaiTree 14 -> BonsaiTree 14 -> BonsaiTree 14
+plusNode :: STLCTree -> STLCTree -> STLCTree
 plusNode = bopNode "+"
 
-intTy :: BonsaiTree 14
+intTy :: STLCTree
 intTy = simpleNode "int"
 
-listOfIntTy :: BonsaiTree 14
+listOfIntTy :: STLCTree
 listOfIntTy = pairNode (simpleNode "listof") intTy
 
-arrowTy :: BonsaiTree 14 -> BonsaiTree 14 -> BonsaiTree 14
+arrowTy :: STLCTree -> STLCTree -> STLCTree
 arrowTy arg res = pairNode (simpleNode "arrow") (pairNode arg res)
 
-arrowTyU :: UnionM (BonsaiTree 14) -> BonsaiTree 14 -> BonsaiTree 14
+arrowTyU :: UnionM (STLCTree) -> STLCTree -> STLCTree
 arrowTyU arg res = pairNode (simpleNode "arrow") (BonsaiNode arg (mrgSingle res))
 
-availableNames :: [BonsaiTree 14]
+availableNames :: [STLCTree]
 availableNames = [simpleNode "a", simpleNode "b", simpleNode "c"]
 
-isAvailableNameNode :: BonsaiTree 14 -> SymBool
+isAvailableNameNode :: STLCTree -> SymBool
 isAvailableNameNode node = foldl (\acc v -> node ==~ v ||~ acc) (conc False) availableNames
 
-asLeaf :: BonsaiError -> BonsaiTree 14 -> ExceptT BonsaiError UnionM (BonsaiTree 14)
+asLeaf :: BonsaiError -> STLCTree -> ExceptT BonsaiError UnionM (STLCTree)
 asLeaf _ x@(BonsaiLeaf _) = mrgReturn x
 asLeaf e _ = throwError e
 
-asNode :: BonsaiError -> BonsaiTree 14 -> ExceptT BonsaiError UnionM (BonsaiTree 14)
+asNode :: BonsaiError -> STLCTree -> ExceptT BonsaiError UnionM (STLCTree)
 asNode _ x@(BonsaiNode _ _) = mrgReturn x
 asNode e _ = throwError e
 
-typer' :: BonsaiTree 14 -> Env 14 (BonsaiTree 14) -> ExceptT BonsaiError UnionM (BonsaiTree 14)
+typer' :: STLCTree -> Env 14 (STLCTree) -> ExceptT BonsaiError UnionM (STLCTree)
 typer' = memo2 $ \tree env -> {-trace (show tree) $ trace (show env) $-}
   bonsaiMatchCustomError
     BonsaiTypeError
@@ -155,7 +162,7 @@ typer' = memo2 $ \tree env -> {-trace (show tree) $ trace (show env) $-}
     ]
     tree
 
-typer :: BonsaiTree 14 -> ExceptT BonsaiError UnionM (BonsaiTree 14)
+typer :: STLCTree -> ExceptT BonsaiError UnionM (STLCTree)
 typer tree = typer' tree (mrgSingle [])
 
 data STLCValue
@@ -163,7 +170,7 @@ data STLCValue
   | STLCList (UnionM [SymInteger])
   | STLCBuiltin (SymUnsignedBV 14)
   | STLCPartiallyAppliedBuiltin (SymUnsignedBV 14) (UnionM STLCValue)
-  | STLCLambda (SymUnsignedBV 14) (UnionM (BonsaiTree 14)) (Env 14 STLCValue)
+  | STLCLambda (SymUnsignedBV 14) (UnionM (STLCTree)) (Env 14 STLCValue)
   deriving (Show, Eq, Generic, Mergeable SymBool, NFData)
 
 instance HasTrie STLCValue where
@@ -225,7 +232,7 @@ applyBuiltin (STLCPartiallyAppliedBuiltin v arg1) arg2 =
     )
 applyBuiltin _ _ = throwError BonsaiExecError
 
-interpreter' :: BonsaiTree 14 -> Env 14 STLCValue -> Int -> ExceptT BonsaiError UnionM STLCValue
+interpreter' :: STLCTree -> Env 14 STLCValue -> Int -> ExceptT BonsaiError UnionM STLCValue
 interpreter' = memo3 $ \tree env reccount -> {-trace (show tree) $ trace (show env) $ trace (show reccount) $-}
   if reccount >= 2
     then throwError BonsaiRecursionError
@@ -265,16 +272,16 @@ interpreter' = memo3 $ \tree env reccount -> {-trace (show tree) $ trace (show e
         ]
         tree
 
-interpreter :: BonsaiTree 14 -> ExceptT BonsaiError UnionM STLCValue
+interpreter :: STLCTree -> ExceptT BonsaiError UnionM STLCValue
 interpreter tree = interpreter' tree (mrgSingle []) 0
 
-matchStlcSyntax :: BonsaiTree 14 -> B.ByteString -> SymBool
+matchStlcSyntax :: STLCTree -> B.ByteString -> SymBool
 matchStlcSyntax = matchSyntax stlcSyntax matchStlcRule
 
-matchStlcRule :: Rule -> BonsaiTree 14 -> SymBool
+matchStlcRule :: Rule -> STLCTree -> SymBool
 matchStlcRule = matchRule stlcSyntax matchStlcSyntax matchStlcRule
 
-execStlc :: BonsaiTree 14 -> ExceptT BonsaiError UnionM STLCValue
+execStlc :: STLCTree -> ExceptT BonsaiError UnionM STLCValue
 execStlc tree = do
   gassertWithError BonsaiTypeError (matchStlcSyntax tree "term")
   mrgFmap (const ()) $ typer tree

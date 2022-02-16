@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module NanoScala where
+module NanoScalaOptimized where
 
 import BonsaiTree
 import Control.DeepSeq
@@ -17,12 +17,13 @@ import Match
 import MatchSyntax
 import Pattern
 import SyntaxSpec
+import Data.BitVector.Sized.Unsigned
 
 type DotBitWidth = 15
 
-type DotTree = BonsaiTree DotBitWidth
+type DotTree = BonsaiTree (SymUnsignedBV DotBitWidth)
 
-type ConcDotTree = ConcBonsaiTree DotBitWidth
+type ConcDotTree = ConcBonsaiTree (UnsignedBV DotBitWidth)
 
 dotSyntax :: OptimSyntaxSpec DotBitWidth
 dotSyntax =
