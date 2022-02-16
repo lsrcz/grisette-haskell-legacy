@@ -40,12 +40,8 @@ denoteSql qs@(QuerySelect cols q f) =
           rowFuncWrap r = (\rf -> rf r) <$> rowFuncs1
           fromContent = case $$queryQ of
             Table _ _ c -> c
-          postFilter = do
-            fv <- fromContent
-            mrgReturn $ (\(r, p) -> (r, mrgIf @SymBool ($$filterQ r) p 0)) <$> fv
-          content = do
-            pf <- postFilter
-            mrgReturn $ first rowFuncWrap <$> pf
+          postFilter = (\(r, p) -> (r, mrgIf @SymBool ($$filterQ r) p 0)) <$> fromContent
+          content = first rowFuncWrap <$> postFilter
        in Table newTblName newSchema content
       ||]
 denoteSql q = fail $ "I don't know how to handle the sql query " ++ show q

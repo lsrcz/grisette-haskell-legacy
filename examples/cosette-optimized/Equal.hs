@@ -16,7 +16,7 @@ tableSum :: RawTable -> RawTable
 tableSum t = (\(r, _) -> (r, getMultiplicity r t)) <$> t
 
 elementContain :: ([UnionM (Maybe SymInteger)], SymInteger) -> RawTable -> SymBool
-elementContain r = foldr (\r1 a -> a ||~ r ==~ r1) (conc False)
+elementContain r@(_, p) t = (p ==~ 0) ||~ foldr (\r1 a -> a ||~ r ==~ r1) (conc False) t
 
 contain :: RawTable -> RawTable -> SymBool
 contain t1 t2 = foldr (\r a -> a &&~ elementContain r t2) (conc True) t1
@@ -28,7 +28,7 @@ bagEqual t1 t2 =
    in contain l1 l2 &&~ contain l2 l1
 
 same :: Query -> Query -> Q (TExp SymBool)
-same q1 q2 = [||bagEqual #~ tableContent $$(denoteSql q1) #~ tableContent $$(denoteSql q2)||]
+same q1 q2 = [||bagEqual (tableContent $$(denoteSql q1)) (tableContent $$(denoteSql q2))||]
 
 tableAllRepOk :: Query -> Q (TExp SymBool)
 tableAllRepOk (QueryTable t) = [||tableRepOk t||]

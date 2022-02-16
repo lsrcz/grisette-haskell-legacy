@@ -87,6 +87,10 @@ executables:
     source-dirs: cosette
     main: Benchmark/Main.hs
     dependencies: grisette-examples
+  cosette-optimized:
+    source-dirs: cosette-optimized
+    main: Benchmark/Main.hs
+    dependencies: grisette-examples
   expr-sketch:
     source-dirs: expr-sketch
     main: Main.hs

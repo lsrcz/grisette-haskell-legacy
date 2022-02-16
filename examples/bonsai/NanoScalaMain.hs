@@ -14,6 +14,8 @@ import Utils.Timing
 import Control.DeepSeq
 import Grisette.Backend.SBV
 import Control.Monad.Except
+import Match
+import Pattern
 
 simpleNode :: B.ByteString -> DotTree
 simpleNode = unsafeLeaf dotSyntax
@@ -79,6 +81,9 @@ bNode = simpleNode "b"
 cNode :: DotTree
 cNode = simpleNode "c"
 
+f4 :: UnionM DotTree
+f4 = genSym (4 :: Int) "a"
+
 f10 :: UnionM DotTree
 f10 = genSym (10 :: Int) "a"
 
@@ -91,6 +96,10 @@ counterExample = dieNode $
 dotMain :: IO ()
 dotMain = do
   print $ terminals dotSyntax
+  print f4
+  print $ bonsaiMatchCustomError BonsaiTypeError [
+    dotLiteral "val" *= (placeHolder *= placeHolder) ==> \a b -> mrgLift a
+    ] #~ f4
   print $ typer nullNode
   print $ typer (dieNode nullNode)
   let typErrNode = rangeNode "c" anyNode nothingNode

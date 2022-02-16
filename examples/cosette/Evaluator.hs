@@ -3,11 +3,13 @@ module Evaluator where
 import Data.Bifunctor
 import qualified Data.ByteString as B
 import Grisette.Core
+import Grisette.Lib
 import Grisette.SymPrim.Term
 import Table
 
 xproduct :: Table -> Table -> Name -> Table
-xproduct a@(Table _ _ ca) b@(Table _ _ cb) name = Table name (schemaJoin a b) (xproductRaw ca cb)
+xproduct a@(Table _ _ ca) b@(Table _ _ cb) name = Table name (schemaJoin a b)
+  (merge $ xproductRaw <$> ca <*> cb)
 
 xproductRaw :: RawTable -> RawTable -> RawTable
 xproductRaw x y = (\((l1, n1), (l2, n2)) -> (l1 ++ l2, n1 * n2)) <$> cartesProd x y
@@ -38,39 +40,83 @@ leftOuterJoin :: Table -> Table -> Int -> Int -> Table
 leftOuterJoin t1@(Table n1 s1 c1) t2@(Table n2 s2 c2) index1 index2 =
   Table
     (B.append n1 n2)
-    (schemaJoin t1 t2)
-    (leftOuterJoinRaw c1 c2 index1 index2 (length s1) (length s2))
+    (schemaJoin t1 t2) $ do
+      c1v <- c1
+      c2v <- c2
+      leftOuterJoinRaw c1v c2v index1 index2 (length s1) (length s2)
 
 leftOuterJoin2 :: Table -> Table -> Table -> Table
 leftOuterJoin2 t1@(Table n1 s1 c1) t2@(Table n2 s2 _) (Table _ _ c12) =
   Table
     (B.append n1 n2)
-    (schemaJoin t1 t2)
-    (addingNullRows c1 c12 (length s1) (length s2))
+    (schemaJoin t1 t2) $ do
+      c1v <- c1
+      c12v <- c12
+      addingNullRows c1v c12v (length s1) (length s2)
 
-leftOuterJoinRaw :: RawTable -> RawTable -> Int -> Int -> Int -> Int -> RawTable
+leftOuterJoinRaw :: RawTable -> RawTable -> Int -> Int -> Int -> Int -> UnionM RawTable
 leftOuterJoinRaw content1 content2 index1 index2 schemaSize1 =
   addingNullRows content1 (equiJoin content1 content2 [(index1, index2)] schemaSize1) schemaSize1
 
-addingNullRows :: RawTable -> RawTable -> Int -> Int -> RawTable
-addingNullRows content1 content12 schemaSize1 schemaSize2 =
-  unionAllRaw content12 (fmap (first (++ nullCols)) diffKeys)
+dedup :: RawTable -> UnionM RawTable
+dedup [] = mrgSingle []
+dedup ((ele, mult) : xs) = mrgGuard (mult ==~ 0) (dedup xs) $ do
+  f <- symFilter (\(ele1, _) -> nots $ ele ==~ ele1) xs
+  d <- dedup f
+  return $ (ele, 1) : d
+
+dedupAccum :: RawTable -> UnionM RawTable
+dedupAccum [] = mrgSingle []
+dedupAccum l@((ele, _) : xs) = do
+  fl <- yl
+  let flc = snd <$> fl
+  let mult1 :: SymInteger = sum flc
+  fntl <- ntl
+  mrgReturn $ (ele, mult1) : fntl
+  where
+    yl = symFilter (\(ele1, _) -> ele ==~ ele1) l
+    ntl = do
+      f <- symFilter (\(ele1, _) -> nots $ ele ==~ ele1) xs
+      dedupAccum f
+
+tableDiff :: RawTable -> RawTable -> UnionM RawTable
+tableDiff tbl1 tbl2 = do
+  t1v <- t1
+  mrgReturn $ cal <$> t1v
+  where
+    t1 = dedupAccum tbl1
+    cal :: ([UnionM (Maybe SymInteger)], SymInteger) -> ([UnionM (Maybe SymInteger)], SymInteger)
+    cal (ele, mult) =
+      let rowCount = getRowCount ele tbl2
+          mult1 = mult - rowCount
+          multr = mrgIf @SymBool (mult1 >~ 0) mult1 0
+       in (ele, multr)
+
+getRowCount :: [UnionM (Maybe SymInteger)] -> RawTable -> SymInteger
+getRowCount row tbl = sum $ (\(ele, mult) -> mrgIf @SymBool (ele ==~ row) mult 0) <$> tbl
+
+addingNullRows :: RawTable -> RawTable -> Int -> Int -> UnionM RawTable
+addingNullRows content1 content12 schemaSize1 schemaSize2 = do
+  er <- extraRows
+  mrgReturn $ unionAllRaw content12 ((\(ele, mult) -> (ele ++ nullCols, mult)) <$> er)
   where
     nullCols :: [UnionM (Maybe SymInteger)]
     nullCols = [mrgSingle Nothing | _ <- [0 .. schemaSize2 -1]]
-    diffKeys = removeSameKeys content1 (fmap (first (take schemaSize1)) content12)
+    diffKeys :: UnionM RawTable
+    diffKeys = do
+      d1 <- dedup content1
+      let p12 = projection [0 .. schemaSize1 - 1] content12
+      d12 <- dedup p12
+      td <- tableDiff d1 d12
+      dedup td
+    extraRows :: UnionM RawTable
+    extraRows = do
+      dk <- diffKeys
+      mrgReturn $
+        projection [0 .. schemaSize1 -1] $
+          equiJoin content1 dk [(x, x) | x <- [0 .. schemaSize1 -1]] schemaSize1
 
 projection :: [Int] -> RawTable -> RawTable
 projection indices = fmap (first projSingle)
   where
     projSingle r = fmap (r !!) indices
-
-removeSameKeys :: RawTable -> RawTable -> RawTable
-removeSameKeys t1 t2 =
-  foldr
-    ( \(v, p) acc ->
-        let multiplicity = mrgIf @SymBool (foldr (||~) (conc False) $ fmap (\(v1, r1) -> v ==~ v1 &&~ r1 /=~ 0) t2) 0 p
-         in if multiplicity == 0 {- using == here is intentional -} then acc else (v, multiplicity) : acc
-    )
-    []
-    t1

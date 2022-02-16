@@ -18,17 +18,9 @@ type RawTable = [([UnionM (Maybe SymInteger)], SymInteger)]
 data Table = Table
   { tableName :: Name,
     tableSchema :: Schema,
-    tableContent :: UnionM RawTable
+    tableContent :: RawTable
   }
   deriving (Show, THSyntax.Lift, Generic, SymEval Model)
-
-instance Mergeable SymBool Table where
-  mergeStrategy = SimpleStrategy $ mrgIf @SymBool
-
-instance SimpleMergeable SymBool Table where
-  mrgIf cond (Table name1 schema1 content1) (Table name2 schema2 content2) =
-    if name1 /= name2 || schema1 /= schema2 then error "Bad merge" else
-      Table name1 schema1 $ mrgGuard cond content1 content2
 
 renameTable :: Name -> Table -> Table
 renameTable name t = t {tableName = name}
@@ -56,6 +48,4 @@ schemaJoin (Table n1 s1 _) (Table n2 s2 _) =
     renamed2 = fmap (B.append (B.append n2 "+")) s2
 
 tableRepOk :: Table -> SymBool
-tableRepOk (Table _ _ c) = getSingle $ do
-  c1 <- c
-  mrgReturn $ foldr (\(_, p) a -> a &&~ p >=~ 0) (conc True) c1
+tableRepOk (Table _ _ c) = foldr (\(_, p) a -> a &&~ p >=~ 0) (conc True) c
