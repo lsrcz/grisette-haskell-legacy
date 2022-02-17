@@ -786,6 +786,7 @@ executable regex
     , deepseq
     , formatting
     , grisette
+    , grisette-examples
     , hashable
     , loch-th
     , megaparsec

@@ -3,6 +3,7 @@
 
 module Main where
 
+import Control.DeepSeq
 import Control.Monad
 import Control.Monad.Coroutine hiding (merge)
 import Control.Monad.Coroutine.SuspensionFunctors
@@ -14,7 +15,7 @@ import qualified Data.ByteString.Char8 as B
 import Data.Functor.Sum
 import Data.Hashable
 import Data.Maybe
-import Data.MemoTrie
+import Data.MemoTrie as MT
 import GHC.Generics
 import Grisette.Backend.SBV
 import Grisette.Core
@@ -22,6 +23,7 @@ import Grisette.SymPrim.Term
 import System.CPUTime
 import Text.Printf
 import Text.Regex.PCRE
+import Utils.Timing
 
 time :: IO t -> IO t
 time a = do
@@ -77,27 +79,36 @@ weaveYieldTransducer w (Left (Yield x c)) (Left (InL (Await f))) = w c $ f x
 weaveYieldTransducer _ (Right ()) (Left (InL (Await _))) = mrgReturn ()
 weaveYieldTransducer w (Right ()) (Left (InR (Yield y c1))) = mrgSuspend (Yield y $ w (return ()) c1)
 
-type PattCoro = B.ByteString -> Integer -> Coroutine (Yield (UnionM Integer)) UnionM ()
+type PattCoro = B.ByteString -> Coroutine (Yield (UnionM Integer)) UnionM ()
+
+addYield :: UnionM Integer -> Coroutine (Yield (UnionM Integer)) UnionM () -> Coroutine (Yield (UnionM Integer)) UnionM ()
+addYield n l = weave sequentialBinder weaveYieldTransducer l $ simpleTransducer $ \i -> mrgYield $ n + i
 
 primPatt :: B.ByteString -> PattCoro
-primPatt pattstr = memo2 $ \str idx -> -- trace (show pattstr ++ " " ++ show str ++ " " ++ show idx)
-  when (idx + toInteger (B.length pattstr) <= toInteger (B.length str) && pattstr == B.take (B.length pattstr) (B.drop (fromInteger idx) str)) $
-    yield $ mrgReturn $ idx + toInteger (B.length pattstr)
+primPatt pattstr = MT.memo $ \str -> -- trace (show pattstr ++ " " ++ show str ++ " " ++ show idx)
+  when (B.length pattstr <= B.length str && pattstr == B.take (B.length pattstr) str) $
+    yield $ mrgReturn $ toInteger (B.length pattstr)
 
 seqPatt :: PattCoro -> PattCoro -> PattCoro
-seqPatt patt1 patt2 = memo2 $ \str idx ->
-  weave sequentialBinder weaveYieldTransducer (patt1 str idx) $ simpleTransducer (lift >=> patt2 str)
+seqPatt patt1 patt2 = MT.memo $ \str ->
+  weave sequentialBinder weaveYieldTransducer (patt1 str) $
+    simpleTransducer (lift >=> (\i1 -> addYield (mrgSingle i1) $ patt2 (B.drop (fromIntegral i1) str)))
 
 altPatt :: PattCoro -> PattCoro -> PattCoro
-altPatt patt1 patt2 = memo2 $ \str idx -> patt1 str idx >>~ patt2 str idx
+altPatt patt1 patt2 = MT.memo $ \str -> patt1 str >>~ patt2 str
 
 plusGreedyPatt :: PattCoro -> PattCoro
-plusGreedyPatt patt = memo2 $ \str idx -> weave sequentialBinder weaveYieldTransducer (patt str idx) $
-  simpleTransducer $ \i -> lift i >>= \i1 -> when (i1 /= idx) (plusGreedyPatt patt str i1) >> yield i
+plusGreedyPatt patt = MT.memo $ \str -> weave sequentialBinder weaveYieldTransducer (patt str) $
+  simpleTransducer $ \i ->
+    lift i >>= \i1 ->
+      when (i1 /= 0) (addYield (mrgSingle i1) $ plusGreedyPatt patt (B.drop (fromIntegral i1) str))
+        >> yield i
 
 plusLazyPatt :: PattCoro -> PattCoro
-plusLazyPatt patt = memo2 $ \str idx -> weave sequentialBinder weaveYieldTransducer (patt str idx) $
-  simpleTransducer $ \i -> lift i >>= \i1 -> yield i >> when (i1 /= idx) (plusLazyPatt patt str i1)
+plusLazyPatt patt = MT.memo $ \str -> weave sequentialBinder weaveYieldTransducer (patt str) $
+  simpleTransducer $ \i ->
+    yield i
+      >> (lift i >>= \i1 -> when (i1 /= 0) (addYield (mrgSingle i1) $ plusLazyPatt patt (B.drop (fromIntegral i1) str)))
 
 plusPatt :: SymBool -> PattCoro -> PattCoro
 plusPatt greedy = mrgIf greedy plusGreedyPatt plusLazyPatt
@@ -107,7 +118,9 @@ matchFirstWithStartImpl patt str startPos = case merge $ pogoStick (\(Yield idx 
   SingleU x -> x
   _ -> error "Should not happen"
   where
-    r1 = (\_ -> MaybeT $ return Nothing) <$> patt str startPos
+    r1 =
+      (\_ -> MaybeT $ return Nothing)
+        <$> addYield (mrgSingle startPos) (patt (B.drop (fromIntegral startPos) str))
 
 matchFirstImpl :: PattCoro -> B.ByteString -> MaybeT UnionM (Integer, Integer)
 matchFirstImpl patt str =
@@ -176,7 +189,8 @@ synthesisRegexCompiled config patt coro reg strs =
   let constraints = conformsFirst coro reg <$> strs
       constraint = foldr (&&~) (conc True) constraints
    in do
-        solveRes <- solveWith config constraint
+        _ <- timeItAll "symeval" $ constraint `deepseq` return ()
+        solveRes <- timeItAll "lowering/solving" $ solveWith config constraint
         case solveRes of
           Left _ -> return Nothing
           Right mo -> return $ Just $ symevalToCon mo patt
@@ -219,6 +233,13 @@ test6 = toCoro $ toSym $ ConcSeqPatt (ConcPlusPatt (ConcAltPatt (ConcPrimPatt "a
 
 test7 :: PattCoro
 test7 = toCoro $ toSym $ ConcSeqPatt (ConcPlusPatt (ConcAltPatt (ConcPrimPatt "") (ConcPrimPatt "a")) False) (ConcPrimPatt "c")
+
+test8 :: PattCoro
+test8 = toCoro $ toSym $ ConcSeqPatt (ConcAltPatt (ConcPrimPatt "c") (ConcPrimPatt "d"))
+  (ConcPlusPatt (ConcSeqPatt (ConcAltPatt (ConcPrimPatt "a") (ConcPrimPatt "")) (ConcPrimPatt "b")) False)
+
+reg8 :: B.ByteString
+reg8 = "(c|d)(a?b)+?"
 
 reg6 :: B.ByteString
 reg6 = "((a|b)+?)c"
@@ -323,9 +344,14 @@ main = do
   print $ listToMaybe (getAllMatches (str3 =~ reg5) :: [(Int, Int)])
   print $ matchFirstImpl test6 str7
   print $ listToMaybe (getAllMatches (str7 =~ reg6) :: [(Int, Int)])
+  print $ matchFirstImpl test8 "cabab"
+  print $ listToMaybe (getAllMatches (("cabab" :: B.ByteString) =~ reg8) :: [(Int, Int)])
   print sk1
   -}
-  res <- time $ synthesisRegex (UnboundedReasoning z3 {transcript = Just "/tmp/a.smt2", timing = PrintTiming}) (mrgSingle sk) "[cd](a?b)+?" $ genWordsUpTo 4 "abcd"
+  res <- time $ synthesisRegex (UnboundedReasoning z3 {transcript = Just "/tmp/a.smt2", timing = PrintTiming}) (mrgSingle sk) "[cd](a?b)+?" $ genWordsUpTo 5 "abcd"
   print res
-  print $ matchFirstImpl (toCoro r) "cabab"
-  print $ listToMaybe (getAllMatches (("cabab" :: B.ByteString) =~ ("[cd](a?b)+?" :: B.ByteString)) :: [(Int, Int)])
+  case res of
+    Just resv -> do
+      print $ matchFirstImpl (toCoro $ toSym resv) "cabab"
+      print $ listToMaybe (getAllMatches (("cabab" :: B.ByteString) =~ ("[cd](a?b)+?" :: B.ByteString)) :: [(Int, Int)])
+    Nothing -> putStrLn "Failed"

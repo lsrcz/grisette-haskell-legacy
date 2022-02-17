@@ -70,6 +70,7 @@ executables:
   regex:
     source-dirs: regex
     main: Main.hs
+    dependencies: grisette-examples
   order:
     source-dirs: order
     main: Main.hs
