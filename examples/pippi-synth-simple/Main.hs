@@ -3,10 +3,10 @@
 
 module Main where
 
+-- import Grisette.Control.Monad
 import Control.Monad.Except
 import Data.Maybe
 import Data.SBV
--- import Grisette.Control.Monad
 import Grisette.Control.Monad.UnionM
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.PrimWrapper
@@ -14,6 +14,7 @@ import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.SymEval (SymEval (symeval))
 import Grisette.Data.Class.SymGen
 import Grisette.Data.Class.ToCon
+import Grisette.Data.Class.ToSym
 import Grisette.Data.Class.UnionOp
 import Grisette.Data.Functor
 import Grisette.Data.SMT.Config
@@ -21,7 +22,6 @@ import Grisette.Data.SMT.Solving
 import Grisette.Data.SymPrim
 -- import PippiInterpreter
 import PippiInterpreter2
-import Grisette.Data.Class.ToSym
 import Text.Printf
 
 --
@@ -92,11 +92,12 @@ arg = genSym @SymBool () "coord"
 main :: IO ()
 main = do
   -- getCoordinates
-  printingVars
+  -- printingVars
   -- verifyTypeChecker
   -- synthesisAttempt
   -- sketchArgumentTrial
   -- synthesisHoleWithArg
+  synthesisAttemptSolverTranslation
 
 
 --
@@ -192,24 +193,37 @@ synthesisHoleWithArg = do
     Left _ -> print "Couldn't find solution :("
   printEnd
 
--- sketchArgumentTrial :: IO ()
--- sketchArgumentTrial = do
---   printBeginning "Attempting Sketch Argument"
---   m <- solveWith (UnboundedReasoning z3 {verbose = doVerbose}) $ case checkAndInterpretStmtUListU fullArgSketch of
---     ExceptT u -> case mrgFmap
---       ( \case
---           Left _ -> conc @SymBool False
---           Right v -> (v ==~ CoordLit 100 100)
---       )
---       u of
---       SingleU x -> x
---       _ -> error "Bad"
---   case m of
---     Right mm -> do
---       printf "Found Solution:\n"
---       print $ fromJust (toCon $ symeval True mm fullArgSketch :: Maybe [ConcMovingStmt])
---     Left _ -> print "Couldn't find solution :("
---   printEnd
+synthesisAttemptSolverTranslation :: IO ()
+synthesisAttemptSolverTranslation = do
+  printBeginning "Attempting Synthesis3 (new SolverTranslation class)"
+  m <- solveWithTranslation FindRuntimeTypeMismatch (UnboundedReasoning z3 {verbose = doVerbose}) $ checkAndInterpretStmtUListU sketchWithArg
+  case m of
+    Right mm -> do
+      printf "Found Solution:\n"
+      printProgram $ fromJust (toCon $ symeval True mm sketchWithArg :: Maybe [ConcMovingStmt])
+    Left _ -> print "Couldn't find solution :("
+  printEnd
+
+{-
+sketchArgumentTrial :: IO ()
+sketchArgumentTrial = do
+  printBeginning "Attempting Sketch Argument"
+  m <- solveWith (UnboundedReasoning z3 {verbose = doVerbose}) $ case checkAndInterpretStmtUListU fullArgSketch of
+    ExceptT u -> case mrgFmap
+      ( \case
+          Left _ -> conc @SymBool False
+          Right v -> (v ==~ CoordLit 100 100)
+      )
+      u of
+      SingleU x -> x
+      _ -> error "Bad"
+  case m of
+    Right mm -> do
+      printf "Found Solution:\n"
+      print $ fromJust (toCon $ symeval True mm fullArgSketch :: Maybe [ConcMovingStmt])
+    Left _ -> print "Couldn't find solution :("
+  printEnd
+  -}
 
 --
 -- | Printing

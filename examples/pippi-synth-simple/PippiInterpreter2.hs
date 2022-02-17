@@ -21,26 +21,26 @@ import Grisette.Control.Monad.UnionM
 import Grisette.Control.Monad.UnionMBase
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
+import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.SymEval
 import Grisette.Data.Class.SymGen
 import Grisette.Data.Class.ToCon
+import Grisette.Data.Class.ToSym
 import Grisette.Data.Functor
 import Grisette.Data.Prim.Model
+import Grisette.Data.SMT.Solving
 import Grisette.Data.SymPrim
-import Grisette.Data.Class.ToSym
 
 wrapInParens :: String -> String
 wrapInParens input = "(" ++ input ++ ")"
 
 --
--- | Data Types
+-- | Symbolic Data Types (used in Synthesis)
 --
 data MovingExpr 
    = Coord (UnionM CoordExpr)
    | Moving (UnionM MovingOpExpr)
-  --  = Coord CoordExpr
-  --  | Moving MovingOpExpr
    | MovingVarExpr SymInteger
    deriving (Generic, Show, Eq, ToSym ConcMovingExpr)
 
@@ -86,7 +86,7 @@ type TypingEnv = [(SymInteger, UnionM MovingType)]
 
 
 --
--- | Concrete Data Types
+-- | Concrete Data Types (used for printing and final program return)
 --
 data ConcMovingExpr 
    = ConcCoord ConcCoordExpr
@@ -151,13 +151,9 @@ instance SymGen SymBool MovingExprSpec MovingOpExpr where
           ]
 
 instance SymGen SymBool MovingExprSpec MovingExpr where
-  genSymIndexed spec@(MovingExprSpec d) = -- merge <$> 
+  genSymIndexed spec@(MovingExprSpec d) =
     if d <= 0
-      then do
-        -- coord   <- genSymSimpleIndexed @SymBool ()
-        -- varName <- genSymSimpleIndexed @SymBool ()
-        -- chooseU (Coord <$> coord) [MovingVarExpr <$> varName]
-        
+      then do        
         coord   <- genSymIndexed @SymBool ()
         varName <- genSymSimpleIndexed @SymBool ()
 
@@ -192,27 +188,20 @@ instance SymGen SymBool (MovingExprSpec, MovingExpr) MovingOpExpr where
 
 instance SymGen SymBool (MovingExprSpec, MovingExpr) MovingExpr where
   genSymIndexed (spec@(MovingExprSpec d), arg) = case arg of
-    (Coord coord) -> -- merge <$>
+    (Coord coord) ->
       if d <= 0
         then do
-          -- mrgReturn $ Coord coord
           choose (Coord coord) []
-          -- return $ mrgSingle $ Coord $ toSym coord
         else do
           moving <- genSymIndexed @SymBool (spec, (Coord coord))
-          
-          -- chooseU (Coord <$> (toSym coord)) [Moving <$> moving]
           choose (Coord coord) [Moving moving]
     
-    (MovingVarExpr var) -> -- merge <$> 
+    (MovingVarExpr var) ->
       if d <= 0
         then do
-          -- mrgReturn $ MovingVarExpr var
           choose (MovingVarExpr var) []
         else do
           moving <- genSymIndexed @SymBool (spec, MovingVarExpr var)
-          
-          -- chooseU (MovingVarExpr <$> (toSym var)) [Moving <$> moving]
           choose (MovingVarExpr var) [Moving moving]
     
     _ -> error "shouldn't ever be here!"
@@ -326,6 +315,13 @@ data MovingRuntimeError
 instance Mergeable (Sym Bool) MovingRuntimeError
 instance SymEval Model MovingRuntimeError
 
+data FindRuntimeTypeMismatch = FindRuntimeTypeMismatch
+
+instance SolverTranslation FindRuntimeTypeMismatch MovingError CoordExpr where
+  errorTranslation _ (MovingRuntime MovingRuntimeTypeMismatch) = True
+  errorTranslation _ _ = False
+  valueTranslation _ _ = conc @SymBool False
+
 data MovingType
   = UnitType
   | CoordType
@@ -335,10 +331,6 @@ instance Mergeable (Sym Bool) MovingType
 
 typeCheckU :: TypingEnv -> UnionM MovingExpr -> ExceptT MovingError UnionM MovingType
 typeCheckU env u = lift u >>= typeCheck env
--- typeCheckU env e = do
---   concE <- lift e
---   case concE of
---     _ -> typeCheck env concE
 
 typeCheck :: TypingEnv -> MovingExpr -> ExceptT MovingError UnionM MovingType
 typeCheck _ (Coord coord) = do
@@ -354,17 +346,6 @@ typeCheck env (Moving symExpr) = do
     (MoveLeft e) -> movementTypeCheck env e
     (MoveRight e) -> movementTypeCheck env e
 typeCheck env (MovingVarExpr i) = resolveEnv env i
--- typeCheck _ (Coord UnitLit) = mrgReturn UnitType
--- typeCheck env (Moving (MoveDown e)) = do
---   et <- typeCheckU env e
---   merge $ if et == CoordType then return CoordType else throwError $ MovingTyper TypeMismatch
--- typeCheck env (Moving (MoveLeft e)) = do
---   et <- typeCheckU env e
---   merge $ if et == CoordType then return CoordType else throwError $ MovingTyper TypeMismatch
--- typeCheck env (Moving (MoveRight e)) = do
---   et <- typeCheckU env e
---   merge $ if et == CoordType then return CoordType else throwError $ MovingTyper TypeMismatch
--- typeCheck env (MovingVarExpr i) = resolveEnv env i
   where
     resolveEnv [] _ = merge $ throwError $ MovingTyper MovingTypeVarNotFound
     resolveEnv ((hdi, hdt) : tl) i1 = mrgIf @SymBool (hdi ==~ i1) (lift hdt) $ resolveEnv tl i1
@@ -373,26 +354,6 @@ movementTypeCheck :: TypingEnv -> UnionM MovingExpr -> ExceptT MovingError Union
 movementTypeCheck env e = do
   et <- typeCheckU env e
   merge $ if et == CoordType then return CoordType else throwError $ MovingTyper TypeMismatch
-
--- typeCheckOld :: TypingEnv -> MovingExpr -> ExceptT MovingError UnionM MovingType
--- typeCheckOld _ (Coord (CoordLit _ _)) = mrgReturn CoordType
--- typeCheckOld _ (Coord UnitLit) = mrgReturn UnitType
--- typeCheckOld env (Moving (MoveUp e)) = do
---   et <- typeCheckU env e
---   merge $ if et == CoordType then return CoordType else throwError $ MovingTyper TypeMismatch
--- typeCheckOld env (Moving (MoveDown e)) = do
---   et <- typeCheckU env e
---   merge $ if et == CoordType then return CoordType else throwError $ MovingTyper TypeMismatch
--- typeCheckOld env (Moving (MoveLeft e)) = do
---   et <- typeCheckU env e
---   merge $ if et == CoordType then return CoordType else throwError $ MovingTyper TypeMismatch
--- typeCheckOld env (Moving (MoveRight e)) = do
---   et <- typeCheckU env e
---   merge $ if et == CoordType then return CoordType else throwError $ MovingTyper TypeMismatch
--- typeCheckOld env (MovingVarExpr i) = resolveEnv env i
---   where
---     resolveEnv [] _ = merge $ throwError $ MovingTyper MovingTypeVarNotFound
---     resolveEnv ((hdi, hdt) : tl) i1 = mrgIf @SymBool (hdi ==~ i1) (lift hdt) $ resolveEnv tl i1
 
 typeCheckStmt :: MovingStmt -> StateT TypingEnv (ExceptT MovingError UnionM) MovingType
 typeCheckStmt (MovingDefineStmt i expr) = StateT $ \st -> mrgFmap (\t -> (UnitType, (i, mrgSingle t) : st)) $ typeCheckU st expr
@@ -468,53 +429,6 @@ interpretMovement env (MoveLeft e) = do
 interpretMovement env (MoveRight e) = do
   ev <- interpretU env e
   reduceMoveRight ev
-
-
--- interpret env (Moving (MoveUp e)) = do
---   ev <- interpretU env e
---   reduceMoveUp ev
--- interpret env (Moving (MoveDown e)) = do
---   ev <- interpretU env e
---   reduceMoveDown ev
--- interpret env (Moving (MoveLeft e)) = do
---   ev <- interpretU env e
---   reduceMoveLeft ev
--- interpret env (Moving (MoveRight e)) = do
---   ev <- interpretU env e
---   reduceMoveRight ev
--- interpret env (MovingVarExpr i) = reduceValue env i
-
--- typeCheck env (Coord coord) = do
---   concCoord <- lift coord
---   case concCoord of
---     UnitLit -> mrgReturn UnitType
---     (CoordLit _ _) -> mrgReturn CoordType
--- typeCheck env (Moving e) = do
---   concMove <- lift e
---   case concMove of 
---     (MoveUp e) -> movementTypeCheck env e
---     (MoveDown e) -> movementTypeCheck env e
---     (MoveLeft e) -> movementTypeCheck env e
---     (MoveRight e) -> movementTypeCheck env e
--- typeCheck env (MovingVarExpr i) = resolveEnv env i
-
-
-
--- interpretOld :: ExecutingEnv -> MovingExpr -> ExceptT MovingError UnionM CoordExpr
--- interpretOld _ (Coord c) = mrgReturn c
--- interpretOld env (Moving (MoveUp e)) = do
---   ev <- interpretU env e
---   reduceMoveUp ev
--- interpretOld env (Moving (MoveDown e)) = do
---   ev <- interpretU env e
---   reduceMoveDown ev
--- interpretOld env (Moving (MoveLeft e)) = do
---   ev <- interpretU env e
---   reduceMoveLeft ev
--- interpretOld env (Moving (MoveRight e)) = do
---   ev <- interpretU env e
---   reduceMoveRight ev
--- interpretOld env (MovingVarExpr i) = reduceValue env i
 
 interpretStmt :: MovingStmt -> StateT ExecutingEnv (ExceptT MovingError UnionM) CoordExpr
 interpretStmt (MovingDefineStmt i expr) = StateT $ \st -> mrgFmap (\t -> (UnitLit, (i, mrgSingle t) : st)) $ interpretU st expr
