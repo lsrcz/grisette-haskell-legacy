@@ -6,7 +6,7 @@ module Main where
 import Control.Monad.Except
 import Data.Maybe
 import Data.SBV
-import Grisette.Control.Monad
+-- import Grisette.Control.Monad
 import Grisette.Control.Monad.UnionM
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.PrimWrapper
