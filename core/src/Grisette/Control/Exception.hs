@@ -16,6 +16,7 @@ import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
 import Control.Exception
 import Control.DeepSeq
+import Grisette.Control.Monad
 
 data AssertionError = AssertionError
   deriving (Show, Eq, Ord, Generic)
@@ -54,5 +55,5 @@ instance TransformError ArrayException AssertionError where
 instance TransformError AssertionError AssertionError where
   transformError = id
 
-gassert :: (TransformError AssertionError to, MonadError to erm, SymBoolOp bool, UnionMOp bool erm) => bool -> erm ()
+gassert :: (TransformError AssertionError to, MonadError to erm, SymBoolOp bool, MonadUnion bool erm) => bool -> erm ()
 gassert = gassertWithError AssertionError

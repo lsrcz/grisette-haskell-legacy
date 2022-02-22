@@ -11,29 +11,29 @@ import Table
 
 symt :: Table
 symt = Table "t" ["tid", "name"]
-  [(mrgSingle . Just <$> [ssymb "t0-0", ssymb "t0-1"], ssymb "t0-p")]
+  [(mrgReturn . Just <$> [ssymb "t0-0", ssymb "t0-1"], ssymb "t0-p")]
 symtr :: Table
 symtr = Table "tr" ["rid", "tid", "name"]
-  [(mrgSingle . Just <$> [ssymb "tr0-0", ssymb "tr0-1", ssymb "tr0-2"], ssymb "tr0-p")]
+  [(mrgReturn . Just <$> [ssymb "tr0-0", ssymb "tr0-1", ssymb "tr0-2"], ssymb "tr0-p")]
 symta :: Table
 symta = Table "ta" ["rid", "status"]
-  [(mrgSingle . Just <$> [ssymb "ta0-0", ssymb "ta0-1"], ssymb "ta0-p")]
+  [(mrgReturn . Just <$> [ssymb "ta0-0", ssymb "ta0-1"], ssymb "ta0-p")]
 symtb :: Table
 symtb = Table "tb" ["rid", "status"]
-  [(mrgSingle . Just <$> [ssymb "tb0-0", ssymb "tb0-1"], ssymb "tb0-p")]
+  [(mrgReturn . Just <$> [ssymb "tb0-0", ssymb "tb0-1"], ssymb "tb0-p")]
 
 conct :: Table
 conct = Table "t" ["tid", "name"]
-  [(mrgSingle . Just <$> [-8, 0], 3)]
+  [(mrgReturn . Just <$> [-8, 0], 3)]
 conctr :: Table
 conctr = Table "tr" ["rid", "tid", "name"]
-  [(mrgSingle . Just <$> [-8, -8, 2], 0)]
+  [(mrgReturn . Just <$> [-8, -8, 2], 0)]
 concta :: Table
 concta = Table "ta" ["rid", "status"]
-  [(mrgSingle . Just <$> [-3, 0], 0)]
+  [(mrgReturn . Just <$> [-3, 0], 0)]
 conctb :: Table
 conctb = Table "tb" ["rid", "status"]
-  [(mrgSingle . Just <$> [-8, 0], 0)]
+  [(mrgReturn . Just <$> [-8, 0], 0)]
 
 t :: Table
 t = symt

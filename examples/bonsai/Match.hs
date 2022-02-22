@@ -73,13 +73,13 @@ bonsaiMatchPattern ::
   BonsaiTree m ->
   ExceptT (PrivateMatchError e) UnionM [UnionM (BonsaiTree m)]
 bonsaiMatchPattern (LiteralPattern lit) (BonsaiLeaf sym) =
-  mrgGuard
+  mrgIf
     (sym ==~ lit)
-    (mrgSingle [])
+    (mrgReturn [])
     (throwError PrivateMatchError)
 bonsaiMatchPattern (PairPattern leftp rightp) (BonsaiNode left right) = do
   l <- bonsaiMatchPattern leftp #~ left
   r <- bonsaiMatchPattern rightp #~ right
   mrgReturn $ l ++ r
-bonsaiMatchPattern PlaceHolder t = mrgReturn [mrgSingle t]
+bonsaiMatchPattern PlaceHolder t = mrgReturn [mrgReturn t]
 bonsaiMatchPattern _ _ = throwError PrivateMatchError

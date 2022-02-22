@@ -18,7 +18,6 @@ import qualified Data.SBV.Control as SBVC
 import Grisette.Control.Monad.UnionM
 import Grisette.Data.Class.ExtractSymbolics
 import Grisette.Data.Class.PrimWrapper
-import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Prim.InternedTerm
 import Grisette.Data.Prim.Model as PM
 import Grisette.Data.SMT.Config
@@ -28,7 +27,7 @@ import Grisette.Data.Class.Bool
 import Data.SBV.Control (Query)
 import Grisette.Data.Class.SymEval
 import Grisette.Control.Exception
-import Grisette.Data.Functor
+import Grisette.Control.Monad
 
 solveTermWith ::
   forall integerBitWidth.
@@ -79,7 +78,7 @@ class CegisTranslation method e v | method -> e v where
   cegisErrorTranslation :: method -> e -> VerificationConditions
   cegisValueTranslation :: method -> v -> ExceptT VerificationConditions UnionM ()
   default cegisValueTranslation :: (v ~ ()) => method -> v -> ExceptT VerificationConditions UnionM ()
-  cegisValueTranslation _ = mrgSingle
+  cegisValueTranslation _ = mrgReturn
 
 translateCegis :: (CegisTranslation method e v)  => method -> ExceptT e UnionM v -> (Sym Bool, Sym Bool)
 translateCegis p (ExceptT u) =

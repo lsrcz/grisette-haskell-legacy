@@ -78,28 +78,30 @@ instance (SymBoolOp bool, Mergeable1 bool m, Mergeable bool e, Mergeable bool a)
 
 instance (SymBoolOp bool, Mergeable1 bool m, Mergeable bool e) => Mergeable1 bool (ExceptT' e m)
 
-instance (SymBoolOp bool, UnionMOp bool m, Mergeable bool e, Mergeable bool a) => SimpleMergeable bool (ExceptT' e m a) where
-  mrgIf c t f = withUnionMSimpleMergeable @bool @m @(Either' e a) $ ExceptT' $ mrgIf c (runExceptT' t) (runExceptT' f)
+instance (SymBoolOp bool, UnionSimpleMergeable1 bool m, Mergeable bool e, Mergeable bool a) => SimpleMergeable bool (ExceptT' e m a) where
+  mrgIte c t f = withUnionSimpleMergeable @bool @m @(Either' e a) $ ExceptT' $ mrgIte c (runExceptT' t) (runExceptT' f)
 
-instance (SymBoolOp bool, UnionMOp bool m, Mergeable bool e) => SimpleMergeable1 bool (ExceptT' e m)
+instance (SymBoolOp bool, UnionSimpleMergeable1 bool m, Mergeable bool e) => SimpleMergeable1 bool (ExceptT' e m)
 
-instance (SymBoolOp bool, UnionMOp bool m, Mergeable bool e) => UnionMOp bool (ExceptT' e m) where
+instance (SymBoolOp bool, UnionSimpleMergeable1 bool m, Mergeable bool e) => UnionSimpleMergeable1 bool (ExceptT' e m)
+
+instance (SymBoolOp bool, MonadUnion bool m, Mergeable bool e) => MonadUnion bool (ExceptT' e m) where
   merge = ExceptT' . merge . runExceptT'
-  mrgSingle = ExceptT' . mrgSingle . Either' . Right
-  mrgGuard = mrgIf
+  mrgReturn = ExceptT' . mrgReturn . Either' . Right
+  mrgIf = mrgIte
 
-assertWithError :: forall m b ex. (MonadError ex m, SymBoolOp b, UnionMOp b m) => ex -> b -> m ()
-assertWithError ex x = mrgGuard x (return ()) (throwError ex)
+assertWithError :: forall m b ex. (MonadError ex m, SymBoolOp b, MonadUnion b m) => ex -> b -> m ()
+assertWithError ex x = mrgIf x (return ()) (throwError ex)
 
-assert :: forall m b. (MonadError Exceptions m, SymBoolOp b, UnionMOp b m) => b -> m ()
+assert :: forall m b. (MonadError Exceptions m, SymBoolOp b, MonadUnion b m) => b -> m ()
 assert = assertWithError AssertViolation
 
-assume :: forall m b. (MonadError Exceptions m, SymBoolOp b, UnionMOp b m) => b -> m ()
+assume :: forall m b. (MonadError Exceptions m, SymBoolOp b, MonadUnion b m) => b -> m ()
 assume = assertWithError AssumeViolation
 
-test :: forall exceptT. (MonadError Exceptions (exceptT Exceptions UnionM), UnionMOp SymBool (exceptT Exceptions UnionM)) => exceptT Exceptions UnionM SymBool
+test :: forall exceptT. (MonadError Exceptions (exceptT Exceptions UnionM), MonadUnion SymBool (exceptT Exceptions UnionM)) => exceptT Exceptions UnionM SymBool
 test =
-  mrgGuard
+  mrgIf
     (ssymb "a")
     ( do
         assert $ ssymb "assert"
@@ -110,11 +112,11 @@ test =
         return $ ssymb "y"
     )
 
-test2 :: forall exceptT. (MonadError Exceptions (exceptT Exceptions UnionM), UnionMOp SymBool (exceptT Exceptions UnionM)) => exceptT Exceptions UnionM SymBool
+test2 :: forall exceptT. (MonadError Exceptions (exceptT Exceptions UnionM), MonadUnion SymBool (exceptT Exceptions UnionM)) => exceptT Exceptions UnionM SymBool
 test2 = do
   assert $ ssymb "x"
   r <-
-    mrgGuard
+    mrgIf
       (ssymb "c")
       ( do
           assert $ ssymb "a1"
@@ -128,7 +130,7 @@ test2 = do
   assert $ ssymb "y"
   mrgReturn r
 
-test3 :: forall exceptT. (MonadError Exceptions (exceptT Exceptions UnionM), UnionMOp SymBool (exceptT Exceptions UnionM)) => exceptT Exceptions UnionM ()
+test3 :: forall exceptT. (MonadError Exceptions (exceptT Exceptions UnionM), MonadUnion SymBool (exceptT Exceptions UnionM)) => exceptT Exceptions UnionM ()
 test3 = do
   assert $ ssymb "x"
   assume $ ssymb "y"

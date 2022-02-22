@@ -97,19 +97,19 @@ symbAdd = "a" + "b"
 -- Symbolic lists
 
 symbList1 :: UnionM [Sym Bool]
-symbList1 = mrgSingle []
+symbList1 = mrgReturn []
 
 symbList2 :: UnionM [Sym Bool]
-symbList2 = mrgSingle ["x"]
+symbList2 = mrgReturn ["x"]
 
 symbList3 :: UnionM [Sym Bool]
-symbList3 = mrgSingle ["y"]
+symbList3 = mrgReturn ["y"]
 
 symbList4 :: UnionM [Sym Bool]
-symbList4 = mrgGuard "a" symbList1 symbList3
+symbList4 = mrgIf "a" symbList1 symbList3
 
 symbList5 :: UnionM [Sym Bool]
-symbList5 = mrgGuard "a" symbList2 symbList3
+symbList5 = mrgIf "a" symbList2 symbList3
 
 -- UnionM can propagate path conditions correctly
 isEmpty :: [Sym Bool] -> Sym Bool
@@ -129,7 +129,7 @@ testIsEmpty = getSingle $ do
 -- link to the z3 example
 getitem :: (Mergeable SymBool a) => SymInteger -> [a] -> ExceptT AssertionError UnionM a
 getitem _ [] = throwError AssertionError
-getitem i (x : xs) = mrgGuard (i ==~ 0) (mrgReturn x) (getitem (i - 1) xs)
+getitem i (x : xs) = mrgIf (i ==~ 0) (mrgReturn x) (getitem (i - 1) xs)
 
 -- getitem if i is in range, return list[i], or return AssertionError
 list :: [SymBool]
@@ -137,7 +137,7 @@ list = ["a", "b"]
 
 correctResult :: ExceptT AssertionError UnionM SymBool
 -- UnionM (Either AssertionError SymBool)
-correctResult = mrgGuard "c" (getitem "d" list) (getitem 1 list)
+correctResult = mrgIf "c" (getitem "d" list) (getitem 1 list)
 
 -- Working with user-defined types
 data ConcExpr
@@ -182,18 +182,18 @@ concExpr' = toCon symbExpr
 -- Mergeable: state merging
 mergedSymbExpr1 :: UnionM Expr
 mergedSymbExpr1 =
-  mrgGuard
+  mrgIf
     "cond"
     (uConst "a")
     (uAdd (uConst "b") (uConst "c"))
 
 mergedSymbExpr2 :: UnionM Expr
 mergedSymbExpr2 =
-  mrgGuard "cond1" (uConst "a1") (uConst "a2")
+  mrgIf "cond1" (uConst "a1") (uConst "a2")
 
 mergedSymbExpr3 :: UnionM Expr
 mergedSymbExpr3 =
-  mrgGuard "cond1"
+  mrgIf "cond1"
     (uAdd (uConst "b1") (uConst "c1"))
     (uAdd (uConst "b2") (uConst "c2"))
 
@@ -221,10 +221,10 @@ instance SymGen SymBool Integer Expr where
       then do
         f <- genSymSimpleIndexed @SymBool ()
         return $ uConst f
-      else -- You still need to write this mrgSingle.
-      -- I realized that forcing the user to insert mrgSingle/mrgReturn everywhere is not a good idea
+      else -- You still need to write this mrgReturn.
+      -- I realized that forcing the user to insert mrgReturn/mrgReturn everywhere is not a good idea
       -- probably in the future we can automatically generate functions like
-      -- singleConst = mrgSingle . Const with Template Haskell
+      -- singleConst = mrgReturn . Const with Template Haskell
 
       -- In scala we can use implicit conversions.
       -- No need for metaprogramming
@@ -310,7 +310,7 @@ interpretExpr (Sub l r) = interpretBop l r $
     _ -> throwError InvalidProgram
 interpretExpr (Eqv l r) = interpretBop l r $
   curry $ \case
-    (VI x, VI y) -> uVB $ x ==~ y -- mrgSingle
+    (VI x, VI y) -> uVB $ x ==~ y -- mrgReturn
     (VB x, VB y) -> uVB $ x ==~ y
     _ -> throwError InvalidProgram
 

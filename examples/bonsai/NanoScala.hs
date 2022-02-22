@@ -122,7 +122,7 @@ eval' = {-memo2 $-} \tree env ->
         mrgReturn $ dotJoinU av bv,
       dotLiteral "var" *= placeHolder ==> \name -> do
         n <- extractName BonsaiExecError name
-        mrgSingle <$> envResolve BonsaiExecError env n,
+        mrgReturn <$> envResolve BonsaiExecError env n,
       dotLiteral "die" *= placeHolder ==> \_ -> throwError BonsaiExecError,
       dotLiteral "make-null" *= placeHolder ==> \_ -> mrgReturn $ uBonsaiLeaf $ uRight "dummy1",
       dotLiteral "null" ==> (mrgReturn $ uBonsaiLeaf $ uRight "dummy2")
@@ -130,7 +130,7 @@ eval' = {-memo2 $-} \tree env ->
     tree
 
 eval :: DotTree -> ExceptT BonsaiError UnionM (UnionM DotResult)
-eval tree = eval' tree (mrgSingle [])
+eval tree = eval' tree (mrgReturn [])
 
 type DotT = UnionM (Either (SymUnsignedBV DotBitWidth) B.ByteString)
 
@@ -176,19 +176,19 @@ dotFind kind name tb =
             placeHolder *= placeHolder ==> \k v ->
               let e =
                     uBonsaiNode (uBonsaiLeaf $ uRight kind) (uBonsaiLeaf $ uLeft name)
-               in mrgGuard (e ==~ k) (uJust v) uNothing
+               in mrgIf (e ==~ k) (uJust v) uNothing
           ]
           tb
       )
 
 dotMake :: B.ByteString -> SymUnsignedBV DotBitWidth -> DotResult -> DotResult
-dotMake kind name tr = BonsaiNode (uBonsaiNode (uBonsaiLeaf $ uRight kind) (uBonsaiLeaf $ uLeft name)) (mrgSingle tr)
+dotMake kind name tr = BonsaiNode (uBonsaiNode (uBonsaiLeaf $ uRight kind) (uBonsaiLeaf $ uLeft name)) (mrgReturn tr)
 
 dotMakeU :: B.ByteString -> SymUnsignedBV DotBitWidth -> UnionM DotResult -> UnionM DotResult
 dotMakeU kind name = uBonsaiNode (uBonsaiNode (uBonsaiLeaf $ uRight kind) (uBonsaiLeaf $ uLeft name))
 
 dotJoin :: DotResult -> DotResult -> DotResult
-dotJoin l r = BonsaiNode (uBonsaiLeaf $ uLeft andBV) (uBonsaiNode (mrgSingle l) (mrgSingle r))
+dotJoin l r = BonsaiNode (uBonsaiLeaf $ uLeft andBV) (uBonsaiNode (mrgReturn l) (mrgReturn r))
 
 dotJoinU :: UnionM DotResult -> UnionM DotResult -> UnionM DotResult
 dotJoinU l r = uBonsaiNode (uBonsaiLeaf $ uLeft andBV) (uBonsaiNode l r)
@@ -304,7 +304,7 @@ type' = memo2 $ \tree env ->
       dotLiteral "var" *= placeHolder ==> \name -> do
         n <- extractName BonsaiTypeError name
         t <- envResolve' 3 BonsaiTypeError env n
-        return $ mrgSingle t,
+        return $ mrgReturn t,
       dotLiteral "die" *= placeHolder ==> \expr -> do
         t <- type' #~ expr # env
         subt <- subType 0 t uDotNothing
@@ -320,7 +320,7 @@ type' = memo2 $ \tree env ->
     tree
 
 typer :: DotTree -> ExceptT BonsaiError UnionM (UnionM DotResult)
-typer tree = type' tree (mrgSingle [])
+typer tree = type' tree (mrgReturn [])
 
 matchDotSyntax :: DotTree -> B.ByteString -> SymBool
 matchDotSyntax = matchSyntax dotSyntax matchDotRule

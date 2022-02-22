@@ -22,7 +22,7 @@ equiJoin content1 content2 indexPairs schemaSize1 =
   foldr
     ( \(v, p) acc ->
         let multiplicity =
-              mrgIf @SymBool
+              mrgIte @SymBool
                 ( foldr (&&~) (conc True) $
                     fmap (\(i1, i2) -> v !! i1 ==~ v !! (i2 + schemaSize1)) indexPairs
                 )
@@ -59,14 +59,14 @@ leftOuterJoinRaw content1 content2 index1 index2 schemaSize1 =
   addingNullRows content1 (equiJoin content1 content2 [(index1, index2)] schemaSize1) schemaSize1
 
 dedup :: RawTable -> UnionM RawTable
-dedup [] = mrgSingle []
-dedup ((ele, mult) : xs) = mrgGuard (mult ==~ 0) (dedup xs) $ do
+dedup [] = mrgReturn []
+dedup ((ele, mult) : xs) = mrgIf (mult ==~ 0) (dedup xs) $ do
   f <- symFilter (\(ele1, _) -> nots $ ele ==~ ele1) xs
   d <- dedup f
   return $ (ele, 1) : d
 
 dedupAccum :: RawTable -> UnionM RawTable
-dedupAccum [] = mrgSingle []
+dedupAccum [] = mrgReturn []
 dedupAccum l@((ele, _) : xs) = do
   fl <- yl
   let flc = snd <$> fl
@@ -89,11 +89,11 @@ tableDiff tbl1 tbl2 = do
     cal (ele, mult) =
       let rowCount = getRowCount ele tbl2
           mult1 = mult - rowCount
-          multr = mrgIf @SymBool (mult1 >~ 0) mult1 0
+          multr = mrgIte @SymBool (mult1 >~ 0) mult1 0
        in (ele, multr)
 
 getRowCount :: [UnionM (Maybe SymInteger)] -> RawTable -> SymInteger
-getRowCount row tbl = sum $ (\(ele, mult) -> mrgIf @SymBool (ele ==~ row) mult 0) <$> tbl
+getRowCount row tbl = sum $ (\(ele, mult) -> mrgIte @SymBool (ele ==~ row) mult 0) <$> tbl
 
 addingNullRows :: RawTable -> RawTable -> Int -> Int -> UnionM RawTable
 addingNullRows content1 content12 schemaSize1 schemaSize2 = do
@@ -101,7 +101,7 @@ addingNullRows content1 content12 schemaSize1 schemaSize2 = do
   mrgReturn $ unionAllRaw content12 ((\(ele, mult) -> (ele ++ nullCols, mult)) <$> er)
   where
     nullCols :: [UnionM (Maybe SymInteger)]
-    nullCols = [mrgSingle Nothing | _ <- [0 .. schemaSize2 -1]]
+    nullCols = [mrgReturn Nothing | _ <- [0 .. schemaSize2 -1]]
     diffKeys :: UnionM RawTable
     diffKeys = do
       d1 <- dedup content1

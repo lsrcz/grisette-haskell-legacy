@@ -58,7 +58,7 @@ nilNode :: STLCTree
 nilNode = simpleNode "nil"
 
 pairNode :: STLCTree -> STLCTree -> STLCTree
-pairNode l r = BonsaiNode (mrgSingle l) (mrgSingle r)
+pairNode l r = BonsaiNode (mrgReturn l) (mrgReturn r)
 
 callNode :: STLCTree -> STLCTree -> STLCTree
 callNode l r = pairNode (simpleNode "call") $ pairNode l r
@@ -102,7 +102,7 @@ arrowTy :: STLCTree -> STLCTree -> STLCTree
 arrowTy arg res = pairNode (simpleNode "arrow") (pairNode arg res)
 
 arrowTyU :: UnionM (STLCTree) -> STLCTree -> STLCTree
-arrowTyU arg res = pairNode (simpleNode "arrow") (BonsaiNode arg (mrgSingle res))
+arrowTyU arg res = pairNode (simpleNode "arrow") (BonsaiNode arg (mrgReturn res))
 
 availableNames :: [STLCTree]
 availableNames = [simpleNode "a", simpleNode "b", simpleNode "c"]
@@ -165,7 +165,7 @@ typer' = memo2 $ \tree env -> {-trace (show tree) $ trace (show env) $-}
     tree
 
 typer :: STLCTree -> ExceptT BonsaiError UnionM (STLCTree)
-typer tree = typer' tree (mrgSingle [])
+typer tree = typer' tree (mrgReturn [])
 
 data STLCValue
   = STLCInt SymInteger
@@ -185,7 +185,7 @@ $(makeUnionMWrapper "u" ''STLCValue)
 
 applyBuiltin :: STLCValue -> UnionM STLCValue -> ExceptT BonsaiError UnionM STLCValue
 applyBuiltin (STLCBuiltin v) arg =
-  mrgGuard
+  mrgIf
     (Just v ==~ (conc <$> terminalToBV stlcSyntax "hd"))
     ( do
         a <- lift arg
@@ -197,7 +197,7 @@ applyBuiltin (STLCBuiltin v) arg =
               (hd : _) -> uSTLCInt hd
           _ -> throwError BonsaiExecError
     )
-    ( mrgGuard
+    ( mrgIf
         (Just v ==~ (conc <$> terminalToBV stlcSyntax "tl"))
         ( do
             a <- lift arg
@@ -205,14 +205,14 @@ applyBuiltin (STLCBuiltin v) arg =
               STLCList lv -> do
                 listv <- lift lv
                 case listv of
-                  [] -> uSTLCList (mrgSingle [])
-                  (_ : tl) -> uSTLCList (mrgSingle tl)
+                  [] -> uSTLCList (mrgReturn [])
+                  (_ : tl) -> uSTLCList (mrgReturn tl)
               _ -> throwError BonsaiExecError
         )
         (uSTLCPartiallyAppliedBuiltin v arg)
     )
 applyBuiltin (STLCPartiallyAppliedBuiltin v arg1) arg2 =
-  mrgGuard
+  mrgIf
     (Just v ==~ (conc <$> terminalToBV stlcSyntax "+"))
     ( do
         a <- lift arg1
@@ -221,7 +221,7 @@ applyBuiltin (STLCPartiallyAppliedBuiltin v arg1) arg2 =
           (STLCInt a1, STLCInt a2) -> uSTLCInt $ a1 + a2
           _ -> throwError BonsaiExecError
     )
-    ( mrgGuard
+    ( mrgIf
         (Just v ==~ (conc <$> terminalToBV stlcSyntax "cons"))
         ( do
             a <- lift arg1
@@ -242,7 +242,7 @@ interpreter' = memo3 $ \tree env reccount -> {-trace (show tree) $ trace (show e
       bonsaiMatchCustomError
         BonsaiExecError
         [ stlcLiteral "one" ==> uSTLCInt 1,
-          stlcLiteral "nil" ==> uSTLCList (mrgSingle []),
+          stlcLiteral "nil" ==> uSTLCList (mrgReturn []),
           stlcLiteral "hd" ==> uSTLCBuiltin (conc (fromJust (terminalToBV stlcSyntax "hd"))),
           stlcLiteral "tl" ==> uSTLCBuiltin (conc (fromJust (terminalToBV stlcSyntax "tl"))),
           stlcLiteral "cons" ==> uSTLCBuiltin (conc (fromJust (terminalToBV stlcSyntax "cons"))),
@@ -256,7 +256,7 @@ interpreter' = memo3 $ \tree env reccount -> {-trace (show tree) $ trace (show e
                 ),
           (stlcLiteral "call" *= (placeHolder *= placeHolder))
             ==> ( \func arg -> do
-              argv <- mrgFmap (mrgSingle @SymBool) $ interpreter' #~ arg # env # reccount
+              argv <- mrgFmap (mrgReturn @SymBool) $ interpreter' #~ arg # env # reccount
               funcv <- interpreter' #~ func # env # reccount
               case funcv of
                 f@STLCBuiltin {} -> applyBuiltin f argv
@@ -274,7 +274,7 @@ interpreter' = memo3 $ \tree env reccount -> {-trace (show tree) $ trace (show e
         tree
 
 interpreter :: STLCTree -> ExceptT BonsaiError UnionM STLCValue
-interpreter tree = interpreter' tree (mrgSingle []) 0
+interpreter tree = interpreter' tree (mrgReturn []) 0
 
 matchStlcSyntax :: STLCTree -> B.ByteString -> SymBool
 matchStlcSyntax = matchSyntax stlcSyntax matchStlcRule

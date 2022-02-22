@@ -13,8 +13,8 @@ assertWithException = [|assertWithException'|]
 
 assertWithException' ::
   forall bool raw eu.
-  (SymBoolOp bool, MonadError (Exception raw) eu, UnionMOp bool eu) =>
+  (SymBoolOp bool, MonadError (Exception raw) eu, MonadUnion bool eu) =>
   raw ->
   bool ->
   eu ()
-assertWithException' ex x = mrgGuard x (return ()) (throwError ex)
+assertWithException' ex x = mrgIf x (return ()) (throwError ex)

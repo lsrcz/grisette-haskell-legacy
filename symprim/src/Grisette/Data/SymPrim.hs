@@ -81,7 +81,7 @@ instance (SupportedPrim a) => Mergeable (Sym Bool) (Sym a) where
   mergeStrategy = SimpleStrategy ites
 
 instance (SupportedPrim a) => SimpleMergeable (Sym Bool) (Sym a) where
-  mrgIf = ites
+  mrgIte = ites
 
 instance (SupportedPrim a) => PrimWrapper (Sym a) a where
   conc = Sym . concTerm
@@ -112,7 +112,7 @@ instance (SupportedPrim a) => ExtractSymbolics (S.HashSet TermSymbol) (Sym a) wh
   extractSymbolics (Sym t) = extractSymbolicsTerm t
 
 instance (SymBoolOp (Sym Bool), SupportedPrim a) => SymGen (Sym Bool) () (Sym a) where
-  genSymIndexed _ = mrgSingle <$> genSymSimpleIndexed @(Sym Bool) ()
+  genSymIndexed _ = mrgReturn <$> genSymSimpleIndexed @(Sym Bool) ()
 
 instance (SymBoolOp (Sym Bool), SupportedPrim a) => SymGenSimple (Sym Bool) () (Sym a) where
   genSymSimpleIndexed _ = do

@@ -48,7 +48,7 @@ interpretOrderOps l (x : xs) fs = do
         merge $ execute f i
   r <- interpretOrderOps l xs fs1
   cond <- nonDet
-  return $ mrgGuard cond fs r
+  return $ mrgIf cond fs r
 
 isPermutation :: [UnionM Integer] -> SymBool
 isPermutation l = go [0 .. fromIntegral (length l) - 1]
@@ -57,7 +57,7 @@ isPermutation l = go [0 .. fromIntegral (length l) - 1]
     go (x : xs) = go1 x l ==~ 1 &&~ go xs
     go1 :: Integer -> [UnionM Integer] -> SymInteger
     go1 _ [] = 0
-    go1 n (x : xs) = ites @SymBool (x ==~ mrgSingle n) 1 0 + go1 n xs
+    go1 n (x : xs) = ites @SymBool (x ==~ mrgReturn n) 1 0 + go1 n xs
 
 reorderOk :: forall conc fs. (FileSystem conc fs) => conc -> [UnionM InodeOp] -> [UnionM Integer] -> SymBool
 reorderOk fs iops = go

@@ -44,8 +44,8 @@ import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.UnionOp
-import Grisette.Data.Functor
 import Grisette.Data.UnionBase
+import Grisette.Control.Monad
 
 type SymGenState = (Int, String)
 
@@ -62,7 +62,7 @@ class (SymBoolOp bool, Mergeable bool a) => SymGen bool spec a where
     (MonadState SymGenState m) =>
     spec ->
     m (UnionMBase bool a)
-  genSymIndexed spec = mrgSingle <$> genSymSimpleIndexed @bool spec
+  genSymIndexed spec = mrgReturn <$> genSymSimpleIndexed @bool spec
 
 genSym :: (SymGen bool spec a) => spec -> String -> UnionMBase bool a
 genSym spec name = evalState (genSymIndexed spec) (0, name)
@@ -257,11 +257,11 @@ choose ::
   a ->
   [a] ->
   m (UnionMBase bool a)
-choose x [] = return $ mrgSingle x
+choose x [] = return $ mrgReturn x
 choose x (r : rs) = do
   b <- genSymSimpleIndexed @bool ()
   res <- choose r rs
-  return $ mrgGuard b (mrgSingle x) res
+  return $ mrgIf b (mrgReturn x) res
 
 simpleChoose ::
   forall bool a m.
@@ -273,7 +273,7 @@ simpleChoose x [] = return x
 simpleChoose x (r : rs) = do
   b <- genSymSimpleIndexed @bool ()
   res <- simpleChoose @bool r rs
-  return $ mrgIf @bool b x res
+  return $ mrgIte @bool b x res
 
 chooseU ::
   forall bool a m.
@@ -285,18 +285,18 @@ chooseU x [] = return x
 chooseU x (r : rs) = do
   b <- genSymSimpleIndexed @bool ()
   res <- chooseU r rs
-  return $ mrgGuard b x res
+  return $ mrgIf b x res
 
 -- Bool
 instance (SymBoolOp bool, SymGenSimple bool () bool) => SymGen bool Bool Bool where
-  genSymIndexed v = return $ mrgSingle v
+  genSymIndexed v = return $ mrgReturn v
 
 instance (SymBoolOp bool, SymGenSimple bool () bool) => SymGenSimple bool Bool Bool where
   genSymSimpleIndexed v = return v
 
 -- Integer
 instance (SymBoolOp bool, SymGenSimple bool () bool) => SymGen bool Integer Integer where
-  genSymIndexed v = return $ mrgSingle v
+  genSymIndexed v = return $ mrgReturn v
 
 instance (SymBoolOp bool, SymGenSimple bool () bool) => SymGenSimple bool Integer Integer where
   genSymSimpleIndexed v = return v
@@ -322,7 +322,7 @@ instance
   ) =>
   SymGen bool (Either a b) (Either a b)
   where
-  genSymIndexed v = mrgSingle <$> genSymSimpleIndexed @bool v
+  genSymIndexed v = mrgReturn <$> genSymSimpleIndexed @bool v
 
 instance
   ( SymBoolOp bool,
@@ -341,7 +341,7 @@ instance
   (SymBoolOp bool, SymGenSimple bool () bool, SymGenSimple bool a a, Mergeable bool a) =>
   SymGen bool (Maybe a) (Maybe a)
   where
-  genSymIndexed v = mrgSingle <$> genSymSimpleIndexed @bool v
+  genSymIndexed v = mrgReturn <$> genSymSimpleIndexed @bool v
 
 instance
   (SymBoolOp bool, SymGenSimple bool () bool, SymGenSimple bool a a, Mergeable bool a) =>
@@ -354,7 +354,7 @@ instance
   (SymBoolOp bool, SymGenSimple bool () bool, SymGenSimple bool a a, Mergeable bool a) =>
   SymGen bool [a] [a]
   where
-  genSymIndexed v = mrgSingle <$> genSymSimpleIndexed @bool v
+  genSymIndexed v = mrgReturn <$> genSymSimpleIndexed @bool v
 
 instance
   (SymBoolOp bool, SymGenSimple bool () bool, SymGenSimple bool () a, Mergeable bool a) =>
@@ -416,7 +416,7 @@ instance
   (SymBoolOp bool, SymGenSimple bool () bool, SymGenSimple bool spec a, Mergeable bool a) =>
   SymGen bool (SimpleListSpec spec) [a]
   where
-  genSymIndexed = fmap mrgSingle . genSymSimpleIndexed @bool
+  genSymIndexed = fmap mrgReturn . genSymSimpleIndexed @bool
 
 instance
   (SymBoolOp bool, SymGenSimple bool () bool, SymGenSimple bool spec a, Mergeable bool a) =>
@@ -447,7 +447,7 @@ instance
   ) =>
   SymGen bool (a, b) (a, b)
   where
-  genSymIndexed v = mrgSingle <$> genSymSimpleIndexed @bool v
+  genSymIndexed v = mrgReturn <$> genSymSimpleIndexed @bool v
 
 instance
   ( SymBoolOp bool,
@@ -474,7 +474,7 @@ instance
   ) =>
   SymGen bool (a, b, c) (a, b, c)
   where
-  genSymIndexed v = mrgSingle <$> genSymSimpleIndexed @bool v
+  genSymIndexed v = mrgReturn <$> genSymSimpleIndexed @bool v
 
 instance
   ( SymBoolOp bool,
@@ -500,7 +500,7 @@ instance
   ) =>
   SymGen bool (MaybeT m a) (MaybeT m a)
   where
-  genSymIndexed v = mrgSingle <$> genSymSimpleIndexed @bool v
+  genSymIndexed v = mrgReturn <$> genSymSimpleIndexed @bool v
 
 instance
   ( SymBoolOp bool,
@@ -524,7 +524,7 @@ instance
   ) =>
   SymGen bool (ExceptT a m b) (ExceptT a m b)
   where
-  genSymIndexed v = mrgSingle <$> genSymSimpleIndexed @bool v
+  genSymIndexed v = mrgReturn <$> genSymSimpleIndexed @bool v
 
 instance
   ( SymBoolOp bool,
@@ -540,7 +540,7 @@ instance
 
 -- UnionM
 instance (SymBoolOp bool, SymGen bool spec a, Mergeable bool a) => SymGen bool spec (UnionMBase bool a) where
-  genSymIndexed spec = mrgSingle <$> genSymSimpleIndexed @bool spec
+  genSymIndexed spec = mrgReturn <$> genSymSimpleIndexed @bool spec
 
 instance (SymBoolOp bool, SymGen bool spec a) => SymGenSimple bool spec (UnionMBase bool a) where
   genSymSimpleIndexed spec = do
@@ -552,4 +552,4 @@ instance (SymBoolOp bool, SymGen bool a a, SymGenSimple bool () bool, Mergeable 
   genSymIndexed spec = go (underlyingUnion $ merge spec)
     where
       go (Single x) = genSymIndexed x
-      go (Guard _ _ _ t f) = mrgGuard <$> genSymSimpleIndexed @bool () <*> go t <*> go f
+      go (Guard _ _ _ t f) = mrgIf <$> genSymSimpleIndexed @bool () <*> go t <*> go f

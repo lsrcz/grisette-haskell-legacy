@@ -40,7 +40,7 @@ denoteSql qs@(QuerySelect cols q f) =
           rowFuncWrap r = (\rf -> rf r) <$> rowFuncs1
           fromContent = case $$queryQ of
             Table _ _ c -> c
-          postFilter = (\(r, p) -> (r, mrgIf @SymBool ($$filterQ r) p 0)) <$> fromContent
+          postFilter = (\(r, p) -> (r, mrgIte @SymBool ($$filterQ r) p 0)) <$> fromContent
           content = first rowFuncWrap <$> postFilter
        in Table newTblName newSchema content
       ||]
@@ -69,7 +69,7 @@ denoteValue ::
           UnionM (Maybe SymInteger)
         )
     )
-denoteValue (ValConst i) _ = [||const $ mrgSingle i||]
+denoteValue (ValConst i) _ = [||const $ mrgReturn i||]
 denoteValue (ValColumnRef s) indexMap =
   case M.lookup s indexMap of
     Just i -> [||(!! i)||]

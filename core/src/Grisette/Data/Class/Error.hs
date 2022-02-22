@@ -7,7 +7,7 @@ where
 
 import Control.Monad.Except
 import Grisette.Data.Class.Bool
-import Grisette.Data.Class.SimpleMergeable
+import Grisette.Control.Monad
 
 class TransformError from to where
   transformError :: from -> to
@@ -19,8 +19,8 @@ gthrowError :: (TransformError from to, MonadError to erm) => from -> erm a
 gthrowError = throwError . transformError
 
 gassertWithError ::
-  (TransformError from to, MonadError to erm, SymBoolOp bool, UnionMOp bool erm) =>
+  (TransformError from to, MonadError to erm, SymBoolOp bool, MonadUnion bool erm) =>
   from ->
   bool ->
   erm ()
-gassertWithError err cond = mrgGuard cond (return ()) (gthrowError err)
+gassertWithError err cond = mrgIf cond (return ()) (gthrowError err)

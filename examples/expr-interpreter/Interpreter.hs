@@ -132,7 +132,7 @@ typeCheck env (Ops (VarExpr i)) = resolveEnv env i
     resolveEnv ((hdi, hdt) : tl) i1 = mrgIf @SymBool (hdi ==~ i1) (lift hdt) $ resolveEnv tl i1
 
 typeCheckStmt :: Stmt -> StateT TypingEnv (ExceptT Error UnionM) Type
-typeCheckStmt (DefineStmt i expr) = StateT $ \st -> mrgFmap (\t -> (UnitType, (i, mrgSingle t) : st)) $ typeCheck st #~ expr
+typeCheckStmt (DefineStmt i expr) = StateT $ \st -> mrgFmap (\t -> (UnitType, (i, mrgReturn t) : st)) $ typeCheck st #~ expr
 typeCheckStmt (ValueStmt expr) = StateT $ \st -> mrgFmap (,st) $ mrgLift expr >>= typeCheck st
 
 typeCheckStmtListU :: [UnionM Stmt] -> StateT TypingEnv (ExceptT Error UnionM) Type
@@ -153,13 +153,13 @@ reduceTail (ListLit l) = do
   l1 <- mrgLift l
   case l1 of
     [] -> throwError $ Runtime RuntimeRuntimeError
-    _ : t -> uListLit $ mrgSingle t
+    _ : t -> uListLit $ mrgReturn t
 reduceTail _ = merge $ throwError $ Runtime RuntimeTypeMismatch
 
 reduceCons :: LitExpr -> LitExpr -> ExceptT Error UnionM LitExpr
 reduceCons (BoolLit b) (ListLit t) = do
   t1 <- lift t
-  uListLit $ mrgSingle $ b : t1
+  uListLit $ mrgReturn $ b : t1
 reduceCons _ _ = merge $ throwError $ Runtime RuntimeTypeMismatch
 
 reduceNot :: LitExpr -> ExceptT Error UnionM LitExpr
@@ -198,7 +198,7 @@ interpret env (Ops (VarExpr i)) = reduceValue env i
 interpret _ (Lit l) = mrgReturn l
 
 interpretStmt :: Stmt -> StateT ExecutingEnv (ExceptT Error UnionM) LitExpr
-interpretStmt (DefineStmt i expr) = StateT $ \st -> mrgFmap (\t -> (UnitLit, (i, mrgSingle t) : st)) $ interpret st #~ expr
+interpretStmt (DefineStmt i expr) = StateT $ \st -> mrgFmap (\t -> (UnitLit, (i, mrgReturn t) : st)) $ interpret st #~ expr
 interpretStmt (ValueStmt expr) = StateT $ \env -> mrgFmap (,env) $ mrgLift expr >>= interpret env
 
 interpretStmtList :: [Stmt] -> StateT ExecutingEnv (ExceptT Error UnionM) LitExpr

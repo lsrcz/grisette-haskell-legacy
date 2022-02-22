@@ -108,7 +108,7 @@ eval' = {-memo2 $-} \tree env ->
         mrgReturn $ uDotJoinValue av bv,
       dotLiteral "var" *= placeHolder ==> \name -> do
         n <- extractName BonsaiExecError name
-        mrgSingle <$> envResolve BonsaiExecError env n,
+        mrgReturn <$> envResolve BonsaiExecError env n,
       dotLiteral "die" *= placeHolder ==> \_ -> throwError BonsaiExecError,
       dotLiteral "make-null" *= placeHolder ==> \_ -> mrgReturn $ uDotDummy $ conc True,
       dotLiteral "null" ==> mrgReturn (uDotDummy $ conc True)
@@ -116,7 +116,7 @@ eval' = {-memo2 $-} \tree env ->
     tree
 
 eval :: DotTree -> ExceptT BonsaiError UnionM (UnionM DotValue)
-eval tree = eval' tree (mrgSingle [])
+eval tree = eval' tree (mrgReturn [])
 
 dotFindU :: Bool -> SymUnsignedBV DotBitWidth -> UnionM DotType -> UnionM (Maybe (UnionM DotType))
 dotFindU isType name d = getSingle $ dotFind isType name <$> d
@@ -128,7 +128,7 @@ dotFind isType name (DotJoinType u1 u2) = do
     Just x -> uJust x
     Nothing -> dotFindU isType name u2
 dotFind isType name (DotNamed isType' n v) =
-  mrgGuard
+  mrgIf
     (conc (isType == isType') &&~ name ==~ n)
     (uJust v)
     uNothing
@@ -235,7 +235,7 @@ type' = memo2 $ \tree env ->
       dotLiteral "var" *= placeHolder ==> \name -> do
         n <- extractName BonsaiTypeError name
         t <- envResolve' 3 BonsaiTypeError env n
-        return $ mrgSingle t,
+        return $ mrgReturn t,
       dotLiteral "die" *= placeHolder ==> \expr -> do
         t <- type' #~ expr # env
         subt <- subType 0 t uDotNothing
@@ -251,7 +251,7 @@ type' = memo2 $ \tree env ->
     tree
 
 typer :: DotTree -> ExceptT BonsaiError UnionM (UnionM DotType)
-typer tree = type' tree (mrgSingle [])
+typer tree = type' tree (mrgReturn [])
 
 matchDotSyntax :: DotTree -> B.ByteString -> SymBool
 matchDotSyntax = matchSyntax dotSyntax matchDotRule

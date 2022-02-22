@@ -34,8 +34,8 @@ oddi :: SymUnsignedBV 4 -> Sym Bool
 oddi = nots . eveni
 
 m :: UnionM Integer
-m = mrgGuard (ssymb "a") (mrgGuard (ssymb "b") (mrgSingle 5) (mrgSingle 6))
-                        (mrgGuard (ssymb "c") (mrgSingle 3) (mrgSingle 4))
+m = mrgIf (ssymb "a") (mrgIf (ssymb "b") (mrgReturn 5) (mrgReturn 6))
+                        (mrgIf (ssymb "c") (mrgReturn 3) (mrgReturn 4))
 
 m1 :: ExceptT VerificationConditions UnionM ()
 m1 = do

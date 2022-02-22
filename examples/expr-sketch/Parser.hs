@@ -25,7 +25,7 @@ parens :: Parser a -> Parser a
 parens = between (symbol "(") (symbol ")")
 
 concIntExpr :: Parser (UnionM SymbExpr)
-concIntExpr = mrgSingle . SConstantExpr <$> lexeme L.decimal
+concIntExpr = uSConstantExpr <$> lexeme L.decimal
 
 intlst :: Parser [Integer]
 intlst = between (symbol "??[") (symbol "]") (sepBy1 L.decimal (symbol ","))
@@ -35,13 +35,13 @@ intHoleRangeExpr = do
   l <- intlst
   let x = conc @SymInteger <$> l
   i <- choose @SymBool (head x) (tail x)
-  return $ mrgSingle $ SConstantExpr $ getSingle i
+  return $ uSConstantExpr $ getSingle i
 
 intHoleExpr :: Parser (UnionM SymbExpr)
 intHoleExpr = do
   _ <- symbol "??i"
   i <- genSymSimpleIndexed @SymBool ()
-  return $ mrgSingle $ SConstantExpr i
+  return $ uSConstantExpr i
 
 binary :: B.ByteString -> (a -> a -> a) -> Operator Parser a
 binary name f = InfixL (f <$ symbol name)
@@ -71,9 +71,9 @@ opBetterHole = InfixL $ do
 -- hole op is handled separately
 operatorTable :: [[Operator Parser (UnionM SymbExpr)]]
 operatorTable =
-  [ [binary "*" (\a b -> mrgSingle $ SMulExpr a b)],
-    [ binary "+" (\a b -> mrgSingle $ SAddExpr a b),
-      binary "-" (\a b -> mrgSingle $ SSubExpr a b)
+  [ [binary "*" uSMulExpr],
+    [ binary "+" uSAddExpr,
+      binary "-" uSSubExpr
     ],
     [ opHoleOperator,
       opBetterHole

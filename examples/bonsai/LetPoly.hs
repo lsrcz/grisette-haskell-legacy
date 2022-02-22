@@ -60,7 +60,7 @@ simpleNode :: B.ByteString -> LetPolyTree
 simpleNode = unsafeLeaf letPolySyntax
 
 pairNode :: LetPolyTree -> LetPolyTree -> LetPolyTree
-pairNode l r = BonsaiNode (mrgSingle l) (mrgSingle r)
+pairNode l r = BonsaiNode (mrgReturn l) (mrgReturn r)
 
 letTerm :: B.ByteString -> LetPolyTree -> LetPolyTree -> LetPolyTree
 letTerm name t1 = pairNode (pairNode (pairNode (simpleNode "let") (simpleNode name)) t1)
@@ -101,7 +101,7 @@ refTy :: LetPolyTree -> LetPolyTree
 refTy = pairNode (simpleNode "ref")
 
 refTyU :: UnionM LetPolyTree -> LetPolyTree
-refTyU = BonsaiNode (mrgSingle $ simpleNode "ref")
+refTyU = BonsaiNode (mrgReturn $ simpleNode "ref")
 
 arrowTy :: LetPolyTree -> LetPolyTree -> LetPolyTree
 arrowTy = pairNode
@@ -159,19 +159,19 @@ derefTy = tyMatch [letPolyLiteral "ref" *= placeHolder ==> return]
 typer' :: LetPolyTree -> Env LetPolyWidth LetPolyTree -> ExceptT BonsaiError UnionM (UnionM LetPolyTree)
 typer' = memo2 $ \tree env ->
   tyMatch
-    [ letPolyLiteral "true" ==> (return $! mrgSingle boolTy),
-      letPolyLiteral "one" ==> (return $! mrgSingle intTy),
+    [ letPolyLiteral "true" ==> (return $! mrgReturn boolTy),
+      letPolyLiteral "one" ==> (return $! mrgReturn intTy),
       letPolyLiteral "!" *= placeHolder ==> \v -> do
         t <- typer' #~ v # env
         typeCompatible #~ t # boolTy
-        return $! mrgSingle boolTy,
+        return $! mrgReturn boolTy,
       letPolyLiteral "-" *= placeHolder ==> \v -> do
         t <- typer' #~ v # env
         typeCompatible #~ t # intTy
-        return $! mrgSingle intTy,
+        return $! mrgReturn intTy,
       letPolyLiteral "&" *= placeHolder ==> \v -> do
         t <- typer' #~ v # env
-        return $! mrgSingle $ refTyU t,
+        return $! mrgReturn $ refTyU t,
       letPolyLiteral "*" *= placeHolder ==> \v -> do
         t <- typer' #~ v # env
         derefTy #~ t,
@@ -193,7 +193,7 @@ typer' = memo2 $ \tree env ->
         isValidName BonsaiTypeError n
         let newenv = envAdd env n ty
         exprTy <- typer' #~ expr # newenv
-        return $! mrgSingle $ arrowTyU ty exprTy,
+        return $! mrgReturn $ arrowTyU ty exprTy,
       letPolyLiteral "call" *= (placeHolder *= placeHolder) ==> \func arg -> do
         ft <- typer' #~ func # env
         ftx <- lift ft
@@ -210,7 +210,7 @@ typer' = memo2 $ \tree env ->
     tree
 
 typer :: LetPolyTree -> ExceptT BonsaiError UnionM (UnionM LetPolyTree)
-typer tree = typer' tree (mrgSingle [])
+typer tree = typer' tree (mrgReturn [])
 
 data LetPolyValue
   = LetPolyInt SymInteger
@@ -226,11 +226,11 @@ instance Mergeable SymBool LetPolyValue where
     LetPolyRefCell _ -> 2
     LetPolyLambda _ _ _ -> 3)
     (memo $ \case
-      0 -> SimpleStrategy $ \cond (LetPolyInt l) (LetPolyInt r) -> LetPolyInt $ mrgIf @SymBool cond l r
-      1 -> SimpleStrategy $ \cond (LetPolyBool l) (LetPolyBool r) -> LetPolyBool $ mrgIf @SymBool cond l r
+      0 -> SimpleStrategy $ \cond (LetPolyInt l) (LetPolyInt r) -> LetPolyInt $ mrgIte @SymBool cond l r
+      1 -> SimpleStrategy $ \cond (LetPolyBool l) (LetPolyBool r) -> LetPolyBool $ mrgIte @SymBool cond l r
       2 -> SimpleStrategy $ \cond (LetPolyRefCell l) (LetPolyRefCell r) -> LetPolyRefCell $ mrgIf @SymBool cond l r
       3 -> SimpleStrategy $ \cond (LetPolyLambda n1 v1 e1) (LetPolyLambda n2 v2 e2) ->
-        LetPolyLambda (mrgIf @SymBool cond n1 n2) (mrgIf @SymBool cond v1 v2) (mrgIf @SymBool cond e1 e2)
+        LetPolyLambda (mrgIte @SymBool cond n1 n2) (mrgIte @SymBool cond v1 v2) (mrgIte @SymBool cond e1 e2)
       _ -> error "Should not happen")
     
 
@@ -272,18 +272,18 @@ getRefEnv i (RefEnv l) = go l
       | otherwise = throwError BonsaiExecError
 
 instance Mergeable SymBool RefEnv where
-  mergeStrategy = SimpleStrategy mrgIf
+  mergeStrategy = SimpleStrategy mrgIte
 
 instance SimpleMergeable SymBool RefEnv where
-  mrgIf cond (RefEnv t) (RefEnv f) = RefEnv $ go t f
+  mrgIte cond (RefEnv t) (RefEnv f) = RefEnv $ go t f
     where
       go [] [] = []
-      go [] ((fi, fv) : fs) = (fi, mrgGuard cond uNothing fv) : go [] fs
-      go ((ti, tv) : ts) [] = (ti, mrgGuard cond tv uNothing) : go ts []
+      go [] ((fi, fv) : fs) = (fi, mrgIf cond uNothing fv) : go [] fs
+      go ((ti, tv) : ts) [] = (ti, mrgIf cond tv uNothing) : go ts []
       go tl@((ti, tv) : ts) fl@((fi, fv) : fs)
-        | ti > fi = (ti, mrgGuard cond tv uNothing) : go ts fl
-        | ti == fi = (ti, mrgGuard cond tv fv) : go ts fs
-        | otherwise = (fi, mrgGuard cond uNothing fv) : go tl fs
+        | ti > fi = (ti, mrgIte cond tv uNothing) : go ts fl
+        | ti == fi = (ti, mrgIte cond tv fv) : go ts fs
+        | otherwise = (fi, mrgIte cond uNothing fv) : go tl fs
 
 instance HasTrie RefEnv where
   newtype RefEnv :->: x = RefEnvTrie {unRefEnvTrie :: Reg RefEnv :->: x}
@@ -320,7 +320,7 @@ simpleEvalList evalFunc named ref =
     letPolyLiteral "&" *= placeHolder ==> \t -> do
       (v, newRef) <- evalFunc named ref #~ t
       let ptr = minimumAvailableNum newRef
-      uTuple2 (uLetPolyRefCell $ mrgSingle ptr) (updateRefEnv ptr v newRef),
+      uTuple2 (uLetPolyRefCell $ mrgReturn ptr) (updateRefEnv ptr v newRef),
     letPolyLiteral "*" *= placeHolder ==> \t -> do
       (v, newRef) <- evalFunc named ref #~ t
       v1 <- lift v
@@ -388,7 +388,7 @@ eval' = memo3 $ \named ref tree ->
 
 eval :: LetPolyTree -> ExceptT BonsaiError UnionM (UnionM LetPolyValue)
 eval tree = do
-  (v, _) <- eval' (mrgSingle []) (RefEnv []) tree
+  (v, _) <- eval' (mrgReturn []) (RefEnv []) tree
   mrgReturn v
 
 matchLetPolySyntax :: LetPolyTree -> B.ByteString -> SymBool

@@ -43,7 +43,7 @@ synth config (Litmus fsBound make setupProc prog allowCond) =
           )
           "order"
       --order = [0,1,2,4,5,3,6]
-      (synthFs, (_, crashes)) = runState (interpretOrderOps prog1 order (mrgSingle $ (toSym newfs :: fs))) ((0, "crash"), [])
+      (synthFs, (_, crashes)) = runState (interpretOrderOps prog1 order (mrgReturn $ (toSym newfs :: fs))) ((0, "crash"), [])
       allowed = allowCond (toSym newfs) #~ synthFs
 
       cost = syncCost progWithSyncs

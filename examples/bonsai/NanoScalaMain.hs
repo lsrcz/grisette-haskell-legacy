@@ -21,7 +21,7 @@ simpleNode :: B.ByteString -> DotTree
 simpleNode = unsafeLeaf dotSyntax
 
 pairNode :: DotTree -> DotTree -> DotTree
-pairNode l r = BonsaiNode (mrgSingle l) (mrgSingle r)
+pairNode l r = BonsaiNode (mrgReturn l) (mrgReturn r)
 
 valNode :: B.ByteString -> DotTree -> DotTree
 valNode name term = pairNode (simpleNode "val") $ pairNode (simpleNode name) term

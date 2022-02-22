@@ -26,14 +26,15 @@ module Grisette.Core
     withMergeable,
     PrimWrapper (..),
     pattern Conc,
-    UnionMOp (..),
+    MonadUnion (..),
     getSingle,
     SimpleMergeable (..),
     SimpleMergeable1 (..),
+    UnionSimpleMergeable1 (..),
     withSimpleMergeable,
-    withUnionMSimpleMergeable,
+    withUnionSimpleMergeable,
     withSimpleMergeableU,
-    withUnionMSimpleMergeableU,
+    withUnionSimpleMergeableU,
     SOrd (..),
     derivedSymLt,
     derivedSymLe,
@@ -71,8 +72,6 @@ module Grisette.Core
     IsConcrete,
     AssertionError (..),
     VerificationConditions (..),
-    mrgReturn,
-    (>>=~),
     mrgFoldM,
     (>>~),
     mrgMzero,
@@ -118,7 +117,6 @@ import Grisette.Data.Class.SymGen
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
 import Grisette.Data.Class.UnionOp
-import Grisette.Data.Functor
 import Grisette.Data.MemoUtils
 import Grisette.TH
 import Grisette.BuiltinUnionMWrappers

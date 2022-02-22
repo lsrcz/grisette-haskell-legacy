@@ -42,7 +42,7 @@ denoteSql qs@(QuerySelect cols q f) =
             Table _ _ c -> c
           postFilter = do
             fv <- fromContent
-            mrgReturn $ (\(r, p) -> (r, mrgIf @SymBool ($$filterQ r) p 0)) <$> fv
+            mrgReturn $ (\(r, p) -> (r, mrgIte @SymBool ($$filterQ r) p 0)) <$> fv
           content = do
             pf <- postFilter
             mrgReturn $ first rowFuncWrap <$> pf
@@ -73,7 +73,7 @@ denoteValue ::
           UnionM (Maybe SymInteger)
         )
     )
-denoteValue (ValConst i) _ = [||const $ mrgSingle i||]
+denoteValue (ValConst i) _ = [||const $ mrgReturn i||]
 denoteValue (ValColumnRef s) indexMap =
   case M.lookup s indexMap of
     Just i -> [||(!! i)||]
