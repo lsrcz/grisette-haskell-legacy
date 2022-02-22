@@ -4,14 +4,13 @@
 {-# LANGUAGE UndecidableSuperClasses #-}
 
 module Grisette.Data.Class.SimpleMergeable
-  ( UnionMOp (..),
-    getSingle,
-    SimpleMergeable (..),
+  ( SimpleMergeable (..),
     SimpleMergeable1 (..),
+    UnionSimpleMergeable1 (..),
     withSimpleMergeable,
-    withUnionMSimpleMergeable,
+    withUnionSimpleMergeable,
     withSimpleMergeableU,
-    withUnionMSimpleMergeableU,
+    withUnionSimpleMergeableU,
   )
 where
 
@@ -23,36 +22,30 @@ import Control.Monad.Trans.Maybe
 import GHC.Generics
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
-import Grisette.Data.Class.UnionOp
 import Grisette.Data.Class.Utils.CConst
 
 class SimpleMergeable' bool f where
-  mrgIf' :: bool -> f a -> f a -> f a
+  mrgIte' :: bool -> f a -> f a -> f a
 
 instance (SimpleMergeable' bool U1) where
-  mrgIf' = \_ t _ -> t
+  mrgIte' = \_ t _ -> t
 
 instance (SimpleMergeable' bool V1) where
-  mrgIf' = \_ t _ -> t
+  mrgIte' = \_ t _ -> t
 
 instance (SimpleMergeable bool c) => (SimpleMergeable' bool (K1 i c)) where
-  mrgIf' = \cond (K1 a) (K1 b) -> K1 $ mrgIf cond a b
+  mrgIte' = \cond (K1 a) (K1 b) -> K1 $ mrgIte cond a b
 
 instance (SimpleMergeable' bool a) => (SimpleMergeable' bool (M1 i c a)) where
-  mrgIf' = \cond (M1 a) (M1 b) -> M1 $ mrgIf' cond a b
+  mrgIte' = \cond (M1 a) (M1 b) -> M1 $ mrgIte' cond a b
 
 instance (SimpleMergeable' bool a, SimpleMergeable' bool b) => (SimpleMergeable' bool (a :*: b)) where
-  mrgIf' = \cond (a1 :*: a2) (b1 :*: b2) -> mrgIf' cond a1 b1 :*: mrgIf' cond a2 b2
+  mrgIte' = \cond (a1 :*: a2) (b1 :*: b2) -> mrgIte' cond a1 b1 :*: mrgIte' cond a2 b2
 
 class Mergeable bool a => SimpleMergeable bool a where
-  mrgIf :: bool -> a -> a -> a
-  default mrgIf :: (Generic a, SimpleMergeable' bool (Rep a)) => bool -> a -> a -> a
-  mrgIf cond t f = to $ mrgIf' cond (from t) (from f)
-
-getSingle :: forall bool u a. (SimpleMergeable bool a, UnionMOp bool u, UnionOp bool u) => u a -> a
-getSingle u = case merge u of
-  SingleU x -> x
-  _ -> error "Should not happen"
+  mrgIte :: bool -> a -> a -> a
+  default mrgIte :: (Generic a, SimpleMergeable' bool (Rep a)) => bool -> a -> a -> a
+  mrgIte cond t f = to $ mrgIte' cond (from t) (from f)
 
 class (Mergeable1 bool u) => SimpleMergeable1 bool u where
   withSimpleMergeableT :: forall a t. (SimpleMergeable bool a) => (SimpleMergeable bool (u a) => t a) -> t a
@@ -63,6 +56,34 @@ class (Mergeable1 bool u) => SimpleMergeable1 bool u where
     (SimpleMergeable bool (u a) => t a) ->
     t a
   withSimpleMergeableT v = v
+  mrgIte1 :: (SimpleMergeable bool a) => bool -> u a -> u a -> u a
+  default mrgIte1 ::
+    (forall b. SimpleMergeable bool b => SimpleMergeable bool (u b)) =>
+    (SimpleMergeable bool a) =>
+    bool ->
+    u a ->
+    u a ->
+    u a
+  mrgIte1 cond t f = mrgIte cond t f
+
+class (SimpleMergeable1 bool u) => UnionSimpleMergeable1 bool u where
+  withUnionSimpleMergeableT :: forall a t. (Mergeable bool a) => (SimpleMergeable bool (u a) => t a) -> t a
+  default withUnionSimpleMergeableT ::
+    (forall b. Mergeable bool b => SimpleMergeable bool (u b)) =>
+    forall a t.
+    (Mergeable bool a) =>
+    (SimpleMergeable bool (u a) => t a) ->
+    t a
+  withUnionSimpleMergeableT v = v
+  mrgIteu1 :: (Mergeable bool a) => bool -> u a -> u a -> u a
+  default mrgIteu1 ::
+    (forall b. Mergeable bool b => SimpleMergeable bool (u b)) =>
+    (Mergeable bool a) =>
+    bool ->
+    u a ->
+    u a ->
+    u a
+  mrgIteu1 cond t f = mrgIte cond t f
 
 withSimpleMergeable :: forall bool u a b. (SimpleMergeable1 bool u, SimpleMergeable bool a) => (SimpleMergeable bool (u a) => b) -> b
 withSimpleMergeable v = unCConst $ withSimpleMergeableT @bool @u @a @(CConst (SimpleMergeable bool (u a)) b) $ CConst v
@@ -70,139 +91,98 @@ withSimpleMergeable v = unCConst $ withSimpleMergeableT @bool @u @a @(CConst (Si
 withSimpleMergeableU :: forall bool u a. (SimpleMergeable1 bool u, SimpleMergeable bool a) => (SimpleMergeable bool (u a) => u a) -> u a
 withSimpleMergeableU = withSimpleMergeable @bool @u @a
 
-class (SimpleMergeable1 bool u) => UnionMOp bool u | u -> bool where
-  withUnionMSimpleMergeableT :: forall a t. (Mergeable bool a) => (SimpleMergeable bool (u a) => t a) -> t a
-  default withUnionMSimpleMergeableT ::
-    (forall b. Mergeable bool b => SimpleMergeable bool (u b)) =>
-    (Mergeable bool a, SimpleMergeable bool (u a)) =>
-    (SimpleMergeable bool (u a) => t a) ->
-    t a
-  withUnionMSimpleMergeableT v = v
-  merge :: (Mergeable bool a) => u a -> u a
-  mrgSingle :: (Mergeable bool a) => a -> u a
-  mrgGuard :: (Mergeable bool a) => bool -> u a -> u a -> u a
+withUnionSimpleMergeable :: forall bool u a b. (UnionSimpleMergeable1 bool u, Mergeable bool a) => (SimpleMergeable bool (u a) => b) -> b
+withUnionSimpleMergeable v = unCConst $ withUnionSimpleMergeableT @bool @u @a @(CConst (SimpleMergeable bool (u a)) b) $ CConst v
 
-withUnionMSimpleMergeable :: forall bool u a b. (UnionMOp bool u, Mergeable bool a) => (SimpleMergeable bool (u a) => b) -> b
-withUnionMSimpleMergeable v = unCConst $ withUnionMSimpleMergeableT @bool @u @a @(CConst (SimpleMergeable bool (u a)) b) $ CConst v
-
-withUnionMSimpleMergeableU :: forall bool u a. (UnionMOp bool u, Mergeable bool a) => (SimpleMergeable bool (u a) => u a) -> u a
-withUnionMSimpleMergeableU = withUnionMSimpleMergeable @bool @u @a
+withUnionSimpleMergeableU :: forall bool u a. (UnionSimpleMergeable1 bool u, Mergeable bool a) => (SimpleMergeable bool (u a) => u a) -> u a
+withUnionSimpleMergeableU = withUnionSimpleMergeable @bool @u @a
 
 instance (SymBoolOp bool) => SimpleMergeable bool () where
-  mrgIf _ t _ = t
+  mrgIte _ t _ = t
 
 instance (SymBoolOp bool, SimpleMergeable bool a, SimpleMergeable bool b) => SimpleMergeable bool (a, b) where
-  mrgIf cond (a1, b1) (a2, b2) = (mrgIf cond a1 a2, mrgIf cond b1 b2)
+  mrgIte cond (a1, b1) (a2, b2) = (mrgIte cond a1 a2, mrgIte cond b1 b2)
 
 instance
   (SymBoolOp bool, SimpleMergeable bool a, SimpleMergeable bool b, SimpleMergeable bool c) =>
   SimpleMergeable bool (a, b, c)
   where
-  mrgIf cond (a1, b1, c1) (a2, b2, c2) = (mrgIf cond a1 a2, mrgIf cond b1 b2, mrgIf cond c1 c2)
+  mrgIte cond (a1, b1, c1) (a2, b2, c2) = (mrgIte cond a1 a2, mrgIte cond b1 b2, mrgIte cond c1 c2)
 
 instance (SymBoolOp bool, SimpleMergeable bool b) => SimpleMergeable bool (a -> b) where
-  mrgIf cond t f = \v -> mrgIf cond (t v) (f v)
+  mrgIte cond t f = \v -> mrgIte cond (t v) (f v)
 
 instance (SymBoolOp bool) => SimpleMergeable1 bool ((->) a)
 
-instance (SymBoolOp bool, UnionMOp bool m, Mergeable bool a) => SimpleMergeable bool (MaybeT m a) where
-  mrgIf = mrgGuard
+instance (SymBoolOp bool, UnionSimpleMergeable1 bool m, Mergeable bool a) => SimpleMergeable bool (MaybeT m a) where
+  mrgIte cond (MaybeT t) (MaybeT f) = MaybeT $ mrgIteu1 cond t f
 
-instance (SymBoolOp bool, UnionMOp bool m) => SimpleMergeable1 bool (MaybeT m)
+instance (SymBoolOp bool, UnionSimpleMergeable1 bool m) => SimpleMergeable1 bool (MaybeT m)
 
-instance (SymBoolOp bool, UnionMOp bool m) => UnionMOp bool (MaybeT m) where
-  merge (MaybeT v) = MaybeT $ merge @bool v
-  mrgSingle v = MaybeT $ mrgSingle $ return v
-  mrgGuard cond (MaybeT t) (MaybeT f) = MaybeT $ mrgGuard cond t f
+instance (SymBoolOp bool, UnionSimpleMergeable1 bool m) => UnionSimpleMergeable1 bool (MaybeT m)
 
 instance
-  (SymBoolOp bool, UnionMOp bool m, Mergeable bool e, Mergeable bool a, Functor m) =>
+  (SymBoolOp bool, UnionSimpleMergeable1 bool m, Mergeable bool e, Mergeable bool a, Functor m) =>
   SimpleMergeable bool (ExceptT e m a)
   where
-  mrgIf cond (ExceptT t) (ExceptT f) =
-    withUnionMSimpleMergeable @bool @m @(Either e a) $ ExceptT $ mrgIf cond t f
+  mrgIte cond (ExceptT t) (ExceptT f) =
+    withUnionSimpleMergeable @bool @m @(Either e a) $ ExceptT $ mrgIte cond t f
 
 instance
-  (SymBoolOp bool, UnionMOp bool m, Mergeable bool e, Functor m) =>
+  (SymBoolOp bool, UnionSimpleMergeable1 bool m, Mergeable bool e, Functor m) =>
   SimpleMergeable1 bool (ExceptT e m)
 
 instance
-  (SymBoolOp bool, UnionMOp bool m, Mergeable bool e, Functor m) =>
-  UnionMOp bool (ExceptT e m)
-  where
-  merge (ExceptT v) = ExceptT $ merge v
-  mrgSingle v = ExceptT $ mrgSingle $ return v
-  mrgGuard cond (ExceptT t) (ExceptT f) = ExceptT $ mrgGuard cond t f
+  (SymBoolOp bool, UnionSimpleMergeable1 bool m, Mergeable bool e, Functor m) =>
+  UnionSimpleMergeable1 bool (ExceptT e m)
 
 instance
-  (SymBoolOp bool, UnionMOp bool m, Mergeable bool a, Mergeable1 bool sus) =>
+  (SymBoolOp bool, UnionSimpleMergeable1 bool m, Mergeable bool a, Mergeable1 bool sus) =>
   SimpleMergeable bool (Coroutine sus m a)
   where
-  mrgIf cond (Coroutine t) (Coroutine f) =
+  mrgIte cond (Coroutine t) (Coroutine f) =
     withMergeable @bool @sus @(Coroutine sus m a) $
-      withUnionMSimpleMergeable @bool @m @(Either (sus (Coroutine sus m a)) a) $
-        Coroutine $ mrgIf cond t f
+      withUnionSimpleMergeable @bool @m @(Either (sus (Coroutine sus m a)) a) $
+        Coroutine $ mrgIte cond t f
 
 instance
-  (SymBoolOp bool, UnionMOp bool m, Mergeable1 bool sus) =>
+  (SymBoolOp bool, UnionSimpleMergeable1 bool m, Mergeable1 bool sus) =>
   SimpleMergeable1 bool (Coroutine sus m)
 
 instance
-  (SymBoolOp bool, UnionMOp bool m, Mergeable1 bool sus) =>
-  UnionMOp bool (Coroutine sus m)
-  where
-  merge ((Coroutine v) :: Coroutine sus m a) =
-    withMergeable @bool @sus @(Coroutine sus m a) $
-      withUnionMSimpleMergeable @bool @m @(Either (sus (Coroutine sus m a)) a) $
-        Coroutine $ merge @bool v
-  mrgSingle (v :: a) =
-    withMergeable @bool @sus @(Coroutine sus m a) $
-      Coroutine $ mrgSingle $ return v
-  mrgGuard cond ((Coroutine t) :: Coroutine sus m a) (Coroutine f) =
-    withMergeable @bool @sus @(Coroutine sus m a) $
-      Coroutine $ mrgGuard cond t f
+  (SymBoolOp bool, UnionSimpleMergeable1 bool m, Mergeable1 bool sus) =>
+  UnionSimpleMergeable1 bool (Coroutine sus m)
 
 instance
-  (SymBoolOp bool, Mergeable bool s, Mergeable bool a, UnionMOp bool m) =>
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool a, UnionSimpleMergeable1 bool m) =>
   SimpleMergeable bool (StateLazy.StateT s m a)
   where
-  mrgIf cond (StateLazy.StateT t) (StateLazy.StateT f) =
-    withUnionMSimpleMergeable @bool @m @(a, s) $
+  mrgIte cond (StateLazy.StateT t) (StateLazy.StateT f) =
+    withUnionSimpleMergeable @bool @m @(a, s) $
       withSimpleMergeable @bool @((->) s) @(m (a, s)) $
-        StateLazy.StateT $ mrgIf cond t f
+        StateLazy.StateT $ mrgIte cond t f
 
 instance
-  (SymBoolOp bool, Mergeable bool s, UnionMOp bool m) =>
+  (SymBoolOp bool, Mergeable bool s, UnionSimpleMergeable1 bool m) =>
   SimpleMergeable1 bool (StateLazy.StateT s m)
 
 instance
-  (SymBoolOp bool, Mergeable bool s, UnionMOp bool m) =>
-  UnionMOp bool (StateLazy.StateT s m)
-  where
-  merge (StateLazy.StateT f) = StateLazy.StateT $ \v -> merge $ f v
-  mrgSingle v = StateLazy.StateT $ \s -> mrgSingle (v, s)
-  mrgGuard cond (StateLazy.StateT t) (StateLazy.StateT f) =
-    StateLazy.StateT $ \s -> mrgGuard cond (t s) (f s)
+  (SymBoolOp bool, Mergeable bool s, UnionSimpleMergeable1 bool m) =>
+  UnionSimpleMergeable1 bool (StateLazy.StateT s m)
 
 instance
-  (SymBoolOp bool, Mergeable bool s, Mergeable bool a, UnionMOp bool m) =>
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool a, UnionSimpleMergeable1 bool m) =>
   SimpleMergeable bool (StateStrict.StateT s m a)
   where
-  mrgIf cond (StateStrict.StateT t) (StateStrict.StateT f) =
-    withUnionMSimpleMergeable @bool @m @(a, s) $
+  mrgIte cond (StateStrict.StateT t) (StateStrict.StateT f) =
+    withUnionSimpleMergeable @bool @m @(a, s) $
       withSimpleMergeable @bool @((->) s) @(m (a, s)) $
-        StateStrict.StateT $ mrgIf cond t f
+        StateStrict.StateT $ mrgIte cond t f
 
 instance
-  (SymBoolOp bool, Mergeable bool s, UnionMOp bool m) =>
+  (SymBoolOp bool, Mergeable bool s, UnionSimpleMergeable1 bool m) =>
   SimpleMergeable1 bool (StateStrict.StateT s m)
 
 instance
-  (SymBoolOp bool, Mergeable bool s, UnionMOp bool m) =>
-  UnionMOp bool (StateStrict.StateT s m)
-  where
-  merge (StateStrict.StateT f) = StateStrict.StateT $ \v -> merge $ f v
-  mrgSingle v = StateStrict.StateT $ \s -> mrgSingle (v, s)
-  mrgGuard cond (StateStrict.StateT t) (StateStrict.StateT f) =
-    StateStrict.StateT $ \s -> mrgGuard cond (t s) (f s)
-
+  (SymBoolOp bool, Mergeable bool s, UnionSimpleMergeable1 bool m) =>
+  UnionSimpleMergeable1 bool (StateStrict.StateT s m)

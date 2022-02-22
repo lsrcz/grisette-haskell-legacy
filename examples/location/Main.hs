@@ -27,5 +27,5 @@ y = $assertWithException Error1 (ssymb "y")
 main :: IO ()
 main = do
   print x
-  print $ mrgGuard (ssymb "a") x y
-  print $ mrgGuard (ssymb "a") x x
+  print $ mrgIf (ssymb "a") x y
+  print $ mrgIf (ssymb "a") x x

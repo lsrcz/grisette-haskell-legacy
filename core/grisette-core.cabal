@@ -44,7 +44,6 @@ library
       Grisette.Data.Class.ToSym
       Grisette.Data.Class.UnionOp
       Grisette.Data.Class.Utils.CConst
-      Grisette.Data.Functor
       Grisette.Data.MemoUtils
       Grisette.Data.UnionBase
       Grisette.TH

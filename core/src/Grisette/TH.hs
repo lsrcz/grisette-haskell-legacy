@@ -8,10 +8,9 @@ where
 
 import Control.Monad
 import Data.Bifunctor
-import Grisette.Control.Monad (mrgReturn)
+import Grisette.Control.Monad
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
-import Grisette.Data.Class.SimpleMergeable
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax
 
@@ -70,7 +69,7 @@ augmentFinalType unionTypeName boolTypeName t = do
   symBoolOp <- [t|SymBoolOp|]
   monad <- [t|Monad|]
   mergeable <- [t|Mergeable|]
-  unionMOp <- [t|UnionMOp|]
+  monadUnion <- [t|MonadUnion|]
   return
     ( ( [ KindedTV boolTypeName StarT,
           KindedTV unionTypeName (AppT (AppT ArrowT StarT) StarT)
@@ -78,7 +77,7 @@ augmentFinalType unionTypeName boolTypeName t = do
         [ AppT symBoolOp boolType,
           AppT monad unionType,
           AppT (AppT mergeable boolType) t,
-          AppT (AppT unionMOp boolType) unionType
+          AppT (AppT monadUnion boolType) unionType
         ]
       ),
       AppT unionType t

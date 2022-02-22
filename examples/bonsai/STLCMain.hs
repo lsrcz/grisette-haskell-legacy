@@ -18,8 +18,8 @@ import Control.Monad.Except
 import STLC
 
 x1 :: STLCTree
-x1 = BonsaiNode (mrgGuard "cond" (mrgSingle (simpleNode "call")) (mrgSingle $ simpleNode "+"))
-       (uBonsaiNode (mrgSingle $ simpleNode "+") (mrgSingle $ simpleNode "one"))
+x1 = BonsaiNode (mrgIf "cond" (mrgReturn (simpleNode "call")) (mrgReturn $ simpleNode "+"))
+       (uBonsaiNode (mrgReturn $ simpleNode "+") (mrgReturn $ simpleNode "one"))
 
 f1 :: UnionM (STLCTree)
 f1 = genSym (1 :: Int) "a"

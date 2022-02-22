@@ -44,17 +44,17 @@ debs b = case B.uncons b of
 
 mrgSuspend ::
   forall m s bool x.
-  (Monad m, Functor s, UnionMOp bool m, SymBoolOp bool, Mergeable bool x, Mergeable1 bool s) =>
+  (Functor s, MonadUnion bool m, SymBoolOp bool, Mergeable bool x, Mergeable1 bool s) =>
   s (Coroutine s m x) ->
   Coroutine s m x
 mrgSuspend s = withMergeable @bool @s @(Coroutine s m x) $ Coroutine $ mrgReturn @bool (Left s)
 
-mrgYield :: (Monad m, SymBoolOp bool, UnionMOp bool m, Mergeable bool x) => x -> Coroutine (Yield x) m ()
+mrgYield :: (SymBoolOp bool, MonadUnion bool m, Mergeable bool x) => x -> Coroutine (Yield x) m ()
 mrgYield x = mrgSuspend (Yield x $ mrgReturn ())
 
 mrgMapSuspension ::
   forall s m bool x s'.
-  (Functor s, Monad m, SymBoolOp bool, UnionMOp bool m, Mergeable bool x, Mergeable1 bool s') =>
+  (Functor s, SymBoolOp bool, MonadUnion bool m, Mergeable bool x, Mergeable1 bool s') =>
   (forall y. s y -> s' y) ->
   Coroutine s m x ->
   Coroutine s' m x
@@ -65,13 +65,13 @@ mrgMapSuspension f cort = withMergeable @bool @s' @(Coroutine s' m x) Coroutine 
     map' (Left s) = Left $ f $ mrgMapSuspension f <$> s
 
 simpleTransducer ::
-  (Monad m, SymBoolOp bool, UnionMOp bool m, Mergeable bool a, Mergeable bool x) =>
+  (SymBoolOp bool, MonadUnion bool m, Mergeable bool a, Mergeable bool x) =>
   (a -> Coroutine (Yield x) m ()) ->
   Coroutine (Sum (Await a) (Yield x)) m ()
 simpleTransducer f = mrgSuspend (InL $ Await $ \x -> mapSuspension InR (f x) >> simpleTransducer f)
 
 weaveYieldTransducer ::
-  (Monad m, SymBoolOp bool, UnionMOp bool m, Mergeable bool b) =>
+  (SymBoolOp bool, MonadUnion bool m, Mergeable bool b) =>
   WeaveStepper (Yield a) (Sum (Await a) (Yield b)) (Yield b) m () () ()
 weaveYieldTransducer _ _ (Right ()) = mrgReturn ()
 weaveYieldTransducer w (Left l) (Left (InR (Yield y c1))) = mrgSuspend (Yield y $ w (suspend l) c1)
@@ -92,7 +92,7 @@ primPatt pattstr = MT.memo $ \str -> -- trace (show pattstr ++ " " ++ show str +
 seqPatt :: PattCoro -> PattCoro -> PattCoro
 seqPatt patt1 patt2 = MT.memo $ \str ->
   weave sequentialBinder weaveYieldTransducer (patt1 str) $
-    simpleTransducer (lift >=> (\i1 -> addYield (mrgSingle i1) $ patt2 (B.drop (fromIntegral i1) str)))
+    simpleTransducer (lift >=> (\i1 -> addYield (mrgReturn i1) $ patt2 (B.drop (fromIntegral i1) str)))
 
 altPatt :: PattCoro -> PattCoro -> PattCoro
 altPatt patt1 patt2 = MT.memo $ \str -> patt1 str >>~ patt2 str
@@ -101,17 +101,17 @@ plusGreedyPatt :: PattCoro -> PattCoro
 plusGreedyPatt patt = MT.memo $ \str -> weave sequentialBinder weaveYieldTransducer (patt str) $
   simpleTransducer $ \i ->
     lift i >>= \i1 ->
-      when (i1 /= 0) (addYield (mrgSingle i1) $ plusGreedyPatt patt (B.drop (fromIntegral i1) str))
+      when (i1 /= 0) (addYield (mrgReturn i1) $ plusGreedyPatt patt (B.drop (fromIntegral i1) str))
         >> yield i
 
 plusLazyPatt :: PattCoro -> PattCoro
 plusLazyPatt patt = MT.memo $ \str -> weave sequentialBinder weaveYieldTransducer (patt str) $
   simpleTransducer $ \i ->
     yield i
-      >> (lift i >>= \i1 -> when (i1 /= 0) (addYield (mrgSingle i1) $ plusLazyPatt patt (B.drop (fromIntegral i1) str)))
+      >> (lift i >>= \i1 -> when (i1 /= 0) (addYield (mrgReturn i1) $ plusLazyPatt patt (B.drop (fromIntegral i1) str)))
 
 plusPatt :: SymBool -> PattCoro -> PattCoro
-plusPatt greedy = mrgIf greedy plusGreedyPatt plusLazyPatt
+plusPatt greedy = mrgIte greedy plusGreedyPatt plusLazyPatt
 
 matchFirstWithStartImpl :: PattCoro -> B.ByteString -> Integer -> MaybeT UnionM Integer
 matchFirstWithStartImpl patt str startPos = case merge $ pogoStick (\(Yield idx _) -> return $ mrgLift idx) r1 of
@@ -120,7 +120,7 @@ matchFirstWithStartImpl patt str startPos = case merge $ pogoStick (\(Yield idx 
   where
     r1 =
       (\_ -> MaybeT $ return Nothing)
-        <$> addYield (mrgSingle startPos) (patt (B.drop (fromIntegral startPos) str))
+        <$> addYield (mrgReturn startPos) (patt (B.drop (fromIntegral startPos) str))
 
 matchFirstImpl :: PattCoro -> B.ByteString -> MaybeT UnionM (Integer, Integer)
 matchFirstImpl patt str =
@@ -149,7 +149,7 @@ toCoroMemoU u = case u of
   GuardU cond ifTrue ifFalse -> do
     t <- toCoroMemoU ifTrue
     f <- toCoroMemoU ifFalse
-    return $ mrgIf cond t f
+    return $ mrgIte cond t f
   _ -> error "Should not happen"
 
 toCoroMemo :: Patt -> MM.MemoState (MemoHashMap Patt PattCoro) Patt PattCoro PattCoro
@@ -348,7 +348,7 @@ main = do
   print $ listToMaybe (getAllMatches (("cabab" :: B.ByteString) =~ reg8) :: [(Int, Int)])
   print sk1
   -}
-  res <- time $ synthesisRegex (UnboundedReasoning z3 {transcript = Just "/tmp/a.smt2", timing = PrintTiming}) (mrgSingle sk) "[cd](a?b)+?" $ genWordsUpTo 5 "abcd"
+  res <- time $ synthesisRegex (UnboundedReasoning z3 {transcript = Just "/tmp/a.smt2", timing = PrintTiming}) (mrgReturn sk) "[cd](a?b)+?" $ genWordsUpTo 5 "abcd"
   print res
   case res of
     Just resv -> do

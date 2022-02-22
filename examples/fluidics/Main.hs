@@ -28,7 +28,7 @@ replaceNth :: (Mergeable SymBool a) => Sym Integer -> a -> [a] -> ExceptT () Uni
 replaceNth pos val ls = go pos val ls 0
   where
     go _ _ [] _ = throwError ()
-    go p v (x : xs) i = mrgGuard (p ==~ i) (mrgSingle (v : xs)) (mrgFmap (x :) $ go p v xs (i + 1))
+    go p v (x : xs) i = mrgIf (p ==~ i) (mrgReturn (v : xs)) (mrgFmap (x :) $ go p v xs (i + 1))
 
 data ConcPoint = ConcPoint Integer Integer
   deriving (Show, Generic, ToCon Point)
@@ -83,7 +83,7 @@ move :: Grid -> Point -> Dir -> ExceptT () UnionM Grid
 move g p d = do
   droplet <- gridRef g p
   let newpoint = translatePoint p d
-  g1 <- gridSet g p (mrgSingle Nothing)
+  g1 <- gridSet g p (mrgReturn Nothing)
   gridSet g1 newpoint droplet
 
 assert :: SymBool -> ExceptT () UnionM ()

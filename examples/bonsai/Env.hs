@@ -49,7 +49,7 @@ envResolve err env k = do
   envResolveSingle e
   where
     envResolveSingle [] = throwError err
-    envResolveSingle ((n, v) : xs) = mrgGuard (n ==~ k) (lift v) $ envResolveSingle xs
+    envResolveSingle ((n, v) : xs) = mrgIf (n ==~ k) (lift v) $ envResolveSingle xs
 
 envResolveU ::
   (Mergeable SymBool t, KnownNat n, 1 <= n) =>
@@ -62,7 +62,7 @@ envResolveU err env k = do
   envResolveSingle e
   where
     envResolveSingle [] = throwError err
-    envResolveSingle ((n, v) : xs) = mrgGuard (n ==~ k) (return v) $ envResolveSingle xs
+    envResolveSingle ((n, v) : xs) = mrgIf (n ==~ k) (return v) $ envResolveSingle xs
 
 envResolve' ::
   forall n t.
@@ -81,4 +81,4 @@ envResolve' fuel err env k = do
     envResolveSingle x ((n, v) : xs) =
       if x > fuel
         then throwError BonsaiRecursionError
-        else mrgGuard (n ==~ k) (lift v) $ envResolveSingle (x + 1) xs
+        else mrgIf (n ==~ k) (lift v) $ envResolveSingle (x + 1) xs

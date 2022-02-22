@@ -24,7 +24,7 @@ lookupEnvU env i = lift env >>= \e -> lookupEnv e i
 
 lookupEnv :: Env -> SIdentifier -> ExceptT Errors UnionM SValue
 lookupEnv [] _ = throwError UndefinedVariable
-lookupEnv ((x, xv) : xs) i = mrgGuard (x ==~ i) (lift xv) (lookupEnv xs i)
+lookupEnv ((x, xv) : xs) i = mrgIf (x ==~ i) (lift xv) (lookupEnv xs i)
 
 data Errors
   = AssertionError
@@ -86,7 +86,7 @@ interpretExpr env (SVarExpr v) = lookupEnvU env v
 interpretStmt :: SymbStmt -> StateT (UnionM Env) (ExceptT Errors UnionM) ()
 interpretStmt (SAssignStmt i e) = StateT $
   \st ->
-    mrgFmap (\t -> ((), mrgFmap (\s -> (i, mrgSingle t) : s) st)) $
+    mrgFmap (\t -> ((), mrgFmap (\s -> (i, mrgReturn t) : s) st)) $
       interpretExprU st e
 interpretStmt (SAssertStmt v) = do
   cond <- StateT $ \st -> mrgFmap (,st) $ interpretExprU st v
@@ -96,14 +96,14 @@ interpretStmt (SAssertStmt v) = do
 interpretStmt (SIfStmt v l r) = do
   cond <- StateT $ \st -> mrgFmap (,st) $ interpretExprU st v
   case cond of
-    SBool sym -> mrgGuard sym (interpretStmtList l) (interpretStmtList r)
+    SBool sym -> mrgIf sym (interpretStmtList l) (interpretStmtList r)
     _ -> throwError BadType
 
 interpretStmtList :: [SymbStmt] -> StateT (UnionM Env) (ExceptT Errors UnionM) ()
 interpretStmtList = foldM (\_ stmt -> interpretStmt stmt) ()
 
 interpretProgram :: SymbProgram -> ExceptT Errors UnionM ()
-interpretProgram (SymbProgram s) = evalStateT (interpretStmtList s) (mrgSingle [])
+interpretProgram (SymbProgram s) = evalStateT (interpretStmtList s) (mrgReturn [])
 
 data DoSynthesis = DoSynthesis
 

@@ -36,7 +36,7 @@ verify config (Litmus _ make setupProc prog allowCond) =
           )
           "order"
 
-      (verifFs, _) = runState (interpretOrderOps prog1 order (mrgSingle $ (toSym newfs :: fs))) ((0, "crash"), [])
+      (verifFs, _) = runState (interpretOrderOps prog1 order (mrgReturn $ (toSym newfs :: fs))) ((0, "crash"), [])
       allowed = allowCond (toSym newfs) #~ verifFs
 
       verifCond :: ExceptT AssertionError UnionM ()

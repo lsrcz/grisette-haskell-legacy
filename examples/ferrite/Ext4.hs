@@ -62,9 +62,9 @@ instance Mergeable SymBool Ext4Fs where
       Ext4Fs
         bs1
         na1
-        (zipWith (mrgIf @SymBool cond) dir1 dir2)
-        (zipWith (mrgIf @SymBool cond) fds1 fds2)
-        (zipWith (mrgIf @SymBool cond) files1 files2)
+        (zipWith (mrgIte @SymBool cond) dir1 dir2)
+        (zipWith (mrgIte @SymBool cond) fds1 fds2)
+        (zipWith (mrgIte @SymBool cond) files1 files2)
 
 ext4fs :: Integer -> Integer -> Bool -> ConcExt4Fs
 ext4fs capacity blockSize nodealloc =
@@ -216,7 +216,7 @@ instance FileSystem ConcExt4Fs Ext4Fs where
         return $ uIDirRename name1 name2 : r
       go (Efsync fd e : xs) = do
         r <- go xs
-        return $ (fd >>= (\fdv -> mrgGuard e (uISwap fdv True) (uISwap fdv False))) : r
+        return $ (fd >>= (\fdv -> mrgIf e (uISwap fdv True) (uISwap fdv False))) : r
   execute f i =
     execStateT
       ( case i of
@@ -227,7 +227,7 @@ instance FileSystem ConcExt4Fs Ext4Fs where
           IDirRename name1 name2 -> unless (name1 == name2) $ do
             newIno <- getNameIno name1
             oldIno <- getNameIno name2
-            updateFile oldIno (File 0 (mrgSingle []))
+            updateFile oldIno (File 0 (mrgReturn []))
             updateDirEnt name1 $ DirEnt oldIno (conc False)
             updateDirEnt name2 $ DirEnt newIno (conc True)
           IFileWrite fd content off -> doWrite fd content off
@@ -263,11 +263,11 @@ instance FileSystem ConcExt4Fs Ext4Fs where
       updateSize fd sz = do
         ino <- getFdINode fd
         File _ onDisk <- getFile ino
-        let newFile = File (mrgSingle sz) onDisk
+        let newFile = File (mrgReturn sz) onDisk
         updateFile ino newFile
   ondisk (Ext4Fs _ _ dirs _ files) name =
     let DirEnt ino exists = dirs !! fromIntegral name
-     in mrgGuard
+     in mrgIf
           exists
           ( do
               i <- ino

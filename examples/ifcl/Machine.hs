@@ -21,7 +21,7 @@ instance TransformError Errors Errors where
 
 takeOnlyEnough :: (Mergeable SymBool a) => [a] -> SymInteger -> ExceptT Errors UnionM [a]
 takeOnlyEnough l i =
-  mrgGuard
+  mrgIf
     (i ==~ 0)
     (return [])
     ( case l of
@@ -33,7 +33,7 @@ takeOnlyEnough l i =
 
 dropOnlyEnough :: (Mergeable SymBool a) => [a] -> SymInteger -> ExceptT Errors UnionM [a]
 dropOnlyEnough l i =
-  mrgGuard
+  mrgIf
     (i ==~ 0)
     (return l)
     ( case l of
@@ -44,7 +44,7 @@ dropOnlyEnough l i =
 replace :: (Mergeable SymBool a) => [a] -> SymInteger -> a -> ExceptT Errors UnionM [a]
 replace [] _ _ = throwError EvalError
 replace (x : xs) v t =
-  mrgGuard
+  mrgIf
     (v ==~ 0)
     (return $! t : xs)
     ( do
@@ -54,7 +54,7 @@ replace (x : xs) v t =
 
 insert :: (Mergeable SymBool a) => [a] -> SymInteger -> a -> ExceptT Errors UnionM [a]
 insert l i v =
-  mrgGuard
+  mrgIf
     (i ==~ 0)
     (return $! v : l)
     ( case l of
@@ -73,7 +73,7 @@ data Machine = Machine
   deriving (SimpleMergeable SymBool, NFData)
 
 freshMachine :: Int -> Machine
-freshMachine memCell = Machine zeroLow (mrgSingle []) (mrgSingle $ replicate memCell (mrgSingle zeroLow))
+freshMachine memCell = Machine zeroLow (mrgReturn []) (mrgReturn $ replicate memCell (mrgReturn zeroLow))
 
 type Program = [UnionM Instruction]
 
@@ -107,14 +107,14 @@ peekPC i m = do
 
 
 push :: MemValue -> Machine -> Machine
-push v (Machine p s m) = Machine p (mrgFmap (mrgSingle v :) s) m
+push v (Machine p s m) = Machine p (mrgFmap (mrgReturn v :) s) m
 
 pushAt :: SymInteger -> MemValue -> Machine -> ExceptT Errors UnionM Machine
 pushAt i v (Machine p s m) = do
   st <- lift s
-  mrgGuard (fromIntegral (length st) <~ i) (throwError EvalError) $ do
-    newst <- insert st i (mrgSingle v)
-    return $! Machine p (mrgSingle newst) m
+  mrgIf (fromIntegral (length st) <~ i) (throwError EvalError) $ do
+    newst <- insert st i (mrgReturn v)
+    return $! Machine p (mrgReturn newst) m
 
 pop :: Machine -> ExceptT Errors UnionM Machine
 pop = popN 1
@@ -122,16 +122,16 @@ pop = popN 1
 popN :: SymInteger -> Machine -> ExceptT Errors UnionM Machine
 popN i (Machine p s m) = do
   st <- lift s
-  mrgGuard (fromIntegral (length st) <~ i) (throwError EvalError) $ do
+  mrgIf (fromIntegral (length st) <~ i) (throwError EvalError) $ do
     newst <- dropOnlyEnough st i
-    return $! Machine p (mrgSingle newst) m
+    return $! Machine p (mrgReturn newst) m
 
 -- concrete pred
 popUntil :: (MemValue -> Bool) -> Machine -> ExceptT Errors UnionM Machine
 popUntil pred (Machine p s m) = do
   st <- lift s
   newst <- computeStack st
-  return $! Machine p (mrgSingle newst) m
+  return $! Machine p (mrgReturn newst) m
   where
     computeStack :: [UnionM MemValue] -> ExceptT Errors UnionM [UnionM MemValue]
     computeStack [] = mrgReturn []
@@ -148,9 +148,9 @@ read i (Machine _ _ m) = do
 write :: SymInteger -> PCValue -> Machine -> ExceptT Errors UnionM Machine
 write i v (Machine p s m) = do
   mv <- lift m
-  mrgGuard (fromIntegral (length m) <~ i) (throwError EvalError) $ do
-    newMem <- replace mv i $ mrgSingle v
-    return $! Machine p s (mrgSingle newMem)
+  mrgIf (fromIntegral (length m) <~ i) (throwError EvalError) $ do
+    newMem <- replace mv i $ mrgReturn v
+    return $! Machine p s (mrgReturn newMem)
 
 goto :: PCValue -> Machine -> Machine
 goto n (Machine _ s m) = Machine n s m

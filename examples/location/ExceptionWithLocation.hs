@@ -21,9 +21,9 @@ assertWithException = [|assertWithException' (B.fromString $__LOCATION__)|]
 
 assertWithException' ::
   forall bool raw eu.
-  (SymBoolOp bool, MonadError (Exception raw) eu, UnionMOp bool eu) =>
+  (SymBoolOp bool, MonadError (Exception raw) eu, MonadUnion bool eu) =>
   B.ByteString ->
   raw ->
   bool ->
   eu ()
-assertWithException' loc ex x = mrgGuard x (return ()) (throwError $ ExceptionWithLocation ex loc)
+assertWithException' loc ex x = mrgIf x (return ()) (throwError $ ExceptionWithLocation ex loc)
