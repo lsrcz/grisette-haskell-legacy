@@ -63,12 +63,7 @@ denoteFilter f _ = fail $ "I don't know how to handle the sql filter " ++ show f
 denoteValue ::
   Val ->
   M.HashMap Table.Name Int ->
-  Q
-    ( TExp
-        ( [UnionM (Maybe SymInteger)] ->
-          UnionM (Maybe SymInteger)
-        )
-    )
+  Q (TExp ([UnionM (Maybe SymInteger)] -> UnionM (Maybe SymInteger)))
 denoteValue (ValConst i) _ = [||const $ mrgReturn i||]
 denoteValue (ValColumnRef s) indexMap =
   case M.lookup s indexMap of

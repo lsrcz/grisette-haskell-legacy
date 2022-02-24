@@ -2,7 +2,6 @@ module Env where
 
 import BonsaiTree
 import Control.Monad.Except
-import Error
 import GHC.TypeNats
 import Grisette.Core
 import Grisette.SymPrim.Term

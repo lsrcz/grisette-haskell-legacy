@@ -6,10 +6,11 @@ module NanoScalaOptimized where
 import BonsaiTree
 import Control.DeepSeq
 import Control.Monad.Except
+import Data.BitVector.Sized.Unsigned
 import qualified Data.ByteString as B
+import Data.Maybe
 import Data.MemoTrie
 import Env
-import Error
 import GHC.Generics
 import Grisette.Core
 import Grisette.SymPrim.Term
@@ -17,8 +18,6 @@ import Match
 import MatchSyntax
 import Pattern
 import SyntaxSpec
-import Data.BitVector.Sized.Unsigned
-import Data.Maybe
 
 type DotBitWidth = 15
 
@@ -55,7 +54,7 @@ dotSyntax =
     ]
 
 dotLiteral :: B.ByteString -> Pattern (SymUnsignedBV DotBitWidth) 0
-dotLiteral s = literal $ fromJust $ toSym $ terminalToBV dotSyntax s 
+dotLiteral s = literal $ fromJust $ toSym $ terminalToBV dotSyntax s
 
 data DotValue
   = DotEmptyValue
@@ -140,7 +139,7 @@ reduceType ::
   Bool ->
   DotTree ->
   ExceptT BonsaiError UnionM (UnionM DotType)
-reduceType = {-mup memo3 $ -}\reccount env strict tree ->
+reduceType = {-mup memo3 $ -} \reccount env strict tree ->
   let reduceTypeR = reduceType (reccount + 1)
    in if reccount >= 3
         then throwError BonsaiTypeError
@@ -179,7 +178,7 @@ reduceType = {-mup memo3 $ -}\reccount env strict tree ->
             tree
 
 subType :: Int -> UnionM DotType -> UnionM DotType -> ExceptT BonsaiError UnionM SymBool
-subType = {-memo3 $ -}\reccount sub sup ->
+subType = {-memo3 $ -} \reccount sub sup ->
   let subTypeR = subType (reccount + 1)
    in if reccount >= 3
         then throwError BonsaiTypeError

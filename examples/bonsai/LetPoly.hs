@@ -11,7 +11,6 @@ import qualified Data.ByteString as B
 import Data.Maybe
 import Data.MemoTrie
 import Env
-import Error
 import GHC.Generics
 import Grisette.Core
 import Grisette.SymPrim.Term

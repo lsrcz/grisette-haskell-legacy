@@ -3,19 +3,17 @@
 module NanoScalaMain where
 
 import BonsaiTree
-import qualified Data.ByteString as B
-import Grisette.Core
-import NanoScala
-import SyntaxSpec
-import Error
-import Grisette.SymPrim.Term
-import Control.Monad.Trans
-import Utils.Timing
 import Control.DeepSeq
-import Grisette.Backend.SBV
 import Control.Monad.Except
+import qualified Data.ByteString as B
+import Grisette.Backend.SBV
+import Grisette.Core
+import Grisette.SymPrim.Term
 import Match
+import NanoScala
 import Pattern
+import SyntaxSpec
+import Utils.Timing
 
 simpleNode :: B.ByteString -> DotTree
 simpleNode = unsafeLeaf dotSyntax
@@ -32,19 +30,11 @@ typNode name term = pairNode (simpleNode "typ") $ pairNode (simpleNode name) ter
 andNode :: DotTree -> DotTree -> DotTree
 andNode l r = pairNode (simpleNode "and") $ pairNode l r
 
-letNode ::
-  B.ByteString ->
-  DotTree ->
-  DotTree ->
-  DotTree ->
-  DotTree ->
-  DotTree
+letNode :: B.ByteString -> DotTree -> DotTree -> DotTree -> DotTree -> DotTree
 letNode name inty outty value expr =
-  pairNode
-    (simpleNode "let")
-    $ pairNode
-      (pairNode (simpleNode name) $ pairNode inty outty)
-      $ pairNode value expr
+  pairNode (simpleNode "let") $
+    pairNode (pairNode (simpleNode name) $ pairNode inty outty) $
+      pairNode value expr
 
 varNode :: B.ByteString -> DotTree
 varNode name = pairNode (simpleNode "var") $ simpleNode name
@@ -88,18 +78,25 @@ f10 :: UnionM DotTree
 f10 = genSym (10 :: Int) "a"
 
 counterExample :: DotTree
-counterExample = dieNode $
-  letNode "a" (typNode "b" anyNode) (getNode (varNode "a") "b")
-    (makeNullNode (andNode (typNode "b" nothingNode) (typNode "b" anyNode)))
-    nullNode
+counterExample =
+  dieNode $
+    letNode
+      "a"
+      (typNode "b" anyNode)
+      (getNode (varNode "a") "b")
+      (makeNullNode (andNode (typNode "b" nothingNode) (typNode "b" anyNode)))
+      nullNode
 
 dotMain :: IO ()
 dotMain = do
   print $ terminals dotSyntax
   print f4
-  print $ bonsaiMatchCustomError BonsaiTypeError [
-    dotLiteral "val" *= (placeHolder *= placeHolder) ==> \a _ -> mrgLift a
-    ] #~ f4
+  print $
+    bonsaiMatchCustomError
+      BonsaiTypeError
+      [ dotLiteral "val" *= (placeHolder *= placeHolder) ==> \a _ -> mrgLift a
+      ]
+      #~ f4
   print $ typer nullNode
   print $ typer (dieNode nullNode)
   let typErrNode = rangeNode "c" anyNode nothingNode
@@ -114,7 +111,7 @@ dotMain = do
 
   let result = lift f10 >>= execDot
   _ <- timeItAll "symeval" $ runExceptT result `deepseq` return ()
-  r <- timeItAll "lower/solve" $ solveWithTranslation VerifyTyper (BoundedReasoning @6 boolector) result 
+  r <- timeItAll "lower/solve" $ solveWithTranslation VerifyTyper (BoundedReasoning @6 boolector) result
   case r of
     Left _ -> putStrLn "Verified"
     Right mo -> do

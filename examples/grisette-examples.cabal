@@ -86,7 +86,6 @@ executable bonsai
   other-modules:
       BonsaiTree
       Env
-      Error
       LetPoly
       LetPolyMain
       Match

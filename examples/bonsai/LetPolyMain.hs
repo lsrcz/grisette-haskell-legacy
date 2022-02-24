@@ -3,19 +3,17 @@
 module LetPolyMain where
 
 import BonsaiTree
+import Control.DeepSeq
+import Control.Monad.Except
 import qualified Data.ByteString as B
-import Data.Foldable
+-- import Data.Foldable
 import Data.Maybe
-import Error
+import Grisette.Backend.SBV
 import Grisette.Core
 import Grisette.SymPrim.Term
 import LetPoly
 import SyntaxSpec
-import Control.Monad.Trans
 import Utils.Timing
-import Control.Monad.Except
-import Control.DeepSeq
-import Grisette.Backend.SBV
 
 testTyperAndEval :: LetPolyTree -> IO ()
 testTyperAndEval t = do
@@ -28,7 +26,6 @@ testTyperAndEval t = do
 
 f7 :: UnionM LetPolyTree
 f7 = genSym (7 :: Int) "a"
-
 
 letPolyMain :: IO ()
 letPolyMain = timeItAll "Overall" $ do
@@ -52,10 +49,10 @@ letPolyMain = timeItAll "Overall" $ do
   print $ typeCompatible (refTy intTy) (refTy boolTy)
   print $ typeCompatible (arrowTy anyTy intTy) (arrowTy intTy intTy)
   print $ typeCompatible (arrowTy intTy anyTy) (arrowTy intTy intTy)
-  -}
   putStrLn "Typer / eval: "
+
   let toTest =
-        [ {-oneTerm,
+        [ oneTerm,
           trueTerm,
           opTerm "-" oneTerm,
           opTerm "!" trueTerm,
@@ -83,10 +80,11 @@ letPolyMain = timeItAll "Overall" $ do
             opTerm "*" $ opTerm "&" (nameTerm "a"),
           letTerm "a" (opTerm "&" $ lambdaTerm "a" anyTy (nameTerm "a")) $
             assignTerm (nameTerm "a") (lambdaTerm "a" boolTy $ opTerm "!" (nameTerm "a")) $
-              callTerm (opTerm "*" $ nameTerm "a") oneTerm
-          opTerm "*" $ opTerm "&"  trueTerm-}
+              callTerm (opTerm "*" $ nameTerm "a") oneTerm,
+          opTerm "*" $ opTerm "&" trueTerm
         ]
   traverse_ testTyperAndEval toTest
+  -}
 
   --print f7
   --print $ matchLetPolySyntax #~ f7 # "term"
@@ -94,7 +92,7 @@ letPolyMain = timeItAll "Overall" $ do
   --print $ mrgFmap (const ()) $ eval #~ f7
   let result = lift f7 >>= execLetPoly
   _ <- timeItAll "symeval" $ runExceptT result `deepseq` return ()
-  r <- timeItAll "lower/solve" $ solveWithTranslation VerifyTyper (BoundedReasoning @6 boolector {verbose=False}) result 
+  r <- timeItAll "lower/solve" $ solveWithTranslation VerifyTyper (BoundedReasoning @6 boolector {verbose = False}) result
   case r of
     Left _ -> putStrLn "Verified"
     Right mo -> do

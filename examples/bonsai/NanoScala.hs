@@ -11,7 +11,6 @@ import Data.Either.Combinators
 import Data.Maybe
 import Data.MemoTrie
 import Env
-import Error
 import Grisette.Core
 import Grisette.SymPrim.Term
 import Match

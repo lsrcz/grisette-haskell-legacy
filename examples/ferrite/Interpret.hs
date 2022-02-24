@@ -67,10 +67,12 @@ reorderOk fs iops = go
     go1 x (l : ls) =
       let opx = (\v -> iops !! fromInteger v) =<< x
           opl = (\v -> iops !! fromInteger v) =<< l
-       in
-         go1 x ls
-            &&~ ((x >~ l) `implies` (((\xv lv -> conc (reorder fs xv lv)) #~ opx #~ opl) &&~
-            (\xv lv -> conc (reorder fs xv lv)) #~ opl #~ opx))
+       in go1 x ls
+            &&~ ( (x >~ l)
+                    `implies` ( ((\xv lv -> conc (reorder fs xv lv)) #~ opx #~ opl)
+                                  &&~ (\xv lv -> conc (reorder fs xv lv)) #~ opl #~ opx
+                              )
+                )
 
 validOrdering :: forall conc fs. (FileSystem conc fs) => conc -> [UnionM InodeOp] -> [UnionM Integer] -> SymBool
 validOrdering fs iops ordering = isPermutation ordering &&~ reorderOk fs iops ordering

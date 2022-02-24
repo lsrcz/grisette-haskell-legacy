@@ -1,5 +1,6 @@
-{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE UndecidableInstances #-}
+
 module Pattern where
 
 import BonsaiTree
@@ -27,11 +28,17 @@ placeHolder :: Pattern a 1
 placeHolder = PlaceHolder
 
 type HandlerType0 m e t = ExceptT e UnionM t
+
 type HandlerType1 m e t = UnionM (BonsaiTree m) -> HandlerType0 m e t
+
 type HandlerType2 m e t = UnionM (BonsaiTree m) -> HandlerType1 m e t
+
 type HandlerType3 m e t = UnionM (BonsaiTree m) -> HandlerType2 m e t
+
 type HandlerType4 m e t = UnionM (BonsaiTree m) -> HandlerType3 m e t
+
 type HandlerType5 m e t = UnionM (BonsaiTree m) -> HandlerType4 m e t
+
 data PatternHandler m e t
   = PatternHandler0 (Pattern m 0) (HandlerType0 m e t)
   | PatternHandler1 (Pattern m 1) (HandlerType1 m e t)

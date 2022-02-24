@@ -23,8 +23,5 @@ cosette =
 
 compile :: B.ByteString -> Q Exp
 compile s = case runParser wholeStringQuery "input" s of
-  Left peb ->
-    let msg = errorBundlePretty peb
-     in [|error msg|]
-  Right qu ->
-    [|qu|]
+  Left peb -> let msg = errorBundlePretty peb in [|error msg|]
+  Right qu -> [|qu|]

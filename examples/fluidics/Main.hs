@@ -122,6 +122,12 @@ interpretInstruction :: Grid -> Instruction -> ExceptT () UnionM Grid
 interpretInstruction g (Move p ud) = lift ud >>= move g p
 interpretInstruction g (Mix p) = mix g p
 
+data Synth = Synth
+
+instance SolverTranslation Synth () SymBool where
+  errorTranslation _ _ = False
+  valueTranslation _ v = v
+
 synthesizeProgram ::
   GrisetteSMTConfig n ->
   Int ->
@@ -138,12 +144,12 @@ synthesizeProgram config i initst f = go 0 (mrgReturn initst)
               t1 <- st
               ins <- lift (lst !! num)
               interpretInstruction t1 ins
-            cond = getSingle $ mrgFmap (\case Left _ -> conc False; Right v -> v) $ runExceptT $ newst >>= f
+            cond = newst >>= f
          in do
               print num
               --print cond
-              _ <- timeItAll "symeval" $ cond `deepseq` return cond
-              r <- timeItAll "lower/solve" $ solveWith config cond
+              _ <- timeItAll "symeval" $ runExceptT cond `deepseq` return cond
+              r <- timeItAll "lower/solve" $ solveWithTranslation Synth config cond
               case r of
                 Left _ -> go (num + 1) newst
                 Right m -> return $ toCon $ symeval True m $ take (num + 1) lst

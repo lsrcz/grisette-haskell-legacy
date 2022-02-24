@@ -4,21 +4,21 @@
 module STLC where
 
 import BonsaiTree
+import Control.DeepSeq
 import Control.Monad.Except
+import Data.BitVector.Sized.Unsigned
 import qualified Data.ByteString as B
 import Data.Maybe
 import Data.MemoTrie
-import Error
+import Env
 import GHC.Generics
 import Grisette.Core
 import Grisette.SymPrim.Term
 import Match
+import MatchSyntax
 import Pattern
 import SyntaxSpec
-import MatchSyntax
-import Control.DeepSeq
-import Env
-import Data.BitVector.Sized.Unsigned
+
 -- import Debug.Trace
 
 type STLCBitWidth = 14
@@ -46,7 +46,7 @@ stlcSyntax =
     ]
 
 stlcLiteral :: B.ByteString -> Pattern (SymUnsignedBV STLCBitWidth) 0
-stlcLiteral s = literal $ fromJust $ toSym $ terminalToBV stlcSyntax s 
+stlcLiteral s = literal $ fromJust $ toSym $ terminalToBV stlcSyntax s
 
 simpleNode :: B.ByteString -> STLCTree
 simpleNode = unsafeLeaf stlcSyntax
@@ -119,7 +119,7 @@ asNode _ x@(BonsaiNode _ _) = mrgReturn x
 asNode e _ = throwError e
 
 typer' :: STLCTree -> Env 14 (STLCTree) -> ExceptT BonsaiError UnionM (UnionM STLCTree)
-typer' = memo2 $ \tree env -> {-trace (show tree) $ trace (show env) $-}
+typer' = memo2 $ \tree env {-trace (show tree) $ trace (show env) $-} ->
   bonsaiMatchCustomError
     BonsaiTypeError
     [ stlcLiteral "one" ==> mrgReturn (mrgReturn intTy),
@@ -158,7 +158,6 @@ typer' = memo2 $ \tree env -> {-trace (show tree) $ trace (show env) $-}
                   BonsaiLeaf sym -> do
                     _ <- envResolveU BonsaiTypeError env sym
                     mrgReturn . mrgReturn $ intTy
-
                   _ -> throwError BonsaiTypeError
             )
     ]
@@ -235,7 +234,7 @@ applyBuiltin (STLCPartiallyAppliedBuiltin v arg1) arg2 =
 applyBuiltin _ _ = throwError BonsaiExecError
 
 interpreter' :: STLCTree -> Env 14 STLCValue -> Int -> ExceptT BonsaiError UnionM (UnionM STLCValue)
-interpreter' = memo3 $ \tree env reccount -> {-trace (show tree) $ trace (show env) $ trace (show reccount) $-}
+interpreter' = memo3 $ \tree env reccount {-trace (show tree) $ trace (show env) $ trace (show reccount) $-} ->
   if reccount >= 2
     then throwError BonsaiRecursionError
     else
@@ -256,21 +255,22 @@ interpreter' = memo3 $ \tree env reccount -> {-trace (show tree) $ trace (show e
                 ),
           (stlcLiteral "call" *= (placeHolder *= placeHolder))
             ==> ( \func arg -> do
-              argv <- interpreter' #~ arg # env # reccount
-              funcv <- interpreter' #~ func # env # reccount
-              funcvv <- lift funcv
-              case funcvv of
-                f@STLCBuiltin {} -> applyBuiltin f argv
-                f@STLCPartiallyAppliedBuiltin {} -> applyBuiltin f argv
-                STLCLambda name expr env1 -> interpreter' #~ expr # envAdd env1 name argv # (reccount + 1)
-                _ -> throwError BonsaiExecError
+                    argv <- interpreter' #~ arg # env # reccount
+                    funcv <- interpreter' #~ func # env # reccount
+                    funcvv <- lift funcv
+                    case funcvv of
+                      f@STLCBuiltin {} -> applyBuiltin f argv
+                      f@STLCPartiallyAppliedBuiltin {} -> applyBuiltin f argv
+                      STLCLambda name expr env1 -> interpreter' #~ expr # envAdd env1 name argv # (reccount + 1)
+                      _ -> throwError BonsaiExecError
                 ),
-          placeHolder ==> (\v -> do
-            s <- lift v
-            case s of
-              BonsaiLeaf sym -> envResolveU BonsaiExecError env sym
-              _ -> throwError BonsaiExecError
-            )
+          placeHolder
+            ==> ( \v -> do
+                    s <- lift v
+                    case s of
+                      BonsaiLeaf sym -> envResolveU BonsaiExecError env sym
+                      _ -> throwError BonsaiExecError
+                )
         ]
         tree
 
@@ -288,4 +288,3 @@ execStlc tree = do
   gassertWithError BonsaiTypeError (matchStlcSyntax tree "term")
   mrgFmap (const ()) $ typer tree
   interpreter tree
-

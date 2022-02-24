@@ -1,7 +1,7 @@
 module SyntaxSpec
   ( Rule (..),
     (-*),
-    Generation(..),
+    Generation (..),
     (-->),
     OptimSyntaxSpec,
     nonTerminals,
@@ -15,18 +15,18 @@ module SyntaxSpec
 where
 
 import Data.BitVector.Sized.Unsigned
+import Data.Bits
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C
-import Data.List
-import Data.String
 import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet as S
-import GHC.TypeLits
-import Data.Bits
-import Grisette.SymPrim.Term ()
 import Data.Hashable
-import GHC.Generics
+import Data.List
 import Data.MemoTrie
+import Data.String
+import GHC.Generics
+import GHC.TypeLits
+import Grisette.SymPrim.Term ()
 
 data Rule
   = SymRule B.ByteString
@@ -38,7 +38,7 @@ instance Show Rule where
   show (PairRule l r) = "[" ++ show l ++ ", " ++ show r ++ "]"
 
 instance HasTrie Rule where
-  newtype (Rule :->: x) = RuleTrie {unRuleTrie :: Reg Rule :->: x}
+  newtype Rule :->: x = RuleTrie {unRuleTrie :: Reg Rule :->: x}
   trie = trieGeneric RuleTrie
   untrie = untrieGeneric unRuleTrie
   enumerate = enumerateGeneric unRuleTrie
@@ -83,12 +83,24 @@ buildSyntax gens = OptimSyntaxSpecC nt t t2bv bv2t gens rulesf
     gont [] = S.empty
     gont ((Generation name _) : xs) = S.insert name $ gont xs
     nt = gont gens
-    t = foldl (\acc (Generation _ rules) ->
-      foldl (\acc1 rule -> S.union (ruleTerminals nt rule) acc1) acc rules) S.empty gens 
+    t =
+      foldl
+        ( \acc (Generation _ rules) ->
+            foldl (\acc1 rule -> S.union (ruleTerminals nt rule) acc1) acc rules
+        )
+        S.empty
+        gens
     t2bvm :: M.HashMap B.ByteString (UnsignedBV n)
-    t2bvm = fst $ foldl (\(acc, n) v -> 
-      if n == 0 then error "The bit width is not large enough" else
-      (M.insert v n acc, n `shift` 1)) (M.empty, 1) t
+    t2bvm =
+      fst $
+        foldl
+          ( \(acc, n) v ->
+              if n == 0
+                then error "The bit width is not large enough"
+                else (M.insert v n acc, n `shift` 1)
+          )
+          (M.empty, 1)
+          t
     t2bv s = M.lookup s t2bvm
     bv2tm :: M.HashMap (UnsignedBV n) B.ByteString
     bv2tm = M.foldlWithKey (\acc v n -> M.insert n v acc) M.empty t2bvm

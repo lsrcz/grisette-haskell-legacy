@@ -1,8 +1,8 @@
 module Main where
 
-import STLCMain
-import NanoScalaMain
 import LetPolyMain
+import NanoScalaMain
+import STLCMain
 import Utils.Timing
 
 main :: IO ()

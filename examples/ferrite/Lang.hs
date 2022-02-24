@@ -1,14 +1,21 @@
 {-# LANGUAGE TemplateHaskell #-}
+
 module Lang where
+
+import GHC.Generics
 import Grisette.Core
 import Grisette.SymPrim.Term
-import GHC.Generics
 
 type Ino = Integer
+
 type Content = [Bool]
+
 type Fd = Integer
+
 type Name = Integer
+
 type BlockSize = Integer
+
 type Off = Integer
 
 data SysCall
@@ -20,14 +27,16 @@ data SysCall
 
 removeDisabledSyncs :: [SysCall] -> [SysCall]
 removeDisabledSyncs [] = []
-removeDisabledSyncs (Efsync _ v:xs) | v == conc False = removeDisabledSyncs xs
-removeDisabledSyncs (x:xs) = x : removeDisabledSyncs xs
+removeDisabledSyncs (Efsync _ v : xs) | v == conc False = removeDisabledSyncs xs
+removeDisabledSyncs (x : xs) = x : removeDisabledSyncs xs
 
 newtype GenEfsync = GenEfsync Integer
+
 instance SymGen SymBool GenEfsync SysCall
+
 instance SymGenSimple SymBool GenEfsync SysCall where
   genSymSimpleIndexed (GenEfsync n) = do
-    fds <- choose 0 [1..n-1]
+    fds <- choose 0 [1 .. n -1]
     b <- genSymSimpleIndexed @SymBool ()
     return $ Efsync fds b
 
@@ -101,7 +110,3 @@ fileWriteExtendDeps :: InodeOp -> InodeOp -> Bool -> Bool
 fileWriteExtendDeps (IFileWrite fd1 _ _) (IFileExtend fd2 _ _ _) _ = fd1 == fd2
 fileWriteExtendDeps (IFileWrite fd1 _ _) (IFileSetSize fd2 _) True = fd1 == fd2
 fileWriteExtendDeps _ _ _ = False
-
-
-
-
