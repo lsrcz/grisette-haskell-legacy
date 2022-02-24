@@ -57,8 +57,7 @@ instance
   where
   merge ((Coroutine v) :: Coroutine sus m a) =
     withMergeable @bool @sus @(Coroutine sus m a) $
-      withUnionSimpleMergeable @bool @m @(Either (sus (Coroutine sus m a)) a) $
-        Coroutine $ merge @bool v
+      Coroutine $ merge @bool v
   mrgReturn (v :: a) =
     withMergeable @bool @sus @(Coroutine sus m a) $
       Coroutine $ mrgReturn $ return v

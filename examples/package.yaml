@@ -34,6 +34,9 @@ dependencies:
 - deepseq
 - Unique
 - bv-sized
+- vector-sized
+- parameterized-utils
+- either
 
 default-extensions:
 - BangPatterns
@@ -69,6 +72,10 @@ executables:
     main: Main.hs
   regex:
     source-dirs: regex
+    main: Main.hs
+    dependencies: grisette-examples
+  regex-old:
+    source-dirs: regex-old
     main: Main.hs
     dependencies: grisette-examples
   order:

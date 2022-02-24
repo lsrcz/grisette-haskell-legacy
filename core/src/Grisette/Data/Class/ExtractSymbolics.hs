@@ -45,12 +45,15 @@ instance
 -- instances
 
 -- Bool
-
 instance (Monoid symbolSet) => ExtractSymbolics symbolSet Bool where
   extractSymbolics _ = mempty
 
 -- Integer
 instance (Monoid symbolSet) => ExtractSymbolics symbolSet Integer where
+  extractSymbolics _ = mempty
+
+-- Char
+instance (Monoid symbolSet) => ExtractSymbolics symbolSet Char where
   extractSymbolics _ = mempty
 
 -- ()

@@ -76,6 +76,11 @@ instance (SymBoolOp bool) => SEq bool Bool
 -- Integer
 instance (SymBoolOp bool) => SEq bool Integer where
   l ==~ r = conc $ l == r
+
+-- Char
+instance (SymBoolOp bool) => SEq bool Char where
+  l ==~ r = conc $ l == r
+
 -- List
 instance (SymBoolOp bool, SEq bool a) => SEq bool [a]
 

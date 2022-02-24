@@ -46,6 +46,10 @@ instance ToSym Bool Bool where
 instance ToSym Integer Integer where
   toSym = id
 
+-- Integer
+instance ToSym Char Char where
+  toSym = id
+
 -- Unit
 instance ToSym () () where
   toSym = id

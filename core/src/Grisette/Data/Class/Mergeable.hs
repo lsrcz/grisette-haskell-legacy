@@ -147,6 +147,9 @@ instance (SymBoolOp bool) => Mergeable bool Bool
 instance (SymBoolOp bool) => Mergeable bool Integer where
   mergeStrategy = OrderedStrategy id $ \_ -> SimpleStrategy $ \_ t _ -> t
 
+instance (SymBoolOp bool) => Mergeable bool Char where
+  mergeStrategy = OrderedStrategy id $ \_ -> SimpleStrategy $ \_ t _ -> t
+
 -- ()
 instance (SymBoolOp bool) => Mergeable bool ()
 

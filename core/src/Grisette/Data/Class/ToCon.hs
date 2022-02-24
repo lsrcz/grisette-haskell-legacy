@@ -47,6 +47,10 @@ instance ToCon Bool Bool where
 instance ToCon Integer Integer where
   toCon = Just
 
+-- Integer
+instance ToCon Char Char where
+  toCon = Just
+
 -- Unit
 instance ToCon () () where
   toCon = Just

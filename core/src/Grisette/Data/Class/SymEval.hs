@@ -52,6 +52,10 @@ instance SymEval model Bool where
 instance SymEval model Integer where
   symeval _ _ = id
 
+-- Char
+instance SymEval model Char where
+  symeval _ _ = id
+
 -- ()
 instance SymEval model () where
   symeval _ _ = id

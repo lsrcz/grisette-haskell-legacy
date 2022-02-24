@@ -16,8 +16,8 @@ where
 import Control.DeepSeq
 import Control.Monad.Except
 import Control.Monad.State
-import Data.BitVector.Sized (knownNat)
-import Data.BitVector.Sized.Signed (SignedBV, mkSignedBV)
+import Data.BitVector.Sized (knownNat, pattern BV)
+import Data.BitVector.Sized.Signed (SignedBV(..), mkSignedBV)
 import Data.BitVector.Sized.Unsigned
 import Data.HashSet as S
 import Data.Hashable
@@ -51,6 +51,7 @@ import Data.Proxy
 import Data.String
 import Data.MemoTrie
 import Grisette.Data.MemoUtils
+import Data.Char (chr, ord)
 
 newtype Sym a = Sym {underlyingTerm :: Term a} deriving (Lift, Generic)
 
@@ -238,6 +239,13 @@ instance (SupportedPrim (SignedBV n)) => Bits (Sym (SignedBV n)) where
   testBit _ = error "You cannot call testBit on symbolic variables"
   bit = withPrim @(SignedBV n) $ conc . bit
   popCount _ = error "You cannot call popCount on symbolic variables"
+
+instance ToCon (SymSignedBV 8) Char where
+  toCon (Conc (SignedBV (BV v))) = Just $ chr $ fromInteger v
+  toCon _ = Nothing
+
+instance ToSym Char (SymSignedBV 8) where
+  toSym v = conc $ mkSignedBV (knownNat @8) $ toInteger $ ord v
 
 -- unsigned bv
 type SymUnsignedBV n = Sym (UnsignedBV n)

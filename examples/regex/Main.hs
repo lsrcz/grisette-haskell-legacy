@@ -24,6 +24,8 @@ import System.CPUTime
 import Text.Printf
 import Text.Regex.PCRE
 import Utils.Timing
+import Debug.Trace
+import qualified Data.ByteString.Char8 as C
 
 time :: IO t -> IO t
 time a = do
@@ -84,10 +86,10 @@ type PattCoro = B.ByteString -> Coroutine (Yield (UnionM Integer)) UnionM ()
 addYield :: UnionM Integer -> Coroutine (Yield (UnionM Integer)) UnionM () -> Coroutine (Yield (UnionM Integer)) UnionM ()
 addYield n l = weave sequentialBinder weaveYieldTransducer l $ simpleTransducer $ \i -> mrgYield $ n + i
 
-primPatt :: B.ByteString -> PattCoro
-primPatt pattstr = MT.memo $ \str -> -- trace (show pattstr ++ " " ++ show str ++ " " ++ show idx)
-  when (B.length pattstr <= B.length str && pattstr == B.take (B.length pattstr) str) $
-    yield $ mrgReturn $ toInteger (B.length pattstr)
+primPatt :: Char -> PattCoro
+primPatt pattc = MT.memo $ \str ->
+  when (B.length str /= 0  && C.head str == pattc) $
+    yield $ mrgReturn $ 1
 
 seqPatt :: PattCoro -> PattCoro -> PattCoro
 seqPatt patt1 patt2 = MT.memo $ \str ->
@@ -96,6 +98,9 @@ seqPatt patt1 patt2 = MT.memo $ \str ->
 
 altPatt :: PattCoro -> PattCoro -> PattCoro
 altPatt patt1 patt2 = MT.memo $ \str -> patt1 str >>~ patt2 str
+
+emptyPatt :: PattCoro
+emptyPatt = MT.memo $ \_ -> yield 0
 
 plusGreedyPatt :: PattCoro -> PattCoro
 plusGreedyPatt patt = MT.memo $ \str -> weave sequentialBinder weaveYieldTransducer (patt str) $
@@ -127,17 +132,19 @@ matchFirstImpl patt str =
   mrgMsum $ (\s -> (\t -> (s, t - s)) <$> matchFirstWithStartImpl patt str s) <$> [0 .. toInteger $ B.length str]
 
 data ConcPatt
-  = ConcPrimPatt B.ByteString
+  = ConcPrimPatt Char
   | ConcSeqPatt ConcPatt ConcPatt
   | ConcAltPatt ConcPatt ConcPatt
   | ConcPlusPatt ConcPatt Bool
+  | ConcEmptyPatt
   deriving (Show, Generic, ToCon Patt)
 
 data Patt
-  = PrimPatt B.ByteString
+  = PrimPatt Char
   | SeqPatt (UnionM Patt) (UnionM Patt)
   | AltPatt (UnionM Patt) (UnionM Patt)
   | PlusPatt (UnionM Patt) SymBool
+  | EmptyPatt
   deriving (Show, Generic, Eq, Hashable, ToSym ConcPatt, SymEval Model, Mergeable SymBool)
 
 toCoroU :: UnionM Patt -> PattCoro
@@ -165,6 +172,7 @@ toCoroMemo (AltPatt p1 p2) = do
 toCoroMemo (PlusPatt p greedy) = do
   p1r <- toCoroMemoU p
   return $ plusPatt greedy p1r
+toCoroMemo EmptyPatt = return emptyPatt
 
 toCoro :: Patt -> PattCoro
 toCoro x = MM.evalMemoState (toCoroMemo x) emptyMemoHashMap
@@ -186,7 +194,7 @@ conformsFirst patt reg str =
 
 synthesisRegexCompiled :: GrisetteSMTConfig b -> UnionM Patt -> PattCoro -> B.ByteString -> [B.ByteString] -> IO (Maybe ConcPatt)
 synthesisRegexCompiled config patt coro reg strs =
-  let constraints = conformsFirst coro reg <$> strs
+  let constraints = (\x -> trace (show x) (conformsFirst coro reg x)) <$> strs
       constraint = foldr (&&~) (conc True) constraints
    in do
         _ <- timeItAll "symeval" $ constraint `deepseq` return ()
@@ -199,44 +207,44 @@ synthesisRegex :: GrisetteSMTConfig b -> UnionM Patt -> B.ByteString -> [B.ByteS
 synthesisRegex config patt = synthesisRegexCompiled config patt (toCoroU patt)
 
 test1 :: PattCoro
-test1 = toCoro $ toSym $ ConcPrimPatt "a"
+test1 = toCoro $ toSym $ ConcPrimPatt 'a'
 
 reg1 :: B.ByteString
 reg1 = "a"
 
 test2 :: PattCoro
-test2 = toCoro $ toSym $ ConcSeqPatt (ConcPrimPatt "a") (ConcPrimPatt "b")
+test2 = toCoro $ toSym $ ConcSeqPatt (ConcPrimPatt 'a') (ConcPrimPatt 'b')
 
 reg2 :: B.ByteString
 reg2 = "ab"
 
 test3 :: PattCoro
-test3 = toCoro $ toSym $ ConcAltPatt (ConcPrimPatt "a") (ConcPrimPatt "b")
+test3 = toCoro $ toSym $ ConcAltPatt (ConcPrimPatt 'a') (ConcPrimPatt 'b')
 
 reg3 :: B.ByteString
 reg3 = "a|b"
 
 test4 :: PattCoro
-test4 = toCoro $ toSym $ ConcPlusPatt (ConcAltPatt (ConcPrimPatt "a") (ConcPrimPatt "b")) True
+test4 = toCoro $ toSym $ ConcPlusPatt (ConcAltPatt (ConcPrimPatt 'a') (ConcPrimPatt 'b')) True
 
 reg4 :: B.ByteString
 reg4 = "(a|b)+"
 
 test5 :: PattCoro
-test5 = toCoro $ toSym $ ConcPlusPatt (ConcAltPatt (ConcPrimPatt "a") (ConcPrimPatt "b")) False
+test5 = toCoro $ toSym $ ConcPlusPatt (ConcAltPatt (ConcPrimPatt 'a') (ConcPrimPatt 'b')) False
 
 reg5 :: B.ByteString
 reg5 = "(a|b)+?"
 
 test6 :: PattCoro
-test6 = toCoro $ toSym $ ConcSeqPatt (ConcPlusPatt (ConcAltPatt (ConcPrimPatt "a") (ConcPrimPatt "b")) False) (ConcPrimPatt "c")
+test6 = toCoro $ toSym $ ConcSeqPatt (ConcPlusPatt (ConcAltPatt (ConcPrimPatt 'a') (ConcPrimPatt 'b')) False) (ConcPrimPatt 'c')
 
 test7 :: PattCoro
-test7 = toCoro $ toSym $ ConcSeqPatt (ConcPlusPatt (ConcAltPatt (ConcPrimPatt "") (ConcPrimPatt "a")) False) (ConcPrimPatt "c")
+test7 = toCoro $ toSym $ ConcSeqPatt (ConcPlusPatt (ConcAltPatt ConcEmptyPatt (ConcPrimPatt 'a')) False) (ConcPrimPatt 'c')
 
 test8 :: PattCoro
-test8 = toCoro $ toSym $ ConcSeqPatt (ConcAltPatt (ConcPrimPatt "c") (ConcPrimPatt "d"))
-  (ConcPlusPatt (ConcSeqPatt (ConcAltPatt (ConcPrimPatt "a") (ConcPrimPatt "")) (ConcPrimPatt "b")) False)
+test8 = toCoro $ toSym $ ConcSeqPatt (ConcAltPatt (ConcPrimPatt 'c') (ConcPrimPatt 'd'))
+  (ConcPlusPatt (ConcSeqPatt (ConcAltPatt (ConcPrimPatt 'a') ConcEmptyPatt) (ConcPrimPatt 'b')) False)
 
 reg8 :: B.ByteString
 reg8 = "(c|d)(a?b)+?"
@@ -268,11 +276,11 @@ str7 = "c"
 sk1 :: UnionM Patt
 sk1 =
   runSymGenIndexed
-    (choose (toSym $ ConcPrimPatt "a") [toSym $ ConcPrimPatt "b"])
+    (choose (PrimPatt 'a') [PrimPatt 'b'])
     "a"
 
 freshPrim :: State (Int, String) (UnionM Patt)
-freshPrim = choose (toSym $ ConcPrimPatt "d") $ toSym <$> [ConcPrimPatt "c", ConcPrimPatt "b", ConcPrimPatt "a", ConcPrimPatt ""]
+freshPrim = choose (PrimPatt 'd') [PrimPatt 'c', PrimPatt 'b', PrimPatt 'a', EmptyPatt]
 
 binFreshPrim :: (UnionM Patt -> UnionM Patt -> Patt) -> State (Int, String) Patt
 binFreshPrim f = do
@@ -302,8 +310,8 @@ r :: Patt
 r =
   toSym $
     ConcSeqPatt
-      (ConcAltPatt (ConcPrimPatt "c") (ConcPrimPatt "d"))
-      (ConcPlusPatt (ConcSeqPatt (ConcAltPatt (ConcPrimPatt "") (ConcPrimPatt "a")) (ConcPrimPatt "b")) True)
+      (ConcAltPatt (ConcPrimPatt 'c') (ConcPrimPatt 'd'))
+      (ConcPlusPatt (ConcSeqPatt (ConcAltPatt ConcEmptyPatt (ConcPrimPatt 'a')) (ConcPrimPatt 'b')) True)
 
 {-
 t :: [Word8]

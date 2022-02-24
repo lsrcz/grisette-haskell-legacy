@@ -102,3 +102,5 @@ class (SEq bool a) => SOrd bool a where
 instance (SymBoolOp bool) => SOrd bool Integer where
   l <=~ r = conc $ l < r
 
+instance (SymBoolOp bool) => SOrd bool Char where
+  l <=~ r = conc $ l < r

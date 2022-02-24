@@ -59,6 +59,7 @@ library
     , bytestring
     , clock
     , deepseq
+    , either
     , formatting
     , grisette
     , hashable
@@ -67,6 +68,7 @@ library
     , monad-coroutine
     , monad-memo
     , mtl
+    , parameterized-utils
     , parser-combinators
     , regex-base
     , regex-pcre
@@ -76,6 +78,7 @@ library
     , transformers
     , unordered-containers
     , utf8-string
+    , vector-sized
   default-language: Haskell2010
 
 executable bonsai
@@ -129,6 +132,7 @@ executable bonsai
     , bytestring
     , clock
     , deepseq
+    , either
     , formatting
     , grisette
     , grisette-examples
@@ -138,6 +142,7 @@ executable bonsai
     , monad-coroutine
     , monad-memo
     , mtl
+    , parameterized-utils
     , parser-combinators
     , regex-base
     , regex-pcre
@@ -147,6 +152,7 @@ executable bonsai
     , transformers
     , unordered-containers
     , utf8-string
+    , vector-sized
   default-language: Haskell2010
 
 executable cosette
@@ -194,6 +200,7 @@ executable cosette
     , bytestring
     , clock
     , deepseq
+    , either
     , formatting
     , grisette
     , grisette-examples
@@ -203,6 +210,7 @@ executable cosette
     , monad-coroutine
     , monad-memo
     , mtl
+    , parameterized-utils
     , parser-combinators
     , regex-base
     , regex-pcre
@@ -212,6 +220,7 @@ executable cosette
     , transformers
     , unordered-containers
     , utf8-string
+    , vector-sized
   default-language: Haskell2010
 
 executable cosette-optimized
@@ -259,6 +268,7 @@ executable cosette-optimized
     , bytestring
     , clock
     , deepseq
+    , either
     , formatting
     , grisette
     , grisette-examples
@@ -268,6 +278,7 @@ executable cosette-optimized
     , monad-coroutine
     , monad-memo
     , mtl
+    , parameterized-utils
     , parser-combinators
     , regex-base
     , regex-pcre
@@ -277,6 +288,7 @@ executable cosette-optimized
     , transformers
     , unordered-containers
     , utf8-string
+    , vector-sized
   default-language: Haskell2010
 
 executable expr-interpreter
@@ -317,6 +329,7 @@ executable expr-interpreter
     , bytestring
     , clock
     , deepseq
+    , either
     , formatting
     , grisette
     , hashable
@@ -325,6 +338,7 @@ executable expr-interpreter
     , monad-coroutine
     , monad-memo
     , mtl
+    , parameterized-utils
     , parser-combinators
     , regex-base
     , regex-pcre
@@ -334,6 +348,7 @@ executable expr-interpreter
     , transformers
     , unordered-containers
     , utf8-string
+    , vector-sized
   default-language: Haskell2010
 
 executable expr-sketch
@@ -375,6 +390,7 @@ executable expr-sketch
     , bytestring
     , clock
     , deepseq
+    , either
     , formatting
     , grisette
     , hashable
@@ -383,6 +399,7 @@ executable expr-sketch
     , monad-coroutine
     , monad-memo
     , mtl
+    , parameterized-utils
     , parser-combinators
     , regex-base
     , regex-pcre
@@ -392,6 +409,7 @@ executable expr-sketch
     , transformers
     , unordered-containers
     , utf8-string
+    , vector-sized
   default-language: Haskell2010
 
 executable ferrite
@@ -438,6 +456,7 @@ executable ferrite
     , bytestring
     , clock
     , deepseq
+    , either
     , formatting
     , grisette
     , grisette-examples
@@ -447,6 +466,7 @@ executable ferrite
     , monad-coroutine
     , monad-memo
     , mtl
+    , parameterized-utils
     , parser-combinators
     , regex-base
     , regex-pcre
@@ -456,6 +476,7 @@ executable ferrite
     , transformers
     , unordered-containers
     , utf8-string
+    , vector-sized
   default-language: Haskell2010
 
 executable fluidics
@@ -495,6 +516,7 @@ executable fluidics
     , bytestring
     , clock
     , deepseq
+    , either
     , formatting
     , grisette
     , grisette-examples
@@ -504,6 +526,7 @@ executable fluidics
     , monad-coroutine
     , monad-memo
     , mtl
+    , parameterized-utils
     , parser-combinators
     , regex-base
     , regex-pcre
@@ -513,6 +536,7 @@ executable fluidics
     , transformers
     , unordered-containers
     , utf8-string
+    , vector-sized
   default-language: Haskell2010
 
 executable genfunc
@@ -552,6 +576,7 @@ executable genfunc
     , bytestring
     , clock
     , deepseq
+    , either
     , formatting
     , grisette
     , hashable
@@ -560,6 +585,7 @@ executable genfunc
     , monad-coroutine
     , monad-memo
     , mtl
+    , parameterized-utils
     , parser-combinators
     , regex-base
     , regex-pcre
@@ -569,6 +595,7 @@ executable genfunc
     , transformers
     , unordered-containers
     , utf8-string
+    , vector-sized
   default-language: Haskell2010
 
 executable ifcl
@@ -613,6 +640,7 @@ executable ifcl
     , bytestring
     , clock
     , deepseq
+    , either
     , formatting
     , grisette
     , grisette-examples
@@ -622,6 +650,7 @@ executable ifcl
     , monad-coroutine
     , monad-memo
     , mtl
+    , parameterized-utils
     , parser-combinators
     , regex-base
     , regex-pcre
@@ -631,6 +660,7 @@ executable ifcl
     , transformers
     , unordered-containers
     , utf8-string
+    , vector-sized
   default-language: Haskell2010
 
 executable location
@@ -672,6 +702,7 @@ executable location
     , bytestring
     , clock
     , deepseq
+    , either
     , formatting
     , grisette
     , hashable
@@ -680,6 +711,7 @@ executable location
     , monad-coroutine
     , monad-memo
     , mtl
+    , parameterized-utils
     , parser-combinators
     , regex-base
     , regex-pcre
@@ -689,6 +721,7 @@ executable location
     , transformers
     , unordered-containers
     , utf8-string
+    , vector-sized
   default-language: Haskell2010
 
 executable order
@@ -728,6 +761,7 @@ executable order
     , bytestring
     , clock
     , deepseq
+    , either
     , formatting
     , grisette
     , hashable
@@ -736,6 +770,7 @@ executable order
     , monad-coroutine
     , monad-memo
     , mtl
+    , parameterized-utils
     , parser-combinators
     , regex-base
     , regex-pcre
@@ -745,6 +780,7 @@ executable order
     , transformers
     , unordered-containers
     , utf8-string
+    , vector-sized
   default-language: Haskell2010
 
 executable regex
@@ -784,6 +820,7 @@ executable regex
     , bytestring
     , clock
     , deepseq
+    , either
     , formatting
     , grisette
     , grisette-examples
@@ -793,6 +830,7 @@ executable regex
     , monad-coroutine
     , monad-memo
     , mtl
+    , parameterized-utils
     , parser-combinators
     , regex-base
     , regex-pcre
@@ -802,6 +840,67 @@ executable regex
     , transformers
     , unordered-containers
     , utf8-string
+    , vector-sized
+  default-language: Haskell2010
+
+executable regex-old
+  main-is: Main.hs
+  other-modules:
+      Paths_grisette_examples
+  hs-source-dirs:
+      regex-old
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+  ghc-options: -Wall -ferror-spans -O2
+  build-depends:
+      MemoTrie
+    , Unique
+    , base >4.7 && <5
+    , bv-sized
+    , bytestring
+    , clock
+    , deepseq
+    , either
+    , formatting
+    , grisette
+    , grisette-examples
+    , hashable
+    , loch-th
+    , megaparsec
+    , monad-coroutine
+    , monad-memo
+    , mtl
+    , parameterized-utils
+    , parser-combinators
+    , regex-base
+    , regex-pcre
+    , template-haskell
+    , th-lift-instances
+    , timeit
+    , transformers
+    , unordered-containers
+    , utf8-string
+    , vector-sized
   default-language: Haskell2010
 
 executable stmt-sketch
@@ -844,6 +943,7 @@ executable stmt-sketch
     , bytestring
     , clock
     , deepseq
+    , either
     , formatting
     , grisette
     , hashable
@@ -852,6 +952,7 @@ executable stmt-sketch
     , monad-coroutine
     , monad-memo
     , mtl
+    , parameterized-utils
     , parser-combinators
     , regex-base
     , regex-pcre
@@ -861,6 +962,7 @@ executable stmt-sketch
     , transformers
     , unordered-containers
     , utf8-string
+    , vector-sized
   default-language: Haskell2010
 
 executable tutorial
@@ -900,6 +1002,7 @@ executable tutorial
     , bytestring
     , clock
     , deepseq
+    , either
     , formatting
     , grisette
     , hashable
@@ -908,6 +1011,7 @@ executable tutorial
     , monad-coroutine
     , monad-memo
     , mtl
+    , parameterized-utils
     , parser-combinators
     , regex-base
     , regex-pcre
@@ -917,4 +1021,5 @@ executable tutorial
     , transformers
     , unordered-containers
     , utf8-string
+    , vector-sized
   default-language: Haskell2010
