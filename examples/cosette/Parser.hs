@@ -6,7 +6,6 @@ import Control.Monad.Combinators.Expr
 import qualified Data.ByteString as B
 import Data.ByteString.Internal
 import Data.Void
-import GHC.Word
 import Syntax
 import Text.Megaparsec
 import Text.Megaparsec.Byte
@@ -38,10 +37,8 @@ rwordList = ["NAMED", "JOIN", "AS", "SELECT", "WHERE", "FROM", "NULL", "LEFT-OUT
 ident :: Parser B.ByteString
 ident = (lexeme . try) (p >>= check)
   where
-    idtail :: Parser [Word8]
     idtail = many (try alphaNumChar <|> char (c2w '\''))
     p = B.pack <$> ((:) <$> lowerChar <*> idtail)
-    check :: B.ByteString -> Parser B.ByteString
     check s =
       if s `elem` rwordList
         then fail $ "keyword " ++ show s ++ "cannot be an identifier"
@@ -50,10 +47,8 @@ ident = (lexeme . try) (p >>= check)
 rawname :: Parser B.ByteString
 rawname = (lexeme . try) (p >>= check)
   where
-    idtail :: Parser [Word8]
     idtail = many (try alphaNumChar <|> char (c2w '.'))
     p = B.pack <$> ((:) <$> letterChar <*> idtail)
-    check :: B.ByteString -> Parser B.ByteString
     check s =
       if s `elem` rwordList
         then fail $ "keyword " ++ show s ++ "cannot be an rawname"
@@ -71,10 +66,7 @@ wholeStringQuery = do
 query :: Parser Query
 query =
   space
-    >> ( try namedQuery
-           <|> try joinQuery
-           <|> try asQuery
-           <|> try selectQuery
+    >> ( try namedQuery <|> try joinQuery <|> try asQuery <|> try selectQuery
            <|> try leftOuterJoin2Query
            <|> subQuery
        )
@@ -162,11 +154,7 @@ filterBinOp = do
   try (filterEq v1) <|> filterNEq v1
 
 filterTerm :: Parser Filter
-filterTerm =
-  parens filterExpr
-    <|> filterTrue
-    <|> filterFalse
-    <|> filterBinOp
+filterTerm = parens filterExpr <|> filterTrue <|> filterFalse <|> filterBinOp
 
 filterExpr :: Parser Filter
 filterExpr = makeExprParser filterTerm operatorTable

@@ -7,7 +7,6 @@ import Grisette.Core
 import Grisette.SymPrim.Term
 import Lang
 
-
 interpretOps :: (FileSystem conc fs, Mergeable SymBool fs) => [UnionM InodeOp] -> fs -> UnionM fs
 interpretOps [] fs = mrgReturn fs
 interpretOps (x : xs) fs = do

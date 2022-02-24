@@ -31,32 +31,12 @@ deriving instance (Mergeable SymBool leaf, SymEval Model leaf) => SymEval Model 
 deriving instance (ToCon leaf cleaf) => ToCon (BonsaiTree leaf) (ConcBonsaiTree cleaf)
 deriving instance (Mergeable SymBool leaf, ToSym cleaf leaf) =>
   ToSym (ConcBonsaiTree cleaf) (BonsaiTree leaf)
-{-
-deriving instance (KnownNat n, 1 <= n) => Show (BonsaiTree n)
-deriving instance (KnownNat n, 1 <= n) => Eq (BonsaiTree n)
-deriving instance (KnownNat n, 1 <= n) => SEq SymBool (BonsaiTree n)
-deriving instance (KnownNat n, 1 <= n) => Mergeable SymBool (BonsaiTree n)
-deriving instance (KnownNat n, 1 <= n) => ToCon (BonsaiTree n) (ConcBonsaiTree n)
-deriving instance (KnownNat n, 1 <= n) => ToSym (ConcBonsaiTree n) (BonsaiTree n)
-deriving instance (KnownNat n, 1 <= n) => SymEval Model (BonsaiTree n)
-deriving instance (KnownNat n, 1 <= n) => Hashable (BonsaiTree n)
-deriving instance (KnownNat n, 1 <= n) => NFData (BonsaiTree n)
--}
-
-{-
-instance (KnownNat n, 1 <= n) => HasTrie (BonsaiTree n) where
-  newtype (BonsaiTree n :->: b) = BonsaiTreeTrie { unBonsaiTreeTrie :: Reg (BonsaiTree n) :->: b}
-  trie = trieGeneric BonsaiTreeTrie
-  untrie = untrieGeneric unBonsaiTreeTrie
-  enumerate = enumerateGeneric unBonsaiTreeTrie
-  -}
 
 instance (Mergeable SymBool leaf, HasTrie leaf) => HasTrie (BonsaiTree leaf) where
   newtype (BonsaiTree leaf :->: b) = BonsaiTreeTrie { unBonsaiTreeTrie :: Reg (BonsaiTree leaf) :->: b}
   trie = trieGeneric BonsaiTreeTrie
   untrie = untrieGeneric unBonsaiTreeTrie
   enumerate = enumerateGeneric unBonsaiTreeTrie
-
 
 $(makeUnionMWrapper "u" ''BonsaiTree)
 

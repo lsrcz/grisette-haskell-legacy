@@ -19,10 +19,8 @@ makeGrid :: Integer -> Integer -> Grid
 makeGrid height width = [[mrgReturn Nothing | _ <- [0 .. width - 1]] | _ <- [0 .. height - 1]]
 
 unsafeReplaceNth :: Int -> a -> [a] -> [a]
-unsafeReplaceNth = go
-  where
-    go _ _ [] = error "Failed"
-    go p v (x : xs) = if p == 0 then v : xs else x : go (p - 1) v xs
+unsafeReplaceNth _ _ [] = error "Failed"
+unsafeReplaceNth p v (x : xs) = if p == 0 then v : xs else x : unsafeReplaceNth (p - 1) v xs
 
 replaceNth :: (Mergeable SymBool a) => Sym Integer -> a -> [a] -> ExceptT () UnionM [a]
 replaceNth pos val ls = go pos val ls 0
@@ -36,7 +34,7 @@ data ConcPoint = ConcPoint Integer Integer
 data Point = Point SymInteger SymInteger
   deriving (Show, Generic, SymEval Model, Mergeable SymBool)
 
-instance SymGen SymBool () Point where
+instance SymGen SymBool () Point
 
 instance SymGenSimple SymBool () Point where
   genSymSimpleIndexed () = do
@@ -63,18 +61,11 @@ unsafeSet g x y v =
 
 data Dir = N | S | W | E deriving (Show, Generic, Mergeable SymBool, SymEval Model, ToCon Dir)
 
-dirx :: Dir -> SymInteger
-dirx N = -1
-dirx S = 1
-dirx _ = 0
-
-diry :: Dir -> SymInteger
-diry W = -1
-diry E = 1
-diry _ = 0
-
 translatePoint :: Point -> Dir -> Point
-translatePoint (Point x y) d = Point (x + dirx d) (y + diry d)
+translatePoint (Point x y) N = Point (x - 1) y
+translatePoint (Point x y) S = Point (x + 1) y
+translatePoint (Point x y) W = Point x (y - 1)
+translatePoint (Point x y) E = Point x (y + 1)
 
 instance SymGen SymBool () Dir where
   genSymIndexed () = choose N [S, W, E]
@@ -139,27 +130,23 @@ synthesizeProgram ::
   IO (Maybe [ConcInstruction])
 synthesizeProgram config i initst f = go 0 (mrgReturn initst)
   where
-    lst :: [UnionM Instruction]
     lst = genSymSimple @SymBool (SimpleListSpec (toInteger i) ()) "a"
-    go :: Int -> ExceptT () UnionM Grid -> IO (Maybe [ConcInstruction])
-    go num st =
-      if num == i
-        then return Nothing
-        else
-          let newst = do
-                t1 <- st
-                ins <- lift (lst !! num)
-                interpretInstruction t1 ins
-              cond = getSingle $ mrgFmap (\case Left _ -> conc False; Right v -> v) $ runExceptT $ newst >>= f
-           in do
-                print num
-                --print cond
-                _ <- timeItAll "symeval" $ cond `deepseq` return cond
-                r <- timeItAll "lower/solve" $ solveWith config cond
-                case r of
-                  Left _ ->
-                    go (num + 1) newst
-                  Right m -> return $ toCon $ symeval True m $ take (num + 1) lst
+    go num st
+      | num == i = return Nothing
+      | otherwise =
+        let newst = do
+              t1 <- st
+              ins <- lift (lst !! num)
+              interpretInstruction t1 ins
+            cond = getSingle $ mrgFmap (\case Left _ -> conc False; Right v -> v) $ runExceptT $ newst >>= f
+         in do
+              print num
+              --print cond
+              _ <- timeItAll "symeval" $ cond `deepseq` return cond
+              r <- timeItAll "lower/solve" $ solveWith config cond
+              case r of
+                Left _ -> go (num + 1) newst
+                Right m -> return $ toCon $ symeval True m $ take (num + 1) lst
 
 initSt :: Grid
 initSt = unsafeSet (unsafeSet (makeGrid 5 5) 0 0 (uJust "a")) 0 2 (uJust "b")

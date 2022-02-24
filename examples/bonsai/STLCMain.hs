@@ -114,7 +114,7 @@ stlcMain = do
 
   let result = lift f8 >>= execStlc
   _ <- timeItAll "symeval" $ runExceptT result `deepseq` return ()
-  r <- timeItAll "lower/solve" $ solveWithTranslation VerifyTyper (BoundedReasoning @6 z3) result 
+  r <- timeItAll "lower/solve" $ solveWithTranslation VerifyTyper (BoundedReasoning @6 boolector) result 
   case r of
     Left _ -> putStrLn "Verified"
     Right mo -> do

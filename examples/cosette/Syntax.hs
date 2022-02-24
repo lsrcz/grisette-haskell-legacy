@@ -37,7 +37,7 @@ instance Lift Query where
   lift (QuerySelect l q f) = [|QuerySelect l q f|]
   lift (QuerySelectDistinct l q f) = [|QuerySelectDistinct l q f|]
   lift (QueryJoin q1 q2) = [|QueryJoin q1 q2|]
-  lift (QueryNamed n) = apply 'QueryTable [varE $ mkName $ C.unpack n] --[|QueryNamed n|]
+  lift (QueryNamed n) = apply 'QueryTable [varE $ mkName $ C.unpack n]
   lift (QueryTable n) = [|QueryTable n|]
   lift (QueryRename q n) = [|QueryRename q n|]
   lift (QueryRenameFull q n s) = [|QueryRenameFull q n s|]

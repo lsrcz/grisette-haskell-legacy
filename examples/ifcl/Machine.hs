@@ -1,5 +1,7 @@
 module Machine where
 
+import Control.DeepSeq
+import Control.Exception
 import Control.Monad.Except
 import GHC.Generics
 import Grisette.Core
@@ -7,9 +9,7 @@ import Grisette.Lib
 import Grisette.SymPrim.Term hiding (insert)
 import Instructions
 import Value
-import Control.Exception
 import Prelude hiding (pred)
-import Control.DeepSeq
 
 data Errors = EvalError deriving (Show, Eq, Generic, Mergeable SymBool)
 
@@ -77,9 +77,10 @@ freshMachine memCell = Machine zeroLow (mrgReturn []) (mrgReturn $ replicate mem
 
 type Program = [UnionM Instruction]
 
-data Exact = Exact [InstructionSpec]
+newtype Exact = Exact [InstructionSpec]
 
-instance SymGen SymBool Exact Program where
+instance SymGen SymBool Exact Program
+
 instance SymGenSimple SymBool Exact Program where
   genSymSimpleIndexed (Exact spec) = traverse genSymIndexed spec
 
@@ -104,7 +105,6 @@ peekPC i m = do
   case p of
     MPCValue pv -> mrgReturn pv
     ReturnAddr {} -> throwError EvalError
-
 
 push :: MemValue -> Machine -> Machine
 push v (Machine p s m) = Machine p (mrgFmap (mrgReturn v :) s) m
@@ -157,5 +157,3 @@ goto n (Machine _ s m) = Machine n s m
 
 next :: Machine -> Machine
 next (Machine (PCValue i l) s m) = Machine (PCValue (i + 1) l) s m
-
-

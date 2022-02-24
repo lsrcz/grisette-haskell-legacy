@@ -108,7 +108,7 @@ eval' = {-memo2 $-} \tree env ->
         mrgReturn $ uDotJoinValue av bv,
       dotLiteral "var" *= placeHolder ==> \name -> do
         n <- extractName BonsaiExecError name
-        mrgReturn <$> envResolve BonsaiExecError env n,
+        envResolveU BonsaiExecError env n,
       dotLiteral "die" *= placeHolder ==> \_ -> throwError BonsaiExecError,
       dotLiteral "make-null" *= placeHolder ==> \_ -> mrgReturn $ uDotDummy $ conc True,
       dotLiteral "null" ==> mrgReturn (uDotDummy $ conc True)

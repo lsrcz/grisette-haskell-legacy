@@ -1,6 +1,5 @@
 module Verifier where
 
-import Control.Monad.Except
 import Control.Monad.State.Strict
 import Data.Maybe
 import Fs
@@ -29,17 +28,14 @@ verify config (Litmus _ make setupProc prog allowCond) =
           then fromJust $ interpretConc setupProc fs
           else fs
       prog1 = crack newfs prog
-      order :: [UnionM Integer]
       order =
         genSymSimple @SymBool
-          ( SimpleListSpec (fromIntegral $ length prog1) (IntegerGenUpperBound (fromIntegral $ length prog1))
-          )
+          ( SimpleListSpec (fromIntegral $ length prog1) (IntegerGenUpperBound (fromIntegral $ length prog1)))
           "order"
 
       (verifFs, _) = runState (interpretOrderOps prog1 order (mrgReturn $ (toSym newfs :: fs))) ((0, "crash"), [])
       allowed = allowCond (toSym newfs) #~ verifFs
 
-      verifCond :: ExceptT AssertionError UnionM ()
       verifCond = gassertWithError AssertionError (validOrdering fs prog1 order `implies` allowed)
    in do
         r <- solveWithTranslation Verify config verifCond

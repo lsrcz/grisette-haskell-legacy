@@ -5,11 +5,9 @@ module Match where
 import BonsaiTree
 import Control.Monad.Except
 import GHC.Generics
--- import GHC.TypeLits
 import Grisette.Core
 import Grisette.SymPrim.Term
 import Pattern
--- import SyntaxSpec
 
 data PrivateMatchError e
   = PrivateMatchError
@@ -29,12 +27,8 @@ bonsaiMatchCustomError ::
   ExceptT e UnionM t
 bonsaiMatchCustomError e handlers tree =
   merge $
-    withExceptT
-      ( \case
-          PrivateMatchError -> e
-          OriginalError e1 -> e1
-      )
-      $ foldl
+    withExceptT (\case PrivateMatchError -> e; OriginalError e1 -> e1) $
+      foldl
         ( \acc handler ->
             acc `catchError` \case
               PrivateMatchError -> bonsaiMatchHandler handler tree

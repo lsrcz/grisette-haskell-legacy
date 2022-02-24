@@ -8,8 +8,11 @@ import Grisette.SymPrim.Term
 import Table
 
 xproduct :: Table -> Table -> Name -> Table
-xproduct a@(Table _ _ ca) b@(Table _ _ cb) name = Table name (schemaJoin a b)
-  (merge $ xproductRaw <$> ca <*> cb)
+xproduct a@(Table _ _ ca) b@(Table _ _ cb) name =
+  Table
+    name
+    (schemaJoin a b)
+    (merge $ xproductRaw <$> ca <*> cb)
 
 xproductRaw :: RawTable -> RawTable -> RawTable
 xproductRaw x y = (\((l1, n1), (l2, n2)) -> (l1 ++ l2, n1 * n2)) <$> cartesProd x y
@@ -40,7 +43,8 @@ leftOuterJoin :: Table -> Table -> Int -> Int -> Table
 leftOuterJoin t1@(Table n1 s1 c1) t2@(Table n2 s2 c2) index1 index2 =
   Table
     (B.append n1 n2)
-    (schemaJoin t1 t2) $ do
+    (schemaJoin t1 t2)
+    $ do
       c1v <- c1
       c2v <- c2
       leftOuterJoinRaw c1v c2v index1 index2 (length s1) (length s2)
@@ -49,7 +53,8 @@ leftOuterJoin2 :: Table -> Table -> Table -> Table
 leftOuterJoin2 t1@(Table n1 s1 c1) t2@(Table n2 s2 _) (Table _ _ c12) =
   Table
     (B.append n1 n2)
-    (schemaJoin t1 t2) $ do
+    (schemaJoin t1 t2)
+    $ do
       c1v <- c1
       c12v <- c12
       addingNullRows c1v c12v (length s1) (length s2)
@@ -69,10 +74,8 @@ dedupAccum :: RawTable -> UnionM RawTable
 dedupAccum [] = mrgReturn []
 dedupAccum l@((ele, _) : xs) = do
   fl <- yl
-  let flc = snd <$> fl
-  let mult1 :: SymInteger = sum flc
   fntl <- ntl
-  mrgReturn $ (ele, mult1) : fntl
+  mrgReturn $ (ele, sum $ snd <$> fl) : fntl
   where
     yl = symFilter (\(ele1, _) -> ele ==~ ele1) l
     ntl = do
@@ -85,7 +88,6 @@ tableDiff tbl1 tbl2 = do
   mrgReturn $ cal <$> t1v
   where
     t1 = dedupAccum tbl1
-    cal :: ([UnionM (Maybe SymInteger)], SymInteger) -> ([UnionM (Maybe SymInteger)], SymInteger)
     cal (ele, mult) =
       let rowCount = getRowCount ele tbl2
           mult1 = mult - rowCount

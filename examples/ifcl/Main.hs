@@ -10,7 +10,6 @@ import Indistinguishable
 import Instructions
 import Machine
 import Utils.Timing
-import Value
 
 data EENIWitness = EENIWitness Program Program deriving (Show)
 
@@ -30,15 +29,12 @@ verifyEENI ::
   pspec ->
   IO (Maybe EENIWitness)
 verifyEENI config end indistinguishable steps progSpec =
-  let p0 :: Program
-      p0 = genSymSimple @SymBool progSpec "a"
-      p1 :: Program
+  let p0 = genSymSimple @SymBool progSpec "a"
       p1 = genSymSimple @SymBool p0 "b"
       m0 = freshMachine 2
       m1 = freshMachine 2
       r0 = merge $ withExceptT (const AssumptionViolation) $ step steps m0 p0
       r1 = merge $ withExceptT (const AssumptionViolation) $ step steps m1 p1
-      res :: ExceptT VerificationConditions UnionM ()
       res = do
         gassertWithError AssumptionViolation (indistinguishable m0 p0 m1 p1)
         m0k <- r0
@@ -51,10 +47,8 @@ verifyEENI config end indistinguishable steps progSpec =
         _ <- timeItAll "symeval2" $ runExceptT r1 `deepseq` return ()
         m <- timeItAll "lowering/solve" $ solveWithTranslation VerifyEENI config res
         case m of
-          Left _ -> do
-            return Nothing
-          Right mo ->
-            return $ Just $ EENIWitness (symeval True mo p0) (symeval True mo p1)
+          Left _ -> do return Nothing
+          Right mo -> return $ Just $ EENIWitness (symeval True mo p0) (symeval True mo p1)
 
 runCexCase ::
   (SymGenSimple SymBool pspec Program) =>
@@ -69,9 +63,7 @@ runCexCase name config end steps progSpec = do
   r <- verifyEENI config end memIndistinguishable steps progSpec
   case r of
     Nothing -> error "Warning: failed to find the counter example"
-    Just v -> do
-      print v
-      return v
+    Just v -> print v >> return v
 
 runValidCase ::
   (SymGenSimple SymBool pspec Program) =>
@@ -86,135 +78,134 @@ runValidCase name config end steps progSpec = do
   r <- verifyEENI config end memIndistinguishable steps progSpec
   case r of
     Nothing -> putStrLn "Verified"
-    Just v -> do
-      error $ "Found cex: " ++ show v
+    Just v -> error $ "Found cex: " ++ show v
 
 main :: IO ()
 main = timeItAll "Overall" $ do
-{-
-  print (genSymSimple @SymBool NoopIns "a" :: Instruction)
-  print (genSym @SymBool NoopIns "a" :: UnionM Instruction)
-  print (genSym @SymBool (ListSpec 0 2 [NoopIns, PushIns]) "a" :: UnionM [UnionM Instruction])
+  {-
+    print (genSymSimple @SymBool NoopIns "a" :: Instruction)
+    print (genSym @SymBool NoopIns "a" :: UnionM Instruction)
+    print (genSym @SymBool (ListSpec 0 2 [NoopIns, PushIns]) "a" :: UnionM [UnionM Instruction])
 
-  print $ step 10 (freshMachine 2) [uHalt]
-  print $ step 1 (freshMachine 2) [uPush $ PCValue 1 (conc False)]
-  print $
-    step
-      2
-      (freshMachine 2)
-      [ uPush $ PCValue 1 (conc False),
-        uPush $ PCValue 1 (conc True)
-      ]
-  print $
-    step
-      2
-      (freshMachine 2)
-      [ uPush $ PCValue 1 (conc False),
-        uPush $ PCValue 0 (conc True)
-      ]
-  let p1 =
+    print $ step 10 (freshMachine 2) [uHalt]
+    print $ step 1 (freshMachine 2) [uPush $ PCValue 1 (conc False)]
+    print $
+      step
+        2
+        (freshMachine 2)
         [ uPush $ PCValue 1 (conc False),
-          uPush $ PCValue 1 (conc True),
-          uStore1AB
+          uPush $ PCValue 1 (conc True)
         ]
-  let p2 =
+    print $
+      step
+        2
+        (freshMachine 2)
         [ uPush $ PCValue 1 (conc False),
-          uPush $ PCValue 0 (conc True),
-          uStore1AB
+          uPush $ PCValue 0 (conc True)
         ]
-  print $
-    step
-      3
-      (freshMachine 2)
-      p1
-  print $
-    step
-      3
-      (freshMachine 2)
-      p2
+    let p1 =
+          [ uPush $ PCValue 1 (conc False),
+            uPush $ PCValue 1 (conc True),
+            uStore1AB
+          ]
+    let p2 =
+          [ uPush $ PCValue 1 (conc False),
+            uPush $ PCValue 0 (conc True),
+            uStore1AB
+          ]
+    print $
+      step
+        3
+        (freshMachine 2)
+        p1
+    print $
+      step
+        3
+        (freshMachine 2)
+        p2
 
-  print $ do
-    i <- step 3 (freshMachine 2) p1
-    j <- step 3 (freshMachine 2) p2
-    mrgReturn $ memIndistinguishable i p1 j p2
+    print $ do
+      i <- step 3 (freshMachine 2) p1
+      j <- step 3 (freshMachine 2) p2
+      mrgReturn $ memIndistinguishable i p1 j p2
 
-  let p3 =
-        [ uPush $ PCValue 5 (conc False),
-          uCall (PCValue 0 (conc False)) (PCValue 1 (conc False)),
-          uPush $ PCValue 1 (conc False),
-          uStoreCR,
-          uHalt,
-          uPush $ PCValue 2 (conc True),
-          uReturn
-        ]
-  print $ step 3 (freshMachine 2) p3
-  print $ step 3 (freshMachine 2) p3
-  let p4 =
-        [ uPush $ PCValue 5 (conc False),
-          uCall (PCValue 0 (conc False)) (PCValue 1 (conc False)),
-          uPush $ PCValue 1 (conc False),
-          uStoreCR,
-          uHalt,
-          uPush $ PCValue 6 (conc True),
-          uReturn
-        ]
-  print $ step 7 (freshMachine 2) p4
+    let p3 =
+          [ uPush $ PCValue 5 (conc False),
+            uCall (PCValue 0 (conc False)) (PCValue 1 (conc False)),
+            uPush $ PCValue 1 (conc False),
+            uStoreCR,
+            uHalt,
+            uPush $ PCValue 2 (conc True),
+            uReturn
+          ]
+    print $ step 3 (freshMachine 2) p3
+    print $ step 3 (freshMachine 2) p3
+    let p4 =
+          [ uPush $ PCValue 5 (conc False),
+            uCall (PCValue 0 (conc False)) (PCValue 1 (conc False)),
+            uPush $ PCValue 1 (conc False),
+            uStoreCR,
+            uHalt,
+            uPush $ PCValue 6 (conc True),
+            uReturn
+          ]
+    print $ step 7 (freshMachine 2) p4
 
-  let p5 =
-        [ uPush $ PCValue 5 (conc False),
-          uCall (PCValue 0 (conc False)) (PCValue 1 (conc False)),
-          uPush $ PCValue 0 (conc False),
-          uStoreCR,
-          uHalt,
-          uPush $ PCValue 0 (conc False),
-          uPush $ PCValue 9 (conc True),
-          uCall (PCValue 0 (conc False)) (PCValue 0 (conc False)),
-          uPop,
-          uPush $ PCValue 0 (conc False),
-          uReturn
-        ]
-  print $ step 12 (freshMachine 2) p5
-  let p6 =
-        [ uPush $ PCValue 5 (conc False),
-          uCall (PCValue 0 (conc False)) (PCValue 1 (conc False)),
-          uPush $ PCValue 0 (conc False),
-          uStoreCR,
-          uHalt,
-          uPush $ PCValue 0 (conc False),
-          uPush $ PCValue 8 (conc True),
-          uCall (PCValue 0 (conc False)) (PCValue 0 (conc False)),
-          uPop,
-          uPush $ PCValue 0 (conc False),
-          uReturn
-        ]
-  print $ step 12 (freshMachine 2) p6
-  let p7 =
-        [ uPush $ PCValue 5 (conc True),
-          uPush $ PCValue 7 (conc False),
-          uCall (PCValue 1 (conc False)) (PCValue 0 (conc False)),
-          uHalt,
-          uPop,
-          uPush $ PCValue 4 (conc False),
-          uReturn,
-          uCall (PCValue 0 (conc False)) (PCValue 1 (conc False)),
-          uPush $ PCValue 1 (conc False),
-          uStoreCR
-        ]
-  print $ step 10 (freshMachine 2) p7
-  let p8 =
-        [ uPush $ PCValue 4 (conc True),
-          uPush $ PCValue 7 (conc False),
-          uCall (PCValue 1 (conc False)) (PCValue 0 (conc False)),
-          uHalt,
-          uPop,
-          uPush $ PCValue 4 (conc False),
-          uReturn,
-          uCall (PCValue 0 (conc False)) (PCValue 1 (conc False)),
-          uPush $ PCValue 1 (conc False),
-          uStoreCR
-        ]
-  print $ step 10 (freshMachine 2) p8
-  -}
+    let p5 =
+          [ uPush $ PCValue 5 (conc False),
+            uCall (PCValue 0 (conc False)) (PCValue 1 (conc False)),
+            uPush $ PCValue 0 (conc False),
+            uStoreCR,
+            uHalt,
+            uPush $ PCValue 0 (conc False),
+            uPush $ PCValue 9 (conc True),
+            uCall (PCValue 0 (conc False)) (PCValue 0 (conc False)),
+            uPop,
+            uPush $ PCValue 0 (conc False),
+            uReturn
+          ]
+    print $ step 12 (freshMachine 2) p5
+    let p6 =
+          [ uPush $ PCValue 5 (conc False),
+            uCall (PCValue 0 (conc False)) (PCValue 1 (conc False)),
+            uPush $ PCValue 0 (conc False),
+            uStoreCR,
+            uHalt,
+            uPush $ PCValue 0 (conc False),
+            uPush $ PCValue 8 (conc True),
+            uCall (PCValue 0 (conc False)) (PCValue 0 (conc False)),
+            uPop,
+            uPush $ PCValue 0 (conc False),
+            uReturn
+          ]
+    print $ step 12 (freshMachine 2) p6
+    let p7 =
+          [ uPush $ PCValue 5 (conc True),
+            uPush $ PCValue 7 (conc False),
+            uCall (PCValue 1 (conc False)) (PCValue 0 (conc False)),
+            uHalt,
+            uPop,
+            uPush $ PCValue 4 (conc False),
+            uReturn,
+            uCall (PCValue 0 (conc False)) (PCValue 1 (conc False)),
+            uPush $ PCValue 1 (conc False),
+            uStoreCR
+          ]
+    print $ step 10 (freshMachine 2) p7
+    let p8 =
+          [ uPush $ PCValue 4 (conc True),
+            uPush $ PCValue 7 (conc False),
+            uCall (PCValue 1 (conc False)) (PCValue 0 (conc False)),
+            uHalt,
+            uPop,
+            uPush $ PCValue 4 (conc False),
+            uReturn,
+            uCall (PCValue 0 (conc False)) (PCValue 1 (conc False)),
+            uPush $ PCValue 1 (conc False),
+            uStoreCR
+          ]
+    print $ step 10 (freshMachine 2) p8
+    -}
 
   let config = BoundedReasoning @5 boolector {verbose = False}
 

@@ -1,12 +1,13 @@
 {-# LANGUAGE TemplateHaskell #-}
+
 module Instructions where
 
-import Value
+import Data.List (sort)
+import Data.List.Unique
 import GHC.Generics
 import Grisette.Core
 import Grisette.SymPrim.Term
-import Data.List (sort)
-import Data.List.Unique
+import Value
 
 data Instruction
   = Halt
@@ -58,7 +59,7 @@ data InstructionSpec
   | Return1ABIns
   deriving (Show, Eq, Ord)
 
-instance SymGen SymBool InstructionSpec Instruction where
+instance SymGen SymBool InstructionSpec Instruction
 
 instance SymGenSimple SymBool InstructionSpec Instruction where
   genSymSimpleIndexed HaltIns = return Halt
@@ -85,11 +86,13 @@ instance SymGenSimple SymBool InstructionSpec Instruction where
   genSymSimpleIndexed Return1ABIns = Return1AB <$> genSymSimpleIndexed @SymBool ()
 
 instance SymGen SymBool [InstructionSpec] Instruction where
-  genSymIndexed spec = let uniqSpec = uniq $ sort spec in do
-    l <- traverse (genSymSimpleIndexed @SymBool) uniqSpec
-    choose (head l) (tail l)
+  genSymIndexed spec =
+    let uniqSpec = uniq $ sort spec
+     in do
+          l <- traverse (genSymSimpleIndexed @SymBool) uniqSpec
+          choose (head l) (tail l)
 
-instance SymGen SymBool Instruction Instruction where
+instance SymGen SymBool Instruction Instruction
 
 instance SymGenSimple SymBool Instruction Instruction where
   genSymSimpleIndexed i = genSymIndexedWithDerivedSameShape @SymBool i

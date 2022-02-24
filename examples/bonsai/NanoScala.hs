@@ -7,6 +7,7 @@ import BonsaiTree
 import Control.Monad.Except
 import Data.BitVector.Sized.Unsigned
 import qualified Data.ByteString as B
+import Data.Either.Combinators
 import Data.Maybe
 import Data.MemoTrie
 import Env
@@ -55,53 +56,6 @@ dotSyntax =
 dotLiteral :: B.ByteString -> Pattern (SymUnsignedBV DotBitWidth) 0
 dotLiteral s = literal $ fromJust $ toSym $ terminalToBV dotSyntax s
 
-{-
-data DotValue
-  = DotEmptyValue
-  | DotDummy SymBool
-  | DotNamedValue (SymUnsignedBV DotBitWidth) (UnionM DotValue)
-  | DotJoinValue (UnionM DotValue) (UnionM DotValue)
-  deriving (Show, Eq, Generic, Mergeable SymBool, NFData)
-  -}
-
-{-
-data DotResult
-  = DotAny
-  | DotNothing
-  | DotJoinType (UnionM DotResult) (UnionM DotResult)
-  | -- isType
-    DotNamed Bool (SymUnsignedBV DotBitWidth) (UnionM DotResult)
-  | DotRange (UnionM DotResult) (UnionM DotResult)
-  deriving (Show, Eq, Generic, Mergeable SymBool, NFData, SEq SymBool)
-  -}
-
-{-
-instance HasTrie DotValue where
-  newtype DotValue :->: x = DotValueTrie {unDotValueTrie :: Reg DotValue :->: x}
-  trie = trieGeneric DotValueTrie
-  untrie = untrieGeneric unDotValueTrie
-  enumerate = enumerateGeneric unDotValueTrie
-  -}
-
-{-
-instance HasTrie DotResult where
-  newtype DotResult :->: x = DotResultTrie {unDotResultTrie :: Reg DotResult :->: x}
-  trie = trieGeneric DotResultTrie
-  untrie = untrieGeneric unDotResultTrie
-  enumerate = enumerateGeneric unDotResultTrie
-  -}
-
--- $(makeUnionMWrapper "u" ''DotValue)
-
--- $(makeUnionMWrapper "u" ''DotResult)
-
-
-{-
-type DotV = UnionM (Either (SymUnsignedBV DotBitWidth) B.ByteString)
-
-type DotValue = BonsaiTree DotV
--}
-
 eval' :: DotTree -> Env DotBitWidth DotResult -> ExceptT BonsaiError UnionM (UnionM DotResult)
 eval' = {-memo2 $-} \tree env ->
   bonsaiMatchCustomError
@@ -122,10 +76,10 @@ eval' = {-memo2 $-} \tree env ->
         mrgReturn $ dotJoinU av bv,
       dotLiteral "var" *= placeHolder ==> \name -> do
         n <- extractName BonsaiExecError name
-        mrgReturn <$> envResolve BonsaiExecError env n,
+        envResolveU BonsaiExecError env n,
       dotLiteral "die" *= placeHolder ==> \_ -> throwError BonsaiExecError,
       dotLiteral "make-null" *= placeHolder ==> \_ -> mrgReturn $ uBonsaiLeaf $ uRight "dummy1",
-      dotLiteral "null" ==> (mrgReturn $ uBonsaiLeaf $ uRight "dummy2")
+      dotLiteral "null" ==> mrgReturn (uBonsaiLeaf $ uRight "dummy2")
     ]
     tree
 
@@ -136,11 +90,7 @@ type DotT = UnionM (Either (SymUnsignedBV DotBitWidth) B.ByteString)
 
 type DotResult = BonsaiTree DotT
 
-dotFindU ::
-  B.ByteString ->
-  SymUnsignedBV DotBitWidth ->
-  UnionM DotResult ->
-  UnionM (Maybe (UnionM DotResult))
+dotFindU :: B.ByteString -> SymUnsignedBV DotBitWidth -> UnionM DotResult -> UnionM (Maybe (UnionM DotResult))
 dotFindU kind name tb = dotFind kind name #~ tb
 
 unsafeBV :: B.ByteString -> SymUnsignedBV DotBitWidth
@@ -152,34 +102,24 @@ andBV = unsafeBV "and"
 terminalLiteral :: B.ByteString -> Pattern DotT 0
 terminalLiteral s = literal $ uLeft $ unsafeBV s
 
-dotFind ::
-  B.ByteString ->
-  SymUnsignedBV DotBitWidth ->
-  DotResult ->
-  UnionM (Maybe (UnionM DotResult))
+dotFind :: B.ByteString -> SymUnsignedBV DotBitWidth -> DotResult -> UnionM (Maybe (UnionM DotResult))
 dotFind kind name tb =
-  mrgFmap
-    ( \case
-        Left _ -> Nothing
-        Right v -> v
-    )
-    $ runExceptT
-      ( bonsaiMatchCustomError
-          BonsaiTypeError
-          [ terminalLiteral "and" *= (placeHolder *= placeHolder) ==> \l r -> do
-              lv <- lift $ dotFindU kind name l
-              case lv of
-                Nothing -> do
-                  rv <- lift $ dotFindU kind name r
-                  mrgReturn rv
-                Just v -> uJust v,
-            placeHolder *= placeHolder ==> \k v ->
-              let e =
-                    uBonsaiNode (uBonsaiLeaf $ uRight kind) (uBonsaiLeaf $ uLeft name)
-               in mrgIf (e ==~ k) (uJust v) uNothing
-          ]
-          tb
-      )
+  mrgFmap (join . rightToMaybe) $
+    runExceptT $
+      bonsaiMatchCustomError
+        BonsaiTypeError
+        [ terminalLiteral "and" *= (placeHolder *= placeHolder) ==> \l r -> do
+            lv <- lift $ dotFindU kind name l
+            case lv of
+              Nothing -> do
+                rv <- lift $ dotFindU kind name r
+                mrgReturn rv
+              Just v -> uJust v,
+          placeHolder *= placeHolder ==> \k v ->
+            let e = uBonsaiNode (uBonsaiLeaf $ uRight kind) (uBonsaiLeaf $ uLeft name)
+             in mrgIf (e ==~ k) (uJust v) uNothing
+        ]
+        tb
 
 dotMake :: B.ByteString -> SymUnsignedBV DotBitWidth -> DotResult -> DotResult
 dotMake kind name tr = BonsaiNode (uBonsaiNode (uBonsaiLeaf $ uRight kind) (uBonsaiLeaf $ uLeft name)) (mrgReturn tr)

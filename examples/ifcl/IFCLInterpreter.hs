@@ -2,12 +2,12 @@ module IFCLInterpreter where
 
 import Control.Monad.Except
 import Grisette.Core
+import Grisette.Lib
 import Grisette.SymPrim.Term
+import Instructions
 import Machine
 import Value
 import Prelude hiding (read)
-import Grisette.Lib
-import Instructions
 
 haltInst :: Machine -> Program -> ExceptT Errors UnionM Machine
 haltInst m p = mrgReturn $ goto (PCValue (fromIntegral $ loc p) (label $ pc m)) m
@@ -61,8 +61,8 @@ storeCRInst m = do
   res <- write x (PCValue y $ lx ||~ ly ||~ lpc) p
   mrgReturn $ next res
 
-addInst  :: Machine -> ExceptT Errors UnionM Machine
-addInst  m = do
+addInst :: Machine -> ExceptT Errors UnionM Machine
+addInst m = do
   PCValue x lx <- peekPC 0 m
   PCValue y ly <- peekPC 1 m
   p <- popN 2 m
@@ -198,7 +198,6 @@ execInst (Return1B v) m _ = ret1bInst v m
 execInst (Return1AB v) m _ = ret1abInst v m
 execInst (Call1B v) m _ = call1bInst v m
 execInst (Call pos hasRet) m _ = callInst pos hasRet m
-
 
 step :: Int -> Machine -> Program -> ExceptT Errors UnionM Machine
 step k m p = mrgIf (isHalted m p ||~ conc (k == 0)) (return m) $ do

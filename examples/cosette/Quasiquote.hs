@@ -18,13 +18,9 @@ cosette =
       quoteDec = notHandled "declarations"
     }
   where
-    notHandled things =
-      error $ things ++ " are not handled by the cosette quasiquoter"
+    notHandled things = error $ things ++ " are not handled by the cosette quasiquoter"
 
 compile :: B.ByteString -> Q Exp
 compile s = case runParser wholeStringQuery "input" s of
-  Left peb ->
-    let msg = errorBundlePretty peb
-     in [|error msg|]
-  Right qu ->
-    [|qu|]
+  Left peb -> let msg = errorBundlePretty peb in [|error msg|]
+  Right qu -> [|qu|]

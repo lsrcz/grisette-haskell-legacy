@@ -6,7 +6,9 @@ module LetPoly where
 import BonsaiTree
 import Control.DeepSeq
 import Control.Monad.Except
+import Data.BitVector.Sized.Unsigned
 import qualified Data.ByteString as B
+import Data.Maybe
 import Data.MemoTrie
 import Env
 import Error
@@ -17,8 +19,6 @@ import Match
 import MatchSyntax
 import Pattern
 import SyntaxSpec
-import Data.BitVector.Sized.Unsigned
-import Data.Maybe
 
 type LetPolyWidth = 19
 
@@ -54,7 +54,7 @@ letPolySyntax =
     ]
 
 letPolyLiteral :: B.ByteString -> Pattern (SymUnsignedBV LetPolyWidth) 0
-letPolyLiteral s = literal $ fromJust $ toSym $ terminalToBV letPolySyntax s 
+letPolyLiteral s = literal $ fromJust $ toSym $ terminalToBV letPolySyntax s
 
 simpleNode :: B.ByteString -> LetPolyTree
 simpleNode = unsafeLeaf letPolySyntax
@@ -220,19 +220,22 @@ data LetPolyValue
   deriving (Show, Eq, Generic, SEq SymBool, NFData, SymEval Model)
 
 instance Mergeable SymBool LetPolyValue where
-  mergeStrategy = OrderedStrategy (\case
-    LetPolyInt _ -> 0 :: Int
-    LetPolyBool _ -> 1
-    LetPolyRefCell _ -> 2
-    LetPolyLambda _ _ _ -> 3)
-    (memo $ \case
-      0 -> SimpleStrategy $ \cond (LetPolyInt l) (LetPolyInt r) -> LetPolyInt $ mrgIte @SymBool cond l r
-      1 -> SimpleStrategy $ \cond (LetPolyBool l) (LetPolyBool r) -> LetPolyBool $ mrgIte @SymBool cond l r
-      2 -> SimpleStrategy $ \cond (LetPolyRefCell l) (LetPolyRefCell r) -> LetPolyRefCell $ mrgIf @SymBool cond l r
-      3 -> SimpleStrategy $ \cond (LetPolyLambda n1 v1 e1) (LetPolyLambda n2 v2 e2) ->
-        LetPolyLambda (mrgIte @SymBool cond n1 n2) (mrgIte @SymBool cond v1 v2) (mrgIte @SymBool cond e1 e2)
-      _ -> error "Should not happen")
-    
+  mergeStrategy =
+    OrderedStrategy
+      ( \case
+          LetPolyInt _ -> 0 :: Int
+          LetPolyBool _ -> 1
+          LetPolyRefCell _ -> 2
+          LetPolyLambda _ _ _ -> 3
+      )
+      ( memo $ \case
+          0 -> SimpleStrategy $ \cond (LetPolyInt l) (LetPolyInt r) -> LetPolyInt $ mrgIte cond l r
+          1 -> SimpleStrategy $ \cond (LetPolyBool l) (LetPolyBool r) -> LetPolyBool $ mrgIte cond l r
+          2 -> SimpleStrategy $ \cond (LetPolyRefCell l) (LetPolyRefCell r) -> LetPolyRefCell $ mrgIf cond l r
+          3 -> SimpleStrategy $ \cond (LetPolyLambda n1 v1 e1) (LetPolyLambda n2 v2 e2) ->
+            LetPolyLambda (mrgIte cond n1 n2) (mrgIte cond v1 v2) (mrgIte cond e1 e2)
+          _ -> error "Should not happen"
+      )
 
 instance HasTrie LetPolyValue where
   newtype LetPolyValue :->: x = LetPolyValueTrie {unLetPolyValueTrie :: Reg LetPolyValue :->: x}

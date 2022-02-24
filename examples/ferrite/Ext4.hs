@@ -1,5 +1,3 @@
-
-
 module Ext4 where
 
 import Control.Monad.Except
@@ -12,25 +10,16 @@ import Grisette.Core
 import Grisette.SymPrim.Term
 import Lang
 
-data ConcDirEnt = ConcDirEnt
-  { concDirEntIno :: Integer,
-    concDirEntExists :: Bool
-  }
+data ConcDirEnt = ConcDirEnt {concDirEntIno :: Integer, concDirEntExists :: Bool}
   deriving (Show, Eq, Generic, ToCon DirEnt)
 
 data DirEnt = DirEnt {dirEntIno :: UnionM Integer, dirEntExists :: SymBool}
   deriving (Show, Eq, Generic, Mergeable SymBool, ToSym ConcDirEnt, SimpleMergeable SymBool, SymEval Model)
 
-data ConcFile = ConcFile
-  { concFileSize :: Integer,
-    concFileOnDisk :: [Bool]
-  }
+data ConcFile = ConcFile {concFileSize :: Integer, concFileOnDisk :: [Bool]}
   deriving (Show, Eq, Generic, ToCon File)
 
-data File = File
-  { fileSize :: UnionM Integer,
-    fileOnDisk :: UnionM [SymBool]
-  }
+data File = File {fileSize :: UnionM Integer, fileOnDisk :: UnionM [SymBool]}
   deriving (Show, Eq, Generic, Mergeable SymBool, ToSym ConcFile, SimpleMergeable SymBool, SymEval Model)
 
 data ConcExt4Fs = ConcExt4Fs
@@ -52,19 +41,18 @@ data Ext4Fs = Ext4Fs
   deriving (Show, Eq, Generic, ToSym ConcExt4Fs, SymEval Model)
 
 instance Mergeable SymBool Ext4Fs where
-  mergeStrategy = SimpleStrategy $
-    \cond (Ext4Fs bs1 na1 dir1 fds1 files1) (Ext4Fs _ _ dir2 fds2 files2) ->
-      -- assume bs1 == bs2
-      -- assume na1 == na2
-      -- assume length dir1 == length dir2
-      -- assume length fds1 == length fds2
-      -- assume length files1 == length files2
-      Ext4Fs
-        bs1
-        na1
-        (zipWith (mrgIte @SymBool cond) dir1 dir2)
-        (zipWith (mrgIte @SymBool cond) fds1 fds2)
-        (zipWith (mrgIte @SymBool cond) files1 files2)
+  mergeStrategy = SimpleStrategy $ \cond (Ext4Fs bs1 na1 dir1 fds1 files1) (Ext4Fs _ _ dir2 fds2 files2) ->
+    -- assume bs1 == bs2
+    -- assume na1 == na2
+    -- assume length dir1 == length dir2
+    -- assume length fds1 == length fds2
+    -- assume length files1 == length files2
+    Ext4Fs
+      bs1
+      na1
+      (zipWith (mrgIte cond) dir1 dir2)
+      (zipWith (mrgIte cond) fds1 fds2)
+      (zipWith (mrgIte cond) files1 files2)
 
 ext4fs :: Integer -> Integer -> Bool -> ConcExt4Fs
 ext4fs capacity blockSize nodealloc =
@@ -109,10 +97,9 @@ getFdINode :: Fd -> StateT Ext4Fs UnionM (UnionM Integer)
 getFdINode fd = merge $ gets $ \(Ext4Fs _ _ _ fds _) -> fds !! fromInteger fd
 
 getFile :: UnionM Ino -> StateT Ext4Fs UnionM File
-getFile ino = merge $
-  StateT $ \s -> do
-    i <- ino
-    mrgReturn (ext4Files s !! fromInteger i, s)
+getFile ino = StateT $ \s -> do
+  i <- ino
+  mrgReturn (ext4Files s !! fromInteger i, s)
 
 getDirEnt :: Name -> StateT Ext4Fs UnionM DirEnt
 getDirEnt name = merge $ gets $ \(Ext4Fs _ _ dir _ _) -> dir !! fromInteger name
@@ -140,19 +127,16 @@ updateFdIno fd ino = merge $
 instance FileSystem ConcExt4Fs Ext4Fs where
   crack (ConcExt4Fs blockSize _ dir fds files) syscalls = evalState (go syscalls) initialState
     where
-      fdFiles :: [ConcFile]
       fdFiles = fmap ((files !!) . fromIntegral) fds
-      initialState :: Ext4FsCrackState
       initialState =
         Ext4FsCrackState
-        0
-        (M.fromList [(fd, concFileSize file) | (fd, file) <- zip [0 ..] fdFiles])
-        ( M.fromList
-            [ (fd, fromIntegral $ length $ concFileOnDisk file)
-              | (fd, file) <- zip [0 ..] fdFiles
-            ]
-        )
-      go :: [SysCall] -> State Ext4FsCrackState [UnionM InodeOp]
+          0
+          (M.fromList [(fd, concFileSize file) | (fd, file) <- zip [0 ..] fdFiles])
+          ( M.fromList
+              [ (fd, fromIntegral $ length $ concFileOnDisk file)
+                | (fd, file) <- zip [0 ..] fdFiles
+              ]
+          )
       go [] = return []
       go (Creat name : xs) = do
         nextFd <- gets ext4NextFd
@@ -170,7 +154,6 @@ instance FileSystem ConcExt4Fs Ext4Fs where
         r2 <- go xs
         return $! ops ++ r ++ r2
         where
-          fill :: Integer -> State Ext4FsCrackState [UnionM InodeOp]
           fill off =
             if off == roundUp off blockSize
               then return []
@@ -181,7 +164,6 @@ instance FileSystem ConcExt4Fs Ext4Fs where
             where
               chunk :: [Bool]
               chunk = take (min (length content) (fromIntegral $ roundUp off blockSize - off)) content
-          res :: Integer -> Integer -> Integer -> State Ext4FsCrackState [UnionM InodeOp]
           res offset pos offsetEnd =
             if pos >= offsetEnd
               then return []
@@ -239,7 +221,6 @@ instance FileSystem ConcExt4Fs Ext4Fs where
       )
       f
     where
-      doWrite :: Fd -> Content -> Integer -> StateT Ext4Fs UnionM ()
       doWrite fd content off = do
         ino <- getFdINode fd
         File sz onDisk <- getFile ino
@@ -259,7 +240,6 @@ instance FileSystem ConcExt4Fs Ext4Fs where
               mrgReturn $ hd ++ toSym content ++ tl
         let newFile = File sz newContent
         updateFile ino newFile
-      updateSize :: Fd -> Integer -> StateT Ext4Fs UnionM ()
       updateSize fd sz = do
         ino <- getFdINode fd
         File _ onDisk <- getFile ino
@@ -278,8 +258,8 @@ instance FileSystem ConcExt4Fs Ext4Fs where
           )
           uNothing
   reorder (ConcExt4Fs bs na _ _ _) call1 call2 =
-    not (dirSameInoDeps call1 call2) &&
-    not (barrierDeps call1 call2) &&
-    not (metadataSameInoDeps call1 call2) &&
-    not (sameFileBlockDeps call1 call2 bs) &&
-    not (fileWriteExtendDeps call1 call2 na)
+    not (dirSameInoDeps call1 call2)
+      && not (barrierDeps call1 call2)
+      && not (metadataSameInoDeps call1 call2)
+      && not (sameFileBlockDeps call1 call2 bs)
+      && not (fileWriteExtendDeps call1 call2 na)

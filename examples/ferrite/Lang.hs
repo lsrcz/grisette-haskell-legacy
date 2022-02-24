@@ -23,7 +23,7 @@ removeDisabledSyncs [] = []
 removeDisabledSyncs (Efsync _ v:xs) | v == conc False = removeDisabledSyncs xs
 removeDisabledSyncs (x:xs) = x : removeDisabledSyncs xs
 
-data GenEfsync = GenEfsync Integer
+newtype GenEfsync = GenEfsync Integer
 instance SymGen SymBool GenEfsync SysCall
 instance SymGenSimple SymBool GenEfsync SysCall where
   genSymSimpleIndexed (GenEfsync n) = do

@@ -39,9 +39,4 @@ indistinguishablePCValueList = indistinguishableList indistinguishablePCValue
 
 memIndistinguishable :: Machine -> Program -> Machine -> Program -> SymBool
 memIndistinguishable (Machine (PCValue _ l0) _ mem0) p0 (Machine (PCValue _ l1) _ mem1) p1 =
-  l0 ==~ l1
-    &&~ ( l0
-            ||~ ( (indistinguishablePCValueList #~ mem0 #~ mem1)
-                    &&~ indistinguishableProgram p0 p1
-                )
-        )
+  l0 ==~ l1 &&~ (l0 ||~ ((indistinguishablePCValueList #~ mem0 #~ mem1) &&~ indistinguishableProgram p0 p1))

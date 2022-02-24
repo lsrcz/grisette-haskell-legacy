@@ -98,7 +98,7 @@ dotMain = do
   print $ terminals dotSyntax
   print f4
   print $ bonsaiMatchCustomError BonsaiTypeError [
-    dotLiteral "val" *= (placeHolder *= placeHolder) ==> \a b -> mrgLift a
+    dotLiteral "val" *= (placeHolder *= placeHolder) ==> \a _ -> mrgLift a
     ] #~ f4
   print $ typer nullNode
   print $ typer (dieNode nullNode)

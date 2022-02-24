@@ -38,19 +38,6 @@ envAddTree err env t v = do
   name <- extractName err t
   mrgReturn $ envAdd env name v
 
-envResolve ::
-  (Mergeable SymBool t, KnownNat n, 1 <= n) =>
-  BonsaiError ->
-  Env n t ->
-  SymUnsignedBV n ->
-  ExceptT BonsaiError UnionM t
-envResolve err env k = do
-  e <- lift env
-  envResolveSingle e
-  where
-    envResolveSingle [] = throwError err
-    envResolveSingle ((n, v) : xs) = mrgIf (n ==~ k) (lift v) $ envResolveSingle xs
-
 envResolveU ::
   (Mergeable SymBool t, KnownNat n, 1 <= n) =>
   BonsaiError ->
@@ -76,7 +63,6 @@ envResolve' fuel err env k = do
   e <- lift env
   envResolveSingle 0 e
   where
-    envResolveSingle :: Int -> EnvSingle n t -> ExceptT BonsaiError UnionM t
     envResolveSingle _ [] = throwError err
     envResolveSingle x ((n, v) : xs) =
       if x > fuel

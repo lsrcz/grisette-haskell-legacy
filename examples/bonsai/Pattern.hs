@@ -1,11 +1,11 @@
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE PolyKinds #-}
 module Pattern where
 
 import BonsaiTree
 import Control.Monad.Except
--- import qualified Data.ByteString as B
 import GHC.TypeLits
 import Grisette.SymPrim.Term
--- import qualified Data.ByteString.Char8 as C
 
 data Pattern a n where
   LiteralPattern :: a -> Pattern a 0
@@ -23,42 +23,22 @@ instance (Show x) => Show (Pattern x n) where
 literal :: a -> Pattern a 0
 literal = LiteralPattern
 
-placeHolder :: Pattern a 1 
+placeHolder :: Pattern a 1
 placeHolder = PlaceHolder
 
+type HandlerType0 m e t = ExceptT e UnionM t
+type HandlerType1 m e t = UnionM (BonsaiTree m) -> HandlerType0 m e t
+type HandlerType2 m e t = UnionM (BonsaiTree m) -> HandlerType1 m e t
+type HandlerType3 m e t = UnionM (BonsaiTree m) -> HandlerType2 m e t
+type HandlerType4 m e t = UnionM (BonsaiTree m) -> HandlerType3 m e t
+type HandlerType5 m e t = UnionM (BonsaiTree m) -> HandlerType4 m e t
 data PatternHandler m e t
-  = PatternHandler0 (Pattern m 0) (ExceptT e UnionM t)
-  | PatternHandler1 (Pattern m 1) (UnionM (BonsaiTree m) -> ExceptT e UnionM t)
-  | PatternHandler2
-      (Pattern m 2)
-      ( UnionM (BonsaiTree m) ->
-        UnionM (BonsaiTree m) ->
-        ExceptT e UnionM t
-      )
-  | PatternHandler3
-      (Pattern m 3)
-      ( UnionM (BonsaiTree m) ->
-        UnionM (BonsaiTree m) ->
-        UnionM (BonsaiTree m) ->
-        ExceptT e UnionM t
-      )
-  | PatternHandler4
-      (Pattern m 4)
-      ( UnionM (BonsaiTree m) ->
-        UnionM (BonsaiTree m) ->
-        UnionM (BonsaiTree m) ->
-        UnionM (BonsaiTree m) ->
-        ExceptT e UnionM t
-      )
-  | PatternHandler5
-      (Pattern m 5)
-      ( UnionM (BonsaiTree m) ->
-        UnionM (BonsaiTree m) ->
-        UnionM (BonsaiTree m) ->
-        UnionM (BonsaiTree m) ->
-        UnionM (BonsaiTree m) ->
-        ExceptT e UnionM t
-      )
+  = PatternHandler0 (Pattern m 0) (HandlerType0 m e t)
+  | PatternHandler1 (Pattern m 1) (HandlerType1 m e t)
+  | PatternHandler2 (Pattern m 2) (HandlerType2 m e t)
+  | PatternHandler3 (Pattern m 3) (HandlerType3 m e t)
+  | PatternHandler4 (Pattern m 4) (HandlerType4 m e t)
+  | PatternHandler5 (Pattern m 5) (HandlerType5 m e t)
 
 applyHandler :: [UnionM (BonsaiTree m)] -> PatternHandler m e t -> ExceptT e UnionM t
 applyHandler [] (PatternHandler0 _ h) = h
@@ -72,67 +52,20 @@ applyHandler _ _ = undefined
 class GetPatternHandler n m e f t | n m e t -> f where
   (==>) :: Pattern m n -> f -> PatternHandler m e t
 
-instance GetPatternHandler 0 m e (ExceptT e UnionM t) t where
+instance GetPatternHandler 0 m e (HandlerType0 m e t) t where
   (==>) = PatternHandler0
 
-instance GetPatternHandler 1 m e (UnionM (BonsaiTree m) -> ExceptT e UnionM t) t where
+instance GetPatternHandler 1 m e (HandlerType1 m e t) t where
   (==>) = PatternHandler1
 
-instance
-  GetPatternHandler
-    2
-    m
-    e
-    ( UnionM (BonsaiTree m) ->
-      UnionM (BonsaiTree m) ->
-      ExceptT e UnionM t
-    )
-    t
-  where
+instance GetPatternHandler 2 m e (HandlerType2 m e t) t where
   (==>) = PatternHandler2
 
-instance
-  GetPatternHandler
-    3
-    m
-    e
-    ( UnionM (BonsaiTree m) ->
-      UnionM (BonsaiTree m) ->
-      UnionM (BonsaiTree m) ->
-      ExceptT e UnionM t
-    )
-    t
-  where
+instance GetPatternHandler 3 m e (HandlerType3 m e t) t where
   (==>) = PatternHandler3
 
-instance
-  GetPatternHandler
-    4
-    m
-    e
-    ( UnionM (BonsaiTree m) ->
-      UnionM (BonsaiTree m) ->
-      UnionM (BonsaiTree m) ->
-      UnionM (BonsaiTree m) ->
-      ExceptT e UnionM t
-    )
-    t
-  where
+instance GetPatternHandler 4 m e (HandlerType4 m e t) t where
   (==>) = PatternHandler4
 
-instance
-  GetPatternHandler
-    5
-    m
-    e
-    ( UnionM (BonsaiTree m) ->
-      UnionM (BonsaiTree m) ->
-      UnionM (BonsaiTree m) ->
-      UnionM (BonsaiTree m) ->
-      UnionM (BonsaiTree m) ->
-      ExceptT e UnionM t
-    )
-    t
-  where
+instance GetPatternHandler 5 m e (HandlerType5 m e t) t where
   (==>) = PatternHandler5
-
