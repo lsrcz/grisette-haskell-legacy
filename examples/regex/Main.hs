@@ -12,7 +12,6 @@ import Control.Monad.State
 import Control.Monad.Trans.Maybe
 import Data.Bifunctor
 import qualified Data.ByteString.Char8 as B
-import Data.Functor.Sum
 import Data.Hashable
 import Data.Maybe
 import GHC.Generics

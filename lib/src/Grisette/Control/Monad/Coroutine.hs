@@ -22,9 +22,11 @@ mrgSuspend ::
   s (Coroutine s m x) ->
   Coroutine s m x
 mrgSuspend s = withMergeable @bool @s @(Coroutine s m x) $ Coroutine $ mrgReturn @bool (Left s)
+{-# INLINEABLE mrgSuspend #-}
 
 mrgYield :: (SymBoolOp bool, MonadUnion bool m, Mergeable bool x) => x -> Coroutine (Yield x) m ()
 mrgYield x = mrgSuspend (Yield x $ mrgReturn ())
+{-# INLINEABLE mrgYield #-}
 
 mrgMapSuspension ::
   forall s m bool x s'.
@@ -37,12 +39,14 @@ mrgMapSuspension f cort = withMergeable @bool @s' @(Coroutine s' m x) Coroutine 
     map' :: Either (s (Coroutine s m x)) x -> Either (s' (Coroutine s' m x)) x
     map' (Right r1) = Right r1
     map' (Left s) = Left $ f $ mrgMapSuspension f <$> s
+{-# INLINEABLE mrgMapSuspension #-}
 
 simpleTransducer ::
   (SymBoolOp bool, MonadUnion bool m, Mergeable bool a, Mergeable bool x) =>
   (a -> Coroutine (Yield x) m ()) ->
   Coroutine (Sum (Await a) (Yield x)) m ()
 simpleTransducer f = mrgSuspend (InL $ Await $ \x -> mapSuspension InR (f x) >> simpleTransducer f)
+{-# INLINEABLE simpleTransducer #-}
 
 mrgWeaveYieldTransducer ::
   (SymBoolOp bool, MonadUnion bool m, Mergeable bool b) =>
@@ -52,6 +56,7 @@ mrgWeaveYieldTransducer w (Left l) (Left (InR (Yield y c1))) = mrgSuspend (Yield
 mrgWeaveYieldTransducer w (Left (Yield x c)) (Left (InL (Await f))) = w c $ f x
 mrgWeaveYieldTransducer _ (Right ()) (Left (InL (Await _))) = mrgReturn ()
 mrgWeaveYieldTransducer w (Right ()) (Left (InR (Yield y c1))) = mrgSuspend (Yield y $ w (return ()) c1)
+{-# INLINEABLE mrgWeaveYieldTransducer #-}
 
 (|->) ::
   (SymBoolOp bool, MonadUnion bool m, Mergeable bool x) =>
@@ -59,6 +64,7 @@ mrgWeaveYieldTransducer w (Right ()) (Left (InR (Yield y c1))) = mrgSuspend (Yie
   Coroutine (Sum (Await a) (Yield x)) m () ->
   Coroutine (Yield x) m ()
 (|->) = weave sequentialBinder mrgWeaveYieldTransducer
+{-# INLINEABLE (|->) #-}
 
 infixl 1 |->
 
@@ -68,3 +74,4 @@ infixl 1 |->
   (a -> Coroutine (Yield x) m ()) ->
   Coroutine (Yield x) m ()
 (|>>=) l f = l |-> simpleTransducer f
+{-# INLINEABLE (|>>=) #-}
