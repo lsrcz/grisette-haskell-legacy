@@ -18,6 +18,7 @@ import Match
 import MatchSyntax
 import Pattern
 import SyntaxSpec
+import Data.Hashable
 
 type DotBitWidth = 15
 
@@ -61,7 +62,7 @@ data DotValue
   | DotDummy SymBool
   | DotNamedValue (SymUnsignedBV DotBitWidth) (UnionM DotValue)
   | DotJoinValue (UnionM DotValue) (UnionM DotValue)
-  deriving (Show, Eq, Generic, Mergeable SymBool, NFData)
+  deriving (Show, Eq, Generic, Mergeable SymBool, NFData, Hashable)
 
 data DotType
   = DotAny
@@ -70,7 +71,7 @@ data DotType
   | -- isType
     DotNamed Bool (SymUnsignedBV DotBitWidth) (UnionM DotType)
   | DotRange (UnionM DotType) (UnionM DotType)
-  deriving (Show, Eq, Generic, Mergeable SymBool, NFData, SEq SymBool)
+  deriving (Show, Eq, Generic, Mergeable SymBool, NFData, SEq SymBool, Hashable)
 
 instance HasTrie DotValue where
   newtype DotValue :->: x = DotValueTrie {unDotValueTrie :: Reg DotValue :->: x}
@@ -88,7 +89,7 @@ $(makeUnionMWrapper "u" ''DotValue)
 $(makeUnionMWrapper "u" ''DotType)
 
 eval' :: DotTree -> Env DotBitWidth DotValue -> ExceptT BonsaiError UnionM (UnionM DotValue)
-eval' = {-memo2 $-} \tree env ->
+eval' = htmemo2 $ \tree env ->
   bonsaiMatchCustomError
     BonsaiExecError
     [ dotLiteral "let" *= ((placeHolder *= (placeHolder *= placeHolder)) *= (placeHolder *= placeHolder))
@@ -139,7 +140,7 @@ reduceType ::
   Bool ->
   DotTree ->
   ExceptT BonsaiError UnionM (UnionM DotType)
-reduceType = {-mup memo3 $ -} \reccount env strict tree ->
+reduceType = htmup htmemo3 $ \reccount env strict tree ->
   let reduceTypeR = reduceType (reccount + 1)
    in if reccount >= 3
         then throwError BonsaiTypeError
@@ -178,7 +179,7 @@ reduceType = {-mup memo3 $ -} \reccount env strict tree ->
             tree
 
 subType :: Int -> UnionM DotType -> UnionM DotType -> ExceptT BonsaiError UnionM SymBool
-subType = {-memo3 $ -} \reccount sub sup ->
+subType = htmemo3 $ \reccount sub sup ->
   let subTypeR = subType (reccount + 1)
    in if reccount >= 3
         then throwError BonsaiTypeError
@@ -203,7 +204,7 @@ subType = {-memo3 $ -} \reccount sub sup ->
                 _ -> return $ sb ==~ sp
 
 type' :: DotTree -> Env DotBitWidth DotType -> ExceptT BonsaiError UnionM (UnionM DotType)
-type' = memo2 $ \tree env ->
+type' = htmemo2 $ \tree env ->
   bonsaiMatchCustomError
     BonsaiTypeError
     [ dotLiteral "let" *= ((placeHolder *= (placeHolder *= placeHolder)) *= (placeHolder *= placeHolder))

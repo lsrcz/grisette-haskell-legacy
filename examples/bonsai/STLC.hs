@@ -9,7 +9,6 @@ import Control.Monad.Except
 import Data.BitVector.Sized.Unsigned
 import qualified Data.ByteString as B
 import Data.Maybe
-import Data.MemoTrie
 import Env
 import GHC.Generics
 import Grisette.Core
@@ -18,6 +17,7 @@ import Match
 import MatchSyntax
 import Pattern
 import SyntaxSpec
+import Data.Hashable
 
 -- import Debug.Trace
 
@@ -119,7 +119,7 @@ asNode _ x@(BonsaiNode _ _) = mrgReturn x
 asNode e _ = throwError e
 
 typer' :: STLCTree -> Env 14 (STLCTree) -> ExceptT BonsaiError UnionM (UnionM STLCTree)
-typer' = memo2 $ \tree env {-trace (show tree) $ trace (show env) $-} ->
+typer' = htmemo2 $ \tree env {-trace (show tree) $ trace (show env) $-} ->
   bonsaiMatchCustomError
     BonsaiTypeError
     [ stlcLiteral "one" ==> mrgReturn (mrgReturn intTy),
@@ -172,13 +172,7 @@ data STLCValue
   | STLCBuiltin (SymUnsignedBV 14)
   | STLCPartiallyAppliedBuiltin (SymUnsignedBV 14) (UnionM STLCValue)
   | STLCLambda (SymUnsignedBV 14) (UnionM (STLCTree)) (Env 14 STLCValue)
-  deriving (Show, Eq, Generic, Mergeable SymBool, NFData)
-
-instance HasTrie STLCValue where
-  newtype STLCValue :->: x = STLCValueTrie {unSTLCValueTrie :: Reg STLCValue :->: x}
-  trie = trieGeneric STLCValueTrie
-  untrie = untrieGeneric unSTLCValueTrie
-  enumerate = enumerateGeneric unSTLCValueTrie
+  deriving (Show, Eq, Generic, Mergeable SymBool, NFData, Hashable)
 
 $(makeUnionMWrapper "u" ''STLCValue)
 
@@ -234,7 +228,7 @@ applyBuiltin (STLCPartiallyAppliedBuiltin v arg1) arg2 =
 applyBuiltin _ _ = throwError BonsaiExecError
 
 interpreter' :: STLCTree -> Env 14 STLCValue -> Int -> ExceptT BonsaiError UnionM (UnionM STLCValue)
-interpreter' = memo3 $ \tree env reccount {-trace (show tree) $ trace (show env) $ trace (show reccount) $-} ->
+interpreter' = htmemo3 $ \tree env reccount {-trace (show tree) $ trace (show env) $ trace (show reccount) $-} ->
   if reccount >= 2
     then throwError BonsaiRecursionError
     else

@@ -9,7 +9,6 @@ import Data.BitVector.Sized.Unsigned
 import qualified Data.ByteString as B
 import Data.Either.Combinators
 import Data.Maybe
-import Data.MemoTrie
 import Env
 import Grisette.Core
 import Grisette.SymPrim.Term
@@ -56,7 +55,7 @@ dotLiteral :: B.ByteString -> Pattern (SymUnsignedBV DotBitWidth) 0
 dotLiteral s = literal $ fromJust $ toSym $ terminalToBV dotSyntax s
 
 eval' :: DotTree -> Env DotBitWidth DotResult -> ExceptT BonsaiError UnionM (UnionM DotResult)
-eval' = {-memo2 $-} \tree env ->
+eval' = htmemo2 $ \tree env ->
   bonsaiMatchCustomError
     BonsaiExecError
     [ dotLiteral "let" *= ((placeHolder *= (placeHolder *= placeHolder)) *= (placeHolder *= placeHolder))
@@ -147,7 +146,7 @@ reduceType ::
   Bool ->
   DotTree ->
   ExceptT BonsaiError UnionM (UnionM DotResult)
-reduceType = {-mup memo3 $ -} \reccount env strict tree ->
+reduceType = htmup htmemo3 $ \reccount env strict tree ->
   let reduceTypeR = reduceType (reccount + 1)
    in if reccount >= 3
         then throwError BonsaiTypeError
@@ -212,7 +211,7 @@ subType reccount subv supv =
             (BonsaiNode subv supv)
 
 type' :: DotTree -> Env DotBitWidth DotResult -> ExceptT BonsaiError UnionM (UnionM DotResult)
-type' = memo2 $ \tree env ->
+type' = htmemo2 $ \tree env ->
   bonsaiMatchCustomError
     BonsaiTypeError
     [ dotLiteral "let" *= ((placeHolder *= (placeHolder *= placeHolder)) *= (placeHolder *= placeHolder))

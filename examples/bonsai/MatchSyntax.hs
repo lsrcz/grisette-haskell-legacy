@@ -3,7 +3,6 @@ module MatchSyntax where
 import BonsaiTree
 import qualified Data.ByteString as B
 import qualified Data.HashSet as S
-import Data.MemoTrie
 import GHC.TypeLits
 import Grisette.Core
 import Grisette.SymPrim.Term
@@ -16,7 +15,7 @@ matchSyntax ::
   BonsaiTree (SymUnsignedBV n) ->
   B.ByteString ->
   SymBool
-matchSyntax stx fR = memo2 $ \tree sym -> case getRules stx sym of
+matchSyntax stx fR = htmemo2 $ \tree sym -> case getRules stx sym of
   Nothing -> conc False
   Just rus -> foldl (\acc rule -> acc ||~ fR rule tree) (conc False) rus
 
@@ -28,7 +27,7 @@ matchRule ::
   Rule ->
   BonsaiTree (SymUnsignedBV n) ->
   SymBool
-matchRule stx fS fR = memo2 $ \rule tree -> case (tree, rule) of
+matchRule stx fS fR = htmemo2 $ \rule tree -> case (tree, rule) of
   (_, SymRule sym) | sym `S.member` nonTerminals stx -> fS tree sym
   (BonsaiNode left right, PairRule first second) ->
     getSingle (fR first <$> left)
