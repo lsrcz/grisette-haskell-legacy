@@ -16,6 +16,7 @@ dependencies:
 - transformers
 - mtl
 - MemoTrie
+- monad-coroutine
 
 default-extensions:
 - BangPatterns

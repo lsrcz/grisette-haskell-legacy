@@ -19,85 +19,15 @@ import GHC.Generics
 import Grisette.Backend.SBV
 import Grisette.Core
 import Grisette.SymPrim.Term
-import System.CPUTime
-import Text.Printf
 import Text.Regex.PCRE
 import Utils.Timing
 import qualified Data.ByteString.Char8 as C
-
-time :: IO t -> IO t
-time a = do
-  start <- getCPUTime
-  v <- a
-  end <- getCPUTime
-  let diff = fromIntegral (end - start) / (10 ^ (12 :: Integer))
-  printf "Computation time: %0.3f sec\n" (diff :: Double)
-  return v
-
-bs :: Either () (Char, B.ByteString) -> B.ByteString
-bs = either (const B.empty) (uncurry B.cons)
-
-debs :: B.ByteString -> Either () (Char, B.ByteString)
-debs b = case B.uncons b of
-  Just p -> Right p
-  Nothing -> Left ()
-
-mrgSuspend ::
-  forall m s bool x.
-  (Functor s, MonadUnion bool m, SymBoolOp bool, Mergeable bool x, Mergeable1 bool s) =>
-  s (Coroutine s m x) ->
-  Coroutine s m x
-mrgSuspend s = withMergeable @bool @s @(Coroutine s m x) $ Coroutine $ mrgReturn @bool (Left s)
-
-mrgYield :: (SymBoolOp bool, MonadUnion bool m, Mergeable bool x) => x -> Coroutine (Yield x) m ()
-mrgYield x = mrgSuspend (Yield x $ mrgReturn ())
-
-mrgMapSuspension ::
-  forall s m bool x s'.
-  (Functor s, SymBoolOp bool, MonadUnion bool m, Mergeable bool x, Mergeable1 bool s') =>
-  (forall y. s y -> s' y) ->
-  Coroutine s m x ->
-  Coroutine s' m x
-mrgMapSuspension f cort = withMergeable @bool @s' @(Coroutine s' m x) Coroutine {resume = mrgFmap map' $ resume cort}
-  where
-    map' :: Either (s (Coroutine s m x)) x -> Either (s' (Coroutine s' m x)) x
-    map' (Right r1) = Right r1
-    map' (Left s) = Left $ f $ mrgMapSuspension f <$> s
-
-simpleTransducer ::
-  (SymBoolOp bool, MonadUnion bool m, Mergeable bool a, Mergeable bool x) =>
-  (a -> Coroutine (Yield x) m ()) ->
-  Coroutine (Sum (Await a) (Yield x)) m ()
-simpleTransducer f = mrgSuspend (InL $ Await $ \x -> mapSuspension InR (f x) >> simpleTransducer f)
-
-weaveYieldTransducer ::
-  (SymBoolOp bool, MonadUnion bool m, Mergeable bool b) =>
-  WeaveStepper (Yield a) (Sum (Await a) (Yield b)) (Yield b) m () () ()
-weaveYieldTransducer _ _ (Right ()) = mrgReturn ()
-weaveYieldTransducer w (Left l) (Left (InR (Yield y c1))) = mrgSuspend (Yield y $ w (suspend l) c1)
-weaveYieldTransducer w (Left (Yield x c)) (Left (InL (Await f))) = w c $ f x
-weaveYieldTransducer _ (Right ()) (Left (InL (Await _))) = mrgReturn ()
-weaveYieldTransducer w (Right ()) (Left (InR (Yield y c1))) = mrgSuspend (Yield y $ w (return ()) c1)
+import Grisette.Lib
 
 type PattCoro = B.ByteString -> Coroutine (Yield (UnionM Integer)) UnionM ()
 
 addYield :: Integer -> Coroutine (Yield (UnionM Integer)) UnionM () -> Coroutine (Yield (UnionM Integer)) UnionM ()
 addYield n l = l |>>= \i -> mrgYield $ mrgReturn n + i
-
-(|->) ::
-  (SymBoolOp bool, MonadUnion bool m, Mergeable bool x) =>
-  Coroutine (Yield a) m () ->
-  Coroutine (Sum (Await a) (Yield x)) m () ->
-  Coroutine (Yield x) m ()
-(|->) = weave sequentialBinder weaveYieldTransducer
-infixl 1 |->
-
-(|>>=) ::
-  (SymBoolOp bool, MonadUnion bool m, Mergeable bool a, Mergeable bool x) =>
-  Coroutine (Yield a) m () ->
-  (a -> Coroutine (Yield x) m ()) ->
-  Coroutine (Yield x) m ()
-(|>>=) l f = l |-> simpleTransducer f
 
 primPatt :: Char -> PattCoro
 primPatt pattc = htmemo $ \str ->
@@ -214,6 +144,7 @@ synthesisRegexCompiled config patt coro reg strs =
 synthesisRegex :: GrisetteSMTConfig b -> UnionM Patt -> B.ByteString -> [B.ByteString] -> IO (Maybe ConcPatt)
 synthesisRegex config patt = synthesisRegexCompiled config patt (toCoroU patt)
 
+{-
 test1 :: PattCoro
 test1 = toCoro $ toSym $ ConcPrimPatt 'a'
 
@@ -286,6 +217,7 @@ sk1 =
   runSymGenIndexed
     (choose (PrimPatt 'a') [PrimPatt 'b'])
     "a"
+-}
 
 freshPrim :: State (Int, String) (UnionM Patt)
 freshPrim = choose (PrimPatt 'd') [PrimPatt 'c', PrimPatt 'b', PrimPatt 'a', EmptyPatt]
@@ -364,7 +296,7 @@ main = do
   print $ listToMaybe (getAllMatches (("cabab" :: B.ByteString) =~ reg8) :: [(Int, Int)])
   print sk1
   -}
-  res <- time $ synthesisRegex (UnboundedReasoning z3 {transcript = Just "/tmp/a.smt2", timing = PrintTiming}) (mrgReturn sk) "[cd](a?b)+?" $ genWordsUpTo 5 "abcd"
+  res <- synthesisRegex (UnboundedReasoning z3 {transcript = Just "/tmp/a.smt2", timing = PrintTiming}) (mrgReturn sk) "[cd](a?b)+?" $ genWordsUpTo 5 "abcd"
   print res
   case res of
     Just resv -> do
