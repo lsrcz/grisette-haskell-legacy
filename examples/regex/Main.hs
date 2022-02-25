@@ -81,18 +81,32 @@ weaveYieldTransducer w (Right ()) (Left (InR (Yield y c1))) = mrgSuspend (Yield 
 
 type PattCoro = B.ByteString -> Coroutine (Yield (UnionM Integer)) UnionM ()
 
-addYield :: UnionM Integer -> Coroutine (Yield (UnionM Integer)) UnionM () -> Coroutine (Yield (UnionM Integer)) UnionM ()
-addYield n l = weave sequentialBinder weaveYieldTransducer l $ simpleTransducer $ \i -> mrgYield $ n + i
+addYield :: Integer -> Coroutine (Yield (UnionM Integer)) UnionM () -> Coroutine (Yield (UnionM Integer)) UnionM ()
+addYield n l = l |>>= \i -> mrgYield $ mrgReturn n + i
+
+(|->) ::
+  (SymBoolOp bool, MonadUnion bool m, Mergeable bool x) =>
+  Coroutine (Yield a) m () ->
+  Coroutine (Sum (Await a) (Yield x)) m () ->
+  Coroutine (Yield x) m ()
+(|->) = weave sequentialBinder weaveYieldTransducer
+infixl 1 |->
+
+(|>>=) ::
+  (SymBoolOp bool, MonadUnion bool m, Mergeable bool a, Mergeable bool x) =>
+  Coroutine (Yield a) m () ->
+  (a -> Coroutine (Yield x) m ()) ->
+  Coroutine (Yield x) m ()
+(|>>=) l f = l |-> simpleTransducer f
 
 primPatt :: Char -> PattCoro
 primPatt pattc = htmemo $ \str ->
   when (B.length str /= 0  && C.head str == pattc) $
-    yield $ mrgReturn $ 1
+    yield $ mrgReturn 1
 
 seqPatt :: PattCoro -> PattCoro -> PattCoro
 seqPatt patt1 patt2 = htmemo $ \str ->
-  weave sequentialBinder weaveYieldTransducer (patt1 str) $
-    simpleTransducer (lift >=> (\i1 -> addYield (mrgReturn i1) $ patt2 (B.drop (fromIntegral i1) str)))
+  patt1 str |>>= (lift >=> (\i1 -> addYield i1 $ patt2 (B.drop (fromIntegral i1) str)))
 
 altPatt :: PattCoro -> PattCoro -> PattCoro
 altPatt patt1 patt2 = htmemo $ \str -> patt1 str >>~ patt2 str
@@ -101,17 +115,14 @@ emptyPatt :: PattCoro
 emptyPatt = htmemo $ \_ -> yield 0
 
 plusGreedyPatt :: PattCoro -> PattCoro
-plusGreedyPatt patt = htmemo $ \str -> weave sequentialBinder weaveYieldTransducer (patt str) $
-  simpleTransducer $ \i ->
+plusGreedyPatt patt = htmemo $ \str -> patt str |>>= (\i ->
     lift i >>= \i1 ->
-      when (i1 /= 0) (addYield (mrgReturn i1) $ plusGreedyPatt patt (B.drop (fromIntegral i1) str))
-        >> yield i
+      when (i1 /= 0) (addYield i1 $ plusGreedyPatt patt (B.drop (fromIntegral i1) str))
+  >> yield i)
 
 plusLazyPatt :: PattCoro -> PattCoro
-plusLazyPatt patt = htmemo $ \str -> weave sequentialBinder weaveYieldTransducer (patt str) $
-  simpleTransducer $ \i ->
-    yield i
-      >> (lift i >>= \i1 -> when (i1 /= 0) (addYield (mrgReturn i1) $ plusLazyPatt patt (B.drop (fromIntegral i1) str)))
+plusLazyPatt patt = htmemo $ \str -> patt str |>>= \i -> yield i
+  >> (lift i >>= \i1 -> when (i1 /= 0) (addYield i1 $ plusLazyPatt patt (B.drop (fromIntegral i1) str)))
 
 plusPatt :: SymBool -> PattCoro -> PattCoro
 plusPatt greedy = mrgIte greedy plusGreedyPatt plusLazyPatt
@@ -121,9 +132,8 @@ matchFirstWithStartImpl patt str startPos = case merge $ pogoStick (\(Yield idx 
   SingleU x -> x
   _ -> error "Should not happen"
   where
-    r1 =
-      (\_ -> MaybeT $ return Nothing)
-        <$> addYield (mrgReturn startPos) (patt (B.drop (fromIntegral startPos) str))
+    r1 = (\_ -> MaybeT $ return Nothing)
+      <$> addYield startPos (patt (B.drop (fromIntegral startPos) str))
 
 matchFirstImpl :: PattCoro -> B.ByteString -> MaybeT UnionM (Integer, Integer)
 matchFirstImpl patt str =

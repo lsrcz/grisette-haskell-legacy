@@ -79,6 +79,22 @@ weaveYieldTransducer w (Left (Yield x c)) (Left (InL (Await f))) = w c $ f x
 weaveYieldTransducer _ (Right ()) (Left (InL (Await _))) = mrgReturn ()
 weaveYieldTransducer w (Right ()) (Left (InR (Yield y c1))) = mrgSuspend (Yield y $ w (return ()) c1)
 
+(|->) ::
+  (SymBoolOp bool, MonadUnion bool m, Mergeable bool x) =>
+  Coroutine (Yield a) m () ->
+  Coroutine (Sum (Await a) (Yield x)) m () ->
+  Coroutine (Yield x) m ()
+(|->) = weave sequentialBinder weaveYieldTransducer
+infixl 1 |->
+
+(|>>=) ::
+  (SymBoolOp bool, MonadUnion bool m, Mergeable bool a, Mergeable bool x) =>
+  Coroutine (Yield a) m () ->
+  (a -> Coroutine (Yield x) m ()) ->
+  Coroutine (Yield x) m ()
+(|>>=) l f = l |-> simpleTransducer f
+infixl 1 |>>=
+
 type PattCoro = B.ByteString -> Integer -> Coroutine (Yield (UnionM Integer)) UnionM ()
 
 primPatt :: Char -> PattCoro
@@ -88,21 +104,21 @@ primPatt pattc = htmemo2 $ \str idx ->
 
 seqPatt :: PattCoro -> PattCoro -> PattCoro
 seqPatt patt1 patt2 = htmemo2 $ \str idx ->
-  weave sequentialBinder weaveYieldTransducer (patt1 str idx) $ simpleTransducer (lift >=> patt2 str)
+  patt1 str idx |>>= (lift >=> patt2 str)
 
 altPatt :: PattCoro -> PattCoro -> PattCoro
-altPatt patt1 patt2 = htmemo2 $ \str idx -> patt1 str idx >>~ patt2 str idx
+altPatt patt1 patt2 = htmemo2 $ \str idx -> patt1 str idx >> patt2 str idx
 
 emptyPatt :: PattCoro
 emptyPatt str idx = when (B.length str >= fromInteger idx) $ yield $ mrgReturn idx
 
 plusGreedyPatt :: PattCoro -> PattCoro
-plusGreedyPatt patt = htmemo2 $ \str idx -> weave sequentialBinder weaveYieldTransducer (patt str idx) $
-  simpleTransducer $ \i -> lift i >>= \i1 -> when (i1 /= idx) (plusGreedyPatt patt str i1) >> yield i
+plusGreedyPatt patt = htmemo2 $ \str idx -> patt str idx |>>=
+  \i -> lift i >>= \i1 -> when (i1 /= idx) (plusGreedyPatt patt str i1) >> yield i
 
 plusLazyPatt :: PattCoro -> PattCoro
-plusLazyPatt patt = htmemo2 $ \str idx -> weave sequentialBinder weaveYieldTransducer (patt str idx) $
-  simpleTransducer $ \i -> lift i >>= \i1 -> yield i >> when (i1 /= idx) (plusLazyPatt patt str i1)
+plusLazyPatt patt = htmemo2 $ \str idx -> patt str idx |>>=
+  \i -> lift i >>= \i1 -> yield i >> when (i1 /= idx) (plusLazyPatt patt str i1)
 
 plusPatt :: SymBool -> PattCoro -> PattCoro
 plusPatt greedy = mrgIte greedy plusGreedyPatt plusLazyPatt
