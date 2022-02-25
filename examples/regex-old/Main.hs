@@ -15,7 +15,6 @@ import qualified Data.ByteString.Char8 as B
 import Data.Functor.Sum
 import Data.Hashable
 import Data.Maybe
-import Data.MemoTrie
 import GHC.Generics
 import Grisette.Backend.SBV
 import Grisette.Core
@@ -25,7 +24,6 @@ import Text.Printf
 import Text.Regex.PCRE
 import Utils.Timing
 import qualified Data.ByteString.Char8 as C
-import Debug.Trace
 
 time :: IO t -> IO t
 time a = do
@@ -84,26 +82,26 @@ weaveYieldTransducer w (Right ()) (Left (InR (Yield y c1))) = mrgSuspend (Yield 
 type PattCoro = B.ByteString -> Integer -> Coroutine (Yield (UnionM Integer)) UnionM ()
 
 primPatt :: Char -> PattCoro
-primPatt pattc = memo2 $ \str idx ->
+primPatt pattc = htmemo2 $ \str idx ->
   when (B.length str > fromInteger idx && C.index str (fromInteger idx) == pattc) $
     yield $ mrgReturn $ idx + 1
 
 seqPatt :: PattCoro -> PattCoro -> PattCoro
-seqPatt patt1 patt2 = memo2 $ \str idx ->
+seqPatt patt1 patt2 = htmemo2 $ \str idx ->
   weave sequentialBinder weaveYieldTransducer (patt1 str idx) $ simpleTransducer (lift >=> patt2 str)
 
 altPatt :: PattCoro -> PattCoro -> PattCoro
-altPatt patt1 patt2 = memo2 $ \str idx -> patt1 str idx >>~ patt2 str idx
+altPatt patt1 patt2 = htmemo2 $ \str idx -> patt1 str idx >>~ patt2 str idx
 
 emptyPatt :: PattCoro
 emptyPatt str idx = when (B.length str >= fromInteger idx) $ yield $ mrgReturn idx
 
 plusGreedyPatt :: PattCoro -> PattCoro
-plusGreedyPatt patt = memo2 $ \str idx -> weave sequentialBinder weaveYieldTransducer (patt str idx) $
+plusGreedyPatt patt = htmemo2 $ \str idx -> weave sequentialBinder weaveYieldTransducer (patt str idx) $
   simpleTransducer $ \i -> lift i >>= \i1 -> when (i1 /= idx) (plusGreedyPatt patt str i1) >> yield i
 
 plusLazyPatt :: PattCoro -> PattCoro
-plusLazyPatt patt = memo2 $ \str idx -> weave sequentialBinder weaveYieldTransducer (patt str idx) $
+plusLazyPatt patt = htmemo2 $ \str idx -> weave sequentialBinder weaveYieldTransducer (patt str idx) $
   simpleTransducer $ \i -> lift i >>= \i1 -> yield i >> when (i1 /= idx) (plusLazyPatt patt str i1)
 
 plusPatt :: SymBool -> PattCoro -> PattCoro
@@ -149,7 +147,7 @@ toCoroMemoU u = case u of
   _ -> error "Should not happen"
 
 toCoroMemo :: Patt -> MM.MemoState (MemoHashMap Patt PattCoro) Patt PattCoro PattCoro
-toCoroMemo (PrimPatt s) = {-trace (show s) $-} return $ primPatt s
+toCoroMemo (PrimPatt s) = return $ primPatt s
 toCoroMemo (SeqPatt p1 p2) = do
   p1r <- toCoroMemoU p1
   p2r <- toCoroMemoU p2
@@ -183,7 +181,7 @@ conformsFirst patt reg str =
 
 synthesisRegexCompiled :: GrisetteSMTConfig b -> UnionM Patt -> PattCoro -> B.ByteString -> [B.ByteString] -> IO (Maybe ConcPatt)
 synthesisRegexCompiled config patt coro reg strs =
-  let constraints = (\x -> trace (show x) (conformsFirst coro reg x)) <$> strs
+  let constraints = conformsFirst coro reg  <$> strs
       constraint = foldr (&&~) (conc True) constraints
    in do
         _ <- timeItAll "symeval" $ constraint `deepseq` return ()

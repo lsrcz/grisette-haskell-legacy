@@ -15,7 +15,6 @@ import qualified Data.ByteString.Char8 as B
 import Data.Functor.Sum
 import Data.Hashable
 import Data.Maybe
-import Data.MemoTrie as MT
 import GHC.Generics
 import Grisette.Backend.SBV
 import Grisette.Core
@@ -24,7 +23,6 @@ import System.CPUTime
 import Text.Printf
 import Text.Regex.PCRE
 import Utils.Timing
-import Debug.Trace
 import qualified Data.ByteString.Char8 as C
 
 time :: IO t -> IO t
@@ -87,30 +85,30 @@ addYield :: UnionM Integer -> Coroutine (Yield (UnionM Integer)) UnionM () -> Co
 addYield n l = weave sequentialBinder weaveYieldTransducer l $ simpleTransducer $ \i -> mrgYield $ n + i
 
 primPatt :: Char -> PattCoro
-primPatt pattc = MT.memo $ \str ->
+primPatt pattc = htmemo $ \str ->
   when (B.length str /= 0  && C.head str == pattc) $
     yield $ mrgReturn $ 1
 
 seqPatt :: PattCoro -> PattCoro -> PattCoro
-seqPatt patt1 patt2 = MT.memo $ \str ->
+seqPatt patt1 patt2 = htmemo $ \str ->
   weave sequentialBinder weaveYieldTransducer (patt1 str) $
     simpleTransducer (lift >=> (\i1 -> addYield (mrgReturn i1) $ patt2 (B.drop (fromIntegral i1) str)))
 
 altPatt :: PattCoro -> PattCoro -> PattCoro
-altPatt patt1 patt2 = MT.memo $ \str -> patt1 str >>~ patt2 str
+altPatt patt1 patt2 = htmemo $ \str -> patt1 str >>~ patt2 str
 
 emptyPatt :: PattCoro
-emptyPatt = MT.memo $ \_ -> yield 0
+emptyPatt = htmemo $ \_ -> yield 0
 
 plusGreedyPatt :: PattCoro -> PattCoro
-plusGreedyPatt patt = MT.memo $ \str -> weave sequentialBinder weaveYieldTransducer (patt str) $
+plusGreedyPatt patt = htmemo $ \str -> weave sequentialBinder weaveYieldTransducer (patt str) $
   simpleTransducer $ \i ->
     lift i >>= \i1 ->
       when (i1 /= 0) (addYield (mrgReturn i1) $ plusGreedyPatt patt (B.drop (fromIntegral i1) str))
         >> yield i
 
 plusLazyPatt :: PattCoro -> PattCoro
-plusLazyPatt patt = MT.memo $ \str -> weave sequentialBinder weaveYieldTransducer (patt str) $
+plusLazyPatt patt = htmemo $ \str -> weave sequentialBinder weaveYieldTransducer (patt str) $
   simpleTransducer $ \i ->
     yield i
       >> (lift i >>= \i1 -> when (i1 /= 0) (addYield (mrgReturn i1) $ plusLazyPatt patt (B.drop (fromIntegral i1) str)))
@@ -194,7 +192,7 @@ conformsFirst patt reg str =
 
 synthesisRegexCompiled :: GrisetteSMTConfig b -> UnionM Patt -> PattCoro -> B.ByteString -> [B.ByteString] -> IO (Maybe ConcPatt)
 synthesisRegexCompiled config patt coro reg strs =
-  let constraints = (\x -> trace (show x) (conformsFirst coro reg x)) <$> strs
+  let constraints = (\x -> (conformsFirst coro reg x)) <$> strs
       constraint = foldr (&&~) (conc True) constraints
    in do
         _ <- timeItAll "symeval" $ constraint `deepseq` return ()
