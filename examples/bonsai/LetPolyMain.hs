@@ -92,7 +92,7 @@ letPolyMain = timeItAll "Overall" $ do
   --print $ mrgFmap (const ()) $ eval #~ f7
   let result = lift f7 >>= execLetPoly
   _ <- timeItAll "symeval" $ runExceptT result `deepseq` return ()
-  r <- timeItAll "lower/solve" $ solveWithTranslation VerifyTyper (BoundedReasoning @6 boolector {verbose = False}) result
+  r <- timeItAll "lower/solve" $ solveWithTranslation VerifyTyper (BoundedReasoning @7 boolector {verbose = False}) result
   case r of
     Left _ -> putStrLn "Verified"
     Right mo -> do

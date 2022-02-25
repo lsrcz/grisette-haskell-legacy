@@ -78,6 +78,7 @@ library
     , deepseq
     , generic-deriving
     , hashable
+    , hashtables
     , intern
     , monad-coroutine
     , monad-memo

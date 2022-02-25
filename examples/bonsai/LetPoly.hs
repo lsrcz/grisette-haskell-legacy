@@ -9,7 +9,6 @@ import Control.Monad.Except
 import Data.BitVector.Sized.Unsigned
 import qualified Data.ByteString as B
 import Data.Maybe
-import Data.MemoTrie
 import Env
 import GHC.Generics
 import Grisette.Core
@@ -18,6 +17,7 @@ import Match
 import MatchSyntax
 import Pattern
 import SyntaxSpec
+import Data.Hashable
 
 type LetPolyWidth = 19
 
@@ -119,7 +119,7 @@ tyMatch ::
 tyMatch = bonsaiMatchCustomError BonsaiTypeError
 
 typeCompatible :: LetPolyTree -> LetPolyTree -> ExceptT BonsaiError UnionM ()
-typeCompatible = memo2 $ \current expect ->
+typeCompatible = htmemo2 $ \current expect ->
   tyMatch
     [ letPolyLiteral "int" ==> (tyassert $! current ==~ intTy),
       letPolyLiteral "bool" ==> (tyassert $! current ==~ boolTy),
@@ -156,7 +156,7 @@ derefTy :: LetPolyTree -> ExceptT BonsaiError UnionM (UnionM LetPolyTree)
 derefTy = tyMatch [letPolyLiteral "ref" *= placeHolder ==> return]
 
 typer' :: LetPolyTree -> Env LetPolyWidth LetPolyTree -> ExceptT BonsaiError UnionM (UnionM LetPolyTree)
-typer' = memo2 $ \tree env ->
+typer' = htmemo2 $ \tree env ->
   tyMatch
     [ letPolyLiteral "true" ==> (return $! mrgReturn boolTy),
       letPolyLiteral "one" ==> (return $! mrgReturn intTy),
@@ -216,7 +216,7 @@ data LetPolyValue
   | LetPolyBool SymBool
   | LetPolyRefCell (UnionM Integer)
   | LetPolyLambda (SymUnsignedBV LetPolyWidth) (UnionM LetPolyTree) (Env LetPolyWidth LetPolyValue)
-  deriving (Show, Eq, Generic, SEq SymBool, NFData, SymEval Model)
+  deriving (Show, Eq, Generic, SEq SymBool, NFData, SymEval Model, Hashable)
 
 instance Mergeable SymBool LetPolyValue where
   mergeStrategy =
@@ -227,7 +227,7 @@ instance Mergeable SymBool LetPolyValue where
           LetPolyRefCell _ -> 2
           LetPolyLambda _ _ _ -> 3
       )
-      ( memo $ \case
+      ( htmemo $ \case
           0 -> SimpleStrategy $ \cond (LetPolyInt l) (LetPolyInt r) -> LetPolyInt $ mrgIte cond l r
           1 -> SimpleStrategy $ \cond (LetPolyBool l) (LetPolyBool r) -> LetPolyBool $ mrgIte cond l r
           2 -> SimpleStrategy $ \cond (LetPolyRefCell l) (LetPolyRefCell r) -> LetPolyRefCell $ mrgIf cond l r
@@ -236,16 +236,10 @@ instance Mergeable SymBool LetPolyValue where
           _ -> error "Should not happen"
       )
 
-instance HasTrie LetPolyValue where
-  newtype LetPolyValue :->: x = LetPolyValueTrie {unLetPolyValueTrie :: Reg LetPolyValue :->: x}
-  trie = trieGeneric LetPolyValueTrie
-  untrie = untrieGeneric unLetPolyValueTrie
-  enumerate = enumerateGeneric unLetPolyValueTrie
-
 $(makeUnionMWrapper "u" ''LetPolyValue)
 
 newtype RefEnv = RefEnv [(Integer, UnionM (Maybe (UnionM LetPolyValue)))]
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq, Generic, Hashable)
 
 minimumAvailableNum :: RefEnv -> Integer
 minimumAvailableNum (RefEnv []) = 0
@@ -286,12 +280,6 @@ instance SimpleMergeable SymBool RefEnv where
         | ti > fi = (ti, mrgIte cond tv uNothing) : go ts fl
         | ti == fi = (ti, mrgIte cond tv fv) : go ts fs
         | otherwise = (fi, mrgIte cond uNothing fv) : go tl fs
-
-instance HasTrie RefEnv where
-  newtype RefEnv :->: x = RefEnvTrie {unRefEnvTrie :: Reg RefEnv :->: x}
-  trie = trieGeneric RefEnvTrie
-  untrie = untrieGeneric unRefEnvTrie
-  enumerate = enumerateGeneric unRefEnvTrie
 
 type EvalType =
   Env LetPolyWidth LetPolyValue ->
@@ -359,13 +347,13 @@ evalMatch ::
 evalMatch = bonsaiMatchCustomError BonsaiExecError
 
 simpleEval' :: EvalType
-simpleEval' = memo3 $ \named ref tree ->
+simpleEval' = htmemo3 $ \named ref tree ->
   evalMatch
     (simpleEvalList simpleEval' named ref)
     tree
 
 eval' :: EvalType
-eval' = memo3 $ \named ref tree ->
+eval' = htmemo3 $ \named ref tree ->
   evalMatch
     ( [ ((letPolyLiteral "let" *= placeHolder) *= placeHolder) *= placeHolder ==> \name v1 v2 -> do
           n <- extractName BonsaiExecError name

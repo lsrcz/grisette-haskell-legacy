@@ -95,6 +95,11 @@ module Grisette.Core
     uInR,
     uAssertionViolation,
     uAssumptionViolation,
+    htmemo,
+    htmemo2,
+    htmemo3,
+    htmup,
+    htmemoFix,
   )
 where
 

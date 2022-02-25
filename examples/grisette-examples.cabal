@@ -63,6 +63,7 @@ library
     , formatting
     , grisette
     , hashable
+    , hashtables
     , loch-th
     , megaparsec
     , monad-coroutine
@@ -136,6 +137,7 @@ executable bonsai
     , grisette
     , grisette-examples
     , hashable
+    , hashtables
     , loch-th
     , megaparsec
     , monad-coroutine
@@ -204,6 +206,7 @@ executable cosette
     , grisette
     , grisette-examples
     , hashable
+    , hashtables
     , loch-th
     , megaparsec
     , monad-coroutine
@@ -272,6 +275,7 @@ executable cosette-optimized
     , grisette
     , grisette-examples
     , hashable
+    , hashtables
     , loch-th
     , megaparsec
     , monad-coroutine
@@ -332,6 +336,7 @@ executable expr-interpreter
     , formatting
     , grisette
     , hashable
+    , hashtables
     , loch-th
     , megaparsec
     , monad-coroutine
@@ -393,6 +398,7 @@ executable expr-sketch
     , formatting
     , grisette
     , hashable
+    , hashtables
     , loch-th
     , megaparsec
     , monad-coroutine
@@ -460,6 +466,7 @@ executable ferrite
     , grisette
     , grisette-examples
     , hashable
+    , hashtables
     , loch-th
     , megaparsec
     , monad-coroutine
@@ -520,6 +527,7 @@ executable fluidics
     , grisette
     , grisette-examples
     , hashable
+    , hashtables
     , loch-th
     , megaparsec
     , monad-coroutine
@@ -579,6 +587,7 @@ executable genfunc
     , formatting
     , grisette
     , hashable
+    , hashtables
     , loch-th
     , megaparsec
     , monad-coroutine
@@ -644,6 +653,7 @@ executable ifcl
     , grisette
     , grisette-examples
     , hashable
+    , hashtables
     , loch-th
     , megaparsec
     , monad-coroutine
@@ -705,6 +715,7 @@ executable location
     , formatting
     , grisette
     , hashable
+    , hashtables
     , loch-th
     , megaparsec
     , monad-coroutine
@@ -764,6 +775,7 @@ executable order
     , formatting
     , grisette
     , hashable
+    , hashtables
     , loch-th
     , megaparsec
     , monad-coroutine
@@ -824,6 +836,7 @@ executable regex
     , grisette
     , grisette-examples
     , hashable
+    , hashtables
     , loch-th
     , megaparsec
     , monad-coroutine
@@ -884,6 +897,7 @@ executable regex-old
     , grisette
     , grisette-examples
     , hashable
+    , hashtables
     , loch-th
     , megaparsec
     , monad-coroutine
@@ -946,6 +960,7 @@ executable stmt-sketch
     , formatting
     , grisette
     , hashable
+    , hashtables
     , loch-th
     , megaparsec
     , monad-coroutine
@@ -1005,6 +1020,7 @@ executable tutorial
     , formatting
     , grisette
     , hashable
+    , hashtables
     , loch-th
     , megaparsec
     , monad-coroutine
