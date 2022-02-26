@@ -103,7 +103,7 @@ mix g p = do
               gx3 <- move gx2 se W
               move gx3 s N
           )
-          3
+          2
           g2
 
 data ConcInstruction = ConcMove ConcPoint Dir | ConcMix ConcPoint

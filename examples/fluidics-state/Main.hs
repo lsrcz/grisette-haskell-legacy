@@ -29,13 +29,9 @@ replaceNth pos val ls = go pos val ls 0
     go _ _ [] _ = throwError ()
     go p v (x : xs) i = mrgIf (p ==~ i) (mrgReturn (v : xs)) (mrgFmap (x :) $ go p v xs (i + 1))
 
-data ConcPoint = ConcPoint Integer Integer
-  deriving (Show, Generic, ToCon Point)
+data ConcPoint = ConcPoint Integer Integer deriving (Show, Generic, ToCon Point)
 
-data Point = Point SymInteger SymInteger
-  deriving (Show, Generic, SymEval Model, Mergeable SymBool)
-
-instance SymGen SymBool () Point
+data Point = Point SymInteger SymInteger deriving (Show, Generic, SymEval Model, Mergeable SymBool, SymGen SymBool ())
 
 instance SymGenSimple SymBool () Point where
   genSymSimpleIndexed () = do
@@ -84,27 +80,22 @@ move p d = do
 assert :: (MonadError () m, MonadUnion SymBool m) => SymBool -> m ()
 assert = gassertWithError ()
 
-performN :: (Monad m) => Int -> m a -> m a
-performN 0 f = f
-performN x f = f >> performN (x - 1) f
-
 mix :: Point -> StateT Grid (ExceptT () UnionM) ()
-mix p =
+mix p = do
   let e = translatePoint p E
-      se = translatePoint e S
-      s = translatePoint p S
-   in do
-        a <- gridRef p
-        b <- gridRef e
-        assert #~ mrgFmap (conc . isJust) a
-        assert #~ mrgFmap (conc . isJust) b
-        gridSet p (uJust "c")
-        gridSet e (uJust "c")
-        performN 3 $ do
-          move p E
-          move e S
-          move se W
-          move s N
+  let se = translatePoint e S
+  let s = translatePoint p S
+  a <- gridRef p
+  b <- gridRef e
+  assert #~ mrgFmap (conc . isJust) a
+  assert #~ mrgFmap (conc . isJust) b
+  gridSet p (uJust "c")
+  gridSet e (uJust "c")
+  merge $ replicateM_ 3 $ do
+    move p E
+    move e S
+    move se W
+    move s N
 
 data ConcInstruction = ConcMove ConcPoint Dir | ConcMix ConcPoint
   deriving (Show, Generic, ToCon Instruction)
@@ -146,7 +137,7 @@ synthesizeProgram config i initst f = go 0 (mrgReturn initst)
               merge $ execStateT (interpretInstruction ins) t1
             cond = newst >>= f
          in do
-              print cond
+              print num
               _ <- timeItAll "symeval" $ runExceptT cond `deepseq` return cond
               r <- timeItAll "lower/solve" $ solveWithTranslation Synth config cond
               case r of
