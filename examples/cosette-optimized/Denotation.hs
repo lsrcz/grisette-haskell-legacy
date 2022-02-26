@@ -27,6 +27,8 @@ denoteSql (QueryLeftOuterJoin2 q1 q2 q12) =
 denoteSql (QueryRename q name) = [||renameTable name $$(denoteSql q)||]
 denoteSql (QueryRenameFull q name scheme) =
   [||renameTableFull name scheme $$(denoteSql q)||]
+denoteSql (QueryUnionAll q1 q2) =
+  [||unionAll $$(denoteSql q1) $$(denoteSql q2)||]
 denoteSql qs@(QuerySelect cols q f) =
   let schema = extractSchema q
       indexMap = Prelude.foldr (\(i, n) b -> M.insert n i b) M.empty (zip [0 ..] schema)
@@ -58,7 +60,7 @@ denoteFilter (FilterBinOp FBinEq v1 v2) indexMap =
   [||\e -> $$(denoteValue v1 indexMap) e ==~ $$(denoteValue v2 indexMap) e||]
 denoteFilter (FilterBinOp FBinNEq v1 v2) indexMap =
   [||\e -> $$(denoteValue v1 indexMap) e /=~ $$(denoteValue v2 indexMap) e||]
-denoteFilter f _ = fail $ "I don't know how to handle the sql filter " ++ show f
+-- denoteFilter f _ = fail $ "I don't know how to handle the sql filter " ++ show f
 
 denoteValue ::
   Val ->

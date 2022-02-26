@@ -31,6 +31,9 @@ equiJoin content1 content2 indexPairs schemaSize1 =
     []
     $ xproductRaw content1 content2
 
+unionAll :: Table -> Table -> Table
+unionAll (Table n1 s1 c1) (Table _ _ c2) = Table n1 s1 (unionAllRaw c1 c2)
+
 unionAllRaw :: RawTable -> RawTable -> RawTable
 unionAllRaw = (++)
 

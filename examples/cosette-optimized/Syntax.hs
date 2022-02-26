@@ -19,7 +19,7 @@ data Val
 
 data Query
   = QuerySelect [B.ByteString] Query Filter
-  | QuerySelectDistinct [B.ByteString] Query Filter
+  -- | QuerySelectDistinct [B.ByteString] Query Filter
   | QueryJoin Query Query
   | QueryNamed B.ByteString
   | QueryTable Table
@@ -35,7 +35,7 @@ apply n = foldl appE (conE n)
 
 instance Lift Query where
   lift (QuerySelect l q f) = [|QuerySelect l q f|]
-  lift (QuerySelectDistinct l q f) = [|QuerySelectDistinct l q f|]
+  -- lift (QuerySelectDistinct l q f) = [|QuerySelectDistinct l q f|]
   lift (QueryJoin q1 q2) = [|QueryJoin q1 q2|]
   lift (QueryNamed n) = apply 'QueryTable [varE $ mkName $ C.unpack n] --[|QueryNamed n|]
   lift (QueryTable n) = [|QueryTable n|]
@@ -51,7 +51,7 @@ data Filter
   | FilterConj Filter Filter
   | FilterDisj Filter Filter
   | FilterNot Filter
-  | FilterExists Query
+  -- | FilterExists Query
   | FilterTrue
   | FilterFalse
   deriving (Show, Lift)
