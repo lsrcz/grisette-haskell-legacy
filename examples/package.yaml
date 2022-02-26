@@ -92,6 +92,10 @@ executables:
     source-dirs: fluidics
     main: Main.hs
     dependencies: grisette-examples
+  fluidics-state:
+    source-dirs: fluidics-state
+    main: Main.hs
+    dependencies: grisette-examples
   cosette:
     source-dirs: cosette
     main: Benchmark/Main.hs

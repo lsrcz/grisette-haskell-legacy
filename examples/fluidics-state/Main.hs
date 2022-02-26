@@ -4,6 +4,7 @@ module Main where
 
 import Control.DeepSeq
 import Control.Monad.Except
+import Control.Monad.State.Strict
 import qualified Data.ByteString as B
 import Data.Maybe (isJust)
 import GHC.Generics
@@ -22,7 +23,7 @@ unsafeReplaceNth :: Int -> a -> [a] -> [a]
 unsafeReplaceNth _ _ [] = error "Failed"
 unsafeReplaceNth p v (x : xs) = if p == 0 then v : xs else x : unsafeReplaceNth (p - 1) v xs
 
-replaceNth :: (Mergeable SymBool a) => Sym Integer -> a -> [a] -> ExceptT () UnionM [a]
+replaceNth :: (Mergeable SymBool a, MonadUnion SymBool m, MonadError () m) => Sym Integer -> a -> [a] -> m [a]
 replaceNth pos val ls = go pos val ls 0
   where
     go _ _ [] _ = throwError ()
@@ -42,16 +43,19 @@ instance SymGenSimple SymBool () Point where
     y <- genSymSimpleIndexed @SymBool ()
     return $ Point x y
 
-gridRef :: Grid -> Point -> ExceptT () UnionM (UnionM (Maybe B.ByteString))
-gridRef g (Point x y) = do
+gridRef :: Point -> StateT Grid (ExceptT () UnionM) (UnionM (Maybe B.ByteString))
+gridRef (Point x y) = do
+  g <- get
   l1 <- g !!~ x
   l1 !!~ y
 
-gridSet :: Grid -> Point -> UnionM (Maybe B.ByteString) -> ExceptT () UnionM Grid
-gridSet g (Point x y) v = do
+gridSet :: Point -> UnionM (Maybe B.ByteString) -> StateT Grid (ExceptT () UnionM) ()
+gridSet (Point x y) v = do
+  g <- get
   xlist <- g !!~ x
   r <- replaceNth y v xlist
-  replaceNth x r g
+  g1 <- replaceNth x r g
+  merge $ put g1
 
 unsafeSet :: Grid -> Int -> Int -> UnionM (Maybe B.ByteString) -> Grid
 unsafeSet g x y v =
@@ -70,41 +74,37 @@ translatePoint (Point x y) E = Point x (y + 1)
 instance SymGen SymBool () Dir where
   genSymIndexed () = choose N [S, W, E]
 
-move :: Grid -> Point -> Dir -> ExceptT () UnionM Grid
-move g p d = do
-  droplet <- gridRef g p
+move :: Point -> Dir -> StateT Grid (ExceptT () UnionM) ()
+move p d = do
+  droplet <- gridRef p
   let newpoint = translatePoint p d
-  g1 <- gridSet g p (mrgReturn Nothing)
-  gridSet g1 newpoint droplet
+  gridSet p (mrgReturn Nothing)
+  gridSet newpoint droplet
 
-assert :: SymBool -> ExceptT () UnionM ()
+assert :: (MonadError () m, MonadUnion SymBool m) => SymBool -> m ()
 assert = gassertWithError ()
 
-performN :: (Monad m) => (a -> m a) -> Int -> a -> m a
-performN f 0 a = f a
-performN f x a = f a >>= performN f (x - 1)
+performN :: (Monad m) => Int -> m a -> m a
+performN 0 f = f
+performN x f = f >> performN (x - 1) f
 
-mix :: Grid -> Point -> ExceptT () UnionM Grid
-mix g p = do
+mix :: Point -> StateT Grid (ExceptT () UnionM) ()
+mix p =
   let e = translatePoint p E
       se = translatePoint e S
       s = translatePoint p S
    in do
-        a <- gridRef g p
-        b <- gridRef g e
+        a <- gridRef p
+        b <- gridRef e
         assert #~ mrgFmap (conc . isJust) a
         assert #~ mrgFmap (conc . isJust) b
-        g1 <- gridSet g p (uJust "c")
-        g2 <- gridSet g1 e (uJust "c")
-        performN
-          ( \gx -> do
-              gx1 <- move gx p E
-              gx2 <- move gx1 e S
-              gx3 <- move gx2 se W
-              move gx3 s N
-          )
-          3
-          g2
+        gridSet p (uJust "c")
+        gridSet e (uJust "c")
+        performN 3 $ do
+          move p E
+          move e S
+          move se W
+          move s N
 
 data ConcInstruction = ConcMove ConcPoint Dir | ConcMix ConcPoint
   deriving (Show, Generic, ToCon Instruction)
@@ -118,9 +118,9 @@ instance SymGen SymBool () Instruction where
     d <- genSymIndexed ()
     choose (Move p d) [Mix p]
 
-interpretInstruction :: Grid -> Instruction -> ExceptT () UnionM Grid
-interpretInstruction g (Move p ud) = lift ud >>= move g p
-interpretInstruction g (Mix p) = mix g p
+interpretInstruction :: Instruction -> StateT Grid (ExceptT () UnionM) ()
+interpretInstruction (Move p ud) = (lift . lift) ud >>= move p
+interpretInstruction (Mix p) = mix p
 
 data Synth = Synth
 
@@ -143,11 +143,10 @@ synthesizeProgram config i initst f = go 0 (mrgReturn initst)
         let newst = do
               t1 <- st
               ins <- lift (lst !! num)
-              interpretInstruction t1 ins
+              merge $ execStateT (interpretInstruction ins) t1
             cond = newst >>= f
          in do
-              print num
-              --print cond
+              print cond
               _ <- timeItAll "symeval" $ runExceptT cond `deepseq` return cond
               r <- timeItAll "lower/solve" $ solveWithTranslation Synth config cond
               case r of
@@ -157,15 +156,15 @@ synthesizeProgram config i initst f = go 0 (mrgReturn initst)
 initSt :: Grid
 initSt = unsafeSet (unsafeSet (makeGrid 5 5) 0 0 (uJust "a")) 0 2 (uJust "b")
 
-spec :: Grid -> ExceptT () UnionM SymBool
-spec g = do
-  r <- gridRef g (Point 4 2)
-  r2 <- gridRef g (Point 0 0)
+spec :: StateT Grid (ExceptT () UnionM) SymBool
+spec = do
+  r <- gridRef (Point 4 2)
+  r2 <- gridRef (Point 0 0)
   return $ r ==~ uJust "a" &&~ r2 ==~ uJust "b"
 
 main :: IO ()
 main = timeItAll "Overall" $ do
   let x = genSym @SymBool @() @Instruction () "a"
   print x
-  synthr <- synthesizeProgram (UnboundedReasoning z3 {verbose = False, timing = PrintTiming}) 20 initSt spec
+  synthr <- synthesizeProgram (UnboundedReasoning z3 {verbose = False, timing = PrintTiming}) 20 initSt (merge . evalStateT spec)
   print synthr
