@@ -16,7 +16,7 @@ tableSum :: RawTable -> RawTable
 tableSum rt@(RawTable t) = RawTable $ (\(r, _) -> (r, getMultiplicity r rt)) <$> t
 
 elementContain :: ([UnionM (Maybe SymInteger)], SymInteger) -> RawTable -> SymBool
-elementContain r@(_, p) (RawTable t) = (p ==~ 0) ||~ foldr (\r1 a -> a ||~ r ==~ r1) (conc False) t
+elementContain r (RawTable t) = foldr (\r1 a -> a ||~ r ==~ r1) (conc False) t
 
 contain :: RawTable -> RawTable -> SymBool
 contain (RawTable t1) t2 = foldr (\r a -> a &&~ elementContain r t2) (conc True) t1
