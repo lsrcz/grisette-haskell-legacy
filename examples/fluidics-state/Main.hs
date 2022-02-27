@@ -24,10 +24,13 @@ unsafeReplaceNth _ _ [] = error "Failed"
 unsafeReplaceNth p v (x : xs) = if p == 0 then v : xs else x : unsafeReplaceNth (p - 1) v xs
 
 replaceNth :: (Mergeable SymBool a, MonadUnion SymBool m, MonadError () m) => Sym Integer -> a -> [a] -> m [a]
-replaceNth pos val ls = go pos val ls 0
+replaceNth pos val ls = go ls 0
   where
-    go _ _ [] _ = throwError ()
-    go p v (x : xs) i = mrgIf (p ==~ i) (mrgReturn (v : xs)) (mrgFmap (x :) $ go p v xs (i + 1))
+    go [] i = mrgIf (pos >=~ i :: SymBool) (throwError ()) (return [])
+    go (x : xs) i = do
+      hd <- mrgIf (pos ==~ i :: SymBool) (mrgReturn val) (mrgReturn x)
+      tl <- go xs (i + 1)
+      mrgReturn (hd : tl)
 
 data ConcPoint = ConcPoint Integer Integer deriving (Show, Generic, ToCon Point)
 
