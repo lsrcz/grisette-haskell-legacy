@@ -80,12 +80,10 @@ tb = symtb
 q1 :: Query
 q1 =
   [cosette|
-  AS (LEFT-OUTER-JOIN2
+  AS (LEFT-OUTER-JOIN
   (NAMED t)
   (NAMED tr)
-  (SELECT t0.tid1 t0.name t0.rid t0.tid2 t0.type
-   FROM (AS (JOIN (NAMED t) (NAMED tr)) t0 [tid1, name, rid, tid2, type])
-   WHERE t0.tid1 = t0.tid2))
+  0 1)
   t1 [tid1, name, rid, tid2, type]
   |]
 

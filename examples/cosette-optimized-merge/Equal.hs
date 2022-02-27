@@ -33,6 +33,8 @@ same q1 q2 = [||bagEqual (tableContent $$(denoteSql q1)) (tableContent $$(denote
 tableAllRepOk :: Query -> Q (TExp SymBool)
 tableAllRepOk (QueryTable t) = [||tableRepOk t||]
 tableAllRepOk (QueryJoin q1 q2) = [||$$(tableAllRepOk q1) &&~ $$(tableAllRepOk q2)||]
+tableAllRepOk (QueryLeftOuterJoin q1 q2 _ _) =
+  [||$$(tableAllRepOk q1) &&~ $$(tableAllRepOk q2)||]
 tableAllRepOk (QueryLeftOuterJoin2 q1 q2 q12) =
   [||$$(tableAllRepOk q1) &&~ $$(tableAllRepOk q2) &&~ $$(tableAllRepOk q12)||]
 tableAllRepOk (QueryRename q _) = [||$$(tableAllRepOk q)||]

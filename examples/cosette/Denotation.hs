@@ -22,6 +22,8 @@ denoteSql (QueryNamed n) = fail $ "There are unresolved tables " ++ show n
 denoteSql (QueryTable t) = [||t||]
 denoteSql (QueryJoin q1 q2) =
   [||xproduct $$(denoteSql q1) $$(denoteSql q2) "dummy"||]
+denoteSql (QueryLeftOuterJoin q1 q2 i1 i2) =
+  [||leftOuterJoin $$(denoteSql q1) $$(denoteSql q2) i1 i2||]
 denoteSql (QueryLeftOuterJoin2 q1 q2 q12) =
   [||leftOuterJoin2 $$(denoteSql q1) $$(denoteSql q2) $$(denoteSql q12)||]
 denoteSql (QueryRename q name) = [||renameTable name $$(denoteSql q)||]

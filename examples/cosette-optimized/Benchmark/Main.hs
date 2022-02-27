@@ -31,6 +31,10 @@ main = timeItAll "Overall" $ do
       print $ symeval True m ta
       putStrLn "tb:"
       print $ symeval True m tb
+      putStrLn "q1 execution result:"
+      print $ symeval True m $$(denoteSql q1)
+      putStrLn "q1r execution result:"
+      print $ symeval True m $$(denoteSql q1r)
       putStrLn "q4 execution result:"
       print $ symeval True m r1
       putStrLn "q4r execution result:"

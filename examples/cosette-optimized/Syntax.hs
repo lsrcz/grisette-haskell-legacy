@@ -25,6 +25,7 @@ data Query
   | QueryTable Table
   | QueryRename Query B.ByteString
   | QueryRenameFull Query B.ByteString [B.ByteString]
+  | QueryLeftOuterJoin Query Query Int Int
   | QueryLeftOuterJoin2 Query Query Query
   | QueryUnionAll Query Query
   | QuerySub B.ByteString
@@ -41,6 +42,7 @@ instance Lift Query where
   lift (QueryTable n) = [|QueryTable n|]
   lift (QueryRename q n) = [|QueryRename q n|]
   lift (QueryRenameFull q n s) = [|QueryRenameFull q n s|]
+  lift (QueryLeftOuterJoin q1 q2 i1 i2) = [|QueryLeftOuterJoin q1 q2 i1 i2|]
   lift (QueryLeftOuterJoin2 q1 q2 q3) = [|QueryLeftOuterJoin2 q1 q2 q3|]
   lift (QueryUnionAll q1 q2) = [|QueryUnionAll q1 q2|]
   lift (QuerySub s) = varE $ mkName $ C.unpack s

@@ -32,7 +32,7 @@ rword :: B.ByteString -> Parser ()
 rword w = (lexeme . try) (string w *> notFollowedBy alphaNumChar)
 
 rwordList :: [B.ByteString]
-rwordList = ["NAMED", "JOIN", "AS", "SELECT", "WHERE", "FROM", "NULL", "LEFT-OUTER-JOIN2"]
+rwordList = ["NAMED", "JOIN", "AS", "SELECT", "WHERE", "FROM", "NULL", "LEFT-OUTER-JOIN2", "LEFT-OUTER-JOIN"]
 
 ident :: Parser B.ByteString
 ident = (lexeme . try) (p >>= check)
@@ -70,6 +70,7 @@ query =
            <|> try joinQuery
            <|> try asQuery
            <|> try selectQuery
+           <|> try leftOuterJoinQuery
            <|> try leftOuterJoin2Query
            <|> subQuery
        )
@@ -110,6 +111,14 @@ selectQuery = do
   q <- parens query
   _ <- rword "WHERE"
   QuerySelect idents q <$> filterExpr
+
+leftOuterJoinQuery :: Parser Query
+leftOuterJoinQuery = do
+  _ <- rword "LEFT-OUTER-JOIN"
+  q1 <- parens query
+  q2 <- parens query
+  i1 <- lexeme L.decimal
+  QueryLeftOuterJoin q1 q2 i1 <$> lexeme L.decimal
 
 leftOuterJoin2Query :: Parser Query
 leftOuterJoin2Query = do
