@@ -7,7 +7,6 @@ import Control.DeepSeq
 import Control.Monad
 import Control.Monad.Coroutine hiding (merge)
 import Control.Monad.Coroutine.SuspensionFunctors
-import Control.Monad.Memo as MM
 import Control.Monad.State
 import Control.Monad.Trans.Maybe
 import Data.Bifunctor
@@ -87,40 +86,13 @@ data Patt
 toCoroU :: UnionM Patt -> PattCoro
 toCoroU u = getSingle $ mrgFmap toCoro u
 
-toCoroMemoU :: UnionM Patt -> MM.MemoState (MemoHashMap Patt PattCoro) Patt PattCoro PattCoro
-toCoroMemoU u = case u of
-  SingleU x -> MM.memo toCoroMemo x
-  GuardU cond ifTrue ifFalse -> do
-    t <- toCoroMemoU ifTrue
-    f <- toCoroMemoU ifFalse
-    return $ mrgIte cond t f
-  _ -> error "Should not happen"
-
-toCoroMemo :: Patt -> MM.MemoState (MemoHashMap Patt PattCoro) Patt PattCoro PattCoro
-toCoroMemo (PrimPatt s) = {-trace (show s) $-} return $ primPatt s
-toCoroMemo (SeqPatt p1 p2) = do
-  p1r <- toCoroMemoU p1
-  p2r <- toCoroMemoU p2
-  return $ seqPatt p1r p2r
-toCoroMemo (AltPatt p1 p2) = do
-  p1r <- toCoroMemoU p1
-  p2r <- toCoroMemoU p2
-  return $ altPatt p1r p2r
-toCoroMemo (PlusPatt p greedy) = do
-  p1r <- toCoroMemoU p
-  return $ plusPatt greedy p1r
-toCoroMemo EmptyPatt = return emptyPatt
-
 toCoro :: Patt -> PattCoro
-toCoro x = MM.evalMemoState (toCoroMemo x) emptyMemoHashMap
-
-{-
-toCoro :: Patt -> PattCoro
-toCoro (PrimPatt s) = getSingle $ mrgFmap primPatt s
-toCoro (SeqPatt p1 p2) = seqPatt (toCoroU p1) (toCoroU p2)
-toCoro (AltPatt p1 p2) = altPatt (toCoroU p1) (toCoroU p2)
-toCoro (PlusPatt p greedy) = plusPatt greedy (toCoroU p)
--}
+toCoro = htmemo $ \case
+  PrimPatt s -> primPatt s
+  SeqPatt p1 p2 -> seqPatt (toCoroU p1) (toCoroU p2)
+  AltPatt p1 p2 -> altPatt (toCoroU p1) (toCoroU p2)
+  PlusPatt subp greedy -> plusPatt greedy (toCoroU subp)
+  EmptyPatt -> emptyPatt
 
 conformsFirst :: PattCoro -> B.ByteString -> B.ByteString -> SymBool
 conformsFirst patt reg str =
