@@ -10,16 +10,16 @@ import Syntax
 import Table
 
 getMultiplicity :: [UnionM (Maybe SymInteger)] -> RawTable -> SymInteger
-getMultiplicity r (RawTable ut) = foldr (\(r1, p1) t -> mrgIte @SymBool (r1 ==~ r) p1 0 + t) 0 ut
+getMultiplicity r = foldr (\(r1, p1) t -> mrgIte @SymBool (r1 ==~ r) p1 0 + t) 0
 
 tableSum :: RawTable -> RawTable
-tableSum rt@(RawTable t) = RawTable $ (\(r, _) -> (r, getMultiplicity r rt)) <$> t
+tableSum t = (\(r, _) -> (r, getMultiplicity r t)) <$> t
 
 elementContain :: ([UnionM (Maybe SymInteger)], SymInteger) -> RawTable -> SymBool
-elementContain r (RawTable t) = foldr (\r1 a -> a ||~ r ==~ r1) (conc False) t
+elementContain r = foldr (\r1 a -> a ||~ r ==~ r1) (conc False)
 
 contain :: RawTable -> RawTable -> SymBool
-contain (RawTable t1) t2 = foldr (\r a -> a &&~ elementContain r t2) (conc True) t1
+contain t1 t2 = foldr (\r a -> a &&~ elementContain r t2) (conc True) t1
 
 bagEqual :: RawTable -> RawTable -> SymBool
 bagEqual t1 t2 =

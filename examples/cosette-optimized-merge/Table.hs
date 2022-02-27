@@ -8,21 +8,12 @@ import Grisette.Core
 import Grisette.SymPrim.Term
 import Instances.TH.Lift ()
 import qualified Language.Haskell.TH.Syntax as THSyntax
-import Data.Bifunctor
 
 type Name = B.ByteString
 
 type Schema = [Name]
 
-type UnderlyingTable = [([UnionM (Maybe SymInteger)], SymInteger)]
-newtype RawTable = RawTable { underlyingTable :: UnderlyingTable }
-  deriving (Show, THSyntax.Lift, Generic, SymEval Model)
-
-instance Mergeable SymBool RawTable where
-
-instance SimpleMergeable SymBool RawTable where
-  mrgIte cond (RawTable tb1) (RawTable tb2) =
-    RawTable $ (second (\m -> mrgIte cond m 0) <$> tb1) ++ (second (mrgIte cond 0) <$> tb2)
+type RawTable = [([UnionM (Maybe SymInteger)], SymInteger)]
 
 data Table = Table
   { tableName :: Name,
@@ -30,14 +21,6 @@ data Table = Table
     tableContent :: RawTable
   }
   deriving (Show, THSyntax.Lift, Generic, SymEval Model)
-
-instance Mergeable SymBool Table where
-  mergeStrategy = SimpleStrategy $ mrgIte @SymBool
-
-instance SimpleMergeable SymBool Table where
-  mrgIte cond (Table name1 schema1 content1) (Table name2 schema2 content2)
-    | name1 /= name2 || schema1 /= schema2 = error "Bad merge"
-    | otherwise = Table name1 schema1 $ mrgIte cond content1 content2
 
 renameTable :: Name -> Table -> Table
 renameTable name t = t {tableName = name}
@@ -60,4 +43,4 @@ schemaJoin (Table n1 s1 _) (Table n2 s2 _) =
   (B.append (B.append n1 "+") <$> s1) ++ (B.append (B.append n2 "+") <$> s2)
 
 tableRepOk :: Table -> SymBool
-tableRepOk (Table _ _ (RawTable c)) = foldr (\(_, p) a -> a &&~ p >=~ 0) (conc True) c
+tableRepOk (Table _ _ c) = foldr (\(_, p) a -> a &&~ p >=~ 0) (conc True) c

@@ -43,10 +43,10 @@ denoteSql qs@(QuerySelect cols q f) =
       let rowFuncs1 = $$rowFuncs
           rowFuncWrap r = (\rf -> rf r) <$> rowFuncs1
           fromContent = case $$queryQ of
-            Table _ _ (RawTable c) -> c
+            Table _ _ c -> c
           postFilter = (\(r, p) -> (r, mrgIte @SymBool ($$filterQ r) p 0)) <$> fromContent
           content = first rowFuncWrap <$> postFilter
-       in Table newTblName newSchema (RawTable content)
+       in Table newTblName newSchema content
       ||]
 denoteSql q = fail $ "I don't know how to handle the sql query " ++ show q
 
