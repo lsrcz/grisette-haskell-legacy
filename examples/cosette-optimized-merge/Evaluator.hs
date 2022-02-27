@@ -62,7 +62,7 @@ dedup :: RawTable -> RawTable
 dedup [] = []
 dedup ((ele, mult) : xs) =
   (ele, mrgIte (mult ==~ 0 :: SymBool) 0 1) :
-    dedup ((\(ele1, m) -> (ele1, mrgIte (ele ==~ ele1 :: SymBool) 0 m)) <$> xs)
+    dedup ((\(ele1, m) -> (ele1, mrgIte (mult /=~ 0 &&~ ele ==~ ele1 :: SymBool) 0 m)) <$> xs)
 
 dedupAccum :: RawTable -> RawTable
 dedupAccum [] = []
