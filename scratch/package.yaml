@@ -30,8 +30,8 @@ dependencies:
 ghc-options: -Wall -ferror-spans -O2
 
 executables:
-  list-union:
-    source-dirs: list-union
+  list-funcs:
+    source-dirs: list-funcs
     main: Main.hs
   interned-trie:
     source-dirs: interned-trie
