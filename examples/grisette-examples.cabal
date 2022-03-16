@@ -21,6 +21,11 @@ source-repository head
   type: git
   location: https://github.com/lsrcz/grisette-haskell
 
+flag fast
+  description: Compile with O2 optimization
+  manual: False
+  default: True
+
 library
   exposed-modules:
       Utils.Timing
@@ -50,7 +55,7 @@ library
       TypeApplications
       TypeFamilies
       TypeOperators
-  ghc-options: -Wall -ferror-spans -O2
+  ghc-options: -Wall -ferror-spans
   build-depends:
       MemoTrie
     , Unique
@@ -80,6 +85,10 @@ library
     , unordered-containers
     , utf8-string
     , vector-sized
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
   default-language: Haskell2010
 
 executable bonsai
@@ -123,7 +132,7 @@ executable bonsai
       TypeApplications
       TypeFamilies
       TypeOperators
-  ghc-options: -Wall -ferror-spans -O2
+  ghc-options: -Wall -ferror-spans
   build-depends:
       MemoTrie
     , Unique
@@ -154,6 +163,10 @@ executable bonsai
     , unordered-containers
     , utf8-string
     , vector-sized
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
   default-language: Haskell2010
 
 executable cosette
@@ -192,7 +205,7 @@ executable cosette
       TypeApplications
       TypeFamilies
       TypeOperators
-  ghc-options: -Wall -ferror-spans -O2
+  ghc-options: -Wall -ferror-spans
   build-depends:
       MemoTrie
     , Unique
@@ -223,6 +236,10 @@ executable cosette
     , unordered-containers
     , utf8-string
     , vector-sized
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
   default-language: Haskell2010
 
 executable cosette-optimized
@@ -261,7 +278,7 @@ executable cosette-optimized
       TypeApplications
       TypeFamilies
       TypeOperators
-  ghc-options: -Wall -ferror-spans -O2
+  ghc-options: -Wall -ferror-spans
   build-depends:
       MemoTrie
     , Unique
@@ -292,6 +309,10 @@ executable cosette-optimized
     , unordered-containers
     , utf8-string
     , vector-sized
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
   default-language: Haskell2010
 
 executable cosette-optimized-merge
@@ -330,7 +351,7 @@ executable cosette-optimized-merge
       TypeApplications
       TypeFamilies
       TypeOperators
-  ghc-options: -Wall -ferror-spans -O2
+  ghc-options: -Wall -ferror-spans
   build-depends:
       MemoTrie
     , Unique
@@ -361,6 +382,10 @@ executable cosette-optimized-merge
     , unordered-containers
     , utf8-string
     , vector-sized
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
   default-language: Haskell2010
 
 executable expr-interpreter
@@ -392,7 +417,7 @@ executable expr-interpreter
       TypeApplications
       TypeFamilies
       TypeOperators
-  ghc-options: -Wall -ferror-spans -O2
+  ghc-options: -Wall -ferror-spans
   build-depends:
       MemoTrie
     , Unique
@@ -422,6 +447,10 @@ executable expr-interpreter
     , unordered-containers
     , utf8-string
     , vector-sized
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
   default-language: Haskell2010
 
 executable expr-sketch
@@ -454,7 +483,7 @@ executable expr-sketch
       TypeApplications
       TypeFamilies
       TypeOperators
-  ghc-options: -Wall -ferror-spans -O2
+  ghc-options: -Wall -ferror-spans
   build-depends:
       MemoTrie
     , Unique
@@ -484,6 +513,10 @@ executable expr-sketch
     , unordered-containers
     , utf8-string
     , vector-sized
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
   default-language: Haskell2010
 
 executable ferrite
@@ -521,7 +554,7 @@ executable ferrite
       TypeApplications
       TypeFamilies
       TypeOperators
-  ghc-options: -Wall -ferror-spans -O2
+  ghc-options: -Wall -ferror-spans
   build-depends:
       MemoTrie
     , Unique
@@ -552,6 +585,10 @@ executable ferrite
     , unordered-containers
     , utf8-string
     , vector-sized
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
   default-language: Haskell2010
 
 executable fluidics
@@ -582,7 +619,7 @@ executable fluidics
       TypeApplications
       TypeFamilies
       TypeOperators
-  ghc-options: -Wall -ferror-spans -O2
+  ghc-options: -Wall -ferror-spans
   build-depends:
       MemoTrie
     , Unique
@@ -613,6 +650,10 @@ executable fluidics
     , unordered-containers
     , utf8-string
     , vector-sized
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
   default-language: Haskell2010
 
 executable fluidics-state
@@ -643,7 +684,7 @@ executable fluidics-state
       TypeApplications
       TypeFamilies
       TypeOperators
-  ghc-options: -Wall -ferror-spans -O2
+  ghc-options: -Wall -ferror-spans
   build-depends:
       MemoTrie
     , Unique
@@ -674,6 +715,10 @@ executable fluidics-state
     , unordered-containers
     , utf8-string
     , vector-sized
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
   default-language: Haskell2010
 
 executable genfunc
@@ -704,7 +749,7 @@ executable genfunc
       TypeApplications
       TypeFamilies
       TypeOperators
-  ghc-options: -Wall -ferror-spans -O2
+  ghc-options: -Wall -ferror-spans
   build-depends:
       MemoTrie
     , Unique
@@ -734,6 +779,10 @@ executable genfunc
     , unordered-containers
     , utf8-string
     , vector-sized
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
   default-language: Haskell2010
 
 executable ifcl
@@ -769,7 +818,7 @@ executable ifcl
       TypeApplications
       TypeFamilies
       TypeOperators
-  ghc-options: -Wall -ferror-spans -O2
+  ghc-options: -Wall -ferror-spans
   build-depends:
       MemoTrie
     , Unique
@@ -800,6 +849,10 @@ executable ifcl
     , unordered-containers
     , utf8-string
     , vector-sized
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
   default-language: Haskell2010
 
 executable location
@@ -832,7 +885,7 @@ executable location
       TypeApplications
       TypeFamilies
       TypeOperators
-  ghc-options: -Wall -ferror-spans -O2
+  ghc-options: -Wall -ferror-spans
   build-depends:
       MemoTrie
     , Unique
@@ -862,6 +915,10 @@ executable location
     , unordered-containers
     , utf8-string
     , vector-sized
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
   default-language: Haskell2010
 
 executable order
@@ -892,7 +949,7 @@ executable order
       TypeApplications
       TypeFamilies
       TypeOperators
-  ghc-options: -Wall -ferror-spans -O2
+  ghc-options: -Wall -ferror-spans
   build-depends:
       MemoTrie
     , Unique
@@ -922,6 +979,10 @@ executable order
     , unordered-containers
     , utf8-string
     , vector-sized
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
   default-language: Haskell2010
 
 executable regex
@@ -952,7 +1013,7 @@ executable regex
       TypeApplications
       TypeFamilies
       TypeOperators
-  ghc-options: -Wall -ferror-spans -O2
+  ghc-options: -Wall -ferror-spans
   build-depends:
       MemoTrie
     , Unique
@@ -983,6 +1044,10 @@ executable regex
     , unordered-containers
     , utf8-string
     , vector-sized
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
   default-language: Haskell2010
 
 executable regex-old
@@ -1013,7 +1078,7 @@ executable regex-old
       TypeApplications
       TypeFamilies
       TypeOperators
-  ghc-options: -Wall -ferror-spans -O2
+  ghc-options: -Wall -ferror-spans
   build-depends:
       MemoTrie
     , Unique
@@ -1044,6 +1109,10 @@ executable regex-old
     , unordered-containers
     , utf8-string
     , vector-sized
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
   default-language: Haskell2010
 
 executable stmt-sketch
@@ -1077,7 +1146,7 @@ executable stmt-sketch
       TypeApplications
       TypeFamilies
       TypeOperators
-  ghc-options: -Wall -ferror-spans -O2
+  ghc-options: -Wall -ferror-spans
   build-depends:
       MemoTrie
     , Unique
@@ -1107,6 +1176,10 @@ executable stmt-sketch
     , unordered-containers
     , utf8-string
     , vector-sized
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
   default-language: Haskell2010
 
 executable tutorial
@@ -1137,7 +1210,7 @@ executable tutorial
       TypeApplications
       TypeFamilies
       TypeOperators
-  ghc-options: -Wall -ferror-spans -O2
+  ghc-options: -Wall -ferror-spans
   build-depends:
       MemoTrie
     , Unique
@@ -1167,4 +1240,8 @@ executable tutorial
     , unordered-containers
     , utf8-string
     , vector-sized
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
   default-language: Haskell2010

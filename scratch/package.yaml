@@ -27,7 +27,22 @@ dependencies:
 - unordered-containers
 - vector
 
-ghc-options: -Wall -ferror-spans -O2
+flags: {
+  fast: {
+    description: "Compile with O2 optimization",
+    manual: False,
+    default: True,
+  }
+}
+
+when:
+  - condition: flag(fast)
+    then:
+      ghc-options: -O2
+    else:
+      ghc-options: -O0
+
+ghc-options: -Wall -ferror-spans
 
 executables:
   list-funcs:

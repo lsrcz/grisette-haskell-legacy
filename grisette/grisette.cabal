@@ -21,6 +21,11 @@ source-repository head
   type: git
   location: https://github.com/lsrcz/grisette-haskell
 
+flag fast
+  description: Compile with O2 optimization
+  manual: False
+  default: True
+
 library
   exposed-modules:
       Grisette.Backend.SBV
@@ -54,7 +59,7 @@ library
       TypeFamilies
       TypeOperators
       DeriveAnyClass
-  ghc-options: -Wall -ferror-spans -O2
+  ghc-options: -Wall -ferror-spans
   build-depends:
       base >4.7 && <5
     , grisette-core
@@ -62,4 +67,8 @@ library
     , grisette-smt
     , grisette-symprim
     , sbv
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
   default-language: Haskell2010
