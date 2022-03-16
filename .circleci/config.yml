@@ -12,7 +12,7 @@ jobs:
             - dep-{{ checksum "stack.yaml" }}
       - run:
           name: Resolve/Update Dependencies
-          command: apt update && apt install curl && stack --no-terminal setup
+          command: stack --no-terminal setup
       - run:
           name: Run tests (for core)
           command: stack --no-terminal test grisette-core --flag grisette-core:-fast
@@ -31,4 +31,4 @@ jobs:
             - "scratch/.stack-work"
       - run:
           name: Upload shc
-          command: curl -L https://github.com/rubik/stack-hpc-coveralls/releases/download/v0.0.6.1/shc-linux-x64-8.10.4.tar.bz2 | tar -xj && ./shc grisette-core spec
+          command: wget https://github.com/rubik/stack-hpc-coveralls/releases/download/v0.0.6.1/shc-linux-x64-8.10.4.tar.bz2 && tar -xj shc-linux-x64-8.10.4.tar.bz2 && ./shc grisette-core spec
