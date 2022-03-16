@@ -28,6 +28,7 @@ library
       Grisette.Control.Monad
       Grisette.Control.Monad.Trans
       Grisette.Control.Monad.UnionMBase
+      Grisette.Data.Class.BitVector
       Grisette.Data.Class.Bool
       Grisette.Data.Class.Error
       Grisette.Data.Class.ExtractSymbolics

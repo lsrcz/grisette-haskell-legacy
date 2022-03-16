@@ -33,8 +33,10 @@ import qualified Data.SBV as SBV
 import qualified Data.SBV.Internals as SBVI
 import Data.Type.Equality (type (~~))
 import Data.Typeable
+import Debug.Trace
 import GHC.Exts (sortWith)
 import GHC.TypeNats
+import Grisette.Data.Prim.BV
 import Grisette.Data.Prim.Bits
 import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.InternedTerm
@@ -485,7 +487,7 @@ lowerSinglePrimImpl config t@(SymbTerm _ ts) m =
     ufunc :: (Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a)))
     ufunc = lowerSinglePrimUFunc config t m
 lowerSinglePrimImpl config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) m =
-  fromMaybe errorMsg $ asum [numType, boolType, bitsType {-, integerType-}]
+  fromMaybe errorMsg $ asum [numType, boolType, bitsType, extBV, extractBV]
   where
     errorMsg :: forall t1. t1
     errorMsg =
@@ -518,8 +520,74 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) m 
         NotTerm t1 -> Just $ lowerUnaryTerm config t t1 SBV.sNot m
         _ -> Nothing
       _ -> Nothing
+    extBV :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
+    extBV = case (R.typeRep @x, R.typeRep @a) of
+      (UnsignedBVType (_ :: proxy xn), UnsignedBVType (_ :: proxy an)) ->
+        case extensionView @BVU.UnsignedBV @xn @an t of
+          Just (ExtensionMatchResult (_ :: proxy1 nn) isSignedExt (t1 :: Term (BVU.UnsignedBV xn))) ->
+            Just $
+              bvIsNonZeroFromGEq1 @nn $
+                lowerUnaryTerm config t t1 (if isSignedExt then SBV.signExtend else SBV.zeroExtend) m
+          _ -> Nothing
+      (SignedBVType (_ :: proxy xn), SignedBVType (_ :: proxy an)) ->
+        case extensionView @BVS.SignedBV @xn @an t of
+          Just (ExtensionMatchResult (_ :: proxy1 nn) isSignedExt (t1 :: Term (BVS.SignedBV xn))) ->
+            trace (show isSignedExt) $
+              Just $
+                bvIsNonZeroFromGEq1 @nn $
+                  lowerUnaryTerm config t t1 (if isSignedExt then SBV.signExtend else SBV.zeroExtend) m
+          _ -> Nothing
+      _ -> Nothing
+    extractBV :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
+    extractBV = case (R.typeRep @x, R.typeRep @a) of
+      (UnsignedBVType (_ :: proxy xn), UnsignedBVType (_ :: proxy an)) ->
+        case extractView @BVU.UnsignedBV @an @xn t of
+          Just (ExtractMatchResult (_ :: proxy1 ix) (t1 :: Term (BVU.UnsignedBV xn))) ->
+            Just $
+              ev @ix @an @xn $
+                lowerUnaryTerm config t t1 (SBV.bvExtract (Proxy @(an + ix - 1)) (Proxy @ix)) m
+          _ -> Nothing
+      (SignedBVType (_ :: proxy xn), SignedBVType (_ :: proxy an)) ->
+        case extractView @BVS.SignedBV @an @xn t of
+          Just (ExtractMatchResult (_ :: proxy1 ix) (t1 :: Term (BVS.SignedBV xn))) ->
+            Just $
+              ev @ix @an @xn $
+                lowerUnaryTerm config t t1 (SBV.bvExtract (Proxy @(an + ix - 1)) (Proxy @ix)) m
+          _ -> Nothing
+      _ -> Nothing
+      where
+        ev ::
+          forall ix w ow r.
+          ( KnownNat ix,
+            KnownNat w,
+            KnownNat ow,
+            ix + w <= ow,
+            1 <= ow,
+            1 <= w
+          ) =>
+          ( ( ((((w + ix) - 1) - ix) + 1) ~ w,
+              KnownNat ((w + ix) - 1),
+              (((w + ix) - 1) + 1) <= ow,
+              ix <= ((w + ix) - 1)
+            ) =>
+            r
+          ) ->
+          r
+        ev r =
+          let
+            withEquality :: forall x1 x2 x3. x1 :~: x2 -> (x1 ~ x2 => x3) -> x3
+            withEquality Refl ret = ret
+            oneleqwpix :: LeqProof 1 (w + ix) = leqAdd (leqProof (Proxy @1) (Proxy @w)) (Proxy @ix)
+            wpixm1repr :: NatRepr (w + ix - 1) =
+              withLeqProof oneleqwpix $ subNat (addNat (knownNat @w) (knownNat @ix)) (knownNat @1)
+            wpixleqow :: LeqProof (w + ix) ow = unsafeCoerce (LeqProof :: LeqProof 0 0)
+            wpixm1p1cancel :: (((w + ix) - 1) + 1) :~: (w + ix) = unsafeCoerce (LeqProof :: LeqProof 0 0)
+            ev1 :: LeqProof ix ((w + ix) - 1) = unsafeCoerce (LeqProof :: LeqProof 0 0)
+           in withKnownNat wpixm1repr $ withLeqProof wpixleqow $ withEquality wpixm1p1cancel $
+             withEquality (unsafeAxiom :: ((((w + ix) - 1) - ix) + 1) :~: w) $
+             withLeqProof ev1 r
 lowerSinglePrimImpl config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_ :: Term y)) m =
-  fromMaybe errorMsg $ asum [numType, numOrdCmp, bitsType, simpleBoolType, eqTerm, funcApply]
+  fromMaybe errorMsg $ asum [numType, numOrdCmp, bitsType, simpleBoolType, eqTerm, concatBV, funcApply]
   where
     errorMsg :: forall t1. t1
     errorMsg =
@@ -578,6 +646,19 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_
             return (addBiMapIntermediate (SomeTerm t) (toDyn g) m2, g)
           _ -> errorMsg
       _ -> Nothing
+    concatBV :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
+    concatBV = case (R.typeRep @x, R.typeRep @y, R.typeRep @a) of
+      (UnsignedBVType (_ :: proxy xn), UnsignedBVType (_ :: proxy yn), UnsignedBVType (_ :: proxy an)) ->
+        case concatView @BVU.UnsignedBV @xn @yn @an t of
+          Just (ConcatMatchResult (t1 :: Term (BVU.UnsignedBV xn)) (t2 :: Term (BVU.UnsignedBV yn))) ->
+            Just $ lowerBinaryTerm config t t1 t2 (SBV.#) m
+          _ -> Nothing
+      (SignedBVType (_ :: proxy xn), SignedBVType (_ :: proxy yn), SignedBVType (_ :: proxy an)) ->
+        case concatView @BVS.SignedBV @xn @yn @an t of
+          Just (ConcatMatchResult (t1 :: Term (BVS.SignedBV xn)) (t2 :: Term (BVS.SignedBV yn))) ->
+            Just $ lowerBinaryTerm config t t1 t2 (SBV.#) m
+          _ -> Nothing
+      _ -> Nothing
 lowerSinglePrimImpl config@ResolvedConfig {} t@(TernaryTerm _ op (_ :: Term x) (_ :: Term y) (_ :: Term z)) m =
   case (config, R.typeRep @a) of
     ResolvedDeepType ->
@@ -617,6 +698,10 @@ unsafeWithNonZeroKnownNat i r
     unsafeBVIsNonZero :: ((SBV.BVIsNonZero w) => r) -> r
     unsafeBVIsNonZero r1 = case unsafeAxiom :: w :~: 1 of
       Refl -> r1
+
+bvIsNonZeroFromGEq1 :: forall w r. (1 <= w) => ((SBV.BVIsNonZero w) => r) -> r
+bvIsNonZeroFromGEq1 r1 = case unsafeAxiom :: w :~: 1 of
+  Refl -> r1
 
 parseModel :: forall integerBitWidth. GrisetteSMTConfig integerBitWidth -> SBVI.SMTModel -> SymBiMap -> PM.Model
 parseModel _ (SBVI.SMTModel _ _ assoc uifuncs) mp = foldr gouifuncs (foldr goassoc PM.empty assoc) uifuncs
@@ -707,15 +792,15 @@ parseModel _ (SBVI.SMTModel _ _ assoc uifuncs) mp = foldr gouifuncs (foldr goass
 
 -- helpers
 
-data SignedBVTypeContainer :: forall k. k -> * where
-  SignedBVTypeContainer :: (SBV.BVIsNonZero n, KnownNat n, 1 <= n) => Proxy n -> SignedBVTypeContainer (BVS.SignedBV n)
+data BVTypeContainer bv k where
+  BVTypeContainer :: (SBV.BVIsNonZero n, KnownNat n, 1 <= n, k ~ bv n) => Proxy n -> BVTypeContainer bv k
 
-signedBVTypeView :: forall t. (SupportedPrim t) => R.TypeRep t -> Maybe (SignedBVTypeContainer t)
+signedBVTypeView :: forall t. (SupportedPrim t) => R.TypeRep t -> Maybe (BVTypeContainer BVS.SignedBV t)
 signedBVTypeView t = case t of
   R.App s (n :: R.TypeRep w) ->
     case (R.eqTypeRep s (R.typeRep @BVS.SignedBV), R.eqTypeRep (R.typeRepKind n) (R.typeRep @Nat)) of
       (Just R.HRefl, Just R.HRefl) ->
-        Just $ unsafeBVIsNonZero @w $ withPrim @t (SignedBVTypeContainer Proxy)
+        Just $ unsafeBVIsNonZero @w $ withPrim @t (BVTypeContainer Proxy)
       _ -> Nothing
   _ -> Nothing
   where
@@ -730,17 +815,14 @@ pattern SignedBVType ::
   (t ~~ BVS.SignedBV n, KnownNat n, 1 <= n, SBV.BVIsNonZero n) =>
   Proxy n ->
   R.TypeRep t
-pattern SignedBVType p <- (signedBVTypeView @t -> Just (SignedBVTypeContainer p))
+pattern SignedBVType p <- (signedBVTypeView @t -> Just (BVTypeContainer p))
 
-data UnsignedBVTypeContainer :: forall k. k -> * where
-  UnsignedBVTypeContainer :: (SBV.BVIsNonZero n, KnownNat n, 1 <= n) => Proxy n -> UnsignedBVTypeContainer (BVU.UnsignedBV n)
-
-unsignedBVTypeView :: forall t. (SupportedPrim t) => R.TypeRep t -> Maybe (UnsignedBVTypeContainer t)
+unsignedBVTypeView :: forall t. (SupportedPrim t) => R.TypeRep t -> Maybe (BVTypeContainer BVU.UnsignedBV t)
 unsignedBVTypeView t = case t of
   R.App s (n :: R.TypeRep w) ->
     case (R.eqTypeRep s (R.typeRep @BVU.UnsignedBV), R.eqTypeRep (R.typeRepKind n) (R.typeRep @Nat)) of
       (Just R.HRefl, Just R.HRefl) ->
-        Just $ unsafeBVIsNonZero @w $ withPrim @t (UnsignedBVTypeContainer Proxy)
+        Just $ unsafeBVIsNonZero @w $ withPrim @t (BVTypeContainer Proxy)
       _ -> Nothing
   _ -> Nothing
   where
@@ -755,7 +837,7 @@ pattern UnsignedBVType ::
   (t ~~ BVU.UnsignedBV n, KnownNat n, 1 <= n, SBV.BVIsNonZero n) =>
   Proxy n ->
   R.TypeRep t
-pattern UnsignedBVType p <- (unsignedBVTypeView @t -> Just (UnsignedBVTypeContainer p))
+pattern UnsignedBVType p <- (unsignedBVTypeView @t -> Just (BVTypeContainer p))
 
 data TFunTypeContainer :: forall k. k -> * where
   TFunTypeContainer :: (SupportedPrim a, SupportedPrim b) => R.TypeRep a -> R.TypeRep b -> TFunTypeContainer (a =-> b)

@@ -44,6 +44,7 @@ import {-# SOURCE #-} Grisette.Data.Prim.Num
 import Grisette.Data.Prim.Utils
 import Language.Haskell.TH.Syntax
 import Unsafe.Coerce
+import Data.Hashable
 
 trueTerm :: Term Bool
 trueTerm = concTerm True
@@ -68,7 +69,7 @@ pattern BoolTerm :: Term Bool -> Term a
 pattern BoolTerm b <- (castTerm -> Just b)
 
 -- Not
-data Not = Not deriving (Generic, Show, Lift, NFData)
+data Not = Not deriving (Generic, Show, Lift, NFData, Eq, Hashable)
 
 notb :: Term Bool -> Term Bool
 notb = partialEvalUnary Not
@@ -87,7 +88,7 @@ pattern NotTerm :: Term Bool -> Term a
 pattern NotTerm t <- UnsafeUnaryTermPatt Not t
 
 -- Eqv
-data Eqv = Eqv deriving (Show, Lift, Generic, NFData)
+data Eqv = Eqv deriving (Show, Lift, Generic, NFData, Eq, Hashable)
 
 eqterm :: (SupportedPrim a) => Term a -> Term a -> Term Bool
 eqterm = partialEvalBinary Eqv
@@ -176,7 +177,7 @@ andEqFalse x y
 {-# INLINE andEqFalse #-}
 
 -- Or
-data Or = Or deriving (Show, Lift, Generic, NFData)
+data Or = Or deriving (Show, Lift, Generic, NFData, Eq, Hashable)
 
 orb :: Term Bool -> Term Bool -> Term Bool
 orb = partialEvalBinary Or
@@ -218,7 +219,7 @@ pattern OrTerm :: Term Bool -> Term Bool -> Term a
 pattern OrTerm l r <- UnsafeBinaryTermPatt Or l r
 
 -- And
-data And = And deriving (Show, Lift, Generic, NFData)
+data And = And deriving (Show, Lift, Generic, NFData, Eq, Hashable)
 
 andb :: Term Bool -> Term Bool -> Term Bool
 andb = partialEvalBinary And
@@ -259,7 +260,7 @@ instance BinaryOp And Bool Bool Bool where
 pattern AndTerm :: Term Bool -> Term Bool -> Term a
 pattern AndTerm l r <- UnsafeBinaryTermPatt And l r
 
-data ITE = ITE deriving (Show, Lift, Generic, NFData)
+data ITE = ITE deriving (Show, Lift, Generic, NFData, Eq, Hashable)
 
 iteHelper :: (Typeable a) => (Term Bool -> Term Bool) -> Term a -> Term a
 iteHelper f a = fromJust $ castTerm a >>= castTerm . f

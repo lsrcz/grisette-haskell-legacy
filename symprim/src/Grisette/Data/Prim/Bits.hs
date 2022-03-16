@@ -12,6 +12,7 @@ import Grisette.Data.Prim.Helpers
 import Grisette.Data.Prim.InternedTerm
 import Grisette.Data.Prim.Utils
 import Language.Haskell.TH.Syntax
+import Data.Hashable
 
 bitsConcTermView :: (Bits b, Typeable b) => Term a -> Maybe b
 bitsConcTermView (ConcTerm _ b) = cast b
@@ -23,6 +24,12 @@ pattern BitsConcTerm b <- (bitsConcTermView -> Just b)
 -- bitand
 data AndBits x where
   AndBits :: (Bits x) => AndBits x
+
+instance Eq (AndBits x) where
+  _ == _ = True
+
+instance Hashable (AndBits x) where
+  s `hashWithSalt` _ = s `hashWithSalt` typeRep (Proxy @AndBits)
 
 instance (Show (AndBits x)) where
   show AndBits = "AndBits"
@@ -62,6 +69,12 @@ pattern AndBitsTerm l r <- BinaryTermPatt (AndBits :: AndBits a) l r
 data OrBits x where
   OrBits :: (Bits x) => OrBits x
 
+instance Eq (OrBits x) where
+  _ == _ = True
+
+instance Hashable (OrBits x) where
+  s `hashWithSalt` _ = s `hashWithSalt` typeRep (Proxy @OrBits)
+
 instance (Show (OrBits x)) where
   show OrBits = "OrBits"
 
@@ -99,6 +112,12 @@ pattern OrBitsTerm l r <- BinaryTermPatt (OrBits :: OrBits a) l r
 -- bitxor
 data XorBits x where
   XorBits :: (Bits x) => XorBits x
+
+instance Eq (XorBits x) where
+  _ == _ = True
+
+instance Hashable (XorBits x) where
+  s `hashWithSalt` _ = s `hashWithSalt` typeRep (Proxy @XorBits)
 
 instance (Show (XorBits x)) where
   show XorBits = "XorBits"
@@ -139,6 +158,12 @@ pattern XorBitsTerm l r <- BinaryTermPatt (XorBits :: XorBits a) l r
 data ComplementBits x where
   ComplementBits :: (Bits x) => ComplementBits x
 
+instance Eq (ComplementBits x) where
+  _ == _ = True
+
+instance Hashable (ComplementBits x) where
+  s `hashWithSalt` _ = s `hashWithSalt` typeRep (Proxy @ComplementBits)
+
 instance (Show (ComplementBits x)) where
   show ComplementBits = "ComplementBits"
 
@@ -167,6 +192,12 @@ pattern ComplementBitsTerm b <- UnaryTermPatt (ComplementBits :: ComplementBits 
 -- shift
 data ShiftBits x where
   ShiftBits :: (Bits x) => Int -> ShiftBits x
+
+instance Eq (ShiftBits x) where
+  (ShiftBits l) == (ShiftBits r) = l == r
+
+instance Hashable (ShiftBits x) where
+  s `hashWithSalt` (ShiftBits i) = s `hashWithSalt` i
 
 instance (Show (ShiftBits x)) where
   show (ShiftBits n) = "Shift " ++ show n
@@ -203,6 +234,12 @@ pattern ShiftBitsTerm b i <- UnaryTerm _ (Dyn (ShiftBits i :: ShiftBits b)) (Dyn
 -- rotate
 data RotateBits x where
   RotateBits :: (Bits x) => Int -> RotateBits x
+
+instance Eq (RotateBits x) where
+  (RotateBits l) == (RotateBits r) = l == r
+
+instance Hashable (RotateBits x) where
+  s `hashWithSalt` (RotateBits i) = s `hashWithSalt` i
 
 instance (Show (RotateBits x)) where
   show (RotateBits n) = "Rotate " ++ show n

@@ -21,6 +21,7 @@ import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.Helpers
 import Grisette.Data.Prim.InternedTerm
 import Language.Haskell.TH.Syntax
+import Data.Hashable
 
 integerConcTermView :: forall a. Term a -> Maybe Integer
 integerConcTermView (ConcTerm _ b) = cast b
@@ -36,7 +37,7 @@ pattern IntegerTerm :: Term Integer -> Term a
 pattern IntegerTerm b <- (integerTermView -> Just b)
 
 -- div
-data DivI = DivI deriving (Show, Lift, Generic, NFData)
+data DivI = DivI deriving (Show, Lift, Generic, NFData, Eq, Hashable)
 
 divi :: Term Integer -> Term Integer -> Term Integer
 divi = partialEvalBinary DivI
@@ -60,7 +61,7 @@ pattern DivITerm :: Term Integer -> Term Integer -> Term a
 pattern DivITerm l r <- BinaryTermPatt DivI l r
 
 -- mod
-data ModI = ModI deriving (Show, Lift, Generic, NFData)
+data ModI = ModI deriving (Show, Lift, Generic, NFData, Eq, Hashable)
 
 modi :: Term Integer -> Term Integer -> Term Integer
 modi = partialEvalBinary ModI

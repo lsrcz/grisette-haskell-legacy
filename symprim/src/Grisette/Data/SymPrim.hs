@@ -17,12 +17,19 @@ import Control.DeepSeq
 import Control.Monad.Except
 import Control.Monad.State
 import Data.BitVector.Sized (knownNat, pattern BV)
-import Data.BitVector.Sized.Signed (SignedBV(..), mkSignedBV)
+import Data.BitVector.Sized.Signed (SignedBV (..), mkSignedBV)
 import Data.BitVector.Sized.Unsigned
+import Data.Bits
+import Data.Char (chr, ord)
 import Data.HashSet as S
 import Data.Hashable
+import Data.MemoTrie
+import Data.Proxy
+import Data.String
 import GHC.Generics
+import GHC.TypeLits
 import Grisette.Control.Monad
+import Grisette.Data.Class.BitVector
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Error
 import Grisette.Data.Class.ExtractSymbolics
@@ -36,6 +43,9 @@ import Grisette.Data.Class.SymEval
 import Grisette.Data.Class.SymGen
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
+import Grisette.Data.MemoUtils
+import Grisette.Data.Prim.BV
+import Grisette.Data.Prim.Bits
 import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.Integer
 import Grisette.Data.Prim.InternedTerm
@@ -44,14 +54,6 @@ import Grisette.Data.Prim.Num
 import Grisette.Data.Prim.TabularFunc
 import Grisette.Data.TabularFunc
 import Language.Haskell.TH.Syntax
-import Data.Bits
-import Grisette.Data.Prim.Bits
-import GHC.TypeLits
-import Data.Proxy
-import Data.String
-import Data.MemoTrie
-import Grisette.Data.MemoUtils
-import Data.Char (chr, ord)
 
 newtype Sym a = Sym {underlyingTerm :: Term a} deriving (Lift, Generic)
 
@@ -240,6 +242,32 @@ instance (SupportedPrim (SignedBV n)) => Bits (Sym (SignedBV n)) where
   bit = withPrim @(SignedBV n) $ conc . bit
   popCount _ = error "You cannot call popCount on symbolic variables"
 
+instance
+  (KnownNat w', KnownNat n, KnownNat w, w' ~ (n + w), 1 <= n, 1 <= w, 1 <= w') =>
+  BVConcat (Sym (SignedBV n)) (Sym (SignedBV w)) (Sym (SignedBV w'))
+  where
+  bvconcat (Sym l) (Sym r) = Sym (bvtconcat l r)
+
+instance
+  (KnownNat n, KnownNat w, KnownNat w', w' ~ (w + n), 1 <= w, 1 <= n, 1 <= w') =>
+  BVExt (Sym (SignedBV w)) n (Sym (SignedBV w'))
+  where
+  bvzext p (Sym v) = Sym $ bvtext p False v
+  bvsext p (Sym v) = Sym $ bvtext p True v
+  bvext = bvsext
+
+instance
+  ( KnownNat ix,
+    KnownNat w,
+    KnownNat ow,
+    ix + w <= ow,
+    1 <= ow,
+    1 <= w
+  ) =>
+  BVExtract (Sym (SignedBV ow)) ix w (Sym (SignedBV w))
+  where
+  bvextract pix pw (Sym v) = Sym $ bvtextract pix pw v
+
 instance ToCon (SymSignedBV 8) Char where
   toCon (Conc (SignedBV (BV v))) = Just $ chr $ fromInteger v
   toCon _ = Nothing
@@ -274,6 +302,32 @@ instance (SupportedPrim (UnsignedBV n)) => SOrd (Sym Bool) (Sym (UnsignedBV n)) 
   (Sym a) <~ (Sym b) = Sym $ withPrim @(UnsignedBV n) $ ltNum a b
   (Sym a) >=~ (Sym b) = Sym $ withPrim @(UnsignedBV n) $ geNum a b
   (Sym a) >~ (Sym b) = Sym $ withPrim @(UnsignedBV n) $ gtNum a b
+
+instance
+  (KnownNat w', KnownNat n, KnownNat w, w' ~ (n + w), 1 <= n, 1 <= w, 1 <= w') =>
+  BVConcat (Sym (UnsignedBV n)) (Sym (UnsignedBV w)) (Sym (UnsignedBV w'))
+  where
+  bvconcat (Sym l) (Sym r) = Sym (bvtconcat l r)
+
+instance
+  (KnownNat n, KnownNat w, KnownNat w', w' ~ (w + n), 1 <= w, 1 <= n, 1 <= w') =>
+  BVExt (Sym (UnsignedBV w)) n (Sym (UnsignedBV w'))
+  where
+  bvzext p (Sym v) = Sym $ bvtext p False v
+  bvsext p (Sym v) = Sym $ bvtext p True v
+  bvext = bvzext
+
+instance
+  ( KnownNat ix,
+    KnownNat w,
+    KnownNat ow,
+    ix + w <= ow,
+    1 <= ow,
+    1 <= w
+  ) =>
+  BVExtract (Sym (UnsignedBV ow)) ix w (Sym (UnsignedBV w))
+  where
+  bvextract pix pw (Sym v) = Sym $ bvtextract pix pw v
 
 -- tabular func
 type a =~> b = Sym (a =-> b)

@@ -63,6 +63,7 @@ import Grisette.Data.Prim.Caches
 import Data.Word
 import qualified Data.Vector as V
 import Data.Bits
+import Debug.Trace
 
 class (Lift t, Typeable t, Hashable t, Eq t, Show t, NFData t) => SupportedPrim t where
   type PrimConstraint t :: Constraint
@@ -84,7 +85,7 @@ class (Lift t, Typeable t, Hashable t, Eq t, Show t, NFData t) => SupportedPrim 
   defaultValueDynamic = toDyn (defaultValue @t)
 
 class
-  (SupportedPrim arg, SupportedPrim t, Lift tag, NFData tag, Show tag, Typeable tag) =>
+  (SupportedPrim arg, SupportedPrim t, Lift tag, NFData tag, Show tag, Typeable tag, Eq tag, Hashable tag) =>
   UnaryOp tag arg t
     | tag arg -> t
   where
@@ -92,7 +93,7 @@ class
   pformatUnary :: tag -> Term arg -> String
 
 class
-  (SupportedPrim arg1, SupportedPrim arg2, SupportedPrim t, Lift tag, NFData tag, Show tag, Typeable tag) =>
+  (SupportedPrim arg1, SupportedPrim arg2, SupportedPrim t, Lift tag, NFData tag, Show tag, Typeable tag, Eq tag, Hashable tag) =>
   BinaryOp tag arg1 arg2 t
     | tag arg1 arg2 -> t
   where
@@ -107,7 +108,9 @@ class
     Lift tag,
     NFData tag,
     Show tag,
-    Typeable tag
+    Typeable tag,
+    Eq tag,
+    Hashable tag
   ) =>
   TernaryOp tag arg1 arg2 arg3 t
     | tag arg1 arg2 arg3 -> t
@@ -277,28 +280,28 @@ identityWithTypeRep (TernaryTerm i _ _ _ _) = (typeRep (Proxy @t), i)
 instance (SupportedPrim t) => Eq (Description (Term t)) where
   DConcTerm (l :: tyl) == DConcTerm (r :: tyr) = cast @tyl @tyr l == Just r
   DSymbTerm ls == DSymbTerm rs = ls == rs
-  DUnaryTerm (_ :: tagl) li == DUnaryTerm (_ :: tagr) ri =
+  DUnaryTerm (tagl :: tagl) li == DUnaryTerm (tagr :: tagr) ri =
     case eqT @tagl @tagr of
-      Just _ -> li == ri
+      Just Refl -> tagl == tagr && li == ri
       Nothing -> False
-  DBinaryTerm (_ :: tagl) li1 li2 == DBinaryTerm (_ :: tagr) ri1 ri2 =
+  DBinaryTerm (tagl :: tagl) li1 li2 == DBinaryTerm (tagr :: tagr) ri1 ri2 =
     case eqT @tagl @tagr of
-      Just _ -> li1 == ri1 && li2 == ri2
+      Just Refl -> tagl == tagr && li1 == ri1 && li2 == ri2
       Nothing -> False
-  DTernaryTerm (_ :: tagl) li1 li2 li3 == DTernaryTerm (_ :: tagr) ri1 ri2 ri3 =
+  DTernaryTerm (tagl :: tagl) li1 li2 li3 == DTernaryTerm (tagr :: tagr) ri1 ri2 ri3 =
     case eqT @tagl @tagr of
-      Just _ -> li1 == ri1 && li2 == ri2 && li3 == ri3
+      Just Refl -> tagl == tagr && li1 == ri1 && li2 == ri2 && li3 == ri3
       Nothing -> False
   _ == _ = False
 
 instance (SupportedPrim t) => Hashable (Description (Term t)) where
   hashWithSalt s (DConcTerm c) = s `hashWithSalt` (0 :: Int) `hashWithSalt` c
   hashWithSalt s (DSymbTerm name) = s `hashWithSalt` (1 :: Int) `hashWithSalt` name
-  hashWithSalt s (DUnaryTerm tag id1) = s `hashWithSalt` (2 :: Int) `hashWithSalt` typeOf tag `hashWithSalt` id1
+  hashWithSalt s (DUnaryTerm tag id1) = s `hashWithSalt` (2 :: Int) `hashWithSalt` tag `hashWithSalt` id1
   hashWithSalt s (DBinaryTerm tag id1 id2) =
-    s `hashWithSalt` (3 :: Int) `hashWithSalt` typeOf tag `hashWithSalt` id1 `hashWithSalt` id2
+    s `hashWithSalt` (3 :: Int) `hashWithSalt` tag `hashWithSalt` id1 `hashWithSalt` id2
   hashWithSalt s (DTernaryTerm tag id1 id2 id3) =
-    s `hashWithSalt` (4 :: Int) `hashWithSalt` typeOf tag `hashWithSalt` id1 `hashWithSalt` id2 `hashWithSalt` id3
+    s `hashWithSalt` (4 :: Int) `hashWithSalt` tag `hashWithSalt` id1 `hashWithSalt` id2 `hashWithSalt` id3
 
 instance (SupportedPrim t) => Eq (Term t) where
   (==) = (==) `on` identity
@@ -427,7 +430,7 @@ constructUnary ::
   tag ->
   Term arg ->
   Term t
-constructUnary tag tm = internTerm $ UUnaryTerm tag tm
+constructUnary tag tm = trace ("construct" ++ show tag) $ let x = internTerm $ UUnaryTerm tag tm in trace (show x) $ x
 
 constructBinary ::
   forall tag arg1 arg2 t.

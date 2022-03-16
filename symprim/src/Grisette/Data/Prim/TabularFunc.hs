@@ -19,6 +19,7 @@ import Grisette.Data.Prim.Helpers
 import Grisette.Data.Prim.InternedTerm
 import Grisette.Data.TabularFunc
 import Language.Haskell.TH.Syntax
+import Data.Hashable
 
 tabularFuncConcTermView :: forall a b c. (Typeable b, Typeable c) => Term a -> Maybe (b =-> c)
 tabularFuncConcTermView (ConcTerm _ b) = cast b
@@ -34,7 +35,7 @@ pattern TabularFuncTerm :: (Typeable b, Typeable c) => Term (b =-> c) -> Term a
 pattern TabularFuncTerm b <- (tabularFuncTermView -> Just b)
 
 -- apply
-data ApplyF = ApplyF deriving (Show, Lift, Generic, NFData)
+data ApplyF = ApplyF deriving (Show, Lift, Generic, NFData, Eq, Hashable)
 
 instance (Show a, Show b, SupportedPrim a, SupportedPrim b) => BinaryPartialStrategy ApplyF (a =-> b) a b where
   extractora _ = tabularFuncConcTermView

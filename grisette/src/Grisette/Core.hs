@@ -6,6 +6,9 @@ module Grisette.Core
     LogicalOp (..),
     SymBoolOp,
     ITEOp (..),
+    BVConcat (..),
+    BVExt (..),
+    BVExtract (..),
     ArithException (..),
     SignedDivMod (..),
     UnsignedDivMod (..),
@@ -125,3 +128,4 @@ import Grisette.Data.Class.UnionOp
 import Grisette.Data.MemoUtils
 import Grisette.TH
 import Grisette.BuiltinUnionMWrappers
+import Grisette.Data.Class.BitVector

@@ -39,6 +39,7 @@ import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.Helpers
 import Grisette.Data.Prim.InternedTerm
 import Language.Haskell.TH.Syntax
+import Data.Hashable
 
 numConcTermView :: (Num b, Typeable b) => Term a -> Maybe b
 numConcTermView (ConcTerm _ b) = cast b
@@ -57,6 +58,12 @@ pattern NumOrdConcTerm b <- (numOrdConcTermView -> Just b)
 -- add
 data AddNum x where
   AddNum :: (Num x) => AddNum x
+
+instance Eq (AddNum x) where
+  _ == _ = True
+
+instance Hashable (AddNum x) where
+  s `hashWithSalt` _ = s `hashWithSalt` typeRep (Proxy @AddNum)
 
 instance Show (AddNum x) where
   show AddNum = "AddNum"
@@ -109,7 +116,7 @@ minusNum :: (Num a, SupportedPrim a) => Term a -> Term a -> Term a
 minusNum l r = addNum l (uminusNum r)
 
 -- uminus
-data UMinusNum = UMinusNum deriving (Show, Lift, Generic, NFData)
+data UMinusNum = UMinusNum deriving (Show, Lift, Generic, NFData, Eq, Hashable)
 
 uminusNum :: (Num a, SupportedPrim a) => Term a -> Term a
 uminusNum = partialEvalUnary UMinusNum
@@ -136,7 +143,7 @@ pattern UMinusNumTerm :: (Num b, Typeable b) => Term b -> Term a
 pattern UMinusNumTerm v <- UnaryTermPatt UMinusNum v
 
 -- times
-data TimesNum = TimesNum deriving (Show, Lift, Generic, NFData)
+data TimesNum = TimesNum deriving (Show, Lift, Generic, NFData, Eq, Hashable)
 
 timesNum :: (Num a, SupportedPrim a) => Term a -> Term a -> Term a
 timesNum = partialEvalBinary TimesNum
@@ -174,7 +181,7 @@ pattern TimesNumTerm :: (Num b, Typeable b) => Term b -> Term b -> Term a
 pattern TimesNumTerm l r <- BinaryTermPatt TimesNum l r
 
 -- abs
-data AbsNum = AbsNum deriving (Show, Lift, Generic, NFData)
+data AbsNum = AbsNum deriving (Show, Lift, Generic, NFData, Eq, Hashable)
 
 absNum :: (SupportedPrim a, Num a) => Term a -> Term a
 absNum = partialEvalUnary AbsNum
@@ -196,7 +203,7 @@ pattern AbsNumTerm :: (Num b, SupportedPrim b) => Term b -> Term a
 pattern AbsNumTerm v <- UnaryTermPatt AbsNum v
 
 -- signum
-data SignumNum = SignumNum deriving (Show, Lift, Generic, NFData)
+data SignumNum = SignumNum deriving (Show, Lift, Generic, NFData, Eq, Hashable)
 
 signumNum :: (Num a, SupportedPrim a) => Term a -> Term a
 signumNum = partialEvalUnary SignumNum
@@ -217,7 +224,7 @@ pattern SignumNumTerm :: (Num b, SupportedPrim b) => Term b -> Term a
 pattern SignumNumTerm v <- UnaryTermPatt SignumNum v
 
 -- lt
-data LTNum = LTNum deriving (Show, Lift, Generic, NFData)
+data LTNum = LTNum deriving (Show, Lift, Generic, NFData, Eq, Hashable)
 
 ltNum :: (Num a, Ord a, SupportedPrim a) => Term a -> Term a -> Term Bool
 ltNum = partialEvalBinary LTNum
@@ -249,7 +256,7 @@ pattern LTNumTerm :: (Num a, Ord a, SupportedPrim a) => Term a -> Term a -> Term
 pattern LTNumTerm l r <- BinaryTermPatt LTNum l r
 
 -- le
-data LENum = LENum deriving (Show, Lift, Generic, NFData)
+data LENum = LENum deriving (Show, Lift, Generic, NFData, Eq, Hashable)
 
 leNum :: (Num a, Ord a, SupportedPrim a) => Term a -> Term a -> Term Bool
 leNum = partialEvalBinary LENum

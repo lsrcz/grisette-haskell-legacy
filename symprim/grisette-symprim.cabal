@@ -76,6 +76,7 @@ library
     , intern
     , monad-memo
     , mtl
+    , parameterized-utils
     , template-haskell
     , typerep-map
     , unordered-containers
