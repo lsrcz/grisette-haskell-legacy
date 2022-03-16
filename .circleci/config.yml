@@ -29,3 +29,6 @@ jobs:
             - "grisette/.stack-work"
             - "examples/.stack-work"
             - "scratch/.stack-work"
+      - run:
+          name: Upload shc
+          command: curl -L https://github.com/rubik/stack-hpc-coveralls/releases/download/v0.0.6.1/shc-linux-x64-8.10.4.tar.bz2 | tar -xj; ./shc grisette-core spec
