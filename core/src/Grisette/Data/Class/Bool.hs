@@ -66,6 +66,7 @@ class LogicalOp b where
   a `xors` b = (a &&~ nots b) ||~ (nots a &&~ b)
   implies :: b -> b -> b
   a `implies` b = nots a ||~ b
+  {-# MINIMAL (||~), nots | (&&~), nots #-}
 
 class ITEOp b v where
   ites :: b -> v -> v -> v
