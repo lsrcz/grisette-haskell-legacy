@@ -53,6 +53,7 @@ spec = do
         S.singleton (SSymbol "a")
       extractSymbolics (ExceptT (Just (Right (SSBool "a"))) :: ExceptT SBool Maybe SBool) `shouldBe`
         S.singleton (SSymbol "a")
+    prop "ExtractSymbolics for ()" (concreteExtractSymbolicsOkSpec @())
     it "ExtractSymbolics for (,)" $ do
       extractSymbolics (SSBool "a", SSBool "b") `shouldBe` S.fromList [SSymbol "a", SSymbol "b"]
     it "ExtractSymbolics for ByteString" $ do

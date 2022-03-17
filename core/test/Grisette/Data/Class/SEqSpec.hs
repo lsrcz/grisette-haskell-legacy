@@ -34,6 +34,7 @@ spec = do
     prop "SEq for Bool" (concreteSEqOkSpec @Bool)
     prop "SEq for Integer" (concreteSEqOkSpec @Integer)
     prop "SEq for Char" (concreteSEqOkSpec @Char)
+    prop "SEq for concrete List" (concreteSEqOkSpec @[Integer])
     it "SEq for List" $ do
       ([] :: [Bool]) ==~ [] `shouldBe` CBool True
       [SSBool "a"] ==~ [SSBool "b"] `shouldBe` Equal (SSBool "a") (SSBool "b")
@@ -41,11 +42,13 @@ spec = do
         And (SSBool "a" ==~ SSBool "c") (SSBool "b" ==~ SSBool "d")
       [SSBool "a"] ==~ [] `shouldBe` CBool False
       [SSBool "a"] ==~ [SSBool "c", SSBool "d"] `shouldBe` CBool False
+    prop "SEq for concrete Maybe" (concreteSEqOkSpec @(Maybe Integer))
     it "SEq for Maybe" $ do
       (Nothing :: Maybe SBool) ==~ Nothing `shouldBe` CBool True
       Just (SSBool "a") ==~ Nothing `shouldBe` CBool False
       Nothing ==~ Just (SSBool "a") `shouldBe` CBool False
       Just (SSBool "a") ==~ Just (SSBool "b") `shouldBe` Equal (SSBool "a") (SSBool "b")
+    prop "SEq for concrete Either" (concreteSEqOkSpec @(Either Integer Integer))
     it "SEq for Either" $ do
       (Left (SSBool "a") :: Either SBool SBool) ==~ Left (SSBool "b") `shouldBe`
         Equal (SSBool "a") (SSBool "b")
@@ -78,6 +81,8 @@ spec = do
         `shouldBe` CBool False
       ExceptT (Just (Right (SSBool "a"))) ==~ (ExceptT (Just (Right (SSBool "b"))) :: ExceptT SBool Maybe SBool)
         `shouldBe` Equal (SSBool "a") (SSBool "b")
+    prop "SEq for ()" (concreteSEqOkSpec @())
+    prop "SEq for concrete (,)" (concreteSEqOkSpec @(Integer, Integer))
     it "SEq for (,)" $ do
       (SSBool "a", SSBool "b") ==~ (SSBool "c", SSBool "d") `shouldBe`
         And (Equal (SSBool "a") (SSBool "c")) (Equal (SSBool "b") (SSBool "d"))

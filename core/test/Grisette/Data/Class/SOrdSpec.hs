@@ -160,7 +160,25 @@ spec = do
       (Right (SSBool "a") :: Either SBool SBool) >~ Right (SSBool "b") `shouldBe` (SSBool "a" >~ SSBool "b" :: SBool)
       (Right (SSBool "a") :: Either SBool SBool) `symCompare` Right (SSBool "b") `shouldBe`
         (SSBool "a" `symCompare` SSBool "b" :: UnionMBase SBool Ordering)
+    prop "SOrd for ()" (concreteOrdOkProp @())
     prop "SOrd for concrete (,)" (concreteOrdOkProp @(Integer, Integer))
+    it "SOrd for (,)" $ do
+      (SSBool "a", SSBool "b") <=~ (SSBool "c", SSBool "d") `shouldBe`
+        (SSBool "a" <~ SSBool "c") ||~ (SSBool "a" ==~ SSBool "c" &&~
+          (SSBool "b" <=~ SSBool "d") :: SBool)
+      (SSBool "a", SSBool "b") <~ (SSBool "c", SSBool "d") `shouldBe`
+        (SSBool "a" <~ SSBool "c") ||~ (SSBool "a" ==~ SSBool "c" &&~
+          (SSBool "b" <~ SSBool "d") :: SBool)
+      (SSBool "a", SSBool "b") >=~ (SSBool "c", SSBool "d") `shouldBe`
+        (SSBool "a" >~ SSBool "c") ||~ (SSBool "a" ==~ SSBool "c" &&~
+          (SSBool "b" >=~ SSBool "d") :: SBool)
+      (SSBool "a", SSBool "b") >~ (SSBool "c", SSBool "d") `shouldBe`
+        (SSBool "a" >~ SSBool "c") ||~ (SSBool "a" ==~ SSBool "c" &&~
+          (SSBool "b" >~ SSBool "d") :: SBool)
+      (SSBool "a", SSBool "b") `symCompare` (SSBool "c", SSBool "d") `shouldBe`
+        (mrgIf (SSBool "a" <~ SSBool "c") (mrgReturn LT)
+          (mrgIf (SSBool "a" ==~ SSBool "c")
+            (symCompare (SSBool "b") (SSBool "d")) (mrgReturn GT)) :: UnionMBase SBool Ordering)
     it "SOrd for ByteString" $ do
       let bytestrings :: [B.ByteString] = ["", "a", "b", "ab", "ba", "aa", "bb"]
       traverse_ concreteOrdOkProp [(x, y) | x <- bytestrings, y <- bytestrings]

@@ -185,6 +185,13 @@ instance (SymBoolOp bool, SOrd bool a, SOrd bool b) => SOrd bool (Either a b) wh
   (>~) = derivedSymGt
   symCompare = derivedSymCompare
 
+instance (SymBoolOp bool) => SOrd bool () where
+  (<=~) = derivedSymLe
+  (<~) = derivedSymLt
+  (>=~) = derivedSymGe
+  (>~) = derivedSymGt
+  symCompare = derivedSymCompare
+
 instance (SymBoolOp bool, SOrd bool a, SOrd bool b) => SOrd bool (a, b) where
   (<=~) = derivedSymLe
   (<~) = derivedSymLt

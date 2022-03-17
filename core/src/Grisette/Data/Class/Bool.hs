@@ -99,6 +99,9 @@ instance (SymBoolOp bool, SEq bool (m (Either e a))) => SEq bool (ExceptT e m a)
 instance (SymBoolOp bool, SEq bool (m (Maybe a))) => SEq bool (MaybeT m a) where
   (MaybeT a) ==~ (MaybeT b) = a ==~ b
 
+-- ()
+instance (SymBoolOp bool) => SEq bool () where
+
 -- (,)
 instance (SymBoolOp bool, SEq bool a, SEq bool b) => SEq bool (a, b)
 
