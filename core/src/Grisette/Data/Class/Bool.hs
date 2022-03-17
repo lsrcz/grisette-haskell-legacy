@@ -17,6 +17,7 @@ import qualified Data.ByteString as B
 import Generics.Deriving
 import Grisette.Data.Class.PrimWrapper
 import {-# SOURCE #-} Grisette.Data.Class.SimpleMergeable
+import Data.Functor.Sum
 
 class (SymBoolOp bool) => SEq' bool f where
   (==~~) :: f a -> f a -> bool
@@ -100,11 +101,38 @@ instance (SymBoolOp bool, SEq bool (m (Maybe a))) => SEq bool (MaybeT m a) where
   (MaybeT a) ==~ (MaybeT b) = a ==~ b
 
 -- ()
-instance (SymBoolOp bool) => SEq bool () where
+instance (SymBoolOp bool) => SEq bool ()
 
 -- (,)
 instance (SymBoolOp bool, SEq bool a, SEq bool b) => SEq bool (a, b)
 
+-- (,,)
+instance (SymBoolOp bool, SEq bool a, SEq bool b, SEq bool c) => SEq bool (a, b, c)
+
+-- (,,,)
+instance (SymBoolOp bool, SEq bool a, SEq bool b, SEq bool c, SEq bool d) => SEq bool (a, b, c, d)
+
+-- (,,,,)
+instance (SymBoolOp bool, SEq bool a, SEq bool b, SEq bool c, SEq bool d, SEq bool e) => SEq bool (a, b, c, d, e)
+
+-- (,,,,,)
+instance
+  (SymBoolOp bool, SEq bool a, SEq bool b, SEq bool c, SEq bool d, SEq bool e, SEq bool f) =>
+  SEq bool (a, b, c, d, e, f)
+
+-- (,,,,,,)
+instance
+  (SymBoolOp bool, SEq bool a, SEq bool b, SEq bool c, SEq bool d, SEq bool e, SEq bool f, SEq bool g) =>
+  SEq bool (a, b, c, d, e, f, g)
+
+-- (,,,,,,,)
+instance
+  (SymBoolOp bool, SEq bool a, SEq bool b, SEq bool c, SEq bool d, SEq bool e, SEq bool f, SEq bool g, SEq bool h) =>
+  SEq bool (a, b, c, d, e, f, g, h)
+
 -- ByteString
 instance (SymBoolOp bool) => SEq bool B.ByteString where
   l ==~ r = conc $ l == r
+
+-- Sum
+instance (SymBoolOp bool, SEq bool (f a), SEq bool (g a)) => SEq bool (Sum f g a)
