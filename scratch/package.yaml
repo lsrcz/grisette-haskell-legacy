@@ -55,4 +55,5 @@ executables:
     source-dirs: cegis
     main: Main.hs
   
-
+library:
+  source-dirs: src
