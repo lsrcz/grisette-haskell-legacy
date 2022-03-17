@@ -10,8 +10,14 @@ import qualified Data.ByteString as B
 import Control.Monad.Except
 import Control.Monad.Trans.Maybe
 import GHC.Generics
+import Test.Hspec.QuickCheck
 
 data A = A1 | A2 SBool | A3 SBool SBool deriving (Generic, Show, Eq, SEq SBool)
+
+concreteSEqOkSpec :: (SEq SBool a, Eq a) => (a, a) -> Expectation
+concreteSEqOkSpec (i, j) = do
+  i ==~ j `shouldBe` CBool (i == j)
+  i /=~ j `shouldBe` CBool (i /= j)
 
 spec :: Spec
 spec = do
@@ -25,15 +31,9 @@ spec = do
       SSBool "a" ==~ CBool False `shouldBe` Not (SSBool "a")
       SSBool "a" ==~ SSBool "b" `shouldBe` Equal (SSBool "a") (SSBool "b")
       SSBool "a" ==~ SSBool "a" `shouldBe` CBool True
-    it "SEq for Bool" $ do
-      let bools :: [Bool] = [True, False]
-      traverse_ (\(i, j) -> i ==~ j `shouldBe` CBool (i == j)) [(x, y) | x <- bools, y <- bools]
-    it "SEq for Integer" $ do
-      let integers :: [Integer] = [-42, -1, 0, 1, 42]
-      traverse_ (\(i, j) -> i ==~ j `shouldBe` CBool (i == j)) [(x, y) | x <- integers, y <- integers]
-    it "SEq for Char" $ do
-      let integers :: [Char] = toEnum <$> [0, 1, 42, 97, 255]
-      traverse_ (\(i, j) -> i ==~ j `shouldBe` CBool (i == j)) [(x, y) | x <- integers, y <- integers]
+    prop "SEq for Bool" (concreteSEqOkSpec @Bool)
+    prop "SEq for Integer" (concreteSEqOkSpec @Integer)
+    prop "SEq for Char" (concreteSEqOkSpec @Char)
     it "SEq for List" $ do
       ([] :: [Bool]) ==~ [] `shouldBe` CBool True
       [SSBool "a"] ==~ [SSBool "b"] `shouldBe` Equal (SSBool "a") (SSBool "b")
@@ -84,7 +84,8 @@ spec = do
     it "SEq for ByteString" $ do
       let bytestrings :: [B.ByteString] = ["", "a", "ab"]
       traverse_ (\(i, j) -> i ==~ j `shouldBe` CBool (i == j)) [(x, y) | x <- bytestrings, y <- bytestrings]
-    it "derived SEq for ADT" $ do
+  describe "deriving SEq for ADT" $ do
+    it "derived SEq for simple ADT" $ do
       A1 ==~ A1 `shouldBe` CBool True
       A1 ==~ A2 (SSBool "a") `shouldBe` CBool False
       A1 ==~ A3 (SSBool "a") (SSBool "b") `shouldBe` CBool False

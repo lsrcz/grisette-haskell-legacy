@@ -16,6 +16,7 @@ import Control.Monad.Trans.Maybe
 import qualified Data.ByteString as B
 import Generics.Deriving
 import Grisette.Data.Class.PrimWrapper
+import {-# SOURCE #-} Grisette.Data.Class.SimpleMergeable
 
 class (SymBoolOp bool) => SEq' bool f where
   (==~~) :: f a -> f a -> bool
@@ -68,7 +69,7 @@ class LogicalOp b where
 class ITEOp b v where
   ites :: b -> v -> v -> v
 
-class (SEq b b, Eq b, LogicalOp b, PrimWrapper b Bool, ITEOp b b) => SymBoolOp b
+class (SimpleMergeable b b, SEq b b, Eq b, LogicalOp b, PrimWrapper b Bool, ITEOp b b) => SymBoolOp b
 
 -- Bool
 instance (SymBoolOp bool) => SEq bool Bool

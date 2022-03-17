@@ -296,3 +296,6 @@ instance
               withKnownNat dec $
                 wrapMergeStrategy mergeStrategy (uncurry VSized.cons) (\v -> (VSized.head v, VSized.tail v))
     (Right LeqProof, NoStrategy) -> NoStrategy
+
+-- Ordering
+instance (SymBoolOp bool) => Mergeable bool Ordering

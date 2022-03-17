@@ -107,6 +107,7 @@ test-suite spec
   other-modules:
       Grisette.Data.Class.ExtractSymbolicsSpec
       Grisette.Data.Class.SEqSpec
+      Grisette.Data.Class.SOrdSpec
       Utils.SBool
       Paths_grisette_core
   hs-source-dirs:

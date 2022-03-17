@@ -6,6 +6,10 @@ import qualified Data.HashSet as S
 import Grisette.Data.Class.ExtractSymbolics
 import GHC.Generics
 import Data.Hashable
+import Grisette.Data.Class.SOrd
+import Grisette.Data.Class.SimpleMergeable
+import Grisette.Data.Class.Mergeable
+import Grisette.Control.Monad
 
 {-
 data Term
@@ -31,6 +35,11 @@ data SBool
   | ITE SBool SBool SBool
   deriving (Show, Eq)
 
+instance Mergeable SBool SBool where
+  mergeStrategy = SimpleStrategy ites
+
+instance SimpleMergeable SBool SBool where
+  mrgIte = ites
 instance SEq SBool SBool where
   (CBool l) ==~ (CBool r) = CBool (l == r)
   (CBool True) ==~ r = r
@@ -41,6 +50,15 @@ instance SEq SBool SBool where
     | l == r = CBool True
     | otherwise = Equal l r
 
+instance SOrd SBool SBool where
+  l <=~ r = nots l ||~ r
+  l <~ r = nots l &&~ r
+  l >=~ r = l ||~ nots r
+  l >~ r = l &&~ nots r
+  symCompare l r =
+    mrgIf (nots l &&~ r)
+      (mrgReturn LT)
+      (mrgIf (l ==~ r) (mrgReturn EQ) (mrgReturn GT))
 instance PrimWrapper SBool Bool where
   conc = CBool
   concView (CBool x) = Just x

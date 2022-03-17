@@ -4,12 +4,15 @@ import Test.Hspec
 import qualified Data.HashSet as S
 import Utils.SBool
 import Grisette.Data.Class.ExtractSymbolics
-import Data.Foldable
 import Control.Monad.Trans.Maybe
 import Control.Monad.Except
 import GHC.Generics
+import Test.Hspec.QuickCheck
 
 data A = A1 | A2 SBool | A3 SBool SBool deriving (Generic, Show, Eq, ExtractSymbolics (S.HashSet Symbol))
+
+concreteExtractSymbolicsOkSpec :: (ExtractSymbolics (S.HashSet Symbol) a) => (a, a) -> Expectation
+concreteExtractSymbolicsOkSpec x = extractSymbolics x `shouldBe` (S.empty :: S.HashSet Symbol)
 
 spec :: Spec
 spec = do
@@ -27,14 +30,9 @@ spec = do
       extractSymbolics (ITE (SSBool "a") (ISBool 1 "b") (SSBool "c")) `shouldBe`
         S.fromList [SSymbol "a", ISymbol 1 "b", SSymbol "c"]
       extractSymbolics (Not $ ISBool 1 "a") `shouldBe` S.singleton (ISymbol 1 "a")
-    it "ExtractSymbolics for Bool" $ do
-      traverse_ (\x -> extractSymbolics x `shouldBe` (S.empty :: S.HashSet Symbol)) [True, False]
-    it "ExtractSymbolics for Integer" $ do
-      traverse_ (\(x :: Integer) -> extractSymbolics x `shouldBe` (S.empty :: S.HashSet Symbol))
-        [-42, -1, 0, 1, 42]
-    it "ExtractSymbolics for Char" $ do
-      traverse_ (\(x :: Char) -> extractSymbolics x `shouldBe` (S.empty :: S.HashSet Symbol)) $
-        toEnum <$> [0, 1, 42, 97, 255]
+    prop "ExtractSymbolics for Bool" (concreteExtractSymbolicsOkSpec @Bool)
+    prop "ExtractSymbolics for Integer" (concreteExtractSymbolicsOkSpec @Integer)
+    prop "ExtractSymbolics for Char" (concreteExtractSymbolicsOkSpec @Char)
     it "ExtractSymbolics for List" $ do
       extractSymbolics ([] :: [SBool]) `shouldBe` (S.empty :: S.HashSet Symbol)
       extractSymbolics [SSBool "a"] `shouldBe` S.singleton (SSymbol "a")
@@ -60,7 +58,8 @@ spec = do
     it "ExtractSymbolics for ByteString" $ do
       extractSymbolics "" `shouldBe` (S.empty :: S.HashSet Symbol)
       extractSymbolics "a" `shouldBe` (S.empty :: S.HashSet Symbol)
-    it "derived ExtractSymbolics for ADT" $ do
+  describe "deriving ExtractSymbolics for ADT" $ do
+    it "derived ExtractSymbolics for simple ADT" $ do
       extractSymbolics A1 `shouldBe` (S.empty :: S.HashSet Symbol)
       extractSymbolics (A2 (SSBool "a")) `shouldBe` S.singleton (SSymbol "a")
       extractSymbolics (A3 (SSBool "a") (SSBool "b")) `shouldBe` S.fromList [SSymbol "a", SSymbol "b"]
