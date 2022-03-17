@@ -6,7 +6,6 @@ module Grisette.Data.Class.SymEval
   )
 where
 
-import Control.Monad.Coroutine
 import Control.Monad.Except
 import Control.Monad.Trans.Maybe
 import qualified Data.ByteString as B
@@ -86,10 +85,6 @@ instance (SymEval model (m (Maybe a))) => SymEval model (MaybeT m a) where
 -- ExceptT
 instance (SymEval model (m (Either e a))) => SymEval model (ExceptT e m a) where
   symeval fillDefault model (ExceptT v) = ExceptT $ symeval fillDefault model v
-
--- Coroutine
-instance (SymEval model (m (Either (sus (Coroutine sus m a)) a))) => SymEval model (Coroutine sus m a) where
-  symeval fillDefault model (Coroutine v) = Coroutine $ symeval fillDefault model v
 
 -- Sum
 instance (SymEval model (f a), SymEval model (g a)) => SymEval model (Sum f g a)

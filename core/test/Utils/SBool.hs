@@ -10,19 +10,8 @@ import Grisette.Data.Class.SOrd
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.Mergeable
 import Grisette.Control.Monad
-
-{-
-data Term
-  = SBoolTerm SBool
-  | SIntTerm SInteger
-  deriving (Show, Eq)
-
-data SInteger
-  = CInteger Integer
-  | SSInteger String
-  | ISInteger Int String
-  deriving (Show, Eq)
-  -}
+import Grisette.Data.Class.SymEval
+import qualified Data.HashMap.Strict as M
 
 data SBool
   = CBool Bool
@@ -40,6 +29,22 @@ instance Mergeable SBool SBool where
 
 instance SimpleMergeable SBool SBool where
   mrgIte = ites
+
+instance SymEval (M.HashMap Symbol Bool) SBool where
+  symeval _ _ c@(CBool _) = c
+  symeval fillDefault model s@(SSBool sym) = case M.lookup (SSymbol sym) model of
+    Just v -> CBool v
+    Nothing -> if fillDefault then (CBool False) else s
+  symeval fillDefault model s@(ISBool i sym) = case M.lookup (ISymbol i sym) model of
+    Just v -> CBool v
+    Nothing -> if fillDefault then (CBool False) else s
+  symeval fillDefault model (Or l r) = symeval fillDefault model l ||~ symeval fillDefault model r
+  symeval fillDefault model (And l r) = symeval fillDefault model l &&~ symeval fillDefault model r
+  symeval fillDefault model (Not v) = nots (symeval fillDefault model v)
+  symeval fillDefault model (Equal l r) = symeval fillDefault model l ==~ symeval fillDefault model r
+  symeval fillDefault model (ITE c l r) = ites (symeval fillDefault model c)
+    (symeval fillDefault model l) (symeval fillDefault model r)
+
 instance SEq SBool SBool where
   (CBool l) ==~ (CBool r) = CBool (l == r)
   (CBool True) ==~ r = r
@@ -67,6 +72,8 @@ instance PrimWrapper SBool Bool where
   isymb = ISBool
 
 instance ITEOp SBool SBool where
+  ites (CBool True) l _ = l
+  ites (CBool False) _ r = r
   ites cond l r = ITE cond l r
 
 instance LogicalOp SBool where
