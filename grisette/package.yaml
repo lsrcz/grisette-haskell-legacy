@@ -57,4 +57,3 @@ ghc-options: -Wall -ferror-spans
 
 library:
   source-dirs: src
-
