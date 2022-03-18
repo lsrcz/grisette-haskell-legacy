@@ -1,15 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
+
 module Grisette.Data.Class.SymEvalSpec where
 
+import Control.Monad.Except
+import Control.Monad.Trans.Maybe
+import qualified Data.ByteString as B
+import Data.Functor.Sum
 import qualified Data.HashMap.Strict as M
 import Grisette.Data.Class.SymEval
 import Test.Hspec
-import Utils.SBool
 import Test.Hspec.QuickCheck
-import Control.Monad.Trans.Maybe
-import Control.Monad.Except
-import qualified Data.ByteString as B
-import Data.Functor.Sum
+import Utils.SBool
 
 concreteSymEvalOkSpec :: (SymEval (M.HashMap Symbol Bool) a, Show a, Eq a) => a -> Expectation
 concreteSymEvalOkSpec x = symeval True (M.empty :: M.HashMap Symbol Bool) x `shouldBe` x
@@ -82,7 +83,7 @@ spec = do
     describe "SymEval for Maybe" $ do
       prop "SymEval for concrete Maybe should work" (concreteSymEvalOkSpec @(Maybe Integer))
       it "SymEval for Maybe should work" $ do
-        let model = M.fromList [ (SSymbol "a", True)] :: M.HashMap Symbol Bool
+        let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
         symeval False model (Nothing :: Maybe SBool) `shouldBe` Nothing
         symeval True model (Nothing :: Maybe SBool) `shouldBe` Nothing
         symeval False model (Just (SSBool "a")) `shouldBe` Just (CBool True)
@@ -92,7 +93,7 @@ spec = do
     describe "SymEval for Either" $ do
       prop "SymEval for concrete Either should work" (concreteSymEvalOkSpec @(Either Integer Integer))
       it "SymEval for Either should work" $ do
-        let model = M.fromList [ (SSymbol "a", True)] :: M.HashMap Symbol Bool
+        let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
         symeval False model (Left (SSBool "a") :: Either SBool SBool) `shouldBe` Left (CBool True)
         symeval True model (Left (SSBool "a") :: Either SBool SBool) `shouldBe` Left (CBool True)
         symeval False model (Left (SSBool "b") :: Either SBool SBool) `shouldBe` Left (SSBool "b")
@@ -104,7 +105,7 @@ spec = do
     describe "SymEval for MaybeT" $ do
       prop "SymEval for concrete MaybeT should work" (concreteSymEvalOkSpec @(MaybeT Maybe Integer) . MaybeT)
       it "SymEval for MaybeT should work" $ do
-        let model = M.fromList [ (SSymbol "a", True)] :: M.HashMap Symbol Bool
+        let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
         symeval False model (MaybeT Nothing :: MaybeT Maybe SBool) `shouldBe` MaybeT Nothing
         symeval True model (MaybeT Nothing :: MaybeT Maybe SBool) `shouldBe` MaybeT Nothing
         symeval False model (MaybeT $ Just Nothing :: MaybeT Maybe SBool) `shouldBe` MaybeT (Just Nothing)
@@ -116,54 +117,117 @@ spec = do
     describe "SymEval for ExceptT" $ do
       prop "SymEval for concrete ExceptT should work" (concreteSymEvalOkSpec @(ExceptT Integer Maybe Integer) . ExceptT)
       it "SymEval for MaybeT should work" $ do
-        let model = M.fromList [ (SSymbol "a", True)] :: M.HashMap Symbol Bool
+        let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
         symeval False model (ExceptT Nothing :: ExceptT SBool Maybe SBool) `shouldBe` ExceptT Nothing
         symeval True model (ExceptT Nothing :: ExceptT SBool Maybe SBool) `shouldBe` ExceptT Nothing
 
-        symeval False model (ExceptT $ Just $ Left $ SSBool "a" :: ExceptT SBool Maybe SBool) `shouldBe`
-          ExceptT (Just $ Left $ CBool True)
-        symeval True model (ExceptT $ Just $ Left $ SSBool "a" :: ExceptT SBool Maybe SBool) `shouldBe`
-          ExceptT (Just $ Left $ CBool True)
-        symeval False model (ExceptT $ Just $ Left $ SSBool "b" :: ExceptT SBool Maybe SBool) `shouldBe`
-          ExceptT (Just $ Left $ SSBool "b")
-        symeval True model (ExceptT $ Just $ Left $ SSBool "b" :: ExceptT SBool Maybe SBool) `shouldBe`
-          ExceptT (Just $ Left $ CBool False)
+        symeval False model (ExceptT $ Just $ Left $ SSBool "a" :: ExceptT SBool Maybe SBool)
+          `shouldBe` ExceptT (Just $ Left $ CBool True)
+        symeval True model (ExceptT $ Just $ Left $ SSBool "a" :: ExceptT SBool Maybe SBool)
+          `shouldBe` ExceptT (Just $ Left $ CBool True)
+        symeval False model (ExceptT $ Just $ Left $ SSBool "b" :: ExceptT SBool Maybe SBool)
+          `shouldBe` ExceptT (Just $ Left $ SSBool "b")
+        symeval True model (ExceptT $ Just $ Left $ SSBool "b" :: ExceptT SBool Maybe SBool)
+          `shouldBe` ExceptT (Just $ Left $ CBool False)
 
-        symeval False model (ExceptT $ Just $ Right $ SSBool "a" :: ExceptT SBool Maybe SBool) `shouldBe`
-          ExceptT (Just $ Right $ CBool True)
-        symeval True model (ExceptT $ Just $ Right $ SSBool "a" :: ExceptT SBool Maybe SBool) `shouldBe`
-          ExceptT (Just $ Right $ CBool True)
-        symeval False model (ExceptT $ Just $ Right $ SSBool "b" :: ExceptT SBool Maybe SBool) `shouldBe`
-          ExceptT (Just $ Right $ SSBool "b")
-        symeval True model (ExceptT $ Just $ Right $ SSBool "b" :: ExceptT SBool Maybe SBool) `shouldBe`
-          ExceptT (Just $ Right $ CBool False)
+        symeval False model (ExceptT $ Just $ Right $ SSBool "a" :: ExceptT SBool Maybe SBool)
+          `shouldBe` ExceptT (Just $ Right $ CBool True)
+        symeval True model (ExceptT $ Just $ Right $ SSBool "a" :: ExceptT SBool Maybe SBool)
+          `shouldBe` ExceptT (Just $ Right $ CBool True)
+        symeval False model (ExceptT $ Just $ Right $ SSBool "b" :: ExceptT SBool Maybe SBool)
+          `shouldBe` ExceptT (Just $ Right $ SSBool "b")
+        symeval True model (ExceptT $ Just $ Right $ SSBool "b" :: ExceptT SBool Maybe SBool)
+          `shouldBe` ExceptT (Just $ Right $ CBool False)
     describe "SymEval for ()" $ do
       prop "SymEval for () should work" (concreteSymEvalOkSpec @())
     describe "SymEval for (,)" $ do
       prop "SymEval for concrete (,) should work" (concreteSymEvalOkSpec @(Integer, Integer))
       it "SymEval for (,) should work" $ do
-        let model = M.fromList [ (SSymbol "a", True)] :: M.HashMap Symbol Bool
+        let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
         symeval False model (SSBool "a", SSBool "b") `shouldBe` (CBool True, SSBool "b")
         symeval True model (SSBool "a", SSBool "b") `shouldBe` (CBool True, CBool False)
     describe "SymEval for (,,)" $ do
       prop "SymEval for concrete (,,) should work" (concreteSymEvalOkSpec @(Integer, Integer, Integer))
       it "SymEval for (,,) should work" $ do
-        let model = M.fromList [ (SSymbol "a", True)] :: M.HashMap Symbol Bool
+        let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
         symeval False model (SSBool "a", SSBool "b", SSBool "c") `shouldBe` (CBool True, SSBool "b", SSBool "c")
         symeval True model (SSBool "a", SSBool "b", SSBool "c") `shouldBe` (CBool True, CBool False, CBool False)
+    describe "SymEval for (,,,)" $ do
+      prop "SymEval for concrete (,,,) should work" (concreteSymEvalOkSpec @(Integer, Integer, Integer, Integer))
+      it "SymEval for (,,,) should work" $ do
+        let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
+        symeval False model (SSBool "a", SSBool "b", SSBool "c", SSBool "d")
+          `shouldBe` (CBool True, SSBool "b", SSBool "c", SSBool "d")
+        symeval True model (SSBool "a", SSBool "b", SSBool "c", SSBool "d")
+          `shouldBe` (CBool True, CBool False, CBool False, CBool False)
+    describe "SymEval for (,,,,)" $ do
+      prop
+        "SymEval for concrete (,,,,) should work"
+        (concreteSymEvalOkSpec @(Integer, Integer, Integer, Integer, Integer))
+      it "SymEval for (,,,,) should work" $ do
+        let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
+        symeval False model (SSBool "a", SSBool "b", SSBool "c", SSBool "d", SSBool "e")
+          `shouldBe` (CBool True, SSBool "b", SSBool "c", SSBool "d", SSBool "e")
+        symeval True model (SSBool "a", SSBool "b", SSBool "c", SSBool "d", SSBool "e")
+          `shouldBe` (CBool True, CBool False, CBool False, CBool False, CBool False)
+    describe "SymEval for (,,,,,)" $ do
+      prop
+        "SymEval for concrete (,,,,,) should work"
+        (concreteSymEvalOkSpec @(Integer, Integer, Integer, Integer, Integer, Integer))
+      it "SymEval for (,,,,,) should work" $ do
+        let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
+        symeval False model (SSBool "a", SSBool "b", SSBool "c", SSBool "d", SSBool "e", SSBool "f")
+          `shouldBe` (CBool True, SSBool "b", SSBool "c", SSBool "d", SSBool "e", SSBool "f")
+        symeval True model (SSBool "a", SSBool "b", SSBool "c", SSBool "d", SSBool "e", SSBool "f")
+          `shouldBe` (CBool True, CBool False, CBool False, CBool False, CBool False, CBool False)
+    describe "SymEval for (,,,,,,)" $ do
+      prop
+        "SymEval for concrete (,,,,,,) should work"
+        (concreteSymEvalOkSpec @(Integer, Integer, Integer, Integer, Integer, Integer, Integer))
+      it "SymEval for (,,,,,,) should work" $ do
+        let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
+        symeval
+          False
+          model
+          (SSBool "a", SSBool "b", SSBool "c", SSBool "d", SSBool "e", SSBool "f", SSBool "g")
+          `shouldBe` (CBool True, SSBool "b", SSBool "c", SSBool "d", SSBool "e", SSBool "f", SSBool "g")
+        symeval
+          True
+          model
+          (SSBool "a", SSBool "b", SSBool "c", SSBool "d", SSBool "e", SSBool "f", SSBool "h")
+          `shouldBe` (CBool True, CBool False, CBool False, CBool False, CBool False, CBool False, CBool False)
+    describe "SymEval for (,,,,,,,)" $ do
+      prop
+        "SymEval for concrete (,,,,,,,) should work"
+        (concreteSymEvalOkSpec @(Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer))
+      it "SymEval for (,,,,,,,) should work" $ do
+        let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
+        symeval
+          False
+          model
+          (SSBool "a", SSBool "b", SSBool "c", SSBool "d", SSBool "e", SSBool "f", SSBool "g", SSBool "h")
+          `shouldBe` (CBool True, SSBool "b", SSBool "c", SSBool "d", SSBool "e", SSBool "f", SSBool "g", SSBool "h")
+        symeval
+          True
+          model
+          (SSBool "a", SSBool "b", SSBool "c", SSBool "d", SSBool "e", SSBool "f", SSBool "h", SSBool "h")
+          `shouldBe` (CBool True, CBool False, CBool False, CBool False, CBool False, CBool False, CBool False, CBool False)
     describe "SymEval for ByteString" $
       it "SymEval for ByteString should work" $ do
-        let model = M.fromList [ (SSymbol "a", True)] :: M.HashMap Symbol Bool
+        let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
         symeval False model ("" :: B.ByteString) `shouldBe` ""
         symeval True model ("" :: B.ByteString) `shouldBe` ""
         symeval False model ("a" :: B.ByteString) `shouldBe` "a"
         symeval True model ("a" :: B.ByteString) `shouldBe` "a"
     describe "SymEval for Sum" $ do
-      prop "SymEval for concrete Sum should work" (\(x :: Either (Maybe Integer) (Maybe Integer)) -> case x of
-        Left val -> concreteSymEvalOkSpec @(Sum Maybe Maybe Integer) $ InL val
-        Right val -> concreteSymEvalOkSpec @(Sum Maybe Maybe Integer) $ InR val)
+      prop
+        "SymEval for concrete Sum should work"
+        ( \(x :: Either (Maybe Integer) (Maybe Integer)) -> case x of
+            Left val -> concreteSymEvalOkSpec @(Sum Maybe Maybe Integer) $ InL val
+            Right val -> concreteSymEvalOkSpec @(Sum Maybe Maybe Integer) $ InR val
+        )
       it "SymEval for Sum should work" $ do
-        let model = M.fromList [ (SSymbol "a", True)] :: M.HashMap Symbol Bool
+        let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
         symeval False model (InL Nothing :: Sum Maybe Maybe SBool) `shouldBe` InL Nothing
         symeval True model (InL Nothing :: Sum Maybe Maybe SBool) `shouldBe` InL Nothing
         symeval False model (InR Nothing :: Sum Maybe Maybe SBool) `shouldBe` InR Nothing
@@ -178,5 +242,3 @@ spec = do
         symeval True model (InR (Just $ SSBool "a") :: Sum Maybe Maybe SBool) `shouldBe` InR (Just $ CBool True)
         symeval False model (InR (Just $ SSBool "b") :: Sum Maybe Maybe SBool) `shouldBe` InR (Just $ SSBool "b")
         symeval True model (InR (Just $ SSBool "b") :: Sum Maybe Maybe SBool) `shouldBe` InR (Just $ CBool False)
-
-

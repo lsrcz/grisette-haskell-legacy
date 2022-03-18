@@ -13,6 +13,7 @@ import Data.Functor.Sum
 import Data.Maybe
 import GHC.Generics
 import Grisette.Data.Class.ToCon
+import Generics.Deriving.Instances ()
 
 class SymEval model a where
   symeval :: Bool -> model -> a -> a
@@ -77,6 +78,44 @@ instance (SymEval model a, SymEval model b) => SymEval model (a, b)
 
 -- (,,)
 instance (SymEval model a, SymEval model b, SymEval model c) => SymEval model (a, b, c)
+
+-- (,,,)
+instance (SymEval model a, SymEval model b, SymEval model c, SymEval model d) => SymEval model (a, b, c, d)
+
+-- (,,,,)
+instance
+  (SymEval model a, SymEval model b, SymEval model c, SymEval model d, SymEval model e) =>
+  SymEval model (a, b, c, d, e)
+
+-- (,,,,,)
+instance
+  (SymEval model a, SymEval model b, SymEval model c, SymEval model d, SymEval model e, SymEval model f) =>
+  SymEval model (a, b, c, d, e, f)
+
+-- (,,,,,,)
+instance
+  ( SymEval model a,
+    SymEval model b,
+    SymEval model c,
+    SymEval model d,
+    SymEval model e,
+    SymEval model f,
+    SymEval model g
+  ) =>
+  SymEval model (a, b, c, d, e, f, g)
+
+-- (,,,,,,,)
+instance
+  ( SymEval model a,
+    SymEval model b,
+    SymEval model c,
+    SymEval model d,
+    SymEval model e,
+    SymEval model f,
+    SymEval model g,
+    SymEval model h
+  ) =>
+  SymEval model ((,,,,,,,) a b c d e f g h)
 
 -- MaybeT
 instance (SymEval model (m (Maybe a))) => SymEval model (MaybeT m a) where
