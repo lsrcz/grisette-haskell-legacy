@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
 
 module Grisette.Data.Class.SOrd
@@ -11,11 +12,14 @@ module Grisette.Data.Class.SOrd
   )
 where
 
+import qualified Data.ByteString as B
 import GHC.Generics
+import Grisette.Control.Monad
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.PrimWrapper
-import qualified Data.ByteString as B
-import Grisette.Control.Monad
+import Data.Functor.Sum
+import Control.Monad.Trans.Maybe
+import Control.Monad.Except
 
 class (SEq' bool f) => SOrd' bool f where
   (<~~) :: f a -> f a -> bool
@@ -120,10 +124,12 @@ class (SEq bool a) => SOrd bool a where
   x >=~ y = y <=~ x
   symCompare :: (MonadUnion bool u) => a -> a -> u Ordering
   symCompare l r =
-    mrgIf (l <~ r :: bool) (mrgReturn LT)
+    mrgIf
+      (l <~ r :: bool)
+      (mrgReturn LT)
       (mrgIf (l ==~ r :: bool) (mrgReturn EQ) (mrgReturn GT))
   {-# MINIMAL (<=~) #-}
-  
+
 instance (SymBoolOp bool) => SOrd bool Bool where
   l <=~ r = conc $ l <= r
   l <~ r = conc $ l < r
@@ -149,13 +155,13 @@ symCompareSingleList :: (SymBoolOp bool, SOrd bool a) => Bool -> Bool -> [a] -> 
 symCompareSingleList isLess isStrict = go
   where
     go [] [] = conc (not isStrict)
-    go (x:xs) (y:ys) = (if isLess then x <~ y else x >~ y) ||~ (x ==~ y &&~ go xs ys)
+    go (x : xs) (y : ys) = (if isLess then x <~ y else x >~ y) ||~ (x ==~ y &&~ go xs ys)
     go [] _ = if isLess then conc True else conc False
     go _ [] = if isLess then conc False else conc True
 
 symCompareList :: (SymBoolOp bool, SOrd bool a, MonadUnion bool u) => [a] -> [a] -> u Ordering
 symCompareList [] [] = mrgReturn EQ
-symCompareList (x:xs) (y:ys) = do
+symCompareList (x : xs) (y : ys) = do
   oxy <- symCompare x y
   case oxy of
     LT -> mrgReturn LT
@@ -199,9 +205,96 @@ instance (SymBoolOp bool, SOrd bool a, SOrd bool b) => SOrd bool (a, b) where
   (>~) = derivedSymGt
   symCompare = derivedSymCompare
 
+instance (SymBoolOp bool, SOrd bool a, SOrd bool b, SOrd bool c) => SOrd bool (a, b, c) where
+  (<=~) = derivedSymLe
+  (<~) = derivedSymLt
+  (>=~) = derivedSymGe
+  (>~) = derivedSymGt
+  symCompare = derivedSymCompare
+
+instance
+  (SymBoolOp bool, SOrd bool a, SOrd bool b, SOrd bool c, SOrd bool d) =>
+  SOrd bool (a, b, c, d)
+  where
+  (<=~) = derivedSymLe
+  (<~) = derivedSymLt
+  (>=~) = derivedSymGe
+  (>~) = derivedSymGt
+  symCompare = derivedSymCompare
+
+instance
+  (SymBoolOp bool, SOrd bool a, SOrd bool b, SOrd bool c, SOrd bool d, SOrd bool e) =>
+  SOrd bool (a, b, c, d, e)
+  where
+  (<=~) = derivedSymLe
+  (<~) = derivedSymLt
+  (>=~) = derivedSymGe
+  (>~) = derivedSymGt
+  symCompare = derivedSymCompare
+
+instance
+  (SymBoolOp bool, SOrd bool a, SOrd bool b, SOrd bool c, SOrd bool d, SOrd bool e, SOrd bool f) =>
+  SOrd bool (a, b, c, d, e, f)
+  where
+  (<=~) = derivedSymLe
+  (<~) = derivedSymLt
+  (>=~) = derivedSymGe
+  (>~) = derivedSymGt
+  symCompare = derivedSymCompare
+
+instance
+  (SymBoolOp bool, SOrd bool a, SOrd bool b, SOrd bool c, SOrd bool d, SOrd bool e, SOrd bool f, SOrd bool g) =>
+  SOrd bool (a, b, c, d, e, f, g)
+  where
+  (<=~) = derivedSymLe
+  (<~) = derivedSymLt
+  (>=~) = derivedSymGe
+  (>~) = derivedSymGt
+  symCompare = derivedSymCompare
+
+instance
+  ( SymBoolOp bool,
+    SOrd bool a,
+    SOrd bool b,
+    SOrd bool c,
+    SOrd bool d,
+    SOrd bool e,
+    SOrd bool f,
+    SOrd bool g,
+    SOrd bool h
+  ) =>
+  SOrd bool (a, b, c, d, e, f, g, h)
+  where
+  (<=~) = derivedSymLe
+  (<~) = derivedSymLt
+  (>=~) = derivedSymGe
+  (>~) = derivedSymGt
+  symCompare = derivedSymCompare
+
+instance (SymBoolOp bool, SOrd bool (f a), SOrd bool (g a)) => SOrd bool (Sum f g a) where
+  (<=~) = derivedSymLe
+  (<~) = derivedSymLt
+  (>=~) = derivedSymGe
+  (>~) = derivedSymGt
+  symCompare = derivedSymCompare
+
 instance (SymBoolOp bool) => SOrd bool B.ByteString where
   l <=~ r = conc $ l <= r
   l <~ r = conc $ l < r
   l >=~ r = conc $ l >= r
   l >~ r = conc $ l > r
   symCompare l r = mrgReturn $ compare l r
+
+instance (SymBoolOp bool, SOrd bool (m (Maybe a))) => SOrd bool (MaybeT m a) where
+  (MaybeT l) <=~ (MaybeT r) = l <=~ r
+  (MaybeT l) <~ (MaybeT r) = l <~ r
+  (MaybeT l) >=~ (MaybeT r) = l >=~ r
+  (MaybeT l) >~ (MaybeT r) = l >~ r
+  symCompare (MaybeT l) (MaybeT r) = symCompare l r
+
+instance (SymBoolOp bool, SOrd bool (m (Either e a))) => SOrd bool (ExceptT e m a) where
+  (ExceptT l) <=~ (ExceptT r) = l <=~ r
+  (ExceptT l) <~ (ExceptT r) = l <~ r
+  (ExceptT l) >=~ (ExceptT r) = l >=~ r
+  (ExceptT l) >~ (ExceptT r) = l >~ r
+  symCompare (ExceptT l) (ExceptT r) = symCompare l r
