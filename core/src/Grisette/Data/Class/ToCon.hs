@@ -5,12 +5,12 @@ module Grisette.Data.Class.ToCon
   )
 where
 
-import Control.Monad.Coroutine
 import Control.Monad.Except
 import Control.Monad.Trans.Maybe
 import qualified Data.ByteString as B
 import Data.Functor.Sum
 import GHC.Generics
+import Generics.Deriving.Instances ()
 
 class ToCon a b where
   toCon :: a -> Maybe b
@@ -47,7 +47,7 @@ instance ToCon Bool Bool where
 instance ToCon Integer Integer where
   toCon = Just
 
--- Integer
+-- Char
 instance ToCon Char Char where
   toCon = Just
 
@@ -74,6 +74,25 @@ instance (ToCon a1 a2, ToCon b1 b2) => ToCon (a1, b1) (a2, b2)
 -- (,,)
 instance (ToCon a1 a2, ToCon b1 b2, ToCon c1 c2) => ToCon (a1, b1, c1) (a2, b2, c2)
 
+-- (,,,)
+instance (ToCon a1 a2, ToCon b1 b2, ToCon c1 c2, ToCon d1 d2) => ToCon (a1, b1, c1, d1) (a2, b2, c2, d2)
+
+-- (,,,,)
+instance (ToCon a1 a2, ToCon b1 b2, ToCon c1 c2, ToCon d1 d2, ToCon e1 e2) =>
+  ToCon (a1, b1, c1, d1, e1) (a2, b2, c2, d2, e2)
+
+-- (,,,,,)
+instance (ToCon a1 a2, ToCon b1 b2, ToCon c1 c2, ToCon d1 d2, ToCon e1 e2, ToCon f1 f2) =>
+  ToCon (a1, b1, c1, d1, e1, f1) (a2, b2, c2, d2, e2, f2)
+
+-- (,,,,,,)
+instance (ToCon a1 a2, ToCon b1 b2, ToCon c1 c2, ToCon d1 d2, ToCon e1 e2, ToCon f1 f2, ToCon g1 g2) =>
+  ToCon (a1, b1, c1, d1, e1, f1, g1) (a2, b2, c2, d2, e2, f2, g2)
+
+-- (,,,,,,,)
+instance (ToCon a1 a2, ToCon b1 b2, ToCon c1 c2, ToCon d1 d2, ToCon e1 e2, ToCon f1 f2, ToCon g1 g2, ToCon h1 h2) =>
+  ToCon (a1, b1, c1, d1, e1, f1, g1, h1) (a2, b2, c2, d2, e2, f2, g2, h2)
+
 -- MaybeT
 instance
   ToCon (m1 (Maybe a)) (m2 (Maybe b)) =>
@@ -93,13 +112,6 @@ instance
   ToCon (ExceptT e1 m1 a) (Either e2 b)
   where
   toCon (ExceptT v) = toCon v
-
--- Coroutine
-instance
-  (ToCon (m1 (Either (sus (Coroutine sus m1 a)) a)) (m2 (Either (sus (Coroutine sus m2 b)) b))) =>
-  ToCon (Coroutine sus m1 a) (Coroutine sus m2 b)
-  where
-  toCon (Coroutine a) = Coroutine <$> toCon a
 
 -- Sum
 instance (ToCon (f a) (f1 a1), ToCon (g a) (g1 a1)) => ToCon (Sum f g a) (Sum f1 g1 a1)

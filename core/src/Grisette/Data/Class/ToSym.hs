@@ -5,8 +5,8 @@ module Grisette.Data.Class.ToSym
   )
 where
 
-import Control.Monad.Coroutine
-import Control.Monad.State
+import Control.Monad.State.Lazy as StateLazy
+import Control.Monad.State.Strict as StateStrict
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Maybe
 import qualified Data.ByteString as B
@@ -46,7 +46,7 @@ instance ToSym Bool Bool where
 instance ToSym Integer Integer where
   toSym = id
 
--- Integer
+-- Char
 instance ToSym Char Char where
   toSym = id
 
@@ -73,9 +73,28 @@ instance (ToSym a1 b1, ToSym a2 b2) => ToSym (a1, a2) (b1, b2)
 -- (,,)
 instance (ToSym a1 b1, ToSym a2 b2, ToSym a3 b3) => ToSym (a1, a2, a3) (b1, b2, b3)
 
+-- (,,,)
+instance (ToSym a1 a2, ToSym b1 b2, ToSym c1 c2, ToSym d1 d2) => ToSym (a1, b1, c1, d1) (a2, b2, c2, d2)
+
+-- (,,,,)
+instance (ToSym a1 a2, ToSym b1 b2, ToSym c1 c2, ToSym d1 d2, ToSym e1 e2) =>
+  ToSym (a1, b1, c1, d1, e1) (a2, b2, c2, d2, e2)
+
+-- (,,,,,)
+instance (ToSym a1 a2, ToSym b1 b2, ToSym c1 c2, ToSym d1 d2, ToSym e1 e2, ToSym f1 f2) =>
+  ToSym (a1, b1, c1, d1, e1, f1) (a2, b2, c2, d2, e2, f2)
+
+-- (,,,,,,)
+instance (ToSym a1 a2, ToSym b1 b2, ToSym c1 c2, ToSym d1 d2, ToSym e1 e2, ToSym f1 f2, ToSym g1 g2) =>
+  ToSym (a1, b1, c1, d1, e1, f1, g1) (a2, b2, c2, d2, e2, f2, g2)
+
+-- (,,,,,,,)
+instance (ToSym a1 a2, ToSym b1 b2, ToSym c1 c2, ToSym d1 d2, ToSym e1 e2, ToSym f1 f2, ToSym g1 g2, ToSym h1 h2) =>
+  ToSym (a1, b1, c1, d1, e1, f1, g1, h1) (a2, b2, c2, d2, e2, f2, g2, h2)
+
 -- function
-instance (ToSym a b, ToSym c d) => ToSym (d -> a) (c -> b) where
-  toSym f = toSym . f . toSym
+instance (ToSym a b) => ToSym (v -> a) (v -> b) where
+  toSym f = toSym . f
 
 -- MaybeT
 instance
@@ -91,16 +110,12 @@ instance
   where
   toSym (ExceptT v) = ExceptT $ toSym v
 
--- Coroutine
-instance
-  (ToSym (m1 (Either (sus (Coroutine sus m1 a)) a)) (m2 (Either (sus (Coroutine sus m2 b)) b))) =>
-  ToSym (Coroutine sus m1 a) (Coroutine sus m2 b)
-  where
-  toSym (Coroutine a) = Coroutine $ toSym a
-
 -- StateT
-instance (ToSym (s1 -> m1 (a1, s1)) (s2 -> m2 (a2, s2))) => ToSym (StateT s1 m1 a1) (StateT s2 m2 a2) where
-  toSym (StateT f1) = StateT $ toSym f1
+instance (ToSym (s1 -> m1 (a1, s1)) (s2 -> m2 (a2, s2))) => ToSym (StateLazy.StateT s1 m1 a1) (StateLazy.StateT s2 m2 a2) where
+  toSym (StateLazy.StateT f1) = StateLazy.StateT $ toSym f1
+
+instance (ToSym (s1 -> m1 (a1, s1)) (s2 -> m2 (a2, s2))) => ToSym (StateStrict.StateT s1 m1 a1) (StateStrict.StateT s2 m2 a2) where
+  toSym (StateStrict.StateT f1) = StateStrict.StateT $ toSym f1
 
 -- Sum
 instance (ToSym (f a) (f1 a1), ToSym (g a) (g1 a1)) => ToSym (Sum f g a) (Sum f1 g1 a1)

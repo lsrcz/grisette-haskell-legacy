@@ -110,6 +110,8 @@ test-suite spec
       Grisette.Data.Class.SEqSpec
       Grisette.Data.Class.SOrdSpec
       Grisette.Data.Class.SymEvalSpec
+      Grisette.Data.Class.ToConSpec
+      Grisette.Data.Class.ToSymSpec
       Utils.SBool
       Paths_grisette_core
   hs-source-dirs:

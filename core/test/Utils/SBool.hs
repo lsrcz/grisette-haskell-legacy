@@ -12,6 +12,8 @@ import Grisette.Data.Class.Mergeable
 import Grisette.Control.Monad
 import Grisette.Data.Class.SymEval
 import qualified Data.HashMap.Strict as M
+import Grisette.Data.Class.ToCon
+import Grisette.Data.Class.ToSym
 
 data SBool
   = CBool Bool
@@ -105,3 +107,16 @@ instance ExtractSymbolics (S.HashSet Symbol) SBool where
       go s (Not v) = go s v
       go s (Equal l r) = go (go s l) r
       go s (ITE c l r) = go (go (go s l) r) c
+
+instance ToCon SBool Bool where
+  toCon (CBool v) = Just v
+  toCon _ = Nothing
+
+instance ToCon SBool SBool where
+  toCon = Just
+
+instance ToSym Bool SBool where
+  toSym = CBool
+
+instance ToSym SBool SBool where
+  toSym = id
