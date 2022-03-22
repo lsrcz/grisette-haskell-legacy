@@ -63,7 +63,6 @@ import Grisette.Data.Prim.Caches
 import Data.Word
 import qualified Data.Vector as V
 import Data.Bits
-import Debug.Trace
 
 class (Lift t, Typeable t, Hashable t, Eq t, Show t, NFData t) => SupportedPrim t where
   type PrimConstraint t :: Constraint
@@ -430,7 +429,7 @@ constructUnary ::
   tag ->
   Term arg ->
   Term t
-constructUnary tag tm = trace ("construct" ++ show tag) $ let x = internTerm $ UUnaryTerm tag tm in trace (show x) $ x
+constructUnary tag tm = let x = internTerm $ UUnaryTerm tag tm in x
 
 constructBinary ::
   forall tag arg1 arg2 t.
