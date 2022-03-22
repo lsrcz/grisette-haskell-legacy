@@ -32,6 +32,7 @@ import Grisette.Data.Class.SymEval
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
 import Grisette.Data.Class.UnionOp
+import Grisette.Data.Class.SymGen
 import Grisette.Data.UnionBase
 import Language.Haskell.TH.Syntax
 import Data.MemoTrie
@@ -265,6 +266,23 @@ sequenceAUnion (Guard _ _ cond l r) = guard cond <$> sequenceAUnion l <*> sequen
 instance (SymBoolOp bool) => Traversable (UnionMBase bool) where
   sequenceA u = freshUAny <$> sequenceAUnion (underlyingUnion u)
 
+-- SymGen
+instance (SymBoolOp bool, SymGen bool spec a, Mergeable bool a) => SymGen bool spec (UnionMBase bool a) where
+  genSymIndexed spec = mrgReturn <$> genSymSimpleIndexed @bool spec
+
+instance (SymBoolOp bool, SymGen bool spec a) => SymGenSimple bool spec (UnionMBase bool a) where
+  genSymSimpleIndexed spec = do
+    res <- genSymIndexed spec
+    if not (isMerged res) then error "Not merged" else return res
+
+instance (SymBoolOp bool, SymGen bool a a, SymGenSimple bool () bool, Mergeable bool a) =>
+  SymGen bool (UnionMBase bool a) a where
+  genSymIndexed spec = go (underlyingUnion $ merge spec)
+    where
+      go (Single x) = genSymIndexed x
+      go (Guard _ _ _ t f) = mrgIf <$> genSymSimpleIndexed @bool () <*> go t <*> go f
+
+-- Concrete Key HashMaps
 class (Eq t, Ord t, Hashable t) => IsConcrete t
 
 instance IsConcrete Bool

@@ -36,7 +36,7 @@ synth config (Litmus fsBound make setupProc prog allowCond) =
 
       order =
         genSymSimple @SymBool
-          (SimpleListSpec (fromIntegral $ length prog1) (IntegerGenUpperBound (fromIntegral $ length prog1)))
+          (SimpleListSpec (fromIntegral $ length prog1) (NumGenUpperBound @Integer (fromIntegral $ length prog1 - 1)))
           "order"
       --order = [0,1,2,4,5,3,6]
       (synthFs, (_, crashes)) = runState (interpretOrderOps prog1 order (mrgReturn $ (toSym newfs :: fs))) ((0, "crash"), [])

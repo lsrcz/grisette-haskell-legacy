@@ -18,11 +18,12 @@ where
 import Control.Monad.Coroutine hiding (merge)
 import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Monad.Except
-import Control.Monad.Trans.Maybe
 import qualified Control.Monad.State.Lazy as StateLazy
 import qualified Control.Monad.State.Strict as StateStrict
+import Control.Monad.Trans.Maybe
 import qualified Data.ByteString as B
 import Data.Functor.Sum
+import Data.MemoTrie
 import Data.Parameterized
 import Data.Typeable
 import qualified Data.Vector.Generic as VGeneric
@@ -32,7 +33,6 @@ import Generics.Deriving
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.OrphanGeneric ()
 import Grisette.Data.Class.Utils.CConst
-import Data.MemoTrie
 import Grisette.Data.MemoUtils ()
 
 data MergeStrategy bool a where
@@ -193,6 +193,90 @@ instance (SymBoolOp bool, Mergeable bool a, Mergeable bool b, Mergeable bool c) 
 
 instance (SymBoolOp bool, Mergeable bool a, Mergeable bool b) => Mergeable1 bool ((,,) a b)
 
+-- (,,,)
+instance
+  (SymBoolOp bool, Mergeable bool a, Mergeable bool b, Mergeable bool c, Mergeable bool d) =>
+  Mergeable bool (a, b, c, d)
+
+instance
+  (SymBoolOp bool, Mergeable bool a, Mergeable bool b, Mergeable bool c) =>
+  Mergeable1 bool ((,,,) a b c)
+
+-- (,,,,)
+instance
+  (SymBoolOp bool, Mergeable bool a, Mergeable bool b, Mergeable bool c, Mergeable bool d, Mergeable bool e) =>
+  Mergeable bool (a, b, c, d, e)
+
+instance
+  (SymBoolOp bool, Mergeable bool a, Mergeable bool b, Mergeable bool c, Mergeable bool d) =>
+  Mergeable1 bool ((,,,,) a b c d)
+
+-- (,,,,,)
+instance
+  ( SymBoolOp bool,
+    Mergeable bool a,
+    Mergeable bool b,
+    Mergeable bool c,
+    Mergeable bool d,
+    Mergeable bool e,
+    Mergeable bool f
+  ) =>
+  Mergeable bool (a, b, c, d, e, f)
+
+instance
+  (SymBoolOp bool, Mergeable bool a, Mergeable bool b, Mergeable bool c, Mergeable bool d, Mergeable bool e) =>
+  Mergeable1 bool ((,,,,,) a b c d e)
+
+-- (,,,,,,)
+instance
+  ( SymBoolOp bool,
+    Mergeable bool a,
+    Mergeable bool b,
+    Mergeable bool c,
+    Mergeable bool d,
+    Mergeable bool e,
+    Mergeable bool f,
+    Mergeable bool g
+  ) =>
+  Mergeable bool (a, b, c, d, e, f, g)
+
+instance
+  ( SymBoolOp bool,
+    Mergeable bool a,
+    Mergeable bool b,
+    Mergeable bool c,
+    Mergeable bool d,
+    Mergeable bool e,
+    Mergeable bool f
+  ) =>
+  Mergeable1 bool ((,,,,,,) a b c d e f)
+
+-- (,,,,,,,)
+instance
+  ( SymBoolOp bool,
+    Mergeable bool a,
+    Mergeable bool b,
+    Mergeable bool c,
+    Mergeable bool d,
+    Mergeable bool e,
+    Mergeable bool f,
+    Mergeable bool g,
+    Mergeable bool h
+  ) =>
+  Mergeable bool (a, b, c, d, e, f, g, h)
+
+instance
+  ( SymBoolOp bool,
+    Mergeable bool a,
+    Mergeable bool b,
+    Mergeable bool c,
+    Mergeable bool d,
+    Mergeable bool e,
+    Mergeable bool f,
+    Mergeable bool g
+  ) =>
+  Mergeable1 bool ((,,,,,,,) a b c d e f g)
+
 -- function
 instance (SymBoolOp bool, Mergeable bool b) => Mergeable bool (a -> b) where
   mergeStrategy = case mergeStrategy @bool @b of
@@ -265,8 +349,6 @@ instance
 
 instance (SymBoolOp bool, Mergeable bool s, Mergeable1 bool m) => Mergeable1 bool (StateStrict.StateT s m)
 
-
-
 -- Sum
 instance
   (SymBoolOp bool, Mergeable1 bool l, Mergeable1 bool r, Mergeable bool x) =>
@@ -299,3 +381,16 @@ instance
 
 -- Ordering
 instance (SymBoolOp bool) => Mergeable bool Ordering
+
+-- Generic
+instance (SymBoolOp bool) => Mergeable bool (U1 x)
+
+instance (SymBoolOp bool) => Mergeable bool (V1 x)
+
+instance (SymBoolOp bool, Mergeable bool c) => Mergeable bool (K1 i c x)
+
+instance (SymBoolOp bool, Mergeable bool (a x)) => Mergeable bool (M1 i c a x)
+
+instance (SymBoolOp bool, Mergeable bool (a x), Mergeable bool (b x)) => Mergeable bool ((a :+: b) x)
+
+instance (SymBoolOp bool, Mergeable bool (a x), Mergeable bool (b x)) => Mergeable bool ((a :*: b) x)

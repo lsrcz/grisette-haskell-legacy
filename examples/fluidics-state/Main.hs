@@ -158,7 +158,7 @@ spec = do
 
 main :: IO ()
 main = timeItAll "Overall" $ do
-  let x = genSym @SymBool @() @Instruction () "a"
+  let (x :: UnionM Instruction) = genSym @SymBool () "a"
   print x
   synthr <- synthesizeProgram (UnboundedReasoning z3 {verbose = False, timing = PrintTiming}) 20 initSt (merge . evalStateT spec)
   print synthr

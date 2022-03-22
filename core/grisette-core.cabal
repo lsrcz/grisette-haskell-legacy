@@ -78,6 +78,7 @@ library
   ghc-options: -Wall -ferror-spans
   build-depends:
       MemoTrie
+    , Unique
     , base >4.7 && <5
     , bytestring
     , constraints
@@ -110,6 +111,7 @@ test-suite spec
       Grisette.Data.Class.SEqSpec
       Grisette.Data.Class.SOrdSpec
       Grisette.Data.Class.SymEvalSpec
+      Grisette.Data.Class.SymGenSpec
       Grisette.Data.Class.ToConSpec
       Grisette.Data.Class.ToSymSpec
       Utils.SBool
@@ -137,6 +139,7 @@ test-suite spec
   ghc-options: -Wall -ferror-spans
   build-depends:
       MemoTrie
+    , Unique
     , base >4.7 && <5
     , bytestring
     , constraints

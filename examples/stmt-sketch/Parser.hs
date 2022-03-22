@@ -38,7 +38,7 @@ intHoleRangeExpr :: Parser (UnionM SymbExpr)
 intHoleRangeExpr = do
   l <- intlst
   let x = conc @SymInteger <$> l
-  i <- choose @SymBool (head x) (tail x)
+  (i :: UnionM SymInteger) <- choose @SymBool (head x) (tail x)
   return $ uSIntConstantExpr $ getSingle i
 
 intHoleExpr :: Parser (UnionM SymbExpr)

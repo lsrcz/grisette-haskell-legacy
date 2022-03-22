@@ -14,6 +14,8 @@ import Grisette.Data.Class.SymEval
 import qualified Data.HashMap.Strict as M
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
+import Grisette.Data.Class.SymGen
+import Control.Monad.State
 
 data SBool
   = CBool Bool
@@ -66,6 +68,7 @@ instance SOrd SBool SBool where
     mrgIf (nots l &&~ r)
       (mrgReturn LT)
       (mrgIf (l ==~ r) (mrgReturn EQ) (mrgReturn GT))
+
 instance PrimWrapper SBool Bool where
   conc = CBool
   concView (CBool x) = Just x
@@ -120,3 +123,17 @@ instance ToSym Bool SBool where
 
 instance ToSym SBool SBool where
   toSym = id
+
+instance SymGen SBool () SBool where
+
+instance SymGenSimple SBool () SBool where
+  genSymSimpleIndexed _ = do
+    (i, s) <- get
+    put (i + 1, s)
+    return $ ISBool i s
+
+instance SymGen SBool SBool SBool where
+
+instance SymGenSimple SBool SBool SBool where
+  genSymSimpleIndexed _ = genSymSimpleIndexed @SBool ()
+

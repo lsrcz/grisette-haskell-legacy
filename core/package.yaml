@@ -28,6 +28,7 @@ dependencies:
 - vector
 - parameterized-utils
 - hashtables
+- Unique
 
 default-extensions:
 - BangPatterns
