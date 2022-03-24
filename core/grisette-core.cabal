@@ -108,6 +108,7 @@ test-suite spec
   other-modules:
       Grisette.Data.Class.BoolSpec
       Grisette.Data.Class.ExtractSymbolicsSpec
+      Grisette.Data.Class.MergeableSpec
       Grisette.Data.Class.SEqSpec
       Grisette.Data.Class.SOrdSpec
       Grisette.Data.Class.SymEvalSpec

@@ -1,5 +1,6 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
@@ -8,6 +9,11 @@ module Grisette.Data.Class.Mergeable
   ( MergeStrategy (..),
     derivedMergeStrategy,
     wrapMergeStrategy,
+    DynamicOrderedIdx (..),
+    StrategyList (..),
+    buildStrategyList,
+    resolveStrategy,
+    resolveStrategy',
     Mergeable (..),
     Mergeable' (..),
     Mergeable1 (..),
@@ -22,8 +28,8 @@ import qualified Control.Monad.State.Lazy as StateLazy
 import qualified Control.Monad.State.Strict as StateStrict
 import Control.Monad.Trans.Maybe
 import qualified Data.ByteString as B
+import Data.Functor.Classes
 import Data.Functor.Sum
-import Data.MemoTrie
 import Data.Parameterized
 import Data.Typeable
 import qualified Data.Vector.Generic as VGeneric
@@ -33,12 +39,42 @@ import Generics.Deriving
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.OrphanGeneric ()
 import Grisette.Data.Class.Utils.CConst
-import Grisette.Data.MemoUtils ()
+import Unsafe.Coerce
+
+data DynamicOrderedIdx where
+  DynamicOrderedIdx :: forall idx. (Show idx, Ord idx, Typeable idx) => idx -> DynamicOrderedIdx
+
+instance Eq DynamicOrderedIdx where
+  (DynamicOrderedIdx (a :: a)) == (DynamicOrderedIdx (b :: b)) = case eqT @a @b of
+    Just Refl -> a == b
+    _ -> False
+
+instance Ord DynamicOrderedIdx where
+  compare (DynamicOrderedIdx (a :: a)) (DynamicOrderedIdx (b :: b)) = case eqT @a @b of
+    Just Refl -> compare a b
+    _ -> error "This Ord is incomplete"
+
+instance Show DynamicOrderedIdx where
+  show (DynamicOrderedIdx a) = show a
+
+resolveStrategy :: forall bool x. (Mergeable bool x) => x -> ([DynamicOrderedIdx], MergeStrategy bool x)
+resolveStrategy x = resolveStrategy' x mergeStrategy
+
+resolveStrategy' :: forall bool x. x -> MergeStrategy bool x -> ([DynamicOrderedIdx], MergeStrategy bool x)
+resolveStrategy' x = go
+  where
+    go :: MergeStrategy bool x -> ([DynamicOrderedIdx], MergeStrategy bool x)
+    go (OrderedStrategy idxFun subStrategy) = case go ss of
+      (idxs, r) -> (DynamicOrderedIdx idx : idxs, r)
+      where
+        idx = idxFun x
+        ss = subStrategy idx
+    go s = ([], s)
 
 data MergeStrategy bool a where
   SimpleStrategy :: (bool -> a -> a -> a) -> MergeStrategy bool a
   OrderedStrategy ::
-    (Ord idx, Typeable idx, HasTrie idx) =>
+    (Ord idx, Typeable idx, Show idx) =>
     (a -> idx) ->
     (idx -> MergeStrategy bool a) ->
     MergeStrategy bool a
@@ -53,7 +89,7 @@ wrapMergeStrategy (SimpleStrategy m) wrap unwrap =
 wrapMergeStrategy (OrderedStrategy idxFun substrategy) wrap unwrap =
   OrderedStrategy
     (idxFun . unwrap)
-    (memo $ \idx -> wrapMergeStrategy (substrategy idx) wrap unwrap)
+    (\idx -> wrapMergeStrategy (substrategy idx) wrap unwrap)
 wrapMergeStrategy NoStrategy _ _ = NoStrategy
 {-# INLINE wrapMergeStrategy #-}
 
@@ -107,7 +143,7 @@ instance (Mergeable' bool a, Mergeable' bool b) => Mergeable' bool (a :+: b) whe
           L1 _ -> False
           R1 _ -> True
       )
-      ( memo $ \idx ->
+      ( \idx ->
           if not idx
             then wrapMergeStrategy mergeStrategy' L1 (\(L1 v) -> v)
             else wrapMergeStrategy mergeStrategy' R1 (\(R1 v) -> v)
@@ -129,9 +165,9 @@ wrapMergeStrategy2 wrap unwrap strategy1 strategy2 =
         ((hdt, tlt), (hdf, tlf)) ->
           wrap (m1 cond hdt hdf) (m2 cond tlt tlf)
     (s1@(SimpleStrategy _), OrderedStrategy idxf subf) ->
-      OrderedStrategy (idxf . snd . unwrap) (memo $ wrapMergeStrategy2 wrap unwrap s1 . subf)
+      OrderedStrategy (idxf . snd . unwrap) (wrapMergeStrategy2 wrap unwrap s1 . subf)
     (OrderedStrategy idxf subf, s2) ->
-      OrderedStrategy (idxf . fst . unwrap) (memo $ \idx -> wrapMergeStrategy2 wrap unwrap (subf idx) s2)
+      OrderedStrategy (idxf . fst . unwrap) (\idx -> wrapMergeStrategy2 wrap unwrap (subf idx) s2)
 {-# INLINE wrapMergeStrategy2 #-}
 
 instance (Mergeable' bool a, Mergeable' bool b) => Mergeable' bool (a :*: b) where
@@ -147,6 +183,7 @@ instance (SymBoolOp bool) => Mergeable bool Bool
 instance (SymBoolOp bool) => Mergeable bool Integer where
   mergeStrategy = OrderedStrategy id $ \_ -> SimpleStrategy $ \_ t _ -> t
 
+-- Char
 instance (SymBoolOp bool) => Mergeable bool Char where
   mergeStrategy = OrderedStrategy id $ \_ -> SimpleStrategy $ \_ t _ -> t
 
@@ -167,6 +204,33 @@ instance (SymBoolOp bool, Mergeable bool a) => Mergeable bool (Maybe a)
 
 instance (SymBoolOp bool) => Mergeable1 bool Maybe
 
+data StrategyList container where
+  StrategyList ::
+    forall bool a container.
+    container [DynamicOrderedIdx] ->
+    container (MergeStrategy bool a) ->
+    StrategyList container
+
+buildStrategyList ::
+  forall bool a container.
+  (Mergeable bool a, Functor container) =>
+  container a ->
+  StrategyList container
+buildStrategyList l = StrategyList idxs strategies
+  where
+    r = resolveStrategy @bool <$> l
+    idxs = fst <$> r
+    strategies = snd <$> r
+
+instance Eq1 container => Eq (StrategyList container) where
+  (StrategyList idxs1 _) == (StrategyList idxs2 _) = eq1 idxs1 idxs2
+
+instance Ord1 container => Ord (StrategyList container) where
+  compare (StrategyList idxs1 _) (StrategyList idxs2 _) = compare1 idxs1 idxs2
+
+instance Show1 container => Show (StrategyList container) where
+  showsPrec i (StrategyList idxs1 _) = showsPrec1 i idxs1
+
 -- List
 instance (SymBoolOp bool, Mergeable bool a) => Mergeable bool [a] where
   mergeStrategy = case mergeStrategy :: MergeStrategy bool a of
@@ -175,11 +239,13 @@ instance (SymBoolOp bool, Mergeable bool a) => Mergeable bool [a] where
         SimpleStrategy $ \cond -> zipWith (m cond)
     NoStrategy ->
       OrderedStrategy length $ const NoStrategy
-    _ -> derivedMergeStrategy
-
---mergeStrategy = OrderedStrategy length $ \_ -> case mergeStrategy of
---  SimpleStrategy m -> SimpleStrategy $ \cond t f -> zipWith (m cond) t f
---  _ -> NoStrategy -- in the future we may change this
+    _ -> OrderedStrategy length $ \_ ->
+      OrderedStrategy (buildStrategyList @bool) $ \(StrategyList _ strategies) ->
+        let s :: [MergeStrategy bool a] = unsafeCoerce strategies
+            allSimple = all (\case SimpleStrategy _ -> True; _ -> False) s
+         in if allSimple
+              then SimpleStrategy $ \cond l r -> (\(SimpleStrategy f, l1, r1) -> f cond l1 r1) <$> zip3 s l r
+              else NoStrategy
 
 instance (SymBoolOp bool) => Mergeable1 bool []
 
@@ -361,22 +427,32 @@ instance (SymBoolOp bool, Mergeable1 bool l, Mergeable1 bool r) => Mergeable1 bo
 
 -- Sized vector
 instance
-  (SymBoolOp bool, Mergeable bool t, KnownNat m, VGeneric.Vector v t) =>
+  ( SymBoolOp bool,
+    Mergeable bool t,
+    KnownNat m,
+    VGeneric.Vector v t,
+    VGeneric.Vector v (MergeStrategy bool t),
+    Typeable v,
+    Functor v,
+    Eq1 v,
+    Ord1 v,
+    Show1 v,
+    Foldable v
+  ) =>
   Mergeable bool (VSized.Vector v m t)
   where
   mergeStrategy = case (isZeroOrGT1 (knownNat @m), mergeStrategy :: MergeStrategy bool t) of
     (Left Refl, _) -> SimpleStrategy $ \_ v _ -> v
     (Right LeqProof, SimpleStrategy m) -> SimpleStrategy $ \cond -> VSized.zipWith (m cond)
     (Right LeqProof, OrderedStrategy _ _) ->
-      let dec = decNat (knownNat @m)
-       in case ( isZeroOrGT1 dec,
-                 plusComm (Proxy @1) (Proxy @(m - 1)),
-                 minusPlusCancel (Proxy @m) (Proxy @1)
-               ) of
-            (Left Refl, Refl, Refl) -> wrapMergeStrategy mergeStrategy VSized.singleton VSized.head
-            (Right LeqProof, Refl, Refl) ->
-              withKnownNat dec $
-                wrapMergeStrategy mergeStrategy (uncurry VSized.cons) (\v -> (VSized.head v, VSized.tail v))
+      OrderedStrategy (buildStrategyList @bool) $ \(StrategyList _ strategies) ->
+        let s :: VSized.Vector v m (MergeStrategy bool t) = unsafeCoerce strategies
+            allSimple = all (\case SimpleStrategy _ -> True; _ -> False) s
+         in if allSimple
+              then SimpleStrategy $ \cond l r ->
+                VSized.zipWith3 (\(SimpleStrategy f) l1 r1 -> f cond l1 r1 :: t) s l r ::
+                  VSized.Vector v m t
+              else NoStrategy
     (Right LeqProof, NoStrategy) -> NoStrategy
 
 -- Ordering

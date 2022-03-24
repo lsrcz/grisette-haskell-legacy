@@ -1,12 +1,11 @@
 module Grisette.Data.Class.Mergeable where
 import Data.Typeable
-import Data.MemoTrie
 import GHC.Generics
 
 data MergeStrategy bool a where
   SimpleStrategy :: (bool -> a -> a -> a) -> MergeStrategy bool a
   OrderedStrategy ::
-    (Ord idx, Typeable idx, HasTrie idx) =>
+    (Ord idx, Typeable idx, Show idx) =>
     (a -> idx) ->
     (idx -> MergeStrategy bool a) ->
     MergeStrategy bool a
