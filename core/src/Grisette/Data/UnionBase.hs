@@ -91,7 +91,7 @@ guardWithStrategy ::
   UnionBase bool a
 guardWithStrategy strategy cond t@(Guard _ False _ _ _) f = guardWithStrategy strategy cond (fullReconstruct strategy t) f
 guardWithStrategy strategy cond t f@(Guard _ False _ _ _) = guardWithStrategy strategy cond t (fullReconstruct strategy f)
-guardWithStrategy strategy cond t f = guardWithStrategyInv strategy cond t (fullReconstruct strategy f)
+guardWithStrategy strategy cond t f = guardWithStrategyInv strategy cond t f
 
 guardWithStrategyInv ::
   (SymBoolOp bool) =>

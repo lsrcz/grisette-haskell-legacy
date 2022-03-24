@@ -9,7 +9,16 @@ import Utils.SBool
 
 data TripleSum a b c = TS1 a | TS2 b | TS3 c deriving (Show, Eq, Generic)
 
-instance (SymBoolOp bool, Mergeable bool a, Mergeable bool b, Mergeable bool c) => Mergeable bool (TripleSum a b c)
+instance (SymBoolOp bool, Mergeable bool a, Mergeable bool b, Mergeable bool c) => Mergeable bool (TripleSum a b c) where
+  mergeStrategy =
+    OrderedStrategy
+      (\case TS1 _ -> (0 :: Int); TS2 _ -> (1 :: Int); TS3 _ -> (2 :: Int))
+      ( \case
+          0 -> wrapMergeStrategy mergeStrategy TS1 (\(TS1 x) -> x)
+          1 -> wrapMergeStrategy mergeStrategy TS2 (\(TS2 x) -> x)
+          2 -> wrapMergeStrategy mergeStrategy TS3 (\(TS3 x) -> x)
+          _ -> error "Bad"
+      )
 
 spec :: Spec
 spec = do
