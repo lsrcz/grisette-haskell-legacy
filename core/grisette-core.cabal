@@ -110,6 +110,7 @@ test-suite spec
       Grisette.Data.Class.ExtractSymbolicsSpec
       Grisette.Data.Class.MergeableSpec
       Grisette.Data.Class.SEqSpec
+      Grisette.Data.Class.SimpleMergeableSpec
       Grisette.Data.Class.SOrdSpec
       Grisette.Data.Class.SymEvalSpec
       Grisette.Data.Class.SymGenSpec

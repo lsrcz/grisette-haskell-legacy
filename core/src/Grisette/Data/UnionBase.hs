@@ -22,7 +22,13 @@ data UnionBase b a
   = Single a
   | -- left most value / invariant maintained / cond / true branch / false branch
     Guard a !Bool !b (UnionBase b a) (UnionBase b a)
-  deriving (Generic, Eq, Lift)
+  deriving (Generic, Eq, Lift, Generic1)
+
+instance (Eq b) => Eq1 (UnionBase b) where
+  liftEq e (Single a) (Single b) = e a b
+  liftEq e (Guard l1 i1 c1 t1 f1) (Guard l2 i2 c2 t2 f2) =
+    e l1 l2 && i1 == i2 && c1 == c2 && liftEq e t1 t2 && liftEq e f1 f2
+  liftEq _ _ _ = False 
 
 instance (SymBoolOp b, HasTrie b, HasTrie a) => HasTrie (UnionBase b a) where
   newtype (UnionBase b a) :->: x = UnionBaseTrie

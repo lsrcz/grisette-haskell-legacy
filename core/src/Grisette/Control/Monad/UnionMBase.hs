@@ -192,6 +192,9 @@ instance (Hashable bool, Hashable a) => Hashable (UnionMBase bool a) where
 instance (Eq bool, Eq a) => Eq (UnionMBase bool a) where
   l == r = underlyingUnion l == underlyingUnion r
 
+instance (Eq bool) => Eq1 (UnionMBase bool) where
+  liftEq e l r = liftEq e (underlyingUnion l) (underlyingUnion r)
+
 instance (SymBoolOp bool, Num a, Mergeable bool a) => Num (UnionMBase bool a) where
   fromInteger = mrgReturn . fromInteger
   negate x = x >>= (mrgReturn . negate)

@@ -109,6 +109,91 @@ instance
   where
   mrgIte cond (a1, b1, c1) (a2, b2, c2) = (mrgIte cond a1 a2, mrgIte cond b1 b2, mrgIte cond c1 c2)
 
+instance
+  ( SymBoolOp bool,
+    SimpleMergeable bool a,
+    SimpleMergeable bool b,
+    SimpleMergeable bool c,
+    SimpleMergeable bool d
+  ) =>
+  SimpleMergeable bool (a, b, c, d)
+  where
+  mrgIte cond (a1, b1, c1, d1) (a2, b2, c2, d2) =
+    (mrgIte cond a1 a2, mrgIte cond b1 b2, mrgIte cond c1 c2, mrgIte cond d1 d2)
+
+instance
+  ( SymBoolOp bool,
+    SimpleMergeable bool a,
+    SimpleMergeable bool b,
+    SimpleMergeable bool c,
+    SimpleMergeable bool d,
+    SimpleMergeable bool e
+  ) =>
+  SimpleMergeable bool (a, b, c, d, e)
+  where
+  mrgIte cond (a1, b1, c1, d1, e1) (a2, b2, c2, d2, e2) =
+    (mrgIte cond a1 a2, mrgIte cond b1 b2, mrgIte cond c1 c2, mrgIte cond d1 d2, mrgIte cond e1 e2)
+
+instance
+  ( SymBoolOp bool,
+    SimpleMergeable bool a,
+    SimpleMergeable bool b,
+    SimpleMergeable bool c,
+    SimpleMergeable bool d,
+    SimpleMergeable bool e,
+    SimpleMergeable bool f
+  ) =>
+  SimpleMergeable bool (a, b, c, d, e, f)
+  where
+  mrgIte cond (a1, b1, c1, d1, e1, f1) (a2, b2, c2, d2, e2, f2) =
+    (mrgIte cond a1 a2, mrgIte cond b1 b2, mrgIte cond c1 c2, mrgIte cond d1 d2, mrgIte cond e1 e2, mrgIte cond f1 f2)
+
+instance
+  ( SymBoolOp bool,
+    SimpleMergeable bool a,
+    SimpleMergeable bool b,
+    SimpleMergeable bool c,
+    SimpleMergeable bool d,
+    SimpleMergeable bool e,
+    SimpleMergeable bool f,
+    SimpleMergeable bool g
+  ) =>
+  SimpleMergeable bool (a, b, c, d, e, f, g)
+  where
+  mrgIte cond (a1, b1, c1, d1, e1, f1, g1) (a2, b2, c2, d2, e2, f2, g2) =
+    ( mrgIte cond a1 a2,
+      mrgIte cond b1 b2,
+      mrgIte cond c1 c2,
+      mrgIte cond d1 d2,
+      mrgIte cond e1 e2,
+      mrgIte cond f1 f2,
+      mrgIte cond g1 g2
+    )
+
+instance
+  ( SymBoolOp bool,
+    SimpleMergeable bool a,
+    SimpleMergeable bool b,
+    SimpleMergeable bool c,
+    SimpleMergeable bool d,
+    SimpleMergeable bool e,
+    SimpleMergeable bool f,
+    SimpleMergeable bool g,
+    SimpleMergeable bool h
+  ) =>
+  SimpleMergeable bool (a, b, c, d, e, f, g, h)
+  where
+  mrgIte cond (a1, b1, c1, d1, e1, f1, g1, h1) (a2, b2, c2, d2, e2, f2, g2, h2) =
+    ( mrgIte cond a1 a2,
+      mrgIte cond b1 b2,
+      mrgIte cond c1 c2,
+      mrgIte cond d1 d2,
+      mrgIte cond e1 e2,
+      mrgIte cond f1 f2,
+      mrgIte cond g1 g2,
+      mrgIte cond h1 h2
+    )
+
 instance (SymBoolOp bool, SimpleMergeable bool b) => SimpleMergeable bool (a -> b) where
   mrgIte cond t f = \v -> mrgIte cond (t v) (f v)
 
