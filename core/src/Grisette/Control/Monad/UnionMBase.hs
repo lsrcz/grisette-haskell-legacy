@@ -7,6 +7,7 @@
 module Grisette.Control.Monad.UnionMBase
   ( UnionMBase (..),
     IsConcrete,
+    reconstructToMonadUnion,
     underlyingUnion,
     isMerged,
     (#~),
@@ -138,17 +139,39 @@ instance SymBoolOp bool => MonadUnion bool (UnionMBase bool) where
   mrgIf cond l r =
     merge $ guard cond l r
 
-instance (SymBoolOp bool, SEq bool a, SimpleMergeable bool bool) => SEq bool (UnionMBase bool a) where
+instance (SymBoolOp bool, SEq bool a) => SEq bool (UnionMBase bool a) where
   x ==~ y = getSingle $ do
     x1 <- x
     y1 <- y
     mrgReturn $ x1 ==~ y1
 
-instance (SymBoolOp bool, SOrd bool a, SimpleMergeable bool bool) => SOrd bool (UnionMBase bool a) where
+reconstructToMonadUnion :: (SymBoolOp bool, Mergeable bool a, MonadUnion bool u) => UnionMBase bool a -> u a
+reconstructToMonadUnion u = go (underlyingUnion u)
+  where
+    go (Single v) = mrgReturn v
+    go (Guard _ _ c t f) = mrgIf c (go t) (go f)
+
+instance (SymBoolOp bool, SOrd bool a) => SOrd bool (UnionMBase bool a) where
   x <=~ y = getSingle $ do
     x1 <- x
     y1 <- y
     mrgReturn $ x1 <=~ y1
+  x <~ y = getSingle $ do
+    x1 <- x
+    y1 <- y
+    mrgReturn $ x1 <~ y1
+  x >=~ y = getSingle $ do
+    x1 <- x
+    y1 <- y
+    mrgReturn $ x1 >=~ y1
+  x >~ y = getSingle $ do
+    x1 <- x
+    y1 <- y
+    mrgReturn $ x1 >~ y1
+  x `symCompare` y = reconstructToMonadUnion $ do
+    x1 <- x
+    y1 <- y
+    x1 `symCompare` y1
 
 instance {-# OVERLAPPABLE #-} (SymBoolOp bool, ToSym a b, Mergeable bool b) => ToSym a (UnionMBase bool b) where
   toSym = mrgReturn . toSym
@@ -190,7 +213,9 @@ instance (Hashable bool, Hashable a) => Hashable (UnionMBase bool a) where
   s `hashWithSalt` (UMrg u) = s `hashWithSalt` (1 :: Int) `hashWithSalt` u
 
 instance (Eq bool, Eq a) => Eq (UnionMBase bool a) where
-  l == r = underlyingUnion l == underlyingUnion r
+  UAny _ l == UAny _ r = l == r
+  UMrg l == UMrg r = l == r
+  _ == _ = False
 
 instance (Eq bool) => Eq1 (UnionMBase bool) where
   liftEq e l r = liftEq e (underlyingUnion l) (underlyingUnion r)
