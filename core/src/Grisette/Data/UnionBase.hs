@@ -103,9 +103,10 @@ guardWithStrategyInv ::
 guardWithStrategyInv _ (Conc v) t f
   | v = t
   | otherwise = f
-guardWithStrategyInv strategy cond t@(Guard _ True condTrue tt _) f@(Guard _ True condFalse _ ff)
+guardWithStrategyInv strategy cond (Guard _ True condTrue tt _) f
   | cond == condTrue = guardWithStrategyInv strategy cond tt f
   -- {| nots cond == condTrue || cond == nots condTrue = guardWithStrategyInv strategy cond ft f
+guardWithStrategyInv strategy cond t (Guard _ True condFalse _ ff)
   | cond == condFalse = guardWithStrategyInv strategy cond t ff
   -- {| nots cond == condTrue || cond == nots condTrue = guardWithStrategyInv strategy cond t tf -- buggy here condTrue
 guardWithStrategyInv (SimpleStrategy m) cond (Single l) (Single r) = Single $ m cond l r

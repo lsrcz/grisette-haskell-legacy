@@ -115,6 +115,7 @@ test-suite spec
       Grisette.Data.Class.SymGenSpec
       Grisette.Data.Class.ToConSpec
       Grisette.Data.Class.ToSymSpec
+      Grisette.Data.UnionBaseSpec
       Utils.SBool
       Paths_grisette_core
   hs-source-dirs:
