@@ -1,21 +1,28 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Grisette.Control.Monad.UnionMBaseSpec where
 
 import Control.Monad.Identity hiding (guard)
+import qualified Data.ByteString as B
+import qualified Data.HashMap.Lazy as ML
 import qualified Data.HashMap.Strict as M
+import qualified Data.HashSet as S
 import Grisette.Control.Monad
 import Grisette.Control.Monad.UnionMBase
 import Grisette.Data.Class.Bool
+import Grisette.Data.Class.ExtractSymbolics
+import Grisette.Data.Class.Function
+import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.SOrd
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.SymEval
+import Grisette.Data.Class.SymGen
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
 import Grisette.Data.Class.UnionOp
 import Grisette.Data.UnionBase
 import Test.Hspec
 import Utils.SBool
-import qualified Data.HashSet as S
-import Grisette.Data.Class.ExtractSymbolics
 
 spec :: Spec
 spec = do
@@ -67,6 +74,32 @@ spec = do
               (ITE (SSBool "b") (SSBool "c") (SSBool "d"))
               (ITE (SSBool "e") (SSBool "f") (SSBool "g"))
           )
+  describe "Functor for UnionMBase" $ do
+    it "fmap should work but would strip mergeable knowledge" $ do
+      let x :: UnionMBase SBool Integer = (+ 1) <$> mrgIf (SSBool "a") (mrgReturn 1) (mrgReturn 2)
+      x `shouldBe` guard (SSBool "a") (return 2) (return 3)
+  describe "Applicative for UnionMBase" $ do
+    it "pure should work but won't give us mergeable knowledge" $ do
+      (pure 1 :: UnionMBase SBool Integer) `shouldBe` single 1
+    it "<*> should work but won't give us mergeable knowledge" $ do
+      let f :: UnionMBase SBool (Integer -> Integer) = mrgIf (SSBool "a") (mrgReturn id) (mrgReturn (+ 1))
+      let v :: UnionMBase SBool Integer = mrgIf (SSBool "b") (mrgReturn 1) (mrgReturn 3)
+      f <*> v
+        `shouldBe` guard
+          (SSBool "a")
+          (guard (SSBool "b") (single 1) (single 3))
+          (guard (SSBool "b") (single 2) (single 4))
+  describe "Monad for UnionMBase" $ do
+    it "return should work but won't give us mergeable knowledge" $ do
+      (pure 1 :: UnionMBase SBool Integer) `shouldBe` single 1
+    it ">>= should work and keeps mergeable knowledge" $ do
+      let v :: UnionMBase SBool Integer = mrgIf (SSBool "a") (mrgReturn 0) (mrgReturn 1)
+      let f :: Integer -> UnionMBase SBool Integer = \i -> mrgIf (SSBool "b") (mrgReturn $ i + 1) (mrgReturn $ i + 3)
+      (v >>= f)
+        `shouldBe` mrgIf
+          (SSBool "a")
+          (mrgIf (SSBool "b") (mrgReturn 1) (mrgReturn 3))
+          (mrgIf (SSBool "b") (mrgReturn 2) (mrgReturn 4))
   describe "UnionOp for UnionMBase" $ do
     it "single for UnionMBase should work" $ do
       let r1 :: UnionMBase SBool SBool = single (SSBool "a")
@@ -322,8 +355,164 @@ spec = do
         `shouldBe` (mrgReturn $ Left $ CBool False :: UnionMBase SBool (Either SBool SBool))
   describe "ExtractSymbolics for UnionMBase" $ do
     it "ExtractSymbolic for UnionMBase should work" $ do
-      extractSymbolics (mrgReturn $ SSBool "a" :: UnionMBase SBool SBool) `shouldBe`
-        S.singleton (SSymbol "a")
-      extractSymbolics (mrgIf (SSBool "a") (mrgReturn $ Left $ SSBool "b") (mrgReturn $ Right $ SSBool "c")
-        :: UnionMBase SBool (Either SBool SBool)) `shouldBe`
-        S.fromList [SSymbol "a", SSymbol "b", SSymbol "c"]
+      extractSymbolics (mrgReturn $ SSBool "a" :: UnionMBase SBool SBool)
+        `shouldBe` S.singleton (SSymbol "a")
+      extractSymbolics
+        ( mrgIf (SSBool "a") (mrgReturn $ Left $ SSBool "b") (mrgReturn $ Right $ SSBool "c") ::
+            UnionMBase SBool (Either SBool SBool)
+        )
+        `shouldBe` S.fromList [SSymbol "a", SSymbol "b", SSymbol "c"]
+  describe "Num for UnionMBase" $ do
+    describe "Num for UnionMBase should work" $ do
+      it "fromInteger for UnionMBase should work" $ do
+        (1 :: UnionMBase SBool Integer) `shouldBe` mrgReturn 1
+      it "negate for UnionMBase should work" $ do
+        negate (mrgIf (SSBool "a") (mrgReturn 1) (mrgReturn 2) :: UnionMBase SBool Integer)
+          `shouldBe` mrgIf (SSBool "a") (mrgReturn $ -1) (mrgReturn $ -2)
+      it "plus for UnionMBase should work" $ do
+        (mrgIf (SSBool "a") (mrgReturn 0) (mrgReturn 1) :: UnionMBase SBool Integer)
+          + mrgIf (SSBool "b") (mrgReturn 1) (mrgReturn 3)
+          `shouldBe` mrgIf
+            (SSBool "a")
+            (mrgIf (SSBool "b") (mrgReturn 1) (mrgReturn 3))
+            (mrgIf (SSBool "b") (mrgReturn 2) (mrgReturn 4))
+      it "minus for UnionMBase should work" $ do
+        (mrgIf (SSBool "a") (mrgReturn 0) (mrgReturn 1) :: UnionMBase SBool Integer)
+          - mrgIf (SSBool "b") (mrgReturn $ -3) (mrgReturn $ -1)
+          `shouldBe` mrgIf
+            (SSBool "a")
+            (mrgIf (Not $ SSBool "b") (mrgReturn 1) (mrgReturn 3))
+            (mrgIf (Not $ SSBool "b") (mrgReturn 2) (mrgReturn 4))
+      it "times for UnionMBase should work" $ do
+        (mrgIf (SSBool "a") (mrgReturn 1) (mrgReturn 2) :: UnionMBase SBool Integer)
+          * mrgIf (SSBool "b") (mrgReturn 3) (mrgReturn 4)
+          `shouldBe` mrgIf
+            (SSBool "a")
+            (mrgIf (SSBool "b") (mrgReturn 3) (mrgReturn 4))
+            (mrgIf (SSBool "b") (mrgReturn 6) (mrgReturn 8))
+      it "abs for UnionMBase should work" $ do
+        abs (mrgIf (SSBool "a") (mrgReturn $ -1) (mrgReturn 2) :: UnionMBase SBool Integer)
+          `shouldBe` mrgIf (SSBool "a") (mrgReturn $ 1) (mrgReturn $ 2)
+      it "signum for UnionMBase should work" $ do
+        signum (mrgIf (SSBool "a") (mrgReturn $ -1) (mrgReturn 2) :: UnionMBase SBool Integer)
+          `shouldBe` mrgIf (SSBool "a") (mrgReturn $ -1) (mrgReturn 1)
+  describe "ITEOp for UnionMBase" $ do
+    it "ites for UnionMBase should work" $ do
+      ites (SSBool "a") (mrgReturn $ SSBool "b") (mrgReturn $ SSBool "c")
+        `shouldBe` (mrgReturn (ITE (SSBool "a") (SSBool "b") (SSBool "c")) :: UnionMBase SBool SBool)
+  describe "LogicalOp for UnionMBase" $ do
+    let l = mrgIf (SSBool "a") (mrgReturn False) (mrgReturn True)
+    let r = mrgIf (SSBool "b") (mrgReturn False) (mrgReturn True)
+    it "||~ for UnionMBase should work" $ do
+      l ||~ r `shouldBe` (mrgIf (And (SSBool "a") (SSBool "b")) (mrgReturn False) (mrgReturn True) :: UnionMBase SBool Bool)
+    it "&&~ for UnionMBase should work" $ do
+      l &&~ r `shouldBe` (mrgIf (Or (SSBool "a") (SSBool "b")) (mrgReturn False) (mrgReturn True) :: UnionMBase SBool Bool)
+    it "nots for UnionMBase should work" $ do
+      nots l `shouldBe` mrgIf (Not $ SSBool "a") (mrgReturn False) (mrgReturn True)
+    it "xors for UnionMBase should work" $ do
+      l `xors` r
+        `shouldBe` ( mrgIf
+                       (ITE (SSBool "a") (SSBool "b") (Not $ SSBool "b"))
+                       (mrgReturn False)
+                       (mrgReturn True) ::
+                       UnionMBase SBool Bool
+                   )
+    it "implies for UnionMBase should work" $ do
+      l `implies` r
+        `shouldBe` ( mrgIf
+                       (And (Not $ SSBool "a") (SSBool "b"))
+                       (mrgReturn False)
+                       (mrgReturn True) ::
+                       UnionMBase SBool Bool
+                   )
+  describe "PrimWrapper for UnionMBase" $ do
+    it "PrimWrapper should work for UnionMBase" $ do
+      conc True `shouldBe` (mrgReturn $ CBool True :: UnionMBase SBool SBool)
+      ssymb "a" `shouldBe` (mrgReturn $ SSBool "a" :: UnionMBase SBool SBool)
+      isymb 0 "a" `shouldBe` (mrgReturn $ ISBool 0 "a" :: UnionMBase SBool SBool)
+      concView (mrgReturn $ CBool True :: UnionMBase SBool SBool) `shouldBe` Just True
+      concView (mrgReturn $ SSBool "a" :: UnionMBase SBool SBool) `shouldBe` Nothing
+      concView
+        ( mrgIf
+            (SSBool "a")
+            (mrgReturn $ CBool False)
+            (mrgReturn $ CBool True) ::
+            UnionMBase SBool SBool
+        )
+        `shouldBe` Nothing
+  describe "Function class for UnionMBase" $ do
+    it "Applying function in UnionMBase" $ do
+      let func = mrgIf (SSBool "a") (mrgReturn (+ 1)) (mrgReturn (+ 2)) :: UnionMBase SBool (Integer -> Integer)
+      func # (1 :: Integer) `shouldBe` mrgIf (SSBool "a") (mrgReturn 2) (mrgReturn 3)
+    it "Helper for applying on UnionMBase" $ do
+      let func (x :: Integer) = mrgIf (SSBool "a") (mrgReturn $ x + 1) (mrgReturn $ x + 3)
+      (func #~ mrgIf (SSBool "b") (mrgReturn 0) (mrgReturn 1))
+        `shouldBe` ( mrgIf
+                       (SSBool "b")
+                       (mrgIf (SSBool "a") (mrgReturn 1) (mrgReturn 3))
+                       (mrgIf (SSBool "a") (mrgReturn 2) (mrgReturn 4)) ::
+                       UnionMBase SBool Integer
+                   )
+  describe "IsString for UnionMBase" $ do
+    it "IsString for UnionMBase should work" $ do
+      ("x" :: UnionMBase SBool B.ByteString) `shouldBe` mrgReturn "x"
+  describe "SymGen for UnionMBase" $ do
+    it "SymGen for UnionMBase with spec" $ do
+      (genSym (ListSpec 1 3 ()) "a" :: UnionMBase SBool (UnionMBase SBool [SBool]))
+        `shouldBe` mrgReturn
+          ( mrgIf
+              (ISBool 3 "a")
+              (mrgReturn [ISBool 2 "a"])
+              ( mrgIf
+                  (ISBool 4 "a")
+                  (mrgReturn [ISBool 1 "a", ISBool 2 "a"])
+                  (mrgReturn [ISBool 0 "a", ISBool 1 "a", ISBool 2 "a"])
+              )
+          )
+      (genSymSimple @SBool (ListSpec 1 3 ()) "a" :: UnionMBase SBool [SBool])
+        `shouldBe` mrgIf
+          (ISBool 3 "a")
+          (mrgReturn [ISBool 2 "a"])
+          ( mrgIf
+              (ISBool 4 "a")
+              (mrgReturn [ISBool 1 "a", ISBool 2 "a"])
+              (mrgReturn [ISBool 0 "a", ISBool 1 "a", ISBool 2 "a"])
+          )
+    it "SymGen for UnionMBase with same shape" $ do
+      ( genSym
+          ( mrgIf
+              (SSBool "a")
+              (mrgReturn [SSBool "x"])
+              (mrgReturn [SSBool "y", SSBool "z"]) ::
+              UnionMBase SBool [SBool]
+          )
+          "a" ::
+          UnionMBase SBool [SBool]
+        )
+        `shouldBe` mrgIf (ISBool 0 "a") (mrgReturn [ISBool 1 "a"]) (mrgReturn [ISBool 2 "a", ISBool 3 "a"])
+  describe "Concrete Key HashMaps" $ do
+    it "Concrete Key HashMap should work" $ do
+      mrgIte
+        (SSBool "a")
+        ( ML.fromList [(1, mrgReturn $ Just 1), (2, mrgReturn $ Just 2)] ::
+            ML.HashMap Integer (UnionMBase SBool (Maybe Integer))
+        )
+        (ML.fromList [(1, mrgReturn $ Just 2), (3, mrgReturn $ Just 3)])
+        `shouldBe` ML.fromList
+          [ (1, mrgIf (SSBool "a") (mrgReturn $ Just 1) (mrgReturn $ Just 2)),
+            (2, mrgIf (Not $ SSBool "a") (mrgReturn Nothing) (mrgReturn $ Just 2)),
+            (3, mrgIf (SSBool "a") (mrgReturn Nothing) (mrgReturn $ Just 3))
+          ]
+      mrgIf
+        (SSBool "a")
+        ( mrgReturn $ ML.fromList [(1, mrgReturn $ Just 1), (2, mrgReturn $ Just 2)] ::
+            UnionMBase SBool (ML.HashMap Integer (UnionMBase SBool (Maybe Integer)))
+        )
+        (mrgReturn (ML.fromList [(1, mrgReturn $ Just 2), (3, mrgReturn $ Just 3)]))
+        `shouldBe` mrgReturn
+          ( ML.fromList
+              [ (1, mrgIf (SSBool "a") (mrgReturn $ Just 1) (mrgReturn $ Just 2)),
+                (2, mrgIf (Not $ SSBool "a") (mrgReturn Nothing) (mrgReturn $ Just 2)),
+                (3, mrgIf (SSBool "a") (mrgReturn Nothing) (mrgReturn $ Just 3))
+              ]
+          )

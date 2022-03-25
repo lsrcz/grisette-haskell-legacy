@@ -224,6 +224,7 @@ instance (SymBoolOp bool, Num a, Mergeable bool a) => Num (UnionMBase bool a) wh
   fromInteger = mrgReturn . fromInteger
   negate x = x >>= (mrgReturn . negate)
   x + y = x >>= \x1 -> y >>= \y1 -> mrgReturn $ x1 + y1
+  x - y = x >>= \x1 -> y >>= \y1 -> mrgReturn $ x1 - y1
   x * y = x >>= \x1 -> y >>= \y1 -> mrgReturn $ x1 * y1
   abs x = x >>= mrgReturn . abs
   signum x = x >>= mrgReturn . signum
@@ -280,6 +281,7 @@ infixl 9 #~
 instance (SymBoolOp bool, IsString a, Mergeable bool a) => IsString (UnionMBase bool a) where
   fromString = mrgReturn . fromString
 
+{-
 foldMapUnion :: (Monoid m) => (a -> m) -> UnionBase bool a -> m
 foldMapUnion f (Single v) = f v
 foldMapUnion f (Guard _ _ _ l r) = foldMapUnion f l <> foldMapUnion f r
@@ -293,10 +295,10 @@ sequenceAUnion (Guard _ _ cond l r) = guard cond <$> sequenceAUnion l <*> sequen
 
 instance (SymBoolOp bool) => Traversable (UnionMBase bool) where
   sequenceA u = freshUAny <$> sequenceAUnion (underlyingUnion u)
+  -}
 
 -- SymGen
 instance (SymBoolOp bool, SymGen bool spec a, Mergeable bool a) => SymGen bool spec (UnionMBase bool a) where
-  genSymIndexed spec = mrgReturn <$> genSymSimpleIndexed @bool spec
 
 instance (SymBoolOp bool, SymGen bool spec a) => SymGenSimple bool spec (UnionMBase bool a) where
   genSymSimpleIndexed spec = do
@@ -317,9 +319,19 @@ instance IsConcrete Bool
 
 instance IsConcrete Integer
 
-instance (SymBoolOp bool, IsConcrete k, Mergeable bool t) => Mergeable bool (HML.HashMap k (UnionMBase bool t)) where
+instance (SymBoolOp bool, IsConcrete k, Mergeable bool t) => Mergeable bool (HML.HashMap k (UnionMBase bool (Maybe t))) where
   mergeStrategy = SimpleStrategy mrgIte
 
-instance (SymBoolOp bool, IsConcrete k, Mergeable bool t) => SimpleMergeable bool (HML.HashMap k (UnionMBase bool t)) where
-  mrgIte cond l r = HML.unionWith (mrgIf cond) l r
+instance (SymBoolOp bool, IsConcrete k, Mergeable bool t) => SimpleMergeable bool (HML.HashMap k (UnionMBase bool (Maybe t))) where
+  mrgIte cond l r = 
+    HML.unionWith (mrgIf cond) ul ur
+    where
+      ul = foldr (\k m -> case HML.lookup k m of
+        Nothing -> HML.insert k (mrgReturn Nothing) m
+        _ -> m
+        ) l (HML.keys r)
+      ur = foldr (\k m -> case HML.lookup k m of
+        Nothing -> HML.insert k (mrgReturn Nothing) m
+        _ -> m
+        ) r (HML.keys l)
 

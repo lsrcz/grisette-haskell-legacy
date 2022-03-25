@@ -68,6 +68,11 @@ class LogicalOp b where
   a `implies` b = nots a ||~ b
   {-# MINIMAL (||~), nots | (&&~), nots #-}
 
+instance LogicalOp Bool where
+  (||~) = (||)
+  (&&~) = (&&)
+  nots = not
+
 class ITEOp b v where
   ites :: b -> v -> v -> v
 
