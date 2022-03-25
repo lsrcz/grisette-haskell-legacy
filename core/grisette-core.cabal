@@ -106,7 +106,10 @@ test-suite spec
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Grisette.Control.ExceptionSpec
+      Grisette.Control.Monad.TransSpec
       Grisette.Control.Monad.UnionMBaseSpec
+      Grisette.Control.MonadSpec
       Grisette.Data.Class.BoolSpec
       Grisette.Data.Class.ExtractSymbolicsSpec
       Grisette.Data.Class.MergeableSpec

@@ -86,7 +86,7 @@ instance
 mrgFoldM :: (MonadUnion bool m, Mergeable bool b, Foldable t) => (b -> a -> m b) -> b -> t a -> m b
 mrgFoldM f z0 xs = foldr c mrgReturn xs z0
   where
-    c x k z = f z x >>= k
+    c x k z = merge (f z x) >>= k
 
 (>>~) :: forall bool m a b. (SymBoolOp bool, MonadUnion bool m, Mergeable bool b) => m a -> m b -> m b
 a >>~ f = merge $ mrgFmap (const ()) a >> f
