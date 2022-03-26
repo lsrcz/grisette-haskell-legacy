@@ -99,6 +99,7 @@ test-suite spec
       Grisette.Data.Prim.BitsSpec
       Grisette.Data.Prim.BoolSpec
       Grisette.Data.Prim.BVSpec
+      Grisette.Data.Prim.IntegerSpec
       Grisette.Data.Prim.NumSpec
       Paths_grisette_symprim
   hs-source-dirs:

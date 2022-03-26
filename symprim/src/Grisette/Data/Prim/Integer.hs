@@ -73,7 +73,8 @@ instance BinaryPartialStrategy ModI Integer Integer Integer where
     | j /= 0 = Just $ concTerm $ i `mod` j
   allConstantHandler _ _ _ = Nothing
   leftConstantHandler _ _ _ = Nothing
-  rightConstantHandler _ i 1 = Just i
+  rightConstantHandler _ _ 1 = Just $ concTerm 0
+  rightConstantHandler _ _ (-1) = Just $ concTerm 0
   rightConstantHandler _ _ _ = Nothing
   nonBinaryConstantHandler _ _ _ = Nothing
 
