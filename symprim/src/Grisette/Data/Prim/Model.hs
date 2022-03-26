@@ -12,22 +12,24 @@ module Grisette.Data.Prim.Model
 where
 
 import Control.Monad.Memo
-import Data.Dynamic
 import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet as S
 import Data.Typeable
 import Grisette.Data.MemoUtils
 import Grisette.Data.Prim.InternedTerm
 import Unsafe.Coerce
+import Grisette.Data.Prim.ModelValue
+import Data.Hashable
+import GHC.Generics
 
-newtype Model = Model (M.HashMap Symbol Dynamic) deriving (Show)
+newtype Model = Model (M.HashMap Symbol ModelValue) deriving (Show, Eq, Generic, Hashable)
 
 empty :: Model
 empty = Model M.empty
 
 valueOf :: forall t. (Typeable t) => Model -> Symbol -> Maybe t
 valueOf (Model m) sym =
-  (\d -> fromDyn @t d (error $ "Bad type" ++ show (typeRep (Proxy @t)) ++ "for symbol " ++ show sym))
+  (unsafeFromModelValue @t)
     <$> M.lookup sym m
 
 exceptFor :: Model -> S.HashSet TermSymbol -> Model
@@ -59,10 +61,10 @@ extendTo (Model m) s =
 exact :: Model -> S.HashSet TermSymbol -> Model
 exact m s = restrictTo (extendTo m s) s
 
-insert :: (Typeable a) => Model -> TermSymbol -> a -> Model
+insert :: (Eq a, Show a, Hashable a, Typeable a) => Model -> TermSymbol -> a -> Model
 insert (Model m) (TermSymbol p sym) v =
   if typeRep p == typeOf v
-    then Model $ M.insert sym (toDyn v) m
+    then Model $ M.insert sym (toModelValue v) m
     else error "Bad value type"
 
 evaluateSomeTermMemo :: Bool -> Model -> SomeTerm -> MemoState (MemoHashMap SomeTerm SomeTerm) SomeTerm SomeTerm SomeTerm
@@ -72,7 +74,7 @@ evaluateSomeTermMemo fillDefault (Model ma) = go
     go c@(SomeTerm ConcTerm {}) = return c
     go c@(SomeTerm ((SymbTerm _ (TermSymbol (_ :: Proxy t) sym)) :: Term a)) = return $ case M.lookup sym ma of
       Nothing -> if fillDefault then SomeTerm $ concTerm (defaultValue @t) else c
-      Just dy -> SomeTerm $ concTerm (fromDyn @a dy undefined)
+      Just dy -> SomeTerm $ concTerm (unsafeFromModelValue @a dy)
     go (SomeTerm (UnaryTerm _ tag (arg :: Term a))) = do
       SomeTerm argv <- memo go (SomeTerm arg)
       return $ SomeTerm $ partialEvalUnary tag (unsafeCoerce argv :: Term a)

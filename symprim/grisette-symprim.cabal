@@ -37,6 +37,7 @@ library
       Grisette.Data.Prim.Integer
       Grisette.Data.Prim.InternedTerm
       Grisette.Data.Prim.Model
+      Grisette.Data.Prim.ModelValue
       Grisette.Data.Prim.Num
       Grisette.Data.Prim.Orphan
       Grisette.Data.Prim.TabularFunc
@@ -100,6 +101,7 @@ test-suite spec
       Grisette.Data.Prim.BoolSpec
       Grisette.Data.Prim.BVSpec
       Grisette.Data.Prim.IntegerSpec
+      Grisette.Data.Prim.ModelSpec
       Grisette.Data.Prim.NumSpec
       Grisette.Data.Prim.TabularFuncSpec
       Paths_grisette_symprim

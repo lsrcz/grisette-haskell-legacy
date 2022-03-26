@@ -63,6 +63,7 @@ import Grisette.Data.Prim.Caches
 import Data.Word
 import qualified Data.Vector as V
 import Data.Bits
+import Grisette.Data.Prim.ModelValue
 
 class (Lift t, Typeable t, Hashable t, Eq t, Show t, NFData t) => SupportedPrim t where
   type PrimConstraint t :: Constraint
@@ -80,8 +81,8 @@ class (Lift t, Typeable t, Hashable t, Eq t, Show t, NFData t) => SupportedPrim 
   pformatSymb :: Symbol -> String
   pformatSymb = show
   defaultValue :: t
-  defaultValueDynamic :: Dynamic
-  defaultValueDynamic = toDyn (defaultValue @t)
+  defaultValueDynamic :: ModelValue
+  defaultValueDynamic = toModelValue (defaultValue @t)
 
 class
   (SupportedPrim arg, SupportedPrim t, Lift tag, NFData tag, Show tag, Typeable tag, Eq tag, Hashable tag) =>
@@ -507,22 +508,22 @@ QED
 
 -- Basic Bool
 defaultValueForBool :: Bool
-defaultValueForBool = True
+defaultValueForBool = False
 
-defaultValueForBoolDyn :: Dynamic
-defaultValueForBoolDyn = toDyn defaultValueForBool
+defaultValueForBoolDyn :: ModelValue
+defaultValueForBoolDyn = toModelValue defaultValueForBool
 
 instance SupportedPrim Bool where
   pformatConc True = "true"
   pformatConc False = "false"
-  defaultValue = True
+  defaultValue = defaultValueForBool
   defaultValueDynamic = defaultValueForBoolDyn
 
 defaultValueForInteger :: Integer
 defaultValueForInteger = 0
 
-defaultValueForIntegerDyn :: Dynamic
-defaultValueForIntegerDyn = toDyn defaultValueForInteger
+defaultValueForIntegerDyn :: ModelValue
+defaultValueForIntegerDyn = toModelValue defaultValueForInteger
 
 -- Basic Integer
 instance SupportedPrim Integer where
