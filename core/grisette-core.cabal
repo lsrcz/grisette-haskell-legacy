@@ -104,7 +104,7 @@ library
 
 test-suite spec
   type: exitcode-stdio-1.0
-  main-is: Spec.hs
+  main-is: Main.hs
   other-modules:
       Grisette.Control.ExceptionSpec
       Grisette.Control.Monad.TransSpec
@@ -121,6 +121,7 @@ test-suite spec
       Grisette.Data.Class.ToConSpec
       Grisette.Data.Class.ToSymSpec
       Grisette.Data.UnionBaseSpec
+      Spec
       Utils.SBool
       Paths_grisette_core
   hs-source-dirs:
@@ -156,6 +157,7 @@ test-suite spec
     , hashable
     , hashtables
     , hspec ==2.*
+    , hspec-junit-formatter
     , intern
     , monad-coroutine
     , monad-memo
