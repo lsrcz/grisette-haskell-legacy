@@ -71,4 +71,7 @@ library:
 tests:
   spec:
     defaults: hspec/hspec@master
-    dependencies: grisette-symprim
+    main: Main.hs
+    dependencies:
+      - grisette-symprim
+      - hspec-junit-formatter

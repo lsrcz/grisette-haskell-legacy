@@ -72,4 +72,7 @@ library:
 tests:
   spec:
     defaults: hspec/hspec@master
-    dependencies: grisette-core
+    main: Main.hs
+    dependencies:
+      - grisette-core
+      - hspec-junit-formatter
