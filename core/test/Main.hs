@@ -12,7 +12,7 @@ main = do
   case (junitEnabled, junitOutputDirectory) of
     (Just "1", Just path) -> do
       summary@(Summary e f) <- runJUnitSpec Spec.spec (path, "core") defaultConfig
-      _ <- putStrLn $ "Total " ++ show e " examples, failed " ++ show f ++ " examples."
+      _ <- putStrLn $ "Total " ++ show e ++ " examples, failed " ++ show f ++ " examples."
       evaluateSummary summary
     _ -> hspec Spec.spec
 
