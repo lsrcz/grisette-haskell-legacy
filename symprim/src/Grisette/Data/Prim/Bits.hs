@@ -10,7 +10,6 @@ import Data.Typeable
 import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.Helpers
 import Grisette.Data.Prim.InternedTerm
-import Grisette.Data.Prim.Utils
 import Language.Haskell.TH.Syntax
 import Data.Hashable
 
@@ -145,6 +144,10 @@ instance (Bits a, SupportedPrim a) => BinaryPartialStrategy (XorBits a) a a a wh
     | i == j = Just $ concTerm zeroBits
   nonBinaryConstantHandler _ (ComplementBitsTerm i) (ComplementBitsTerm j) =
     Just $ bitxor i j
+  nonBinaryConstantHandler _ (ComplementBitsTerm i) j =
+    Just $ bitneg (bitxor i j)
+  nonBinaryConstantHandler _ i (ComplementBitsTerm j) =
+    Just $ bitneg (bitxor i j)
   nonBinaryConstantHandler _ _ _ = Nothing
 
 instance (Bits a, SupportedPrim a) => BinaryOp (XorBits a) a a a where
@@ -186,8 +189,8 @@ instance (Bits a, SupportedPrim a) => UnaryOp (ComplementBits a) a a where
   partialEvalUnary s v = unaryUnfoldOnce (unaryPartial s) (constructUnary s) v
   pformatUnary _ v = "(bitneg " ++ pformat v ++ ")"
 
-pattern ComplementBitsTerm :: forall b a. (Bits b, Typeable b) => Term b -> Term a
-pattern ComplementBitsTerm b <- UnaryTermPatt (ComplementBits :: ComplementBits b) b
+pattern ComplementBitsTerm :: forall a. (Bits a, Typeable a) => Term a -> Term a
+pattern ComplementBitsTerm b <- UnaryTermPatt (ComplementBits :: ComplementBits a) b
 
 -- shift
 data ShiftBits x where
@@ -228,8 +231,8 @@ instance (Bits a, SupportedPrim a) => UnaryOp (ShiftBits a) a a where
   partialEvalUnary s v = unaryUnfoldOnce (unaryPartial s) (constructUnary s) v
   pformatUnary (ShiftBits i) v = "(shift " ++ show i ++ " " ++ pformat v ++ ")"
 
-pattern ShiftBitsTerm :: forall b a. (Bits b, Typeable b) => Term b -> Int -> Term a
-pattern ShiftBitsTerm b i <- UnaryTerm _ (Dyn (ShiftBits i :: ShiftBits b)) (Dyn b)
+pattern ShiftBitsTerm :: forall a. (Bits a, Typeable a) => Term a -> Int -> Term a
+pattern ShiftBitsTerm b i <- UnaryTermPatt (ShiftBits i :: ShiftBits a) b
 
 -- rotate
 data RotateBits x where
@@ -260,7 +263,7 @@ instance (Bits a, SupportedPrim a) => UnaryPartialStrategy (RotateBits a) a a wh
   nonConstantHandler (RotateBits a) x
     | case bsize of
         Nothing -> False
-        Just s -> s /= 0 && (a >= s || a <= -s) = do
+        Just s -> s /= 0 && (a >= s || a < 0) = do
           cbsize <- bsize
           if a >= cbsize then
             return $ bitrotate x (a - cbsize)
@@ -276,5 +279,5 @@ instance (Bits a, SupportedPrim a) => UnaryOp (RotateBits a) a a where
   partialEvalUnary s v = unaryUnfoldOnce (unaryPartial s) (constructUnary s) v
   pformatUnary (RotateBits i) v = "(rotate " ++ show i ++ " " ++ pformat v ++ ")"
 
-pattern RotateBitsTerm :: forall b a. (Bits b, Typeable b) => Term b -> Int -> Term a
-pattern RotateBitsTerm b i <- UnaryTerm _ (Dyn (RotateBits i :: RotateBits b)) (Dyn b)
+pattern RotateBitsTerm :: forall a. (Bits a, Typeable a) => Term a -> Int -> Term a
+pattern RotateBitsTerm b i <- UnaryTermPatt (RotateBits i :: RotateBits a) b
