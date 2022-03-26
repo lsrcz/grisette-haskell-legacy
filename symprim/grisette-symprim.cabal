@@ -101,6 +101,7 @@ test-suite spec
       Grisette.Data.Prim.BVSpec
       Grisette.Data.Prim.IntegerSpec
       Grisette.Data.Prim.NumSpec
+      Grisette.Data.Prim.TabularFuncSpec
       Paths_grisette_symprim
   hs-source-dirs:
       test
