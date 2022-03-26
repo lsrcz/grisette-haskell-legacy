@@ -35,7 +35,6 @@ import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.Helpers
 import Grisette.Data.Prim.InternedTerm
 import Language.Haskell.TH.Syntax
-import Debug.Trace
 
 signedBVConcTermView :: forall w a. (KnownNat w) => Term a -> Maybe (SignedBV w)
 signedBVConcTermView (ConcTerm _ b) = cast b
@@ -84,6 +83,7 @@ instance Eq (BVTExtract w ow) where
 
 instance Hashable (BVTExtract w ow) where
   s `hashWithSalt` (BVTExtract p) = s `hashWithSalt` natVal p
+
 instance Show (BVTExtract w ow) where
   show (BVTExtract p :: BVTExtract o ow) =
     "BVTExtract" ++ show (natVal p) ++ ":"
@@ -124,8 +124,7 @@ instance
   nonConstantHandler _ _ = Nothing
 
 instance
-  ( 
-    KnownNat w,
+  ( KnownNat w,
     KnownNat ow,
     1 <= ow,
     1 <= w,
@@ -221,7 +220,6 @@ bvtext p signed =
       e5 = plusMinusCancel (Proxy @n) (Proxy @w)
    in case (e3, e4, e5) of
         (LeqProof, Refl, Refl) ->
-          trace (show signed) $
           partialEvalUnary (if signed then Sext @n @w @w' p else Zext @n @w @w' p)
 
 instance
@@ -253,7 +251,7 @@ instance
          in case wplus1leqw' of
               LeqProof ->
                 Just $ concTerm $ wrap $ sext (knownNat @w) (knownNat @w') (unwrap v)
-  nonConstantHandler tag _ = trace (show tag ++ "--") Nothing
+  nonConstantHandler _ _ = Nothing
 
 instance
   ( KnownNat w,

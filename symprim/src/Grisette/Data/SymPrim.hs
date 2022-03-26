@@ -147,6 +147,8 @@ instance LogicalOp (Sym Bool) where
   (Sym l) ||~ (Sym r) = Sym $ orb l r
   (Sym l) &&~ (Sym r) = Sym $ andb l r
   nots (Sym v) = Sym $ notb v
+  (Sym l) `xors` (Sym r) = Sym $ xorb l r
+  (Sym l) `implies` (Sym r) = Sym $ implyb l r
 
 instance SymBoolOp (Sym Bool)
 
@@ -196,6 +198,11 @@ instance SOrd (Sym Bool) (Sym Integer) where
   (Sym a) <~ (Sym b) = Sym $ ltNum a b
   (Sym a) >=~ (Sym b) = Sym $ geNum a b
   (Sym a) >~ (Sym b) = Sym $ gtNum a b
+  a `symCompare` b =
+    mrgIf
+      (a <~ b)
+      (mrgReturn LT)
+      (mrgIf (a ==~ b) (mrgReturn EQ) (mrgReturn GT))
 
 instance SymIntegerOp (Sym Bool) (Sym Integer)
 
@@ -240,6 +247,7 @@ instance (SupportedPrim (SignedBV n)) => Bits (Sym (SignedBV n)) where
   testBit (Conc n) = withPrim @(SignedBV n) $ testBit n
   testBit _ = error "You cannot call testBit on symbolic variables"
   bit = withPrim @(SignedBV n) $ conc . bit
+  popCount (Conc n) = withPrim @(SignedBV n) $ popCount n
   popCount _ = error "You cannot call popCount on symbolic variables"
 
 instance
@@ -329,6 +337,22 @@ instance
   where
   bvextract pix pw (Sym v) = Sym $ bvtextract pix pw v
 
+instance (SupportedPrim (UnsignedBV n)) => Bits (Sym (UnsignedBV n)) where
+  Sym l .&. Sym r = Sym $ withPrim @(UnsignedBV n) $ bitand l r
+  Sym l .|. Sym r = Sym $ withPrim @(UnsignedBV n) $ bitor l r
+  Sym l `xor` Sym r = Sym $ withPrim @(UnsignedBV n) $ bitxor l r
+  complement (Sym n) = Sym $ withPrim @(UnsignedBV n) $ bitneg n
+  shift (Sym n) i = Sym $ withPrim @(UnsignedBV n) $ bitshift n i
+  rotate (Sym n) i = Sym $ withPrim @(UnsignedBV n) $ bitrotate n i
+  bitSize _ = fromInteger $ withPrim @(UnsignedBV n) $ natVal (Proxy @n)
+  bitSizeMaybe _ = Just $ fromInteger $ withPrim @(UnsignedBV n) $ natVal (Proxy @n)
+  isSigned _ = False
+  testBit (Conc n) = withPrim @(UnsignedBV n) $ testBit n
+  testBit _ = error "You cannot call testBit on symbolic variables"
+  bit = withPrim @(UnsignedBV n) $ conc . bit
+  popCount (Conc n) = withPrim @(UnsignedBV n) $ popCount n
+  popCount _ = error "You cannot call popCount on symbolic variables"
+
 -- tabular func
 type a =~> b = Sym (a =-> b)
 
@@ -343,6 +367,7 @@ instance (SupportedPrim a, SupportedPrim b) => SymConcView (a =-> b) where
   symConcView _ = Nothing
   -}
 
+{-
 instance
   ( SupportedPrim a,
     SupportedPrim b,
@@ -352,18 +377,4 @@ instance
   ExtractSymbolics (S.HashSet TermSymbol) (a =~> b)
   where
   extractSymbolics (Sym t) = extractSymbolicsTerm t
-
-instance (SupportedPrim (UnsignedBV n)) => Bits (Sym (UnsignedBV n)) where
-  Sym l .&. Sym r = Sym $ withPrim @(UnsignedBV n) $ bitand l r
-  Sym l .|. Sym r = Sym $ withPrim @(UnsignedBV n) $ bitor l r
-  Sym l `xor` Sym r = Sym $ withPrim @(UnsignedBV n) $ bitxor l r
-  complement (Sym n) = Sym $ withPrim @(UnsignedBV n) $ bitneg n
-  shift (Sym n) i = Sym $ withPrim @(UnsignedBV n) $ bitshift n i
-  rotate (Sym n) i = Sym $ withPrim @(UnsignedBV n) $ bitrotate n i
-  bitSize _ = fromInteger $ withPrim @(UnsignedBV n) $ natVal (Proxy @n)
-  bitSizeMaybe _ = Just $ fromInteger $ withPrim @(UnsignedBV n) $ natVal (Proxy @n)
-  isSigned _ = True
-  testBit (Conc n) = withPrim @(UnsignedBV n) $ testBit n
-  testBit _ = error "You cannot call testBit on symbolic variables"
-  bit = withPrim @(UnsignedBV n) $ conc . bit
-  popCount _ = error "You cannot call popCount on symbolic variables"
+-}
