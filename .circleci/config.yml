@@ -31,4 +31,4 @@ jobs:
             - "scratch/.stack-work"
       - run:
           name: Upload shc
-          command: wget https://github.com/rubik/stack-hpc-coveralls/releases/download/v0.0.6.1/shc-linux-x64-8.10.4.tar.bz2 && tar -xjf shc-linux-x64-8.10.4.tar.bz2 && ./shc --repo-token=$COVERALLS_REPO_TOKEN all all
+          command: wget https://github.com/rubik/stack-hpc-coveralls/releases/download/v0.0.6.1/shc-linux-x64-8.10.4.tar.bz2 && tar -xjf shc-linux-x64-8.10.4.tar.bz2 && ./shc --repo-token=$COVERALLS_REPO_TOKEN combined all
