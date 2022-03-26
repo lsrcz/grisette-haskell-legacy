@@ -68,3 +68,7 @@ ghc-options: -Wall -ferror-spans
 library:
   source-dirs: src
 
+tests:
+  spec:
+    defaults: hspec/hspec@master
+    dependencies: grisette-symprim

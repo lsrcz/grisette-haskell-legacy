@@ -91,3 +91,58 @@ library
   else
     ghc-options: -O0
   default-language: Haskell2010
+
+test-suite spec
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Grisette.Data.Prim.BoolSpec
+      Paths_grisette_symprim
+  hs-source-dirs:
+      test
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveGeneric
+      DeriveLift
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+      DeriveAnyClass
+  ghc-options: -Wall -ferror-spans
+  build-depends:
+      MemoTrie
+    , array
+    , base >4.7 && <5
+    , bv-sized
+    , constraints
+    , deepseq
+    , grisette-core
+    , grisette-symprim
+    , hashable
+    , hspec ==2.*
+    , intern
+    , monad-memo
+    , mtl
+    , parameterized-utils
+    , template-haskell
+    , typerep-map
+    , unordered-containers
+    , vector
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
+  default-language: Haskell2010
+  build-tool-depends: hspec-discover:hspec-discover == 2.*
