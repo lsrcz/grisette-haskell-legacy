@@ -63,7 +63,7 @@ class LogicalOp b where
   infixr 3 &&~
   nots :: b -> b
   xors :: b -> b -> b
-  a `xors` b = (nots a &&~ b) ||~ (a &&~ nots b)
+  a `xors` b = (a &&~ nots b) ||~ (nots a &&~ b)
   implies :: b -> b -> b
   a `implies` b = nots a ||~ b
   {-# MINIMAL (||~), nots | (&&~), nots #-}
