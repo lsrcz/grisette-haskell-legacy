@@ -81,7 +81,7 @@ addNum l r = normalizeAddNum $ partialEvalBinary @(AddNum a) AddNum l r
 instance (Num a, SupportedPrim a) => BinaryCommPartialStrategy (AddNum a) a a where
   singleConstantHandler _ 0 k = Just k
   singleConstantHandler _ l (AddNumTerm (NumConcTerm j) k) = Just $ addNum (concTerm $ l + j) k
-  singleConstantHandler _ l (TimesNumTerm (NumConcTerm j) k) = Just $ addNum (concTerm $ l * j) (timesNum (concTerm l) k)
+  -- singleConstantHandler _ l (TimesNumTerm (NumConcTerm j) k) = Just $ addNum (concTerm $ l * j) (timesNum (concTerm l) k)
   singleConstantHandler _ _ (TimesNumTerm (_ :: Term a) (ConcTerm _ _)) = error "Should not happen"
   singleConstantHandler _ _ (AddNumTerm (_ :: Term a) (ConcTerm _ _)) = error "Should not happen" -- Just $ addi (concTerm $ l + k) j
   singleConstantHandler _ _ _ = Nothing
@@ -94,6 +94,8 @@ instance (Num a, SupportedPrim a) => BinaryPartialStrategy (AddNum a) a a a wher
   nonBinaryConstantHandler _ (AddNumTerm i@ConcTerm {} j) k = Just $ addNum i $ addNum j k
   nonBinaryConstantHandler _ i (AddNumTerm j@ConcTerm {} k) = Just $ addNum j $ addNum i k
   nonBinaryConstantHandler _ (UMinusNumTerm i) (UMinusNumTerm j) = Just $ uminusNum $ addNum i j
+  nonBinaryConstantHandler _ (TimesNumTerm (ConcTerm _ i) j) (TimesNumTerm (ConcTerm _ k) l)
+    | j == l = Just $ timesNum (concTerm $ i + k) j
   nonBinaryConstantHandler _ (TimesNumTerm i@ConcTerm {} j) (TimesNumTerm k@(ConcTerm _ _) l)
     | i == k = Just $ timesNum i (addNum j l)
   nonBinaryConstantHandler _ i j@ConcTerm {} = Just $ addNum j i
@@ -238,11 +240,11 @@ instance (Num a, Ord a, SupportedPrim a) => BinaryPartialStrategy LTNum a a Bool
   leftConstantHandler _ _ (AddNumTerm (_ :: Term a) (NumOrdConcTerm (_ :: a))) = error "Should not happen" -- Just $ lti (concTerm $ l - k) j
   leftConstantHandler _ _ _ = Nothing
   rightConstantHandler _ (AddNumTerm (NumOrdConcTerm i) j) k = Just $ ltNum j (concTerm $ k - i)
-  rightConstantHandler _ (UMinusNumTerm i) j = Just $ ltNum (concTerm $ - j) i
+  -- rightConstantHandler _ (UMinusNumTerm i) j = Just $ ltNum (concTerm $ - j) i
   rightConstantHandler _ (AddNumTerm (_ :: Term a) (NumOrdConcTerm (_ :: a))) _ = error "Should not happen" -- Just $ lti i (concTerm $ k - j)
   rightConstantHandler _ l r = Just $ ltNum (concTerm $ - r) (uminusNum l)
 
-  nonBinaryConstantHandler _ (AddNumTerm (NumOrdConcTerm j) k) l = Just $ ltNum (concTerm j) (minusNum k l)
+  nonBinaryConstantHandler _ (AddNumTerm (NumOrdConcTerm j) k) l = Just $ ltNum (concTerm j) (minusNum l k)
   nonBinaryConstantHandler _ j (AddNumTerm (NumOrdConcTerm k) l) = Just $ ltNum (concTerm $ - k) (minusNum l j)
   nonBinaryConstantHandler _ (AddNumTerm (_ :: Term a) (NumOrdConcTerm (_ :: a))) _ = error "Should not happen" -- Just $ lti (concTerm k) (minusi j l)
   nonBinaryConstantHandler _ _ (AddNumTerm (_ :: Term a) (NumOrdConcTerm (_ :: a))) = error "Should not happen" -- Just $ lti (concTerm $ -l) (minusi k j)
@@ -269,11 +271,11 @@ instance (Num a, Ord a, SupportedPrim a) => BinaryPartialStrategy LENum a a Bool
   leftConstantHandler _ _ (AddNumTerm (_ :: Term a) (NumOrdConcTerm (_ :: a))) = error "Should not happen" -- Just $ lti (concTerm $ l - k) j
   leftConstantHandler _ _ _ = Nothing
   rightConstantHandler _ (AddNumTerm (NumOrdConcTerm i) j) k = Just $ leNum j (concTerm $ k - i)
-  rightConstantHandler _ (UMinusNumTerm i) j = Just $ leNum (concTerm $ - j) i
+  -- rightConstantHandler _ (UMinusNumTerm i) j = Just $ leNum (concTerm $ - j) i
   rightConstantHandler _ (AddNumTerm (_ :: Term a) (NumOrdConcTerm (_ :: a))) _ = error "Should not happen" -- Just $ lti i (concTerm $ k - j)
   rightConstantHandler _ l r = Just $ leNum (concTerm $ - r) (uminusNum l)
 
-  nonBinaryConstantHandler _ (AddNumTerm (NumOrdConcTerm j) k) l = Just $ leNum (concTerm j) (minusNum k l)
+  nonBinaryConstantHandler _ (AddNumTerm (NumOrdConcTerm j) k) l = Just $ leNum (concTerm j) (minusNum l k)
   nonBinaryConstantHandler _ j (AddNumTerm (NumOrdConcTerm k) l) = Just $ leNum (concTerm $ - k) (minusNum l j)
   nonBinaryConstantHandler _ (AddNumTerm (_ :: Term a) (NumOrdConcTerm (_ :: a))) _ = error "Should not happen" -- Just $ lti (concTerm k) (minusi j l)
   nonBinaryConstantHandler _ _ (AddNumTerm (_ :: Term a) (NumOrdConcTerm (_ :: a))) = error "Should not happen" -- Just $ lti (concTerm $ -l) (minusi k j)

@@ -97,6 +97,7 @@ test-suite spec
   main-is: Spec.hs
   other-modules:
       Grisette.Data.Prim.BoolSpec
+      Grisette.Data.Prim.NumSpec
       Paths_grisette_symprim
   hs-source-dirs:
       test
