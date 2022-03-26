@@ -8,7 +8,7 @@ jobs:
       - restore_cache:
           name: Restore Cached Dependencies
           keys:
-            - dep-{{ checksum "stack.yaml" }}-{{ checksum ".circleci/config.yml" }}-{{ checksum "core/grisette-core.cabal" }}-{{ checksum "symprim/grisette-symprim.cabal" }}-{{ checksum "smt/grisette-smt.cabal" }}-{{ checksum "lib/grisette-lib.cabal" }}-{{ checksum "grisette/grisette.cabal" }}-{{ checksum "scratch/grisette-scratch.cabal" }}-{{ checksum "examples/grisette-examples.cabal" }}-
+            - dep-{{ checksum "stack.yaml" }}-{{ checksum "core/package.yaml" }}-{{ checksum "symprim/package.yaml" }}-{{ checksum "smt/package.yaml" }}-{{ checksum "lib/package.yaml" }}-{{ checksum "grisette/package.yaml" }}-{{ checksum "scratch/package.yaml" }}-{{ checksum "examples/package.yaml" }}-
             - dep-{{ checksum "stack.yaml" }}
       - run:
           name: Resolve/Update Dependencies
@@ -18,7 +18,7 @@ jobs:
           command: stack --no-terminal test --flag grisette-core:-fast --flag grisette-examples:-fast --flag grisette-lib:-fast --flag grisette:-fast --flag grisette-scratch:-fast --flag grisette-smt:-fast --flag grisette-symprim:-fast --coverage
       - save_cache:
           name: Cache Dependencies
-          key: dep-{{ checksum "stack.yaml" }}-{{ checksum ".circleci/config.yml" }}-{{ checksum "core/grisette-core.cabal" }}-{{ checksum "symprim/grisette-symprim.cabal" }}-{{ checksum "smt/grisette-smt.cabal" }}-{{ checksum "lib/grisette-lib.cabal" }}-{{ checksum "grisette/grisette.cabal" }}-{{ checksum "scratch/grisette-scratch.cabal" }}-{{ checksum "examples/grisette-examples.cabal" }}-
+          key: dep-{{ checksum "stack.yaml" }}-{{ checksum "core/package.yaml" }}-{{ checksum "symprim/package.yaml" }}-{{ checksum "smt/package.yaml" }}-{{ checksum "lib/package.yaml" }}-{{ checksum "grisette/package.yaml" }}-{{ checksum "scratch/package.yaml" }}-{{ checksum "examples/package.yaml" }}-
           paths:
             - "/root/.stack"
             - ".stack-work"
@@ -31,4 +31,4 @@ jobs:
             - "scratch/.stack-work"
       - run:
           name: Upload shc
-          command: wget https://github.com/rubik/stack-hpc-coveralls/releases/download/v0.0.6.1/shc-linux-x64-8.10.4.tar.bz2 && tar -xjf shc-linux-x64-8.10.4.tar.bz2 && ./shc --repo-token=$COVERALLS_REPO_TOKEN grisette-core spec
+          command: wget https://github.com/rubik/stack-hpc-coveralls/releases/download/v0.0.6.1/shc-linux-x64-8.10.4.tar.bz2 && tar -xjf shc-linux-x64-8.10.4.tar.bz2 && ./shc --repo-token=$COVERALLS_REPO_TOKEN all all
