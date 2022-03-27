@@ -36,7 +36,7 @@ f8 :: UnionM (STLCTree)
 f8 = genSym (8 :: Int) "h"
 
 main :: IO ()
-main = do
+main = timeItAll "Overall" $ do
   print $ terminals stlcSyntax
   print $ matchStlcSyntax x1 "term"
   print f1

@@ -88,7 +88,7 @@ counterExample =
       nullNode
 
 main :: IO ()
-main = do
+main = timeItAll "Overall" $ do
   print $ terminals dotSyntax
   print f4
   print $
