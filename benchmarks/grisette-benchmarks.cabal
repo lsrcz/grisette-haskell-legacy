@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 
-name:           grisette-examples
+name:           grisette-benchmarks
 version:        0.1.0.0
-synopsis:       Example code for Grisette
-description:    Example symbolic DSLs
+synopsis:       Benchmark set for Grisette
+description:    Example symbolic DSLs for benchmarking purpose
 category:       Formal Methods, Theorem Provers, Symbolic Computation, SMT
 homepage:       https://github.com/lsrcz/grisette-haskell#readme
 bug-reports:    https://github.com/lsrcz/grisette-haskell/issues
@@ -29,10 +29,18 @@ flag fast
 library
   exposed-modules:
       Utils.Timing
+      Bonsai.BonsaiTree
+      Bonsai.Env
+      Bonsai.Match
+      Bonsai.MatchSyntax
+      Bonsai.MatchSyntaxNoMemo
+      Bonsai.Pattern
+      Bonsai.SyntaxSpec
   other-modules:
-      Paths_grisette_examples
+      Paths_grisette_benchmarks
   hs-source-dirs:
       utils
+      bonsai-lib
   default-extensions:
       BangPatterns
       ConstraintKinds
@@ -91,13 +99,13 @@ library
     ghc-options: -O0
   default-language: Haskell2010
 
-executable expr-interpreter
+executable bonsai-letpoly
   main-is: Main.hs
   other-modules:
-      Interpreter
-      Paths_grisette_examples
+      LetPoly
+      Paths_grisette_benchmarks
   hs-source-dirs:
-      expr-interpreter
+      bonsai-letpoly
   default-extensions:
       BangPatterns
       ConstraintKinds
@@ -132,6 +140,7 @@ executable expr-interpreter
     , either
     , formatting
     , grisette
+    , grisette-benchmarks
     , hashable
     , hashtables
     , loch-th
@@ -156,14 +165,350 @@ executable expr-interpreter
     ghc-options: -O0
   default-language: Haskell2010
 
-executable expr-sketch
+executable bonsai-letpoly-nomemo
   main-is: Main.hs
   other-modules:
-      Expr
+      LetPoly
+      Paths_grisette_benchmarks
+  hs-source-dirs:
+      bonsai-letpoly-nomemo
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+  ghc-options: -Wall -ferror-spans
+  build-depends:
+      MemoTrie
+    , Unique
+    , base >4.7 && <5
+    , bv-sized
+    , bytestring
+    , clock
+    , deepseq
+    , either
+    , formatting
+    , grisette
+    , grisette-benchmarks
+    , hashable
+    , hashtables
+    , loch-th
+    , megaparsec
+    , monad-coroutine
+    , monad-memo
+    , mtl
+    , parameterized-utils
+    , parser-combinators
+    , regex-base
+    , regex-pcre
+    , template-haskell
+    , th-lift-instances
+    , timeit
+    , transformers
+    , unordered-containers
+    , utf8-string
+    , vector-sized
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
+  default-language: Haskell2010
+
+executable bonsai-nanoscala
+  main-is: Main.hs
+  other-modules:
+      NanoScala
+      Paths_grisette_benchmarks
+  hs-source-dirs:
+      bonsai-nanoscala
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+  ghc-options: -Wall -ferror-spans
+  build-depends:
+      MemoTrie
+    , Unique
+    , base >4.7 && <5
+    , bv-sized
+    , bytestring
+    , clock
+    , deepseq
+    , either
+    , formatting
+    , grisette
+    , grisette-benchmarks
+    , hashable
+    , hashtables
+    , loch-th
+    , megaparsec
+    , monad-coroutine
+    , monad-memo
+    , mtl
+    , parameterized-utils
+    , parser-combinators
+    , regex-base
+    , regex-pcre
+    , template-haskell
+    , th-lift-instances
+    , timeit
+    , transformers
+    , unordered-containers
+    , utf8-string
+    , vector-sized
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
+  default-language: Haskell2010
+
+executable bonsai-nanoscala-nomemo
+  main-is: Main.hs
+  other-modules:
+      NanoScala
+      Paths_grisette_benchmarks
+  hs-source-dirs:
+      bonsai-nanoscala-nomemo
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+  ghc-options: -Wall -ferror-spans
+  build-depends:
+      MemoTrie
+    , Unique
+    , base >4.7 && <5
+    , bv-sized
+    , bytestring
+    , clock
+    , deepseq
+    , either
+    , formatting
+    , grisette
+    , grisette-benchmarks
+    , hashable
+    , hashtables
+    , loch-th
+    , megaparsec
+    , monad-coroutine
+    , monad-memo
+    , mtl
+    , parameterized-utils
+    , parser-combinators
+    , regex-base
+    , regex-pcre
+    , template-haskell
+    , th-lift-instances
+    , timeit
+    , transformers
+    , unordered-containers
+    , utf8-string
+    , vector-sized
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
+  default-language: Haskell2010
+
+executable bonsai-stlc
+  main-is: Main.hs
+  other-modules:
+      STLC
+      Paths_grisette_benchmarks
+  hs-source-dirs:
+      bonsai-stlc
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+  ghc-options: -Wall -ferror-spans
+  build-depends:
+      MemoTrie
+    , Unique
+    , base >4.7 && <5
+    , bv-sized
+    , bytestring
+    , clock
+    , deepseq
+    , either
+    , formatting
+    , grisette
+    , grisette-benchmarks
+    , hashable
+    , hashtables
+    , loch-th
+    , megaparsec
+    , monad-coroutine
+    , monad-memo
+    , mtl
+    , parameterized-utils
+    , parser-combinators
+    , regex-base
+    , regex-pcre
+    , template-haskell
+    , th-lift-instances
+    , timeit
+    , transformers
+    , unordered-containers
+    , utf8-string
+    , vector-sized
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
+  default-language: Haskell2010
+
+executable bonsai-stlc-nomemo
+  main-is: Main.hs
+  other-modules:
+      STLC
+      Paths_grisette_benchmarks
+  hs-source-dirs:
+      bonsai-stlc-nomemo
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+  ghc-options: -Wall -ferror-spans
+  build-depends:
+      MemoTrie
+    , Unique
+    , base >4.7 && <5
+    , bv-sized
+    , bytestring
+    , clock
+    , deepseq
+    , either
+    , formatting
+    , grisette
+    , grisette-benchmarks
+    , hashable
+    , hashtables
+    , loch-th
+    , megaparsec
+    , monad-coroutine
+    , monad-memo
+    , mtl
+    , parameterized-utils
+    , parser-combinators
+    , regex-base
+    , regex-pcre
+    , template-haskell
+    , th-lift-instances
+    , timeit
+    , transformers
+    , unordered-containers
+    , utf8-string
+    , vector-sized
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
+  default-language: Haskell2010
+
+executable cosette
+  main-is: Benchmark/Main.hs
+  other-modules:
+      Benchmark.Queries
+      Denotation
+      Equal
+      Evaluator
       Parser
-      Paths_grisette_examples
+      Quasiquote
+      Syntax
+      Table
+      Paths_grisette_benchmarks
   hs-source-dirs:
-      expr-sketch
+      cosette
   default-extensions:
       BangPatterns
       ConstraintKinds
@@ -198,6 +543,7 @@ executable expr-sketch
     , either
     , formatting
     , grisette
+    , grisette-benchmarks
     , hashable
     , hashtables
     , loch-th
@@ -222,209 +568,20 @@ executable expr-sketch
     ghc-options: -O0
   default-language: Haskell2010
 
-executable genfunc
-  main-is: Main.hs
+executable cosette-optimized-merge
+  main-is: Benchmark/Main.hs
   other-modules:
-      Paths_grisette_examples
-  hs-source-dirs:
-      genfunc
-  default-extensions:
-      BangPatterns
-      ConstraintKinds
-      DataKinds
-      DefaultSignatures
-      DeriveAnyClass
-      DeriveGeneric
-      DeriveLift
-      DerivingStrategies
-      FlexibleContexts
-      FlexibleInstances
-      FunctionalDependencies
-      GADTs
-      KindSignatures
-      LambdaCase
-      MultiParamTypeClasses
-      RankNTypes
-      ScopedTypeVariables
-      TupleSections
-      TypeApplications
-      TypeFamilies
-      TypeOperators
-  ghc-options: -Wall -ferror-spans
-  build-depends:
-      MemoTrie
-    , Unique
-    , base >4.7 && <5
-    , bv-sized
-    , bytestring
-    , clock
-    , deepseq
-    , either
-    , formatting
-    , grisette
-    , hashable
-    , hashtables
-    , loch-th
-    , megaparsec
-    , monad-coroutine
-    , monad-memo
-    , mtl
-    , parameterized-utils
-    , parser-combinators
-    , regex-base
-    , regex-pcre
-    , template-haskell
-    , th-lift-instances
-    , timeit
-    , transformers
-    , unordered-containers
-    , utf8-string
-    , vector-sized
-  if flag(fast)
-    ghc-options: -O2
-  else
-    ghc-options: -O0
-  default-language: Haskell2010
-
-executable location
-  main-is: Main.hs
-  other-modules:
-      Exception
-      ExceptionWithLocation
-      Paths_grisette_examples
-  hs-source-dirs:
-      location
-  default-extensions:
-      BangPatterns
-      ConstraintKinds
-      DataKinds
-      DefaultSignatures
-      DeriveAnyClass
-      DeriveGeneric
-      DeriveLift
-      DerivingStrategies
-      FlexibleContexts
-      FlexibleInstances
-      FunctionalDependencies
-      GADTs
-      KindSignatures
-      LambdaCase
-      MultiParamTypeClasses
-      RankNTypes
-      ScopedTypeVariables
-      TupleSections
-      TypeApplications
-      TypeFamilies
-      TypeOperators
-  ghc-options: -Wall -ferror-spans
-  build-depends:
-      MemoTrie
-    , Unique
-    , base >4.7 && <5
-    , bv-sized
-    , bytestring
-    , clock
-    , deepseq
-    , either
-    , formatting
-    , grisette
-    , hashable
-    , hashtables
-    , loch-th
-    , megaparsec
-    , monad-coroutine
-    , monad-memo
-    , mtl
-    , parameterized-utils
-    , parser-combinators
-    , regex-base
-    , regex-pcre
-    , template-haskell
-    , th-lift-instances
-    , timeit
-    , transformers
-    , unordered-containers
-    , utf8-string
-    , vector-sized
-  if flag(fast)
-    ghc-options: -O2
-  else
-    ghc-options: -O0
-  default-language: Haskell2010
-
-executable order
-  main-is: Main.hs
-  other-modules:
-      Paths_grisette_examples
-  hs-source-dirs:
-      order
-  default-extensions:
-      BangPatterns
-      ConstraintKinds
-      DataKinds
-      DefaultSignatures
-      DeriveAnyClass
-      DeriveGeneric
-      DeriveLift
-      DerivingStrategies
-      FlexibleContexts
-      FlexibleInstances
-      FunctionalDependencies
-      GADTs
-      KindSignatures
-      LambdaCase
-      MultiParamTypeClasses
-      RankNTypes
-      ScopedTypeVariables
-      TupleSections
-      TypeApplications
-      TypeFamilies
-      TypeOperators
-  ghc-options: -Wall -ferror-spans
-  build-depends:
-      MemoTrie
-    , Unique
-    , base >4.7 && <5
-    , bv-sized
-    , bytestring
-    , clock
-    , deepseq
-    , either
-    , formatting
-    , grisette
-    , hashable
-    , hashtables
-    , loch-th
-    , megaparsec
-    , monad-coroutine
-    , monad-memo
-    , mtl
-    , parameterized-utils
-    , parser-combinators
-    , regex-base
-    , regex-pcre
-    , template-haskell
-    , th-lift-instances
-    , timeit
-    , transformers
-    , unordered-containers
-    , utf8-string
-    , vector-sized
-  if flag(fast)
-    ghc-options: -O2
-  else
-    ghc-options: -O0
-  default-language: Haskell2010
-
-executable stmt-sketch
-  main-is: Main.hs
-  other-modules:
-      DataStructures
-      Interpreter
+      Benchmark.Queries
+      Denotation
+      Equal
+      Evaluator
       Parser
-      Paths_grisette_examples
+      Quasiquote
+      Syntax
+      Table
+      Paths_grisette_benchmarks
   hs-source-dirs:
-      stmt-sketch
+      cosette-optimized-merge
   default-extensions:
       BangPatterns
       ConstraintKinds
@@ -459,6 +616,7 @@ executable stmt-sketch
     , either
     , formatting
     , grisette
+    , grisette-benchmarks
     , hashable
     , hashtables
     , loch-th
@@ -483,12 +641,19 @@ executable stmt-sketch
     ghc-options: -O0
   default-language: Haskell2010
 
-executable tutorial
+executable ferrite
   main-is: Main.hs
   other-modules:
-      Paths_grisette_examples
+      Ext4
+      Fs
+      Interpret
+      Lang
+      Litmus
+      Synth
+      Verifier
+      Paths_grisette_benchmarks
   hs-source-dirs:
-      tutorial
+      ferrite
   default-extensions:
       BangPatterns
       ConstraintKinds
@@ -523,6 +688,272 @@ executable tutorial
     , either
     , formatting
     , grisette
+    , grisette-benchmarks
+    , hashable
+    , hashtables
+    , loch-th
+    , megaparsec
+    , monad-coroutine
+    , monad-memo
+    , mtl
+    , parameterized-utils
+    , parser-combinators
+    , regex-base
+    , regex-pcre
+    , template-haskell
+    , th-lift-instances
+    , timeit
+    , transformers
+    , unordered-containers
+    , utf8-string
+    , vector-sized
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
+  default-language: Haskell2010
+
+executable fluidics
+  main-is: Main.hs
+  other-modules:
+      Paths_grisette_benchmarks
+  hs-source-dirs:
+      fluidics
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+  ghc-options: -Wall -ferror-spans
+  build-depends:
+      MemoTrie
+    , Unique
+    , base >4.7 && <5
+    , bv-sized
+    , bytestring
+    , clock
+    , deepseq
+    , either
+    , formatting
+    , grisette
+    , grisette-benchmarks
+    , hashable
+    , hashtables
+    , loch-th
+    , megaparsec
+    , monad-coroutine
+    , monad-memo
+    , mtl
+    , parameterized-utils
+    , parser-combinators
+    , regex-base
+    , regex-pcre
+    , template-haskell
+    , th-lift-instances
+    , timeit
+    , transformers
+    , unordered-containers
+    , utf8-string
+    , vector-sized
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
+  default-language: Haskell2010
+
+executable ifcl
+  main-is: Main.hs
+  other-modules:
+      IFCLInterpreter
+      Indistinguishable
+      Instructions
+      Machine
+      Value
+      Paths_grisette_benchmarks
+  hs-source-dirs:
+      ifcl
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+  ghc-options: -Wall -ferror-spans
+  build-depends:
+      MemoTrie
+    , Unique
+    , base >4.7 && <5
+    , bv-sized
+    , bytestring
+    , clock
+    , deepseq
+    , either
+    , formatting
+    , grisette
+    , grisette-benchmarks
+    , hashable
+    , hashtables
+    , loch-th
+    , megaparsec
+    , monad-coroutine
+    , monad-memo
+    , mtl
+    , parameterized-utils
+    , parser-combinators
+    , regex-base
+    , regex-pcre
+    , template-haskell
+    , th-lift-instances
+    , timeit
+    , transformers
+    , unordered-containers
+    , utf8-string
+    , vector-sized
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
+  default-language: Haskell2010
+
+executable regex
+  main-is: Main.hs
+  other-modules:
+      Paths_grisette_benchmarks
+  hs-source-dirs:
+      regex
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+  ghc-options: -Wall -ferror-spans
+  build-depends:
+      MemoTrie
+    , Unique
+    , base >4.7 && <5
+    , bv-sized
+    , bytestring
+    , clock
+    , deepseq
+    , either
+    , formatting
+    , grisette
+    , grisette-benchmarks
+    , hashable
+    , hashtables
+    , loch-th
+    , megaparsec
+    , monad-coroutine
+    , monad-memo
+    , mtl
+    , parameterized-utils
+    , parser-combinators
+    , regex-base
+    , regex-pcre
+    , template-haskell
+    , th-lift-instances
+    , timeit
+    , transformers
+    , unordered-containers
+    , utf8-string
+    , vector-sized
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
+  default-language: Haskell2010
+
+executable regex-nomemo
+  main-is: Main.hs
+  other-modules:
+      Paths_grisette_benchmarks
+  hs-source-dirs:
+      regex-nomemo
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+  ghc-options: -Wall -ferror-spans
+  build-depends:
+      MemoTrie
+    , Unique
+    , base >4.7 && <5
+    , bv-sized
+    , bytestring
+    , clock
+    , deepseq
+    , either
+    , formatting
+    , grisette
+    , grisette-benchmarks
     , hashable
     , hashtables
     , loch-th
