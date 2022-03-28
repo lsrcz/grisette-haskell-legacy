@@ -224,7 +224,7 @@ genWordsUpTo :: Int -> [Char] -> [B.ByteString]
 genWordsUpTo n alph = concatMap (`genWords` alph) [0 .. n]
 
 main :: IO ()
-main = do
+main = timeItAll "Overall" $ do
   {-
   print $ matchFirstImpl test1 str1
   print $ listToMaybe (getAllMatches (str1 =~ reg1) :: [(Int, Int)])
