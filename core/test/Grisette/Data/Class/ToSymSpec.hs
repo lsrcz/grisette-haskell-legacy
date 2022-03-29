@@ -12,7 +12,7 @@ import Utils.SBool
 import Control.Monad.State.Lazy as StateLazy
 import Control.Monad.State.Strict as StateStrict
 
-toSymForConcreteProp :: (ToSym v v, Show v, Eq v) => v -> Expectation
+toSymForConcreteProp :: (HasCallStack, ToSym v v, Show v, Eq v) => v -> Expectation
 toSymForConcreteProp v = toSym v `shouldBe` v
 
 spec :: Spec

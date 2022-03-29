@@ -22,7 +22,7 @@ import Test.Hspec.QuickCheck
 import Utils.SBool
 
 testMergeableSimpleEquivClass ::
-  (Mergeable SBool x, Show x, Eq x) => x -> [DynamicOrderedIdx] -> [(SBool, x, x, x)] -> Expectation
+  (HasCallStack, Mergeable SBool x, Show x, Eq x) => x -> [DynamicOrderedIdx] -> [(SBool, x, x, x)] -> Expectation
 testMergeableSimpleEquivClass x idxs cases = do
   let (idxsT, s) = resolveStrategy @SBool x
   case s of
@@ -40,7 +40,7 @@ testMergeableSimpleEquivClass x idxs cases = do
     _ -> expectationFailure $ "Bad strategy type for " ++ show x
 
 testMergeableSimpleEquivClass' ::
-  (Mergeable SBool x, Show y, Eq y) => (x -> y) -> x -> [DynamicOrderedIdx] -> [(SBool, x, x, x)] -> Expectation
+  (HasCallStack, Mergeable SBool x, Show y, Eq y) => (x -> y) -> x -> [DynamicOrderedIdx] -> [(SBool, x, x, x)] -> Expectation
 testMergeableSimpleEquivClass' vis x idxs cases = do
   let (idxsT, s) = resolveStrategy @SBool x
   case s of

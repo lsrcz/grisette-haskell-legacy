@@ -17,7 +17,7 @@ import Utils.SBool
 
 data A = A1 | A2 SBool | A3 SBool SBool deriving (Generic, Show, Eq, SEq SBool)
 
-concreteSEqOkSpec :: (SEq SBool a, Eq a) => (a, a) -> Expectation
+concreteSEqOkSpec :: (HasCallStack, SEq SBool a, Eq a) => (a, a) -> Expectation
 concreteSEqOkSpec (i, j) = do
   i ==~ j `shouldBe` CBool (i == j)
   i /=~ j `shouldBe` CBool (i /= j)

@@ -16,7 +16,7 @@ import Test.Hspec
 import Test.Hspec.QuickCheck
 import Utils.SBool
 
-concreteOrdOkProp :: (SOrd SBool a, Ord a) => (a, a) -> Expectation
+concreteOrdOkProp :: (HasCallStack, SOrd SBool a, Ord a) => (a, a) -> Expectation
 concreteOrdOkProp (i, j) = do
   i <=~ j `shouldBe` CBool (i <= j)
   i <~ j `shouldBe` CBool (i < j)
@@ -25,7 +25,7 @@ concreteOrdOkProp (i, j) = do
   symCompare i j `shouldBe` (mrgReturn $ compare i j :: UnionMBase SBool Ordering)
 
 symbolicProdOrdOkProp ::
-  (Show v, Show vl, Show vr, SOrd SBool v, SOrd SBool vl, SOrd SBool vr) =>
+  (HasCallStack, Show v, Show vl, Show vr, SOrd SBool v, SOrd SBool vl, SOrd SBool vr) =>
   v ->
   v ->
   vl ->
@@ -50,7 +50,7 @@ symbolicProdOrdOkProp l r ll lr rl rr = do
 
 symbolicSumOrdOkProp ::
   forall v vl vr.
-  (Show v, Show vl, Show vr, SOrd SBool v, SOrd SBool vl, SOrd SBool vr) =>
+  (HasCallStack, Show v, Show vl, Show vr, SOrd SBool v, SOrd SBool vl, SOrd SBool vr) =>
   [v] ->
   [v] ->
   [vl] ->

@@ -12,7 +12,7 @@ import Test.Hspec
 import Test.Hspec.QuickCheck
 import Utils.SBool
 
-concreteSymEvalOkSpec :: (SymEval (M.HashMap Symbol Bool) a, Show a, Eq a) => a -> Expectation
+concreteSymEvalOkSpec :: (HasCallStack, SymEval (M.HashMap Symbol Bool) a, Show a, Eq a) => a -> Expectation
 concreteSymEvalOkSpec x = symeval True (M.empty :: M.HashMap Symbol Bool) x `shouldBe` x
 
 spec :: Spec

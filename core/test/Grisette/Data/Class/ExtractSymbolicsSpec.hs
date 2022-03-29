@@ -11,7 +11,7 @@ import Test.Hspec.QuickCheck
 
 data A = A1 | A2 SBool | A3 SBool SBool deriving (Generic, Show, Eq, ExtractSymbolics (S.HashSet Symbol))
 
-concreteExtractSymbolicsOkSpec :: (ExtractSymbolics (S.HashSet Symbol) a) => (a, a) -> Expectation
+concreteExtractSymbolicsOkSpec :: (HasCallStack, ExtractSymbolics (S.HashSet Symbol) a) => (a, a) -> Expectation
 concreteExtractSymbolicsOkSpec x = extractSymbolics x `shouldBe` (S.empty :: S.HashSet Symbol)
 
 spec :: Spec

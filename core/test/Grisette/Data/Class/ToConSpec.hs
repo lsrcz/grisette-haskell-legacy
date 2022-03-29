@@ -10,7 +10,7 @@ import Test.Hspec
 import Test.Hspec.QuickCheck
 import Utils.SBool
 
-toConForConcreteProp :: (ToCon v v, Show v, Eq v) => v -> Expectation
+toConForConcreteProp :: (HasCallStack, ToCon v v, Show v, Eq v) => v -> Expectation
 toConForConcreteProp v = toCon v `shouldBe` Just v
 
 spec :: Spec
