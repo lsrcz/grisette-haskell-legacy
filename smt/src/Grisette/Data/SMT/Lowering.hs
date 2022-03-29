@@ -33,12 +33,12 @@ import qualified Data.SBV as SBV
 import qualified Data.SBV.Internals as SBVI
 import Data.Type.Equality (type (~~))
 import Data.Typeable
-import Debug.Trace
 import GHC.Exts (sortWith)
 import GHC.TypeNats
 import Grisette.Data.Prim.BV
 import Grisette.Data.Prim.Bits
 import Grisette.Data.Prim.Bool
+import Grisette.Data.Prim.Integer
 import Grisette.Data.Prim.InternedTerm
 import Grisette.Data.Prim.Model as PM
 import Grisette.Data.Prim.Num
@@ -532,10 +532,9 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) m 
       (SignedBVType (_ :: proxy xn), SignedBVType (_ :: proxy an)) ->
         case extensionView @BVS.SignedBV @xn @an t of
           Just (ExtensionMatchResult (_ :: proxy1 nn) isSignedExt (t1 :: Term (BVS.SignedBV xn))) ->
-            trace (show isSignedExt) $
-              Just $
-                bvIsNonZeroFromGEq1 @nn $
-                  lowerUnaryTerm config t t1 (if isSignedExt then SBV.signExtend else SBV.zeroExtend) m
+            Just $
+              bvIsNonZeroFromGEq1 @nn $
+                lowerUnaryTerm config t t1 (if isSignedExt then SBV.signExtend else SBV.zeroExtend) m
           _ -> Nothing
       _ -> Nothing
     extractBV :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
@@ -574,20 +573,21 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) m 
           ) ->
           r
         ev r =
-          let
-            withEquality :: forall x1 x2 x3. x1 :~: x2 -> (x1 ~ x2 => x3) -> x3
-            withEquality Refl ret = ret
-            oneleqwpix :: LeqProof 1 (w + ix) = leqAdd (leqProof (Proxy @1) (Proxy @w)) (Proxy @ix)
-            wpixm1repr :: NatRepr (w + ix - 1) =
-              withLeqProof oneleqwpix $ subNat (addNat (knownNat @w) (knownNat @ix)) (knownNat @1)
-            wpixleqow :: LeqProof (w + ix) ow = unsafeCoerce (LeqProof :: LeqProof 0 0)
-            wpixm1p1cancel :: (((w + ix) - 1) + 1) :~: (w + ix) = unsafeCoerce (LeqProof :: LeqProof 0 0)
-            ev1 :: LeqProof ix ((w + ix) - 1) = unsafeCoerce (LeqProof :: LeqProof 0 0)
-           in withKnownNat wpixm1repr $ withLeqProof wpixleqow $ withEquality wpixm1p1cancel $
-             withEquality (unsafeAxiom :: ((((w + ix) - 1) - ix) + 1) :~: w) $
-             withLeqProof ev1 r
+          let withEquality :: forall x1 x2 x3. x1 :~: x2 -> (x1 ~ x2 => x3) -> x3
+              withEquality Refl ret = ret
+              oneleqwpix :: LeqProof 1 (w + ix) = leqAdd (leqProof (Proxy @1) (Proxy @w)) (Proxy @ix)
+              wpixm1repr :: NatRepr (w + ix - 1) =
+                withLeqProof oneleqwpix $ subNat (addNat (knownNat @w) (knownNat @ix)) (knownNat @1)
+              wpixleqow :: LeqProof (w + ix) ow = unsafeCoerce (LeqProof :: LeqProof 0 0)
+              wpixm1p1cancel :: (((w + ix) - 1) + 1) :~: (w + ix) = unsafeCoerce (LeqProof :: LeqProof 0 0)
+              ev1 :: LeqProof ix ((w + ix) - 1) = unsafeCoerce (LeqProof :: LeqProof 0 0)
+           in withKnownNat wpixm1repr $
+                withLeqProof wpixleqow $
+                  withEquality wpixm1p1cancel $
+                    withEquality (unsafeAxiom :: ((((w + ix) - 1) - ix) + 1) :~: w) $
+                      withLeqProof ev1 r
 lowerSinglePrimImpl config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_ :: Term y)) m =
-  fromMaybe errorMsg $ asum [numType, numOrdCmp, bitsType, simpleBoolType, eqTerm, concatBV, funcApply]
+  fromMaybe errorMsg $ asum [numType, numOrdCmp, bitsType, simpleBoolType, eqTerm, concatBV, integerType, funcApply]
   where
     errorMsg :: forall t1. t1
     errorMsg =
@@ -624,6 +624,14 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_
         case t of
           AddNumTerm (t1' :: Term a) t2' -> Just $ lowerBinaryTerm config t t1' t2' (+) m
           TimesNumTerm (t1' :: Term a) t2' -> Just $ lowerBinaryTerm config t t1' t2' (*) m
+          _ -> Nothing
+      _ -> Nothing
+    integerType :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
+    integerType = case (config, R.typeRep @a) of
+      (ResolvedConfig {}, IntegerType) ->
+        case t of
+          DivITerm t1' t2' -> Just $ lowerBinaryTerm config t t1' t2' SBV.sDiv m
+          ModITerm t1' t2' -> Just $ lowerBinaryTerm config t t1' t2' SBV.sMod m
           _ -> Nothing
       _ -> Nothing
     bitsType :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))

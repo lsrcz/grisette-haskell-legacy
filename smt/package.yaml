@@ -65,3 +65,10 @@ ghc-options: -Wall -ferror-spans
 library:
   source-dirs: src
 
+tests:
+  spec:
+    defaults: hspec/hspec@master
+    main: Main.hs
+    dependencies:
+      - grisette-smt
+      - hspec-junit-formatter

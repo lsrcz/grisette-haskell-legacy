@@ -2,7 +2,27 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module Grisette.Data.Prim.Bits where
+module Grisette.Data.Prim.Bits (
+  pattern BitsConcTerm,
+  AndBits(..),
+  bitand,
+  pattern AndBitsTerm,
+  OrBits(..),
+  bitor,
+  pattern OrBitsTerm,
+  XorBits(..),
+  bitxor,
+  pattern XorBitsTerm,
+  ComplementBits(..),
+  bitneg,
+  pattern ComplementBitsTerm,
+  ShiftBits(..),
+  bitshift,
+  pattern ShiftBitsTerm,
+  RotateBits(..),
+  bitrotate,
+  pattern RotateBitsTerm,
+) where
 
 import Control.DeepSeq
 import Data.Bits
