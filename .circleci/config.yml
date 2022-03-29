@@ -13,13 +13,13 @@ jobs:
             - dep-{{ checksum "stack.yaml" }}
       - run:
           name: Resolve/Update Dependencies
-          command:
-            - apt update
-            - apt install -y pkg-config git curl libpcre2-dev libpcre3-dev
-            - wget https://github.com/Z3Prover/z3/releases/download/z3-4.8.10/z3-4.8.10-x64-ubuntu-18.04.zip
-            - unzip z3-4.8.10-x64-ubuntu-18.04.zip
-            - cp z3-4.8.10-x64-ubuntu-18.04/bin/z3 /usr/bin
-            - stack --no-terminal setup
+          command: |
+            apt update
+            apt install -y pkg-config git curl libpcre2-dev libpcre3-dev
+            wget https://github.com/Z3Prover/z3/releases/download/z3-4.8.10/z3-4.8.10-x64-ubuntu-18.04.zip
+            unzip z3-4.8.10-x64-ubuntu-18.04.zip
+            cp z3-4.8.10-x64-ubuntu-18.04/bin/z3 /usr/bin
+            stack --no-terminal setup
       - run:
           name: Run tests
           command: stack --no-terminal test --flag grisette-core:-fast --flag grisette-examples:-fast --flag grisette-lib:-fast --flag grisette:-fast --flag grisette-scratch:-fast --flag grisette-smt:-fast --flag grisette-symprim:-fast --flag grisette-benchmarks:-fast --coverage
