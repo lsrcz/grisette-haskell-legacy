@@ -81,6 +81,7 @@ test-suite spec
   main-is: Main.hs
   other-modules:
       Grisette.Data.SMT.LoweringSpec
+      Grisette.Data.SMT.TermRewritingSpec
       Spec
       Paths_grisette_smt
   hs-source-dirs:
@@ -107,7 +108,8 @@ test-suite spec
       DeriveAnyClass
   ghc-options: -Wall -ferror-spans
   build-depends:
-      base >4.7 && <5
+      QuickCheck
+    , base >4.7 && <5
     , bv-sized
     , constraints
     , grisette-core

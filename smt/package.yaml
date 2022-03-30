@@ -72,3 +72,4 @@ tests:
     dependencies:
       - grisette-smt
       - hspec-junit-formatter
+      - QuickCheck
