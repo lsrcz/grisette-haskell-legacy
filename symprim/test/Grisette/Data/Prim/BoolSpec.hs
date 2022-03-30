@@ -57,6 +57,11 @@ spec = do
       it "Eqv on general symbolic" $ do
         eqterm (ssymbTerm "a" :: Term Integer) (ssymbTerm "b")
           `shouldBe` constructBinary Eqv (ssymbTerm "a" :: Term Integer) (ssymbTerm "b" :: Term Integer)
+      it "Eqv on Bool with single concrete" $ do
+        eqterm (concTerm True) (ssymbTerm "a") `shouldBe` ssymbTerm "a"
+        eqterm (ssymbTerm "a") (concTerm True) `shouldBe` ssymbTerm "a"
+        eqterm (concTerm False) (ssymbTerm "a") `shouldBe` notb (ssymbTerm "a")
+        eqterm (ssymbTerm "a") (concTerm False) `shouldBe` notb (ssymbTerm "a")
       it "NEqv on general symbolic" $ do
         neterm (ssymbTerm "a" :: Term Integer) (ssymbTerm "b")
           `shouldBe` notb (eqterm (ssymbTerm "a" :: Term Integer) (ssymbTerm "b"))

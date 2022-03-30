@@ -99,6 +99,7 @@ neterm l r = notb $ eqterm l r
 instance SupportedPrim a => BinaryOp Eqv a a Bool where
   partialEvalBinary _ l@ConcTerm {} r@ConcTerm {} = concTerm $ l == r
   partialEvalBinary _ l@ConcTerm {} r = eqterm r l
+  partialEvalBinary _ l (BoolConcTerm rv) = if rv then unsafeCoerce l else notb $ unsafeCoerce l
   partialEvalBinary _ (NotTerm lv) r
     | lv == unsafeCoerce r = falseTerm
   partialEvalBinary _ l (NotTerm rv)
