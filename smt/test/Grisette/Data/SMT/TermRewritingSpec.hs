@@ -83,14 +83,10 @@ validateSpec config a = do
   rs <- solveWith config (Sym $ same a)
   case (r, rs) of
     (Left _, Right _) -> do
-      print a
       return ()
     (Left _, Left _) -> do
       expectationFailure $ "Bad rewriting with unsolvable formula: " ++ pformat (norewriteVer a) ++ " was rewritten to " ++ pformat (rewriteVer a)
     (Right m, _) -> do
-      print a
-      print $ counterExample $ a
-      print $ same $ a
       expectationFailure $ "With model" ++ show m ++ "Bad rewriting: " ++ pformat (norewriteVer a) ++ " was rewritten to " ++ pformat (rewriteVer a)
 
 data BoolOnlySpec = BoolOnlySpec (Term Bool) (Term Bool)
