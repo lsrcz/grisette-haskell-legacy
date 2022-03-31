@@ -534,7 +534,17 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) m 
           Just (ExtensionMatchResult (_ :: proxy1 nn) isSignedExt (t1 :: Term (BVS.SignedBV xn))) ->
             Just $
               bvIsNonZeroFromGEq1 @nn $
-                lowerUnaryTerm config t t1 (if isSignedExt then SBV.signExtend else SBV.zeroExtend) m
+                lowerUnaryTerm @integerBitWidth @x @(SBV.SBV (SBV.IntN xn)) @a @(SBV.SBV (SBV.IntN an))
+                  config
+                  t
+                  t1
+                  ( if isSignedExt
+                      then SBV.signExtend
+                      else \x ->
+                        SBV.sFromIntegral
+                          (SBV.zeroExtend (SBV.sFromIntegral x :: SBV.SBV (SBV.WordN xn)) :: SBV.SBV (SBV.WordN an))
+                  )
+                  m
           _ -> Nothing
       _ -> Nothing
     extractBV :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
@@ -664,7 +674,17 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_
       (SignedBVType (_ :: proxy xn), SignedBVType (_ :: proxy yn), SignedBVType (_ :: proxy an)) ->
         case concatView @BVS.SignedBV @xn @yn @an t of
           Just (ConcatMatchResult (t1 :: Term (BVS.SignedBV xn)) (t2 :: Term (BVS.SignedBV yn))) ->
-            Just $ lowerBinaryTerm config t t1 t2 (SBV.#) m
+            Just $
+              lowerBinaryTerm
+                config
+                t
+                t1
+                t2
+                ( \(x :: SBV.SInt xn) (y :: SBV.SInt yn) ->
+                    SBV.sFromIntegral $
+                      (SBV.sFromIntegral x :: SBV.SWord xn) SBV.# (SBV.sFromIntegral y :: SBV.SWord yn)
+                )
+                m
           _ -> Nothing
       _ -> Nothing
 lowerSinglePrimImpl config@ResolvedConfig {} t@(TernaryTerm _ op (_ :: Term x) (_ :: Term y) (_ :: Term z)) m =

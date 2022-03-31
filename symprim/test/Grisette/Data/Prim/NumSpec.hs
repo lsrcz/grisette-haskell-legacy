@@ -209,9 +209,14 @@ spec = do
         absNum (uminusNum $ ssymbTerm "a" :: Term Integer) `shouldBe` absNum (ssymbTerm "a")
       it "Abs on Abs" $ do
         absNum (absNum $ ssymbTerm "a" :: Term Integer) `shouldBe` absNum (ssymbTerm "a")
-      it "Abs on Times" $ do
+      it "Abs on Times Integer" $ do
         absNum (timesNum (ssymbTerm "a") (ssymbTerm "b") :: Term Integer)
           `shouldBe` timesNum (absNum (ssymbTerm "a")) (absNum (ssymbTerm "b"))
+      it "Abs on Times BV" $ do
+        absNum (timesNum (ssymbTerm "a") (ssymbTerm "b") :: Term (BVS.SignedBV 5))
+          `shouldBe` constructUnary AbsNum (timesNum (ssymbTerm "a") (ssymbTerm "b") :: Term (BVS.SignedBV 5))
+        absNum (timesNum (ssymbTerm "a") (ssymbTerm "b") :: Term (BVU.UnsignedBV 5))
+          `shouldBe` constructUnary AbsNum (timesNum (ssymbTerm "a") (ssymbTerm "b") :: Term (BVU.UnsignedBV 5))
       it "Abs symbolic" $ do
         absNum (ssymbTerm "a" :: Term Integer)
           `shouldBe` constructUnary AbsNum (ssymbTerm "a")
@@ -231,12 +236,22 @@ spec = do
         signumNum (concTerm 10 :: Term Integer) `shouldBe` concTerm 1
         signumNum (concTerm 0 :: Term Integer) `shouldBe` concTerm 0
         signumNum (concTerm $ -10 :: Term Integer) `shouldBe` concTerm (-1)
-      it "Signum on UMinus" $ do
+      it "Signum on UMinus Integer" $ do
         signumNum (uminusNum $ ssymbTerm "a" :: Term Integer)
           `shouldBe` uminusNum (signumNum $ ssymbTerm "a")
-      it "Signum on Times" $ do
+      it "Signum on UMinus BV" $ do
+        signumNum (uminusNum $ ssymbTerm "a" :: Term (BVS.SignedBV 5))
+          `shouldBe` constructUnary SignumNum (uminusNum $ ssymbTerm "a" :: Term (BVS.SignedBV 5))
+        signumNum (uminusNum $ ssymbTerm "a" :: Term (BVU.UnsignedBV 5))
+          `shouldBe` constructUnary SignumNum (uminusNum $ ssymbTerm "a" :: Term (BVU.UnsignedBV 5))
+      it "Signum on Times Integer" $ do
         signumNum (timesNum (ssymbTerm "a") (ssymbTerm "b") :: Term Integer)
           `shouldBe` timesNum (signumNum $ ssymbTerm "a") (signumNum $ ssymbTerm "b")
+      it "Signum on Times BV" $ do
+        signumNum (timesNum (ssymbTerm "a") (ssymbTerm "b") :: Term (BVS.SignedBV 5))
+          `shouldBe` constructUnary SignumNum (timesNum (ssymbTerm "a") (ssymbTerm "b") :: Term (BVS.SignedBV 5))
+        signumNum (timesNum (ssymbTerm "a") (ssymbTerm "b") :: Term (BVU.UnsignedBV 5))
+          `shouldBe` constructUnary SignumNum (timesNum (ssymbTerm "a") (ssymbTerm "b") :: Term (BVU.UnsignedBV 5))
       it "Signum symbolics" $ do
         signumNum (ssymbTerm "a" :: Term Integer)
           `shouldBe` constructUnary SignumNum (ssymbTerm "a")
@@ -256,24 +271,68 @@ spec = do
         ltNum (concTerm 1 :: Term Integer) (concTerm 2) `shouldBe` concTerm True
         ltNum (concTerm 2 :: Term Integer) (concTerm 2) `shouldBe` concTerm False
         ltNum (concTerm 3 :: Term Integer) (concTerm 2) `shouldBe` concTerm False
-      it "Lt on left constant right add concrete" $ do
+        ltNum (concTerm 1 :: Term (BVS.SignedBV 2)) (concTerm 0) `shouldBe` concTerm False
+        ltNum (concTerm 2 :: Term (BVS.SignedBV 2)) (concTerm 0) `shouldBe` concTerm True
+        ltNum (concTerm 3 :: Term (BVS.SignedBV 2)) (concTerm 0) `shouldBe` concTerm True
+        ltNum (concTerm 1 :: Term (BVU.UnsignedBV 2)) (concTerm 2) `shouldBe` concTerm True
+        ltNum (concTerm 2 :: Term (BVU.UnsignedBV 2)) (concTerm 2) `shouldBe` concTerm False
+        ltNum (concTerm 3 :: Term (BVU.UnsignedBV 2)) (concTerm 2) `shouldBe` concTerm False
+      it "Lt on left constant right add concrete Integers" $ do
         ltNum (concTerm 1 :: Term Integer) (addNum (concTerm 2) (ssymbTerm "a"))
           `shouldBe` ltNum (concTerm $ -1 :: Term Integer) (ssymbTerm "a")
-      it "Lt on right constant left add concrete" $ do
-        ltNum (addNum (concTerm 2) (ssymbTerm "a")) (concTerm 1 :: Term Integer) 
+      it "Lt on right constant left add concrete Integers" $ do
+        ltNum (addNum (concTerm 2) (ssymbTerm "a")) (concTerm 1 :: Term Integer)
           `shouldBe` ltNum (concTerm 1 :: Term Integer) (uminusNum $ ssymbTerm "a")
-      it "Lt on right constant" $ do
-        ltNum (ssymbTerm "a") (concTerm 1 :: Term Integer) 
+      it "Lt on right constant Integers" $ do
+        ltNum (ssymbTerm "a") (concTerm 1 :: Term Integer)
           `shouldBe` ltNum (concTerm $ -1 :: Term Integer) (uminusNum $ ssymbTerm "a")
-      it "Lt on right constant left uminus" $ do
-        ltNum (uminusNum $ ssymbTerm "a") (concTerm 1 :: Term Integer) 
+      it "Lt on right constant left uminus Integers" $ do
+        ltNum (uminusNum $ ssymbTerm "a") (concTerm 1 :: Term Integer)
           `shouldBe` ltNum (concTerm $ -1 :: Term Integer) (ssymbTerm "a")
-      it "Lt on left add concrete" $ do
-        ltNum (addNum (concTerm 2) (ssymbTerm "a")) (ssymbTerm "b" :: Term Integer) 
+      it "Lt on left add concrete Integers" $ do
+        ltNum (addNum (concTerm 2) (ssymbTerm "a")) (ssymbTerm "b" :: Term Integer)
           `shouldBe` ltNum (concTerm 2 :: Term Integer) (addNum (ssymbTerm "b") (uminusNum $ ssymbTerm "a"))
-      it "Lt on right add concrete" $ do
-        ltNum (ssymbTerm "b" :: Term Integer) (addNum (concTerm 2) (ssymbTerm "a")) 
+      it "Lt on right add concrete Integers" $ do
+        ltNum (ssymbTerm "b" :: Term Integer) (addNum (concTerm 2) (ssymbTerm "a"))
           `shouldBe` ltNum (concTerm $ -2 :: Term Integer) (addNum (ssymbTerm "a") (uminusNum $ ssymbTerm "b"))
+      let concSignedBV :: Integer -> Term (BVS.SignedBV 5) = concTerm . fromInteger
+      let concUnsignedBV :: Integer -> Term (BVU.UnsignedBV 5) = concTerm . fromInteger
+      it "Lt on left constant right add concrete BVs should not be simplified" $ do
+        ltNum (concSignedBV 1) (addNum (concTerm 2) (ssymbTerm "a"))
+          `shouldBe` constructBinary LTNum (concSignedBV 1) (addNum (concSignedBV 2) (ssymbTerm "a"))
+        ltNum (concUnsignedBV 1) (addNum (concTerm 2) (ssymbTerm "a"))
+          `shouldBe` constructBinary LTNum (concUnsignedBV 1) (addNum (concUnsignedBV 2) (ssymbTerm "a"))
+      it "Lt on right constant left add concrete BVs should not be simplified" $ do
+        ltNum (addNum (concSignedBV 2) (ssymbTerm "a")) (concTerm 1)
+          `shouldBe` constructBinary LTNum (addNum (concSignedBV 2) (ssymbTerm "a")) (concSignedBV 1)
+        ltNum (addNum (concUnsignedBV 2) (ssymbTerm "a")) (concTerm 1)
+          `shouldBe` constructBinary LTNum (addNum (concUnsignedBV 2) (ssymbTerm "a")) (concUnsignedBV 1)
+      it "Lt on right constant BVs should not be simplified" $ do
+        ltNum (ssymbTerm "a") (concSignedBV 1)
+          `shouldBe` constructBinary LTNum (ssymbTerm "a" :: Term (BVS.SignedBV 5)) (concSignedBV 1)
+        ltNum (ssymbTerm "a") (concUnsignedBV 1)
+          `shouldBe` constructBinary LTNum (ssymbTerm "a" :: Term (BVU.UnsignedBV 5)) (concUnsignedBV 1)
+      it "Lt on right constant left uminus BVs should not be simplified" $ do
+        ltNum (uminusNum $ ssymbTerm "a") (concSignedBV 1)
+          `shouldBe` constructBinary LTNum (uminusNum $ ssymbTerm "a" :: Term (BVS.SignedBV 5)) (concSignedBV 1)
+        ltNum (uminusNum $ ssymbTerm "a") (concUnsignedBV 1)
+          `shouldBe` constructBinary LTNum (uminusNum $ ssymbTerm "a" :: Term (BVU.UnsignedBV 5)) (concUnsignedBV 1)
+      it "Lt on left add concrete BVs should not be simplified" $ do
+        ltNum (addNum (concSignedBV 2) (ssymbTerm "a")) (ssymbTerm "b")
+          `shouldBe` constructBinary LTNum (addNum (concSignedBV 2) (ssymbTerm "a")) (ssymbTerm "b" :: Term (BVS.SignedBV 5))
+        ltNum (addNum (concUnsignedBV 2) (ssymbTerm "a")) (ssymbTerm "b")
+          `shouldBe` constructBinary LTNum (addNum (concUnsignedBV 2) (ssymbTerm "a")) (ssymbTerm "b" :: Term (BVU.UnsignedBV 5))
+      it "Lt on right add concrete BVs should not be simplified" $ do
+        ltNum (ssymbTerm "b") (addNum (concSignedBV 2) (ssymbTerm "a"))
+          `shouldBe` constructBinary
+            LTNum
+            (ssymbTerm "b" :: Term (BVS.SignedBV 5))
+            (addNum (concSignedBV 2) (ssymbTerm "a"))
+        ltNum (ssymbTerm "b") (addNum (concUnsignedBV 2) (ssymbTerm "a"))
+          `shouldBe` constructBinary
+            LTNum
+            (ssymbTerm "b" :: Term (BVU.UnsignedBV 5))
+            (addNum (concUnsignedBV 2) (ssymbTerm "a"))
       it "Lt on symbolic" $ do
         ltNum (ssymbTerm "a" :: Term Integer) (ssymbTerm "b")
           `shouldBe` constructBinary LTNum (ssymbTerm "a" :: Term Integer) (ssymbTerm "b" :: Term Integer)
@@ -294,24 +353,69 @@ spec = do
         leNum (concTerm 1 :: Term Integer) (concTerm 2) `shouldBe` concTerm True
         leNum (concTerm 2 :: Term Integer) (concTerm 2) `shouldBe` concTerm True
         leNum (concTerm 3 :: Term Integer) (concTerm 2) `shouldBe` concTerm False
-      it "Le on left constant right add concrete" $ do
+        leNum (concTerm 0 :: Term (BVS.SignedBV 2)) (concTerm 0) `shouldBe` concTerm True
+        leNum (concTerm 1 :: Term (BVS.SignedBV 2)) (concTerm 0) `shouldBe` concTerm False
+        leNum (concTerm 2 :: Term (BVS.SignedBV 2)) (concTerm 0) `shouldBe` concTerm True
+        leNum (concTerm 3 :: Term (BVS.SignedBV 2)) (concTerm 0) `shouldBe` concTerm True
+        leNum (concTerm 1 :: Term (BVU.UnsignedBV 2)) (concTerm 2) `shouldBe` concTerm True
+        leNum (concTerm 2 :: Term (BVU.UnsignedBV 2)) (concTerm 2) `shouldBe` concTerm True
+        leNum (concTerm 3 :: Term (BVU.UnsignedBV 2)) (concTerm 2) `shouldBe` concTerm False
+      it "Le on left constant right add concrete Integers" $ do
         leNum (concTerm 1 :: Term Integer) (addNum (concTerm 2) (ssymbTerm "a"))
           `shouldBe` leNum (concTerm $ -1 :: Term Integer) (ssymbTerm "a")
-      it "Le on right constant left add concrete" $ do
-        leNum (addNum (concTerm 2) (ssymbTerm "a")) (concTerm 1 :: Term Integer) 
+      it "Le on right constant left add concrete Integers" $ do
+        leNum (addNum (concTerm 2) (ssymbTerm "a")) (concTerm 1 :: Term Integer)
           `shouldBe` leNum (concTerm 1 :: Term Integer) (uminusNum $ ssymbTerm "a")
-      it "Le on right constant" $ do
-        leNum (ssymbTerm "a") (concTerm 1 :: Term Integer) 
+      it "Le on right constant Integers" $ do
+        leNum (ssymbTerm "a") (concTerm 1 :: Term Integer)
           `shouldBe` leNum (concTerm $ -1 :: Term Integer) (uminusNum $ ssymbTerm "a")
-      it "Le on right constant left uminus" $ do
-        leNum (uminusNum $ ssymbTerm "a") (concTerm 1 :: Term Integer) 
+      it "Le on right constant left uminus Integers" $ do
+        leNum (uminusNum $ ssymbTerm "a") (concTerm 1 :: Term Integer)
           `shouldBe` leNum (concTerm $ -1 :: Term Integer) (ssymbTerm "a")
-      it "Le on left add concrete" $ do
-        leNum (addNum (concTerm 2) (ssymbTerm "a")) (ssymbTerm "b" :: Term Integer) 
+      it "Le on left add concrete Integers" $ do
+        leNum (addNum (concTerm 2) (ssymbTerm "a")) (ssymbTerm "b" :: Term Integer)
           `shouldBe` leNum (concTerm 2 :: Term Integer) (addNum (ssymbTerm "b") (uminusNum $ ssymbTerm "a"))
-      it "Le on right add concrete" $ do
-        leNum (ssymbTerm "b" :: Term Integer) (addNum (concTerm 2) (ssymbTerm "a")) 
+      it "Le on right add concrete Integers" $ do
+        leNum (ssymbTerm "b" :: Term Integer) (addNum (concTerm 2) (ssymbTerm "a"))
           `shouldBe` leNum (concTerm $ -2 :: Term Integer) (addNum (ssymbTerm "a") (uminusNum $ ssymbTerm "b"))
+      let concSignedBV :: Integer -> Term (BVS.SignedBV 5) = concTerm . fromInteger
+      let concUnsignedBV :: Integer -> Term (BVU.UnsignedBV 5) = concTerm . fromInteger
+      it "Lt on left constant right add concrete BVs should not be simplified" $ do
+        leNum (concSignedBV 1) (addNum (concTerm 2) (ssymbTerm "a"))
+          `shouldBe` constructBinary LENum (concSignedBV 1) (addNum (concSignedBV 2) (ssymbTerm "a"))
+        leNum (concUnsignedBV 1) (addNum (concTerm 2) (ssymbTerm "a"))
+          `shouldBe` constructBinary LENum (concUnsignedBV 1) (addNum (concUnsignedBV 2) (ssymbTerm "a"))
+      it "Le on right constant left add concrete BVs should not be simplified" $ do
+        leNum (addNum (concSignedBV 2) (ssymbTerm "a")) (concTerm 1)
+          `shouldBe` constructBinary LENum (addNum (concSignedBV 2) (ssymbTerm "a")) (concSignedBV 1)
+        leNum (addNum (concUnsignedBV 2) (ssymbTerm "a")) (concTerm 1)
+          `shouldBe` constructBinary LENum (addNum (concUnsignedBV 2) (ssymbTerm "a")) (concUnsignedBV 1)
+      it "Le on right constant BVs should not be simplified" $ do
+        leNum (ssymbTerm "a") (concSignedBV 1)
+          `shouldBe` constructBinary LENum (ssymbTerm "a" :: Term (BVS.SignedBV 5)) (concSignedBV 1)
+        leNum (ssymbTerm "a") (concUnsignedBV 1)
+          `shouldBe` constructBinary LENum (ssymbTerm "a" :: Term (BVU.UnsignedBV 5)) (concUnsignedBV 1)
+      it "Le on right constant left uminus BVs should not be simplified" $ do
+        leNum (uminusNum $ ssymbTerm "a") (concSignedBV 1)
+          `shouldBe` constructBinary LENum (uminusNum $ ssymbTerm "a" :: Term (BVS.SignedBV 5)) (concSignedBV 1)
+        leNum (uminusNum $ ssymbTerm "a") (concUnsignedBV 1)
+          `shouldBe` constructBinary LENum (uminusNum $ ssymbTerm "a" :: Term (BVU.UnsignedBV 5)) (concUnsignedBV 1)
+      it "Le on left add concrete BVs should not be simplified" $ do
+        leNum (addNum (concSignedBV 2) (ssymbTerm "a")) (ssymbTerm "b")
+          `shouldBe` constructBinary LENum (addNum (concSignedBV 2) (ssymbTerm "a")) (ssymbTerm "b" :: Term (BVS.SignedBV 5))
+        leNum (addNum (concUnsignedBV 2) (ssymbTerm "a")) (ssymbTerm "b")
+          `shouldBe` constructBinary LENum (addNum (concUnsignedBV 2) (ssymbTerm "a")) (ssymbTerm "b" :: Term (BVU.UnsignedBV 5))
+      it "Lt on right add concrete BVs should not be simplified" $ do
+        leNum (ssymbTerm "b") (addNum (concSignedBV 2) (ssymbTerm "a"))
+          `shouldBe` constructBinary
+            LENum
+            (ssymbTerm "b" :: Term (BVS.SignedBV 5))
+            (addNum (concSignedBV 2) (ssymbTerm "a"))
+        leNum (ssymbTerm "b") (addNum (concUnsignedBV 2) (ssymbTerm "a"))
+          `shouldBe` constructBinary
+            LENum
+            (ssymbTerm "b" :: Term (BVU.UnsignedBV 5))
+            (addNum (concUnsignedBV 2) (ssymbTerm "a"))
       it "Le on symbolic" $ do
         leNum (ssymbTerm "a" :: Term Integer) (ssymbTerm "b")
           `shouldBe` constructBinary LENum (ssymbTerm "a" :: Term Integer) (ssymbTerm "b" :: Term Integer)

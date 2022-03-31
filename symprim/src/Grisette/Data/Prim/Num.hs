@@ -40,6 +40,8 @@ import Grisette.Data.Prim.Helpers
 import Grisette.Data.Prim.InternedTerm
 import Language.Haskell.TH.Syntax
 import Data.Hashable
+import Unsafe.Coerce
+import Grisette.Data.Prim.Utils
 
 numConcTermView :: (Num b, Typeable b) => Term a -> Maybe b
 numConcTermView (ConcTerm _ b) = cast b
@@ -193,8 +195,9 @@ instance (Num a, SupportedPrim a) => UnaryPartialStrategy AbsNum a a where
   constantHandler _ i = Just $ concTerm $ abs i
   nonConstantHandler _ (UMinusNumTerm v) = Just $ absNum v
   nonConstantHandler _ t@(AbsNumTerm (_ :: Term a)) = Just t
-  nonConstantHandler _ (TimesNumTerm l r) = Just $ timesNum (absNum l) $ absNum r
-  nonConstantHandler _ (AddNumTerm (_ :: Term a) ConcTerm {}) = error "Should not happen" -- Just $ minusi (concTerm $ -r) l
+  nonConstantHandler _ (BinaryTerm _ (Dyn TimesNum) (Dyn (l :: Term Integer)) r) =
+    Just $ timesNum (absNum $ unsafeCoerce l :: Term a) $ absNum (unsafeCoerce r)
+  -- nonConstantHandler _ (AddNumTerm (_ :: Term a) ConcTerm {}) = error "Should not happen" -- Just $ minusi (concTerm $ -r) l
   nonConstantHandler _ _ = Nothing
 
 instance (Num a, SupportedPrim a) => UnaryOp AbsNum a a where
@@ -213,9 +216,12 @@ signumNum = partialEvalUnary SignumNum
 instance (Num a, SupportedPrim a) => UnaryPartialStrategy SignumNum a a where
   extractor _ = numConcTermView
   constantHandler _ i = Just $ concTerm $ signum i
-  nonConstantHandler _ (UMinusNumTerm v) = Just $ uminusNum $ signumNum v
-  nonConstantHandler _ (TimesNumTerm l r) = Just $ timesNum (signumNum l) $ signumNum r
-  nonConstantHandler _ (AddNumTerm (_ :: Term a) ConcTerm {}) = error "Should not happen" -- Just $ minusi (concTerm $ -r) l
+  -- nonConstantHandler _ (UMinusNumTerm v) = Just $ uminusNum $ signumNum v
+  nonConstantHandler _ (UnaryTerm _ (Dyn UMinusNum) (Dyn (v :: Term Integer))) = Just $ uminusNum $ signumNum $ unsafeCoerce v
+  -- nonConstantHandler _ (TimesNumTerm l r) = Just $ timesNum (signumNum l) $ signumNum r
+  nonConstantHandler _ (BinaryTerm _ (Dyn TimesNum) (Dyn (l :: Term Integer)) r) =
+    Just $ timesNum (signumNum $ unsafeCoerce l :: Term a) $ signumNum (unsafeCoerce r)
+  -- nonConstantHandler _ (AddNumTerm (_ :: Term a) ConcTerm {}) = error "Should not happen" -- Just $ minusi (concTerm $ -r) l
   nonConstantHandler _ _ = Nothing
 
 instance (Num a, SupportedPrim a) => UnaryOp SignumNum a a where
@@ -235,19 +241,17 @@ instance (Num a, Ord a, SupportedPrim a) => BinaryPartialStrategy LTNum a a Bool
   extractora _ = numOrdConcTermView
   extractorb _ = numOrdConcTermView
   allConstantHandler _ l r = Just $ concTerm $ l < r
-  leftConstantHandler _ l (AddNumTerm (NumOrdConcTerm j) k) = Just $ ltNum (concTerm $ l - j) k
-  -- leftConstantHandler l (UMinusITerm j) = Just $ lti j $ concTerm $ -l
-  leftConstantHandler _ _ (AddNumTerm (_ :: Term a) (NumOrdConcTerm (_ :: a))) = error "Should not happen" -- Just $ lti (concTerm $ l - k) j
+  leftConstantHandler _ l (AddNumTerm (ConcTerm _ (j :: Integer)) k) = Just $ ltNum (concTerm $ unsafeCoerce l - j) k
   leftConstantHandler _ _ _ = Nothing
-  rightConstantHandler _ (AddNumTerm (NumOrdConcTerm i) j) k = Just $ ltNum j (concTerm $ k - i)
-  -- rightConstantHandler _ (UMinusNumTerm i) j = Just $ ltNum (concTerm $ - j) i
-  rightConstantHandler _ (AddNumTerm (_ :: Term a) (NumOrdConcTerm (_ :: a))) _ = error "Should not happen" -- Just $ lti i (concTerm $ k - j)
-  rightConstantHandler _ l r = Just $ ltNum (concTerm $ - r) (uminusNum l)
+  rightConstantHandler _ (AddNumTerm (ConcTerm _ (i :: Integer)) j) k = Just $ ltNum j (concTerm $ unsafeCoerce k - i)
+  rightConstantHandler _ l r =
+    case eqT @a @Integer of
+      Just Refl ->
+        Just $ ltNum (concTerm $ - r) (uminusNum l)
+      _ -> Nothing
 
-  nonBinaryConstantHandler _ (AddNumTerm (NumOrdConcTerm j) k) l = Just $ ltNum (concTerm j) (minusNum l k)
-  nonBinaryConstantHandler _ j (AddNumTerm (NumOrdConcTerm k) l) = Just $ ltNum (concTerm $ - k) (minusNum l j)
-  nonBinaryConstantHandler _ (AddNumTerm (_ :: Term a) (NumOrdConcTerm (_ :: a))) _ = error "Should not happen" -- Just $ lti (concTerm k) (minusi j l)
-  nonBinaryConstantHandler _ _ (AddNumTerm (_ :: Term a) (NumOrdConcTerm (_ :: a))) = error "Should not happen" -- Just $ lti (concTerm $ -l) (minusi k j)
+  nonBinaryConstantHandler _ (AddNumTerm (ConcTerm _ (j :: Integer)) k) l = Just $ ltNum (concTerm j) (minusNum (unsafeCoerce l) k)
+  nonBinaryConstantHandler _ j (AddNumTerm (ConcTerm _ (k :: Integer)) l) = Just $ ltNum (concTerm $ - k) (minusNum l (unsafeCoerce j))
   nonBinaryConstantHandler _ _ _ = Nothing
 
 instance (Num a, Ord a, SupportedPrim a) => BinaryOp LTNum a a Bool where
@@ -267,19 +271,19 @@ instance (Num a, Ord a, SupportedPrim a) => BinaryPartialStrategy LENum a a Bool
   extractora _ = numOrdConcTermView
   extractorb _ = numOrdConcTermView
   allConstantHandler _ l r = Just $ concTerm $ l <= r
-  leftConstantHandler _ l (AddNumTerm (NumOrdConcTerm j) k) = Just $ leNum (concTerm $ l - j) k
-  leftConstantHandler _ _ (AddNumTerm (_ :: Term a) (NumOrdConcTerm (_ :: a))) = error "Should not happen" -- Just $ lti (concTerm $ l - k) j
+  leftConstantHandler _ l (AddNumTerm (ConcTerm _ (j :: Integer)) k) = Just $ leNum (concTerm $ unsafeCoerce l - j) k
   leftConstantHandler _ _ _ = Nothing
-  rightConstantHandler _ (AddNumTerm (NumOrdConcTerm i) j) k = Just $ leNum j (concTerm $ k - i)
-  -- rightConstantHandler _ (UMinusNumTerm i) j = Just $ leNum (concTerm $ - j) i
-  rightConstantHandler _ (AddNumTerm (_ :: Term a) (NumOrdConcTerm (_ :: a))) _ = error "Should not happen" -- Just $ lti i (concTerm $ k - j)
-  rightConstantHandler _ l r = Just $ leNum (concTerm $ - r) (uminusNum l)
+  rightConstantHandler _ (AddNumTerm (ConcTerm _ (i :: Integer)) j) k = Just $ leNum j (concTerm $ unsafeCoerce k - i)
+  rightConstantHandler _ l r =
+    case eqT @a @Integer of
+      Just Refl ->
+        Just $ leNum (concTerm $ - r) (uminusNum l)
+      _ -> Nothing
 
-  nonBinaryConstantHandler _ (AddNumTerm (NumOrdConcTerm j) k) l = Just $ leNum (concTerm j) (minusNum l k)
-  nonBinaryConstantHandler _ j (AddNumTerm (NumOrdConcTerm k) l) = Just $ leNum (concTerm $ - k) (minusNum l j)
-  nonBinaryConstantHandler _ (AddNumTerm (_ :: Term a) (NumOrdConcTerm (_ :: a))) _ = error "Should not happen" -- Just $ lti (concTerm k) (minusi j l)
-  nonBinaryConstantHandler _ _ (AddNumTerm (_ :: Term a) (NumOrdConcTerm (_ :: a))) = error "Should not happen" -- Just $ lti (concTerm $ -l) (minusi k j)
+  nonBinaryConstantHandler _ (AddNumTerm (ConcTerm _ (j :: Integer)) k) l = Just $ leNum (concTerm j) (minusNum (unsafeCoerce l) k)
+  nonBinaryConstantHandler _ j (AddNumTerm (ConcTerm _ (k :: Integer)) l) = Just $ leNum (concTerm $ - k) (minusNum l (unsafeCoerce j))
   nonBinaryConstantHandler _ _ _ = Nothing
+
 
 instance (Num a, Ord a, SupportedPrim a) => BinaryOp LENum a a Bool where
   partialEvalBinary tag l r = binaryUnfoldOnce (binaryPartial tag) (constructBinary tag) l r

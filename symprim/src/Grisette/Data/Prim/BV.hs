@@ -21,6 +21,7 @@ module Grisette.Data.Prim.BV
     ExtensionMatchResult (..),
     extractView,
     ExtractMatchResult (..),
+    UnderlyingBV(..),
   )
 where
 
