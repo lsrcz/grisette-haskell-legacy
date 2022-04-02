@@ -6,6 +6,7 @@ module Grisette.Data.SMT.Solving
     solveWithTranslation,
     SolverTranslation (..),
     CegisTranslation (..),
+    DefaultVerificationCondition (..),
     cegisWithTranslation,
     cegisWith,
   )
@@ -79,6 +80,11 @@ class CegisTranslation method e v | method -> e v where
   cegisValueTranslation :: method -> v -> ExceptT VerificationConditions UnionM ()
   default cegisValueTranslation :: (v ~ ()) => method -> v -> ExceptT VerificationConditions UnionM ()
   cegisValueTranslation _ = mrgReturn
+
+data DefaultVerificationCondition = DefaultVerificationCondition
+
+instance CegisTranslation DefaultVerificationCondition VerificationConditions () where
+  cegisErrorTranslation _ = id
 
 translateCegis :: (CegisTranslation method e v)  => method -> ExceptT e UnionM v -> (Sym Bool, Sym Bool)
 translateCegis p (ExceptT u) =

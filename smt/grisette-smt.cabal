@@ -80,7 +80,9 @@ test-suite spec
   type: exitcode-stdio-1.0
   main-is: Main.hs
   other-modules:
+      Grisette.Data.SMT.CEGISSpec
       Grisette.Data.SMT.LoweringSpec
+      Grisette.Data.SMT.TermRewritingGen
       Grisette.Data.SMT.TermRewritingSpec
       Spec
       Paths_grisette_smt
