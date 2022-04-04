@@ -30,7 +30,7 @@ jobs:
           command: |
             stack --no-terminal haddock --flag grisette-core:-fast --flag grisette-examples:-fast --flag grisette-lib:-fast --flag grisette:-fast --flag grisette-scratch:-fast --flag grisette-smt:-fast --flag grisette-symprim:-fast --flag grisette-benchmarks:-fast
             mkdir /tmp/grisette-doc
-            cp $(stack path --local-doc-root)/grisette-* /tmp/grisette-doc
+            cp -r $(stack path --local-doc-root)/grisette-* /tmp/grisette-doc
       - store_artifacts:
           path: "/tmp/grisette-doc"
       - save_cache:
