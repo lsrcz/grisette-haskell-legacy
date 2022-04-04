@@ -238,23 +238,23 @@ spec = do
           unboundedConfig
           True
           ()
-          [bvextract (Proxy @2) a ==~ (conc 1 :: SymSignedBV 2), a ==~ conc 0b10101]
+          [bvselect (Proxy @2) (Proxy @2) a ==~ (conc 1 :: SymSignedBV 2), a ==~ conc 0b10101]
         testCegis
           unboundedConfig
           False
           ()
-          [bvextract (Proxy @2) a ==~ (conc 1 :: SymSignedBV 2), a ==~ conc 0b10001]
+          [bvselect (Proxy @2) (Proxy @2) a ==~ (conc 1 :: SymSignedBV 2), a ==~ conc 0b10001]
       it "Extract should work when lowered twice" $ do
         testCegis
           unboundedConfig
           True
           a
-          [bvextract (Proxy @2) (bvconcat a b) ==~ (conc 1 :: SymSignedBV 2)]
+          [bvselect (Proxy @2) (Proxy @2) (bvconcat a b) ==~ (conc 1 :: SymSignedBV 2)]
         testCegis
           unboundedConfig
           True
           b
-          [bvextract (Proxy @7) (bvconcat a b) ==~ (conc 1 :: SymSignedBV 2)]
+          [bvselect (Proxy @7) (Proxy @2) (bvconcat a b) ==~ (conc 1 :: SymSignedBV 2)]
     describe "Concat" $ do
       it "Concat should work" $ do
         testCegis
@@ -272,76 +272,76 @@ spec = do
           unboundedConfig
           True
           (a, c)
-          [bvconcat c (bvextract (Proxy @2) (bvconcat a b) :: SymSignedBV 2) ==~ bvconcat c (conc 1 :: SymSignedBV 2)]
+          [bvconcat c (bvselect (Proxy @2) (Proxy @2) (bvconcat a b) :: SymSignedBV 2) ==~ bvconcat c (conc 1 :: SymSignedBV 2)]
         testCegis
           unboundedConfig
           True
           (b, c)
-          [bvconcat c (bvextract (Proxy @7) (bvconcat a b) :: SymSignedBV 2) ==~ bvconcat c (conc 1 :: SymSignedBV 2)]
+          [bvconcat c (bvselect (Proxy @7) (Proxy @2) (bvconcat a b) :: SymSignedBV 2) ==~ bvconcat c (conc 1 :: SymSignedBV 2)]
     describe "Zext" $ do
       it "bvzeroExtend should work" $ do
         testCegis
           unboundedConfig
           True
           ()
-          [bvzeroExtend a ==~ d, a ==~ conc 1, d ==~ (conc 1 :: SymSignedBV 10)]
+          [bvzeroExtend (Proxy @10) a ==~ d, a ==~ conc 1, d ==~ (conc 1 :: SymSignedBV 10)]
         testCegis
           unboundedConfig
           True
           ()
-          [bvzeroExtend a ==~ d, a ==~ conc 0b11111, d ==~ (conc 0b11111 :: SymSignedBV 10)]
+          [bvzeroExtend (Proxy @10) a ==~ d, a ==~ conc 0b11111, d ==~ (conc 0b11111 :: SymSignedBV 10)]
         testCegis
           unboundedConfig
           False
           ()
-          [bvzeroExtend a ==~ d, d ==~ (conc 0b111111 :: SymSignedBV 10)]
+          [bvzeroExtend (Proxy @10) a ==~ d, d ==~ (conc 0b111111 :: SymSignedBV 10)]
         testCegis
           unboundedConfig
           False
           ()
-          [bvzeroExtend a ==~ d, d ==~ (conc 0b1111111111 :: SymSignedBV 10)]
+          [bvzeroExtend (Proxy @10) a ==~ d, d ==~ (conc 0b1111111111 :: SymSignedBV 10)]
       it "bvzeroExtend should work when lowered twice" $ do
         testCegis
           unboundedConfig
           True
           a
-          [bvzeroExtend (bvextract (Proxy @2) (bvconcat a b) :: SymSignedBV 2) ==~ (conc 1 :: SymSignedBV 10)]
+          [bvzeroExtend (Proxy @10) (bvselect (Proxy @2) (Proxy @2) (bvconcat a b) :: SymSignedBV 2) ==~ (conc 1 :: SymSignedBV 10)]
         testCegis
           unboundedConfig
           True
           b
-          [bvzeroExtend (bvextract (Proxy @7) (bvconcat a b) :: SymSignedBV 2) ==~ (conc 1 :: SymSignedBV 10)]
+          [bvzeroExtend (Proxy @10) (bvselect (Proxy @7) (Proxy @2) (bvconcat a b) :: SymSignedBV 2) ==~ (conc 1 :: SymSignedBV 10)]
     describe "Sext" $ do
       it "bvsignExtend should work" $ do
         testCegis
           unboundedConfig
           True
           ()
-          [bvsignExtend a ==~ d, a ==~ conc 1, d ==~ (conc 1 :: SymSignedBV 10)]
+          [bvsignExtend (Proxy @10) a ==~ d, a ==~ conc 1, d ==~ (conc 1 :: SymSignedBV 10)]
         testCegis
           unboundedConfig
           True
           ()
-          [bvsignExtend a ==~ d, a ==~ conc 0b11111, d ==~ (conc 0b1111111111 :: SymSignedBV 10)]
+          [bvsignExtend (Proxy @10) a ==~ d, a ==~ conc 0b11111, d ==~ (conc 0b1111111111 :: SymSignedBV 10)]
         testCegis
           unboundedConfig
           False
           ()
-          [bvsignExtend a ==~ d, d ==~ (conc 0b111111 :: SymSignedBV 10)]
+          [bvsignExtend (Proxy @10) a ==~ d, d ==~ (conc 0b111111 :: SymSignedBV 10)]
         testCegis
           unboundedConfig
           False
           ()
-          [bvsignExtend a ==~ d, d ==~ (conc 0b11111 :: SymSignedBV 10)]
+          [bvsignExtend (Proxy @10) a ==~ d, d ==~ (conc 0b11111 :: SymSignedBV 10)]
       it "bvsignExtend should work when lowered twice" $ do
         testCegis
           unboundedConfig
           True
           a
-          [bvsignExtend (bvextract (Proxy @2) (bvconcat a b) :: SymSignedBV 2) ==~ (conc 1 :: SymSignedBV 10)]
+          [bvsignExtend (Proxy @10) (bvselect (Proxy @2) (Proxy @2) (bvconcat a b) :: SymSignedBV 2) ==~ (conc 1 :: SymSignedBV 10)]
         testCegis
           unboundedConfig
           True
           b
-          [bvsignExtend (bvextract (Proxy @7) (bvconcat a b) :: SymSignedBV 2) ==~ (conc 1 :: SymSignedBV 10)]
+          [bvsignExtend (Proxy @10) (bvselect (Proxy @7) (Proxy @2) (bvconcat a b) :: SymSignedBV 2) ==~ (conc 1 :: SymSignedBV 10)]
 

@@ -258,10 +258,10 @@ instance
 
 instance
   (KnownNat n, KnownNat w, KnownNat w', n ~ (w' - w), w' ~ (w + n), 1 <= w, 1 <= n, 1 <= w') =>
-  BVExtend (Sym (SignedBV w)) (Sym (SignedBV w'))
+  BVExtend (Sym (SignedBV w)) w' (Sym (SignedBV w'))
   where
-  bvzeroExtend (Sym v) = Sym $ bvtext (Proxy @n) False v
-  bvsignExtend (Sym v) = Sym $ bvtext (Proxy @n) True v
+  bvzeroExtend _ (Sym v) = Sym $ bvtext (Proxy @n) False v
+  bvsignExtend _ (Sym v) = Sym $ bvtext (Proxy @n) True v
   bvextend = bvsignExtend
 
 instance
@@ -272,9 +272,9 @@ instance
     1 <= ow,
     1 <= w
   ) =>
-  BVExtract (Sym (SignedBV ow)) ix (Sym (SignedBV w))
+  BVSelect (Sym (SignedBV ow)) ix w (Sym (SignedBV w))
   where
-  bvextract pix (Sym v) = Sym $ bvtextract pix (Proxy @w) v
+  bvselect pix pw (Sym v) = Sym $ bvtextract pix pw v
 
 instance ToCon (SymSignedBV 8) Char where
   toCon (Conc (SignedBV (BV v))) = Just $ chr $ fromInteger v
@@ -319,10 +319,10 @@ instance
 
 instance
   (KnownNat n, KnownNat w, KnownNat w', n ~ (w' - w), w' ~ (w + n), 1 <= w, 1 <= n, 1 <= w') =>
-  BVExtend (Sym (UnsignedBV w)) (Sym (UnsignedBV w'))
+  BVExtend (Sym (UnsignedBV w)) w' (Sym (UnsignedBV w'))
   where
-  bvzeroExtend (Sym v) = Sym $ bvtext (Proxy @n) False v
-  bvsignExtend (Sym v) = Sym $ bvtext (Proxy @n) True v
+  bvzeroExtend _ (Sym v) = Sym $ bvtext (Proxy @n) False v
+  bvsignExtend _ (Sym v) = Sym $ bvtext (Proxy @n) True v
   bvextend = bvzeroExtend
 
 instance
@@ -333,9 +333,9 @@ instance
     1 <= ow,
     1 <= w
   ) =>
-  BVExtract (Sym (UnsignedBV ow)) ix (Sym (UnsignedBV w))
+  BVSelect (Sym (UnsignedBV ow)) ix w (Sym (UnsignedBV w))
   where
-  bvextract pix (Sym v) = Sym $ bvtextract pix (Proxy @w) v
+  bvselect pix pw (Sym v) = Sym $ bvtextract pix pw v
 
 instance (SupportedPrim (UnsignedBV n)) => Bits (Sym (UnsignedBV n)) where
   Sym l .&. Sym r = Sym $ withPrim @(UnsignedBV n) $ bitand l r

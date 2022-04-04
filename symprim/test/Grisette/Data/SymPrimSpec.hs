@@ -301,19 +301,19 @@ spec = do
             )
     describe "bvextend for Sym BV" $ do
       it "bvzeroExtend for SymPrim" $ do
-        bvzeroExtend au `shouldBe` Sym (bvtext (Proxy @2) False aut)
-        bvzeroExtend as `shouldBe` Sym (bvtext (Proxy @2) False ast)
+        bvzeroExtend (Proxy @6) au `shouldBe` Sym (bvtext (Proxy @2) False aut)
+        bvzeroExtend (Proxy @6) as `shouldBe` Sym (bvtext (Proxy @2) False ast)
       it "bvsignExtend for SymPrim" $ do
-        bvsignExtend au `shouldBe` Sym (bvtext (Proxy @2) True aut)
-        bvsignExtend as `shouldBe` Sym (bvtext (Proxy @2) True ast)
+        bvsignExtend (Proxy @6) au `shouldBe` Sym (bvtext (Proxy @2) True aut)
+        bvsignExtend (Proxy @6) as `shouldBe` Sym (bvtext (Proxy @2) True ast)
       it "bvextend for SymPrim" $ do
-        bvextend au `shouldBe` Sym (bvtext (Proxy @2) False aut)
-        bvextend as `shouldBe` Sym (bvtext (Proxy @2) True ast)
-    describe "BVExtract for Sym BV" $ do
-      it "bvextract for SymPrim" $ do
-        bvextract (Proxy @2) au
+        bvextend (Proxy @6) au `shouldBe` Sym (bvtext (Proxy @2) False aut)
+        bvextend (Proxy @6) as `shouldBe` Sym (bvtext (Proxy @2) True ast)
+    describe "bvselect for Sym BV" $ do
+      it "bvselect for SymPrim" $ do
+        bvselect (Proxy @2) (Proxy @1) au
           `shouldBe` Sym (bvtextract (Proxy @2) (Proxy @1) aut)
-        bvextract (Proxy @2) as
+        bvselect (Proxy @2) (Proxy @1) as
           `shouldBe` Sym (bvtextract (Proxy @2) (Proxy @1) ast)
     describe "conversion from Char to Sym BV" $ do
       it "toSym" $ do
