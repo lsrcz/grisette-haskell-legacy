@@ -299,16 +299,16 @@ spec = do
                 (ssymbTerm "a" :: Term (BVU.UnsignedBV 4))
                 (ssymbTerm "b" :: Term (BVU.UnsignedBV 3))
             )
-    describe "BVExt for Sym BV" $ do
-      it "bvzext for SymPrim" $ do
-        bvzext (Proxy @2) au `shouldBe` Sym (bvtext (Proxy @2) False aut)
-        bvzext (Proxy @2) as `shouldBe` Sym (bvtext (Proxy @2) False ast)
-      it "bvsext for SymPrim" $ do
-        bvsext (Proxy @2) au `shouldBe` Sym (bvtext (Proxy @2) True aut)
-        bvsext (Proxy @2) as `shouldBe` Sym (bvtext (Proxy @2) True ast)
-      it "bvext for SymPrim" $ do
-        bvext (Proxy @2) au `shouldBe` Sym (bvtext (Proxy @2) False aut)
-        bvext (Proxy @2) as `shouldBe` Sym (bvtext (Proxy @2) True ast)
+    describe "bvextend for Sym BV" $ do
+      it "bvzeroExtend for SymPrim" $ do
+        bvzeroExtend au `shouldBe` Sym (bvtext (Proxy @2) False aut)
+        bvzeroExtend as `shouldBe` Sym (bvtext (Proxy @2) False ast)
+      it "bvsignExtend for SymPrim" $ do
+        bvsignExtend au `shouldBe` Sym (bvtext (Proxy @2) True aut)
+        bvsignExtend as `shouldBe` Sym (bvtext (Proxy @2) True ast)
+      it "bvextend for SymPrim" $ do
+        bvextend au `shouldBe` Sym (bvtext (Proxy @2) False aut)
+        bvextend as `shouldBe` Sym (bvtext (Proxy @2) True ast)
     describe "BVExtract for Sym BV" $ do
       it "bvextract for SymPrim" $ do
         bvextract (Proxy @2) (Proxy @1) au

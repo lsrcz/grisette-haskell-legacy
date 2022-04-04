@@ -2,12 +2,11 @@
 
 module Grisette.Core
   ( SEq (..),
-    (/=~),
     LogicalOp (..),
     SymBoolOp,
     ITEOp (..),
     BVConcat (..),
-    BVExt (..),
+    BVExtend (..),
     BVExtract (..),
     ArithException (..),
     SignedDivMod (..),

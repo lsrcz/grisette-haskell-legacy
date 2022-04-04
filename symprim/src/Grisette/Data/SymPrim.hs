@@ -257,12 +257,12 @@ instance
   bvconcat (Sym l) (Sym r) = Sym (bvtconcat l r)
 
 instance
-  (KnownNat n, KnownNat w, KnownNat w', w' ~ (w + n), 1 <= w, 1 <= n, 1 <= w') =>
-  BVExt (Sym (SignedBV w)) n (Sym (SignedBV w'))
+  (KnownNat n, KnownNat w, KnownNat w', n ~ (w' - w), w' ~ (w + n), 1 <= w, 1 <= n, 1 <= w') =>
+  BVExtend (Sym (SignedBV w)) (Sym (SignedBV w'))
   where
-  bvzext p (Sym v) = Sym $ bvtext p False v
-  bvsext p (Sym v) = Sym $ bvtext p True v
-  bvext = bvsext
+  bvzeroExtend (Sym v) = Sym $ bvtext (Proxy @n) False v
+  bvsignExtend (Sym v) = Sym $ bvtext (Proxy @n) True v
+  bvextend = bvsignExtend
 
 instance
   ( KnownNat ix,
@@ -318,12 +318,12 @@ instance
   bvconcat (Sym l) (Sym r) = Sym (bvtconcat l r)
 
 instance
-  (KnownNat n, KnownNat w, KnownNat w', w' ~ (w + n), 1 <= w, 1 <= n, 1 <= w') =>
-  BVExt (Sym (UnsignedBV w)) n (Sym (UnsignedBV w'))
+  (KnownNat n, KnownNat w, KnownNat w', n ~ (w' - w), w' ~ (w + n), 1 <= w, 1 <= n, 1 <= w') =>
+  BVExtend (Sym (UnsignedBV w)) (Sym (UnsignedBV w'))
   where
-  bvzext p (Sym v) = Sym $ bvtext p False v
-  bvsext p (Sym v) = Sym $ bvtext p True v
-  bvext = bvzext
+  bvzeroExtend (Sym v) = Sym $ bvtext (Proxy @n) False v
+  bvsignExtend (Sym v) = Sym $ bvtext (Proxy @n) True v
+  bvextend = bvzeroExtend
 
 instance
   ( KnownNat ix,

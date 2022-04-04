@@ -1,12 +1,15 @@
 {-# LANGUAGE BinaryLiterals #-}
+
 module Grisette.Data.SMT.CEGISSpec where
 
 import Control.Monad.Except
 import qualified Data.HashSet as S
+import Data.Proxy
 import qualified Data.SBV as SBV
 import Grisette.Control.Exception
 import Grisette.Control.Monad
 import Grisette.Control.Monad.UnionM
+import Grisette.Data.Class.BitVector
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Error
 import Grisette.Data.Class.ExtractSymbolics
@@ -18,8 +21,6 @@ import Grisette.Data.SMT.Config
 import Grisette.Data.SMT.Solving
 import Grisette.Data.SymPrim
 import Test.Hspec
-import Grisette.Data.Class.BitVector
-import Data.Proxy
 
 testCegis :: (HasCallStack, ExtractSymbolics (S.HashSet TermSymbol) a) => GrisetteSMTConfig i -> Bool -> a -> [SymBool] -> Expectation
 testCegis config shouldSuccess a bs = do
@@ -278,68 +279,68 @@ spec = do
           (b, c)
           [bvconcat c (bvextract (Proxy @7) (Proxy @2) (bvconcat a b)) ==~ bvconcat c (conc 1 :: SymSignedBV 2)]
     describe "Zext" $ do
-      it "bvzext should work" $ do
+      it "bvzeroExtend should work" $ do
         testCegis
           unboundedConfig
           True
           ()
-          [bvzext (Proxy @5) a ==~ d, a ==~ conc 1, d ==~ conc 1]
+          [bvzeroExtend a ==~ d, a ==~ conc 1, d ==~ (conc 1 :: SymSignedBV 10)]
         testCegis
           unboundedConfig
           True
           ()
-          [bvzext (Proxy @5) a ==~ d, a ==~ conc 0b11111, d ==~ conc 0b11111]
+          [bvzeroExtend a ==~ d, a ==~ conc 0b11111, d ==~ (conc 0b11111 :: SymSignedBV 10)]
         testCegis
           unboundedConfig
           False
           ()
-          [bvzext (Proxy @5) a ==~ d, d ==~ conc 0b111111]
+          [bvzeroExtend a ==~ d, d ==~ (conc 0b111111 :: SymSignedBV 10)]
         testCegis
           unboundedConfig
           False
           ()
-          [bvzext (Proxy @5) a ==~ d, d ==~ conc 0b1111111111]
-      it "bvzext should work when lowered twice" $ do
+          [bvzeroExtend a ==~ d, d ==~ (conc 0b1111111111 :: SymSignedBV 10)]
+      it "bvzeroExtend should work when lowered twice" $ do
         testCegis
           unboundedConfig
           True
           a
-          [bvzext (Proxy @2) (bvextract (Proxy @2) (Proxy @2) (bvconcat a b)) ==~ conc 1]
+          [bvzeroExtend (bvextract (Proxy @2) (Proxy @2) (bvconcat a b)) ==~ (conc 1 :: SymSignedBV 10)]
         testCegis
           unboundedConfig
           True
           b
-          [bvzext (Proxy @2) (bvextract (Proxy @7) (Proxy @2) (bvconcat a b)) ==~ conc 1]
+          [bvzeroExtend (bvextract (Proxy @7) (Proxy @2) (bvconcat a b)) ==~ (conc 1 :: SymSignedBV 10)]
     describe "Sext" $ do
-      it "bvsext should work" $ do
+      it "bvsignExtend should work" $ do
         testCegis
           unboundedConfig
           True
           ()
-          [bvsext (Proxy @5) a ==~ d, a ==~ conc 1, d ==~ conc 1]
+          [bvsignExtend a ==~ d, a ==~ conc 1, d ==~ (conc 1 :: SymSignedBV 10)]
         testCegis
           unboundedConfig
           True
           ()
-          [bvsext (Proxy @5) a ==~ d, a ==~ conc 0b11111, d ==~ conc 0b1111111111]
+          [bvsignExtend a ==~ d, a ==~ conc 0b11111, d ==~ (conc 0b1111111111 :: SymSignedBV 10)]
         testCegis
           unboundedConfig
           False
           ()
-          [bvsext (Proxy @5) a ==~ d, d ==~ conc 0b111111]
+          [bvsignExtend a ==~ d, d ==~ (conc 0b111111 :: SymSignedBV 10)]
         testCegis
           unboundedConfig
           False
           ()
-          [bvsext (Proxy @5) a ==~ d, d ==~ conc 0b11111]
-      it "bvsext should work when lowered twice" $ do
+          [bvsignExtend a ==~ d, d ==~ (conc 0b11111 :: SymSignedBV 10)]
+      it "bvsignExtend should work when lowered twice" $ do
         testCegis
           unboundedConfig
           True
           a
-          [bvsext (Proxy @2) (bvextract (Proxy @2) (Proxy @2) (bvconcat a b)) ==~ conc 1]
+          [bvsignExtend (bvextract (Proxy @2) (Proxy @2) (bvconcat a b)) ==~ (conc 1 :: SymSignedBV 10)]
         testCegis
           unboundedConfig
           True
           b
-          [bvsext (Proxy @2) (bvextract (Proxy @7) (Proxy @2) (bvconcat a b)) ==~ conc 1]
+          [bvsignExtend (bvextract (Proxy @7) (Proxy @2) (bvconcat a b)) ==~ (conc 1 :: SymSignedBV 10)]
