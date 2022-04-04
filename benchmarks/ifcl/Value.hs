@@ -3,13 +3,14 @@
 module Value where
 
 import Control.DeepSeq
-import GHC.Generics
+import Generics.Deriving
 import Grisette.Core
 import Grisette.SymPrim.Term
 
 data PCValue = PCValue {int :: SymInteger, label :: SymBool}
-  deriving (Show, Eq, Generic, Mergeable SymBool, SEq SymBool, SymEval Model)
+  deriving (Show, Eq, Generic, Mergeable SymBool, SymEval Model)
   deriving (SimpleMergeable SymBool, NFData)
+  deriving (SEq SymBool) via (Default PCValue)
 
 $(makeUnionMWrapper "u" ''PCValue)
 
@@ -29,4 +30,5 @@ zeroLow = PCValue 0 $ conc False
 data MemValue
   = MPCValue PCValue
   | ReturnAddr PCValue PCValue
-  deriving (Show, Eq, Generic, Mergeable SymBool, SEq SymBool, SymEval Model, NFData)
+  deriving (Show, Eq, Generic, Mergeable SymBool, SymEval Model, NFData)
+  deriving (SEq SymBool) via (Default MemValue)

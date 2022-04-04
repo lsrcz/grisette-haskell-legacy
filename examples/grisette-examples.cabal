@@ -41,7 +41,7 @@ library
       DeriveAnyClass
       DeriveGeneric
       DeriveLift
-      DerivingStrategies
+      DerivingVia
       FlexibleContexts
       FlexibleInstances
       FunctionalDependencies
@@ -66,6 +66,7 @@ library
     , deepseq
     , either
     , formatting
+    , generic-deriving
     , grisette
     , hashable
     , hashtables
@@ -106,7 +107,7 @@ executable expr-interpreter
       DeriveAnyClass
       DeriveGeneric
       DeriveLift
-      DerivingStrategies
+      DerivingVia
       FlexibleContexts
       FlexibleInstances
       FunctionalDependencies
@@ -131,6 +132,7 @@ executable expr-interpreter
     , deepseq
     , either
     , formatting
+    , generic-deriving
     , grisette
     , hashable
     , hashtables
@@ -172,7 +174,7 @@ executable expr-sketch
       DeriveAnyClass
       DeriveGeneric
       DeriveLift
-      DerivingStrategies
+      DerivingVia
       FlexibleContexts
       FlexibleInstances
       FunctionalDependencies
@@ -197,6 +199,7 @@ executable expr-sketch
     , deepseq
     , either
     , formatting
+    , generic-deriving
     , grisette
     , hashable
     , hashtables
@@ -236,7 +239,7 @@ executable genfunc
       DeriveAnyClass
       DeriveGeneric
       DeriveLift
-      DerivingStrategies
+      DerivingVia
       FlexibleContexts
       FlexibleInstances
       FunctionalDependencies
@@ -261,6 +264,7 @@ executable genfunc
     , deepseq
     , either
     , formatting
+    , generic-deriving
     , grisette
     , hashable
     , hashtables
@@ -302,7 +306,7 @@ executable location
       DeriveAnyClass
       DeriveGeneric
       DeriveLift
-      DerivingStrategies
+      DerivingVia
       FlexibleContexts
       FlexibleInstances
       FunctionalDependencies
@@ -327,6 +331,7 @@ executable location
     , deepseq
     , either
     , formatting
+    , generic-deriving
     , grisette
     , hashable
     , hashtables
@@ -366,7 +371,7 @@ executable order
       DeriveAnyClass
       DeriveGeneric
       DeriveLift
-      DerivingStrategies
+      DerivingVia
       FlexibleContexts
       FlexibleInstances
       FunctionalDependencies
@@ -391,6 +396,7 @@ executable order
     , deepseq
     , either
     , formatting
+    , generic-deriving
     , grisette
     , hashable
     , hashtables
@@ -433,7 +439,7 @@ executable stmt-sketch
       DeriveAnyClass
       DeriveGeneric
       DeriveLift
-      DerivingStrategies
+      DerivingVia
       FlexibleContexts
       FlexibleInstances
       FunctionalDependencies
@@ -458,6 +464,7 @@ executable stmt-sketch
     , deepseq
     , either
     , formatting
+    , generic-deriving
     , grisette
     , hashable
     , hashtables
@@ -497,7 +504,7 @@ executable tutorial
       DeriveAnyClass
       DeriveGeneric
       DeriveLift
-      DerivingStrategies
+      DerivingVia
       FlexibleContexts
       FlexibleInstances
       FunctionalDependencies
@@ -522,6 +529,7 @@ executable tutorial
     , deepseq
     , either
     , formatting
+    , generic-deriving
     , grisette
     , hashable
     , hashtables

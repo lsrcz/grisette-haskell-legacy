@@ -1,7 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 module Expr where
 
-import GHC.Generics
+import Generics.Deriving
 import Grisette.Backend.SBV
 import Grisette.Core
 import Grisette.SymPrim.Term
@@ -18,7 +18,8 @@ data SymbExpr
   | SAddExpr (UnionM SymbExpr) (UnionM SymbExpr)
   | SSubExpr (UnionM SymbExpr) (UnionM SymbExpr)
   | SMulExpr (UnionM SymbExpr) (UnionM SymbExpr)
-  deriving (Show, Eq, Generic, Mergeable SymBool, SEq SymBool, SymEval Model, ToSym ConcExpr)
+  deriving (Show, Eq, Generic, Mergeable SymBool, SymEval Model, ToSym ConcExpr)
+  deriving (SEq SymBool) via (Default SymbExpr)
 
 $(makeUnionMWrapper "u" ''SymbExpr)
 

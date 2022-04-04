@@ -216,7 +216,8 @@ data LetPolyValue
   | LetPolyBool SymBool
   | LetPolyRefCell (UnionM Integer)
   | LetPolyLambda (SymUnsignedBV LetPolyWidth) (UnionM LetPolyTree) (Env LetPolyWidth LetPolyValue)
-  deriving (Show, Eq, Generic, SEq SymBool, NFData, SymEval Model, Hashable)
+  deriving (Show, Eq, Generic, NFData, SymEval Model, Hashable)
+  deriving (SEq SymBool) via (Default LetPolyValue)
 
 instance Mergeable SymBool LetPolyValue where
   mergeStrategy =

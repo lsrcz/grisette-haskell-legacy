@@ -16,6 +16,7 @@ dependencies:
 - grisette-lib
 - grisette-smt
 - sbv
+- generic-deriving
 
 default-extensions:
 - BangPatterns

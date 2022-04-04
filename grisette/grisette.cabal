@@ -62,6 +62,7 @@ library
   ghc-options: -Wall -ferror-spans
   build-depends:
       base >4.7 && <5
+    , generic-deriving
     , grisette-core
     , grisette-lib
     , grisette-smt

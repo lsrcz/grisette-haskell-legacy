@@ -13,13 +13,16 @@ where
 import Control.Monad.Except
 import Control.Monad.Trans.Maybe
 import qualified Data.ByteString as B
+import Data.Functor.Sum
 import Generics.Deriving
 import Grisette.Data.Class.PrimWrapper
 import {-# SOURCE #-} Grisette.Data.Class.SimpleMergeable
-import Data.Functor.Sum
 
+-- | Auxiliary class for 'SEq' instance derivation
 class (SymBoolOp bool) => SEq' bool f where
+  -- | Auxiliary function for '(==~)' derivation
   (==~~) :: f a -> f a -> bool
+
   infix 4 ==~~
 
 instance (SymBoolOp bool) => SEq' bool U1 where
@@ -42,14 +45,24 @@ instance (SymBoolOp bool, SEq' bool a, SEq' bool b) => SEq' bool (a :+: b) where
 instance (SymBoolOp bool, SEq' bool a, SEq' bool b) => SEq' bool (a :*: b) where
   (a1 :*: b1) ==~~ (a2 :*: b2) = (a1 ==~~ a2) &&~ (b1 ==~~ b2)
 
+-- | Symbolic Equality. Note that we can't use Haskell's 'Eq' class since symbolic comparison won't necessarily return
+-- | a concrete 'Bool' value.
+-- |
+-- | The @bool@ type is the symbolic boolean type to return.
 class (SymBoolOp bool) => SEq bool a where
   (==~) :: a -> a -> bool
+  a ==~ b = nots $ a /=~ b
   infix 4 ==~
-  default (==~) :: (Generic a, SEq' bool (Rep a)) => a -> a -> bool
-  x ==~ y = from x ==~~ from y
+
+  -- default (==~) :: (Generic a, SEq' bool (Rep a)) => a -> a -> bool
+  -- x ==~ y = from x ==~~ from y
   (/=~) :: a -> a -> bool
   a /=~ b = nots $ a ==~ b
   infix 4 /=~
+  {-# MINIMAL (==~) | (/=~) #-}
+
+instance (Generic a, SymBoolOp bool, SEq' bool (Rep a)) => SEq bool (Default a) where
+  Default l ==~ Default r = from l ==~~ from r
 
 class LogicalOp b where
   (||~) :: b -> b -> b
@@ -76,7 +89,7 @@ class ITEOp b v where
 class (SimpleMergeable b b, SEq b b, Eq b, LogicalOp b, PrimWrapper b Bool, ITEOp b b) => SymBoolOp b
 
 -- Bool
-instance (SymBoolOp bool) => SEq bool Bool
+deriving via (Default Bool) instance (SymBoolOp bool) => SEq bool Bool
 
 -- Integer
 instance (SymBoolOp bool) => SEq bool Integer where
@@ -87,13 +100,13 @@ instance (SymBoolOp bool) => SEq bool Char where
   l ==~ r = conc $ l == r
 
 -- List
-instance (SymBoolOp bool, SEq bool a) => SEq bool [a]
+deriving via (Default [a]) instance (SymBoolOp bool, SEq bool a) => SEq bool [a]
 
 -- Maybe
-instance (SymBoolOp bool, SEq bool a) => SEq bool (Maybe a)
+deriving via (Default (Maybe a)) instance (SymBoolOp bool, SEq bool a) => SEq bool (Maybe a)
 
 -- Either
-instance (SymBoolOp bool, SEq bool e, SEq bool a) => SEq bool (Either e a)
+deriving via (Default (Either e a)) instance (SymBoolOp bool, SEq bool e, SEq bool a) => SEq bool (Either e a)
 
 -- ExceptT
 instance (SymBoolOp bool, SEq bool (m (Either e a))) => SEq bool (ExceptT e m a) where
@@ -104,38 +117,55 @@ instance (SymBoolOp bool, SEq bool (m (Maybe a))) => SEq bool (MaybeT m a) where
   (MaybeT a) ==~ (MaybeT b) = a ==~ b
 
 -- ()
-instance (SymBoolOp bool) => SEq bool ()
+deriving via (Default ()) instance (SymBoolOp bool) => SEq bool ()
 
 -- (,)
-instance (SymBoolOp bool, SEq bool a, SEq bool b) => SEq bool (a, b)
+deriving via (Default (a, b)) instance (SymBoolOp bool, SEq bool a, SEq bool b) => SEq bool (a, b)
 
 -- (,,)
-instance (SymBoolOp bool, SEq bool a, SEq bool b, SEq bool c) => SEq bool (a, b, c)
+deriving via (Default (a, b, c)) instance (SymBoolOp bool, SEq bool a, SEq bool b, SEq bool c) => SEq bool (a, b, c)
 
 -- (,,,)
-instance (SymBoolOp bool, SEq bool a, SEq bool b, SEq bool c, SEq bool d) => SEq bool (a, b, c, d)
+deriving via
+  (Default (a, b, c, d))
+  instance
+    (SymBoolOp bool, SEq bool a, SEq bool b, SEq bool c, SEq bool d) =>
+    SEq bool (a, b, c, d)
 
 -- (,,,,)
-instance (SymBoolOp bool, SEq bool a, SEq bool b, SEq bool c, SEq bool d, SEq bool e) => SEq bool (a, b, c, d, e)
+deriving via
+  (Default (a, b, c, d, e))
+  instance
+    (SymBoolOp bool, SEq bool a, SEq bool b, SEq bool c, SEq bool d, SEq bool e) =>
+    SEq bool (a, b, c, d, e)
 
 -- (,,,,,)
-instance
-  (SymBoolOp bool, SEq bool a, SEq bool b, SEq bool c, SEq bool d, SEq bool e, SEq bool f) =>
-  SEq bool (a, b, c, d, e, f)
+deriving via
+  (Default (a, b, c, d, e, f))
+  instance
+    (SymBoolOp bool, SEq bool a, SEq bool b, SEq bool c, SEq bool d, SEq bool e, SEq bool f) =>
+    SEq bool (a, b, c, d, e, f)
 
 -- (,,,,,,)
-instance
-  (SymBoolOp bool, SEq bool a, SEq bool b, SEq bool c, SEq bool d, SEq bool e, SEq bool f, SEq bool g) =>
-  SEq bool (a, b, c, d, e, f, g)
+deriving via
+  (Default (a, b, c, d, e, f, g))
+  instance
+    (SymBoolOp bool, SEq bool a, SEq bool b, SEq bool c, SEq bool d, SEq bool e, SEq bool f, SEq bool g) =>
+    SEq bool (a, b, c, d, e, f, g)
 
 -- (,,,,,,,)
-instance
-  (SymBoolOp bool, SEq bool a, SEq bool b, SEq bool c, SEq bool d, SEq bool e, SEq bool f, SEq bool g, SEq bool h) =>
-  SEq bool (a, b, c, d, e, f, g, h)
+deriving via
+  (Default (a, b, c, d, e, f, g, h))
+  instance
+    (SymBoolOp bool, SEq bool a, SEq bool b, SEq bool c, SEq bool d, SEq bool e, SEq bool f, SEq bool g, SEq bool h) =>
+    SEq bool (a, b, c, d, e, f, g, h)
 
 -- ByteString
 instance (SymBoolOp bool) => SEq bool B.ByteString where
   l ==~ r = conc $ l == r
 
 -- Sum
-instance (SymBoolOp bool, SEq bool (f a), SEq bool (g a)) => SEq bool (Sum f g a)
+deriving via
+  (Default (Sum f g a))
+  instance
+    (SymBoolOp bool, SEq bool (f a), SEq bool (g a)) => SEq bool (Sum f g a)

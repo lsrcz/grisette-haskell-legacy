@@ -4,7 +4,7 @@ module Interpreter where
 import Control.Monad.Except
 import Control.Monad.State
 import DataStructures
-import GHC.Generics
+import Generics.Deriving
 import Grisette.Backend.SBV
 import Grisette.Core hiding (AssertionError)
 import Grisette.SymPrim.Term
@@ -13,7 +13,8 @@ data SValue
   = SInt SymInteger
   | SBool SymBool
   | SUnit
-  deriving (Show, Eq, Generic, Mergeable SymBool, SEq SymBool)
+  deriving (Show, Eq, Generic, Mergeable SymBool)
+  deriving (SEq SymBool) via (Default SValue)
 
 $(makeUnionMWrapper "u" ''SValue)
 
@@ -30,7 +31,8 @@ data Errors
   = AssertionError
   | BadType
   | UndefinedVariable
-  deriving (Show, Eq, Generic, Mergeable SymBool, SEq SymBool)
+  deriving (Show, Eq, Generic, Mergeable SymBool)
+  deriving (SEq SymBool) via (Default Errors)
 
 instance TransformError Errors Errors where
   transformError = id

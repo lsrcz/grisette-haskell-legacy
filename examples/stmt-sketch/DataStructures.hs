@@ -2,7 +2,7 @@
 module DataStructures where
 
 import Data.List (intercalate)
-import GHC.Generics
+import Generics.Deriving
 import Grisette.Core
 import Grisette.SymPrim.Term
 import Language.Haskell.TH.Syntax (Lift)
@@ -36,11 +36,11 @@ data SymbExpr
       Eq,
       Generic,
       Mergeable SymBool,
-      SEq SymBool,
       SymEval Model,
       ToSym ConcExpr,
       Lift
     )
+  deriving (SEq SymBool) via (Default SymbExpr)
 
 newtype Identifier = Identifier Integer
   deriving (Eq, Generic, ToCon SIdentifier)
@@ -52,11 +52,11 @@ newtype SIdentifier = SIdentifier SymInteger
       Generic,
       Mergeable SymBool,
       SimpleMergeable SymBool,
-      SEq SymBool,
       SymEval Model,
       ToSym Identifier,
       Lift
     )
+  deriving (SEq SymBool) via (Default SIdentifier)
 
 $(makeUnionMWrapper "u" ''SymbExpr)
 $(makeUnionMWrapper "u" ''SIdentifier)
@@ -116,11 +116,11 @@ data SymbStmt
       Eq,
       Generic,
       Mergeable SymBool,
-      SEq SymBool,
       SymEval Model,
       ToSym Stmt,
       Lift
     )
+  deriving (SEq SymBool) via (Default SymbStmt)
 
 newtype Program = Program [Stmt] deriving (Eq, Generic, ToCon SymbProgram)
 
@@ -130,11 +130,11 @@ newtype SymbProgram = SymbProgram [SymbStmt]
       Eq,
       Generic,
       Mergeable SymBool,
-      SEq SymBool,
       SymEval Model,
       ToSym Program,
       Lift
     )
+  deriving (SEq SymBool) via (Default SymbProgram)
 
 instance Show Stmt where
   show (AssertStmt e) = "assert " ++ show e

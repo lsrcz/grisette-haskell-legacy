@@ -36,6 +36,7 @@ default-extensions:
 - DefaultSignatures
 - DeriveGeneric
 - DeriveLift
+- DerivingVia
 - FlexibleContexts
 - FlexibleInstances
 - FunctionalDependencies
@@ -45,6 +46,7 @@ default-extensions:
 - MultiParamTypeClasses
 - RankNTypes
 - ScopedTypeVariables
+- StandaloneDeriving
 - TypeApplications
 - TypeFamilies
 - TypeOperators

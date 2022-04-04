@@ -103,9 +103,11 @@ module Grisette.Core
     htmemo3,
     htmup,
     htmemoFix,
+    Default(..),
   )
 where
 
+import Generics.Deriving (Default(..))
 import Grisette.Control.Exception
 import Grisette.Control.Monad
 import Grisette.Control.Monad.Trans

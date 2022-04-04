@@ -11,7 +11,7 @@ import qualified Data.ByteString as B
 import Data.Hashable
 import Data.Maybe
 import Data.MemoTrie
-import GHC.Generics
+import Generics.Deriving
 import GHC.TypeNats
 import Grisette.Backend.SBV
 import Grisette.Core
@@ -28,7 +28,7 @@ data BonsaiTree leaf
   | BonsaiNode (UnionM (BonsaiTree leaf)) (UnionM (BonsaiTree leaf))
   deriving (Generic, Show, Eq, Hashable, NFData)
 
-deriving instance (SEq SymBool leaf) => SEq SymBool (BonsaiTree leaf)
+deriving via (Default (BonsaiTree leaf)) instance (SEq SymBool leaf) => SEq SymBool (BonsaiTree leaf)
 
 deriving instance (Mergeable SymBool leaf) => Mergeable SymBool (BonsaiTree leaf)
 

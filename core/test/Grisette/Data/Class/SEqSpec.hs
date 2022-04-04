@@ -9,13 +9,15 @@ import Data.Bifunctor
 import qualified Data.ByteString as B
 import Data.Foldable
 import Data.Functor.Sum
-import GHC.Generics
+import Generics.Deriving
 import Grisette.Data.Class.Bool
 import Test.Hspec
 import Test.Hspec.QuickCheck
 import Utils.SBool
 
-data A = A1 | A2 SBool | A3 SBool SBool deriving (Generic, Show, Eq, SEq SBool)
+data A = A1 | A2 SBool | A3 SBool SBool
+  deriving (Generic, Show, Eq)
+  deriving (SEq SBool) via (Default A)
 
 concreteSEqOkSpec :: (HasCallStack, SEq SBool a, Eq a) => (a, a) -> Expectation
 concreteSEqOkSpec (i, j) = do

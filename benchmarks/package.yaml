@@ -38,6 +38,7 @@ dependencies:
 - parameterized-utils
 - either
 - hashtables
+- generic-deriving
 
 default-extensions:
 - BangPatterns
@@ -48,6 +49,7 @@ default-extensions:
 - DeriveGeneric
 - DeriveLift
 - DerivingStrategies
+- DerivingVia
 - FlexibleContexts
 - FlexibleInstances
 - FunctionalDependencies

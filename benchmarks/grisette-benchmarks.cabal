@@ -50,6 +50,7 @@ library
       DeriveGeneric
       DeriveLift
       DerivingStrategies
+      DerivingVia
       FlexibleContexts
       FlexibleInstances
       FunctionalDependencies
@@ -74,6 +75,7 @@ library
     , deepseq
     , either
     , formatting
+    , generic-deriving
     , grisette
     , hashable
     , hashtables
@@ -115,6 +117,7 @@ executable bonsai-letpoly
       DeriveGeneric
       DeriveLift
       DerivingStrategies
+      DerivingVia
       FlexibleContexts
       FlexibleInstances
       FunctionalDependencies
@@ -139,6 +142,7 @@ executable bonsai-letpoly
     , deepseq
     , either
     , formatting
+    , generic-deriving
     , grisette
     , grisette-benchmarks
     , hashable
@@ -181,6 +185,7 @@ executable bonsai-letpoly-nomemo
       DeriveGeneric
       DeriveLift
       DerivingStrategies
+      DerivingVia
       FlexibleContexts
       FlexibleInstances
       FunctionalDependencies
@@ -205,6 +210,7 @@ executable bonsai-letpoly-nomemo
     , deepseq
     , either
     , formatting
+    , generic-deriving
     , grisette
     , grisette-benchmarks
     , hashable
@@ -247,6 +253,7 @@ executable bonsai-nanoscala
       DeriveGeneric
       DeriveLift
       DerivingStrategies
+      DerivingVia
       FlexibleContexts
       FlexibleInstances
       FunctionalDependencies
@@ -271,6 +278,7 @@ executable bonsai-nanoscala
     , deepseq
     , either
     , formatting
+    , generic-deriving
     , grisette
     , grisette-benchmarks
     , hashable
@@ -313,6 +321,7 @@ executable bonsai-nanoscala-nomemo
       DeriveGeneric
       DeriveLift
       DerivingStrategies
+      DerivingVia
       FlexibleContexts
       FlexibleInstances
       FunctionalDependencies
@@ -337,6 +346,7 @@ executable bonsai-nanoscala-nomemo
     , deepseq
     , either
     , formatting
+    , generic-deriving
     , grisette
     , grisette-benchmarks
     , hashable
@@ -379,6 +389,7 @@ executable bonsai-stlc
       DeriveGeneric
       DeriveLift
       DerivingStrategies
+      DerivingVia
       FlexibleContexts
       FlexibleInstances
       FunctionalDependencies
@@ -403,6 +414,7 @@ executable bonsai-stlc
     , deepseq
     , either
     , formatting
+    , generic-deriving
     , grisette
     , grisette-benchmarks
     , hashable
@@ -445,6 +457,7 @@ executable bonsai-stlc-nomemo
       DeriveGeneric
       DeriveLift
       DerivingStrategies
+      DerivingVia
       FlexibleContexts
       FlexibleInstances
       FunctionalDependencies
@@ -469,6 +482,7 @@ executable bonsai-stlc-nomemo
     , deepseq
     , either
     , formatting
+    , generic-deriving
     , grisette
     , grisette-benchmarks
     , hashable
@@ -518,6 +532,7 @@ executable cosette
       DeriveGeneric
       DeriveLift
       DerivingStrategies
+      DerivingVia
       FlexibleContexts
       FlexibleInstances
       FunctionalDependencies
@@ -542,6 +557,7 @@ executable cosette
     , deepseq
     , either
     , formatting
+    , generic-deriving
     , grisette
     , grisette-benchmarks
     , hashable
@@ -591,6 +607,7 @@ executable cosette-optimized-merge
       DeriveGeneric
       DeriveLift
       DerivingStrategies
+      DerivingVia
       FlexibleContexts
       FlexibleInstances
       FunctionalDependencies
@@ -615,6 +632,7 @@ executable cosette-optimized-merge
     , deepseq
     , either
     , formatting
+    , generic-deriving
     , grisette
     , grisette-benchmarks
     , hashable
@@ -663,6 +681,7 @@ executable ferrite
       DeriveGeneric
       DeriveLift
       DerivingStrategies
+      DerivingVia
       FlexibleContexts
       FlexibleInstances
       FunctionalDependencies
@@ -687,6 +706,7 @@ executable ferrite
     , deepseq
     , either
     , formatting
+    , generic-deriving
     , grisette
     , grisette-benchmarks
     , hashable
@@ -728,6 +748,7 @@ executable fluidics
       DeriveGeneric
       DeriveLift
       DerivingStrategies
+      DerivingVia
       FlexibleContexts
       FlexibleInstances
       FunctionalDependencies
@@ -752,6 +773,7 @@ executable fluidics
     , deepseq
     , either
     , formatting
+    , generic-deriving
     , grisette
     , grisette-benchmarks
     , hashable
@@ -798,6 +820,7 @@ executable ifcl
       DeriveGeneric
       DeriveLift
       DerivingStrategies
+      DerivingVia
       FlexibleContexts
       FlexibleInstances
       FunctionalDependencies
@@ -822,6 +845,7 @@ executable ifcl
     , deepseq
     , either
     , formatting
+    , generic-deriving
     , grisette
     , grisette-benchmarks
     , hashable
@@ -863,6 +887,7 @@ executable regex
       DeriveGeneric
       DeriveLift
       DerivingStrategies
+      DerivingVia
       FlexibleContexts
       FlexibleInstances
       FunctionalDependencies
@@ -887,6 +912,7 @@ executable regex
     , deepseq
     , either
     , formatting
+    , generic-deriving
     , grisette
     , grisette-benchmarks
     , hashable
@@ -928,6 +954,7 @@ executable regex-nomemo
       DeriveGeneric
       DeriveLift
       DerivingStrategies
+      DerivingVia
       FlexibleContexts
       FlexibleInstances
       FunctionalDependencies
@@ -952,6 +979,7 @@ executable regex-nomemo
     , deepseq
     , either
     , formatting
+    , generic-deriving
     , grisette
     , grisette-benchmarks
     , hashable
