@@ -4,7 +4,6 @@
 module Grisette.Data.Class.Bool
   ( SEq (..),
     SEq' (..),
-    (/=~),
     LogicalOp (..),
     SymBoolOp,
     ITEOp (..),
@@ -48,11 +47,9 @@ class (SymBoolOp bool) => SEq bool a where
   infix 4 ==~
   default (==~) :: (Generic a, SEq' bool (Rep a)) => a -> a -> bool
   x ==~ y = from x ==~~ from y
-
-(/=~) :: (SEq bool a) => a -> a -> bool
-(/=~) l r = nots $ l ==~ r
-
-infix 4 /=~
+  (/=~) :: a -> a -> bool
+  a /=~ b = nots $ a ==~ b
+  infix 4 /=~
 
 class LogicalOp b where
   (||~) :: b -> b -> b
