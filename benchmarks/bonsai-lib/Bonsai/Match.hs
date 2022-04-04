@@ -17,7 +17,7 @@ data PrivateMatchError e
 instance TransformError e (PrivateMatchError e) where
   transformError = OriginalError
 
-deriving instance (Mergeable SymBool e) => Mergeable SymBool (PrivateMatchError e)
+deriving via (Default (PrivateMatchError e)) instance (Mergeable SymBool e) => Mergeable SymBool (PrivateMatchError e)
 
 bonsaiMatchCustomError ::
   (SEq SymBool m, Mergeable SymBool m, Mergeable SymBool e, Mergeable SymBool t) =>

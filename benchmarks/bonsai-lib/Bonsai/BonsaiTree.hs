@@ -30,13 +30,13 @@ data BonsaiTree leaf
 
 deriving via (Default (BonsaiTree leaf)) instance (SEq SymBool leaf) => SEq SymBool (BonsaiTree leaf)
 
-deriving instance (Mergeable SymBool leaf) => Mergeable SymBool (BonsaiTree leaf)
+deriving via (Default (BonsaiTree leaf)) instance (Mergeable SymBool leaf) => Mergeable SymBool (BonsaiTree leaf)
 
-deriving instance (Mergeable SymBool leaf, SymEval Model leaf) => SymEval Model (BonsaiTree leaf)
+deriving via (Default (BonsaiTree leaf)) instance (Mergeable SymBool leaf, SymEval Model leaf) => SymEval Model (BonsaiTree leaf)
 
-deriving instance (ToCon leaf cleaf) => ToCon (BonsaiTree leaf) (ConcBonsaiTree cleaf)
+deriving via (Default (ConcBonsaiTree cleaf)) instance (ToCon leaf cleaf) => ToCon (BonsaiTree leaf) (ConcBonsaiTree cleaf)
 
-deriving instance
+deriving via (Default (BonsaiTree leaf)) instance
   (Mergeable SymBool leaf, ToSym cleaf leaf) =>
   ToSym (ConcBonsaiTree cleaf) (BonsaiTree leaf)
 
@@ -72,7 +72,8 @@ data BonsaiError
   = BonsaiTypeError
   | BonsaiExecError
   | BonsaiRecursionError
-  deriving (Show, Eq, Generic, Mergeable SymBool, ToCon BonsaiError, NFData, SymEval Model)
+  deriving (Show, Eq, Generic, NFData)
+  deriving (Mergeable SymBool, ToCon BonsaiError, SymEval Model) via (Default BonsaiError)
 
 instance TransformError BonsaiError BonsaiError where
   transformError = id

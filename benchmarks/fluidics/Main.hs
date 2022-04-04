@@ -32,9 +32,12 @@ replaceNth pos val ls = go ls 0
       tl <- go xs (i + 1)
       mrgReturn (hd : tl)
 
-data ConcPoint = ConcPoint Integer Integer deriving (Show, Generic, ToCon Point)
+data ConcPoint = ConcPoint Integer Integer deriving (Show, Generic)
+  deriving (ToCon Point) via (Default ConcPoint)
 
-data Point = Point SymInteger SymInteger deriving (Show, Generic, SymEval Model, Mergeable SymBool, SymGen SymBool ())
+data Point = Point SymInteger SymInteger
+  deriving (Show, Generic, SymGen SymBool ())
+  deriving (SymEval Model, Mergeable SymBool) via (Default Point)
 
 instance SymGenSimple SymBool () Point where
   genSymSimpleIndexed () = do
@@ -62,7 +65,9 @@ unsafeSet g x y v =
       r = unsafeReplaceNth y v xlist
    in unsafeReplaceNth x r g
 
-data Dir = N | S | W | E deriving (Show, Generic, Mergeable SymBool, SymEval Model, ToCon Dir)
+data Dir = N | S | W | E
+  deriving (Show, Generic)
+  deriving (Mergeable SymBool, SymEval Model, ToCon Dir) via (Default Dir)
 
 translatePoint :: Point -> Dir -> Point
 translatePoint (Point x y) N = Point (x - 1) y
@@ -101,10 +106,12 @@ mix p = do
     move s N
 
 data ConcInstruction = ConcMove ConcPoint Dir | ConcMix ConcPoint
-  deriving (Show, Generic, ToCon Instruction)
+  deriving (Show, Generic)
+  deriving (ToCon Instruction) via (Default ConcInstruction)
 
 data Instruction = Move Point (UnionM Dir) | Mix Point
-  deriving (Show, Generic, Mergeable SymBool, SymEval Model)
+  deriving (Show, Generic)
+  deriving (Mergeable SymBool, SymEval Model) via (Default Instruction)
 
 instance SymGen SymBool () Instruction where
   genSymIndexed _ = do

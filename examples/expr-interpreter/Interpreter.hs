@@ -10,13 +10,15 @@ import Grisette.SymPrim.Term
 data Expr
   = Lit LitExpr
   | Ops OpsExpr
-  deriving (Generic, Show, SymEval Model, Mergeable SymBool)
+  deriving (Generic, Show)
+  deriving (SymEval Model, Mergeable SymBool) via (Default Expr)
 
 data LitExpr
   = BoolLit SymBool
   | ListLit (UnionM [SymBool])
   | UnitLit
-  deriving (Generic, Show, SymEval Model, Mergeable SymBool)
+  deriving (Generic, Show)
+  deriving (SymEval Model, Mergeable SymBool) via (Default LitExpr)
 
 data OpsExpr
   = HeadExpr (UnionM Expr)
@@ -25,7 +27,8 @@ data OpsExpr
   | AndExpr (UnionM Expr) (UnionM Expr)
   | NotExpr (UnionM Expr)
   | VarExpr SymInteger
-  deriving (Generic, Show, SymEval Model, Mergeable SymBool)
+  deriving (Generic, Show)
+  deriving (SymEval Model, Mergeable SymBool) via (Default OpsExpr)
 
 $(makeUnionMWrapper "u" ''OpsExpr)
 $(makeUnionMWrapper "u" ''LitExpr)
@@ -71,7 +74,8 @@ instance SymGen (Sym Bool) ExprSpec Expr where
 data Stmt
   = DefineStmt SymInteger (UnionM Expr)
   | ValueStmt (UnionM Expr)
-  deriving (Generic, Show, SymEval Model, Mergeable SymBool)
+  deriving (Generic, Show)
+  deriving (SymEval Model, Mergeable SymBool) via (Default Stmt)
 
 instance SymGen (Sym Bool) ExprSpec Stmt where
   genSymIndexed e = do
@@ -82,24 +86,28 @@ instance SymGen (Sym Bool) ExprSpec Stmt where
 data Error
   = Typer TyperError
   | Runtime RuntimeError
-  deriving (Generic, Show, SymEval Model, Mergeable SymBool)
+  deriving (Generic, Show)
+  deriving (SymEval Model, Mergeable SymBool) via (Default Error)
 
 data TyperError
   = TypeVarNotFound
   | TypeMismatch
-  deriving (Generic, Show, SymEval Model, Mergeable SymBool)
+  deriving (Generic, Show)
+  deriving (SymEval Model, Mergeable SymBool) via (Default TyperError)
 
 data RuntimeError
   = RuntimeVarNotFound
   | RuntimeTypeMismatch
   | RuntimeRuntimeError
-  deriving (Generic, Show, SymEval Model, Mergeable SymBool)
+  deriving (Generic, Show)
+  deriving (SymEval Model, Mergeable SymBool) via (Default RuntimeError)
 
 data Type
   = UnitType
   | BoolType
   | ListType
-  deriving (Generic, Show, Eq, Mergeable SymBool)
+  deriving (Generic, Show, Eq)
+  deriving (SymEval Model, Mergeable SymBool) via (Default Type)
 
 $(makeUnionMWrapper "u" ''Type)
 

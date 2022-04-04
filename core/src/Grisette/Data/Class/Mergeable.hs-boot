@@ -1,6 +1,5 @@
 module Grisette.Data.Class.Mergeable where
 import Data.Typeable
-import GHC.Generics
 
 data MergeStrategy bool a where
   SimpleStrategy :: (bool -> a -> a -> a) -> MergeStrategy bool a
@@ -16,7 +15,3 @@ class Mergeable' bool f where
 
 class Mergeable bool a where
   mergeStrategy :: MergeStrategy bool a
-  default mergeStrategy :: (Generic a, Mergeable' bool (Rep a)) =>
-                                            MergeStrategy bool a
-  mergeStrategy = derivedMergeStrategy
-  {-# NOINLINE mergeStrategy #-}

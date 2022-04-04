@@ -23,7 +23,8 @@ data SysCall
   | Write Fd Content
   | Rename Name Name
   | Efsync (UnionM Fd) SymBool
-  deriving (Show, Eq, Generic, Mergeable SymBool, SymEval Model)
+  deriving (Show, Eq, Generic)
+  deriving (Mergeable SymBool, SymEval Model) via (Default SysCall)
 
 removeDisabledSyncs :: [SysCall] -> [SysCall]
 removeDisabledSyncs [] = []

@@ -11,15 +11,16 @@ data ConcExpr
   | AddExpr ConcExpr ConcExpr
   | SubExpr ConcExpr ConcExpr
   | MulExpr ConcExpr ConcExpr
-  deriving (Show, Eq, Generic, ToCon SymbExpr)
+  deriving (Show, Eq, Generic)
+  deriving (ToCon SymbExpr) via (Default ConcExpr)
 
 data SymbExpr
   = SConstantExpr SymInteger
   | SAddExpr (UnionM SymbExpr) (UnionM SymbExpr)
   | SSubExpr (UnionM SymbExpr) (UnionM SymbExpr)
   | SMulExpr (UnionM SymbExpr) (UnionM SymbExpr)
-  deriving (Show, Eq, Generic, Mergeable SymBool, SymEval Model, ToSym ConcExpr)
-  deriving (SEq SymBool) via (Default SymbExpr)
+  deriving (Show, Eq, Generic)
+  deriving (SEq SymBool, Mergeable SymBool, SymEval Model, ToSym ConcExpr) via (Default SymbExpr)
 
 $(makeUnionMWrapper "u" ''SymbExpr)
 

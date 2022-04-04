@@ -18,7 +18,8 @@ data ConcExpr
   | AddExpr ConcExpr ConcExpr
   | SubExpr ConcExpr ConcExpr
   | MulExpr ConcExpr ConcExpr
-  deriving (Eq, Generic, ToCon SymbExpr)
+  deriving (Eq, Generic)
+  deriving (ToCon SymbExpr) via (Default ConcExpr)
 
 data SymbExpr
   = SIntConstantExpr SymInteger
@@ -35,28 +36,33 @@ data SymbExpr
     ( Show,
       Eq,
       Generic,
-      Mergeable SymBool,
-      SymEval Model,
-      ToSym ConcExpr,
       Lift
     )
-  deriving (SEq SymBool) via (Default SymbExpr)
+  deriving
+    ( SEq SymBool,
+      Mergeable SymBool,
+      SymEval Model,
+      ToSym ConcExpr
+    ) via (Default SymbExpr)
 
 newtype Identifier = Identifier Integer
-  deriving (Eq, Generic, ToCon SIdentifier)
+  deriving (Eq, Generic)
+  deriving (ToCon SIdentifier) via (Default Identifier)
 
 newtype SIdentifier = SIdentifier SymInteger
   deriving
     ( Show,
       Eq,
       Generic,
+      Lift
+    )
+  deriving
+    ( SEq SymBool,
       Mergeable SymBool,
       SimpleMergeable SymBool,
       SymEval Model,
-      ToSym Identifier,
-      Lift
-    )
-  deriving (SEq SymBool) via (Default SIdentifier)
+      ToSym Identifier
+    ) via (Default SIdentifier)
 
 $(makeUnionMWrapper "u" ''SymbExpr)
 $(makeUnionMWrapper "u" ''SIdentifier)
@@ -105,7 +111,8 @@ data Stmt
   = AssignStmt Identifier ConcExpr
   | IfStmt ConcExpr [Stmt] [Stmt]
   | AssertStmt ConcExpr
-  deriving (Eq, Generic, ToCon SymbStmt)
+  deriving (Eq, Generic)
+  deriving (ToCon SymbStmt) via (Default Stmt)
 
 data SymbStmt
   = SAssignStmt SIdentifier (UnionM SymbExpr)
@@ -115,26 +122,32 @@ data SymbStmt
     ( Show,
       Eq,
       Generic,
-      Mergeable SymBool,
-      SymEval Model,
-      ToSym Stmt,
       Lift
     )
-  deriving (SEq SymBool) via (Default SymbStmt)
+  deriving
+    ( SEq SymBool,
+      Mergeable SymBool,
+      SymEval Model,
+      ToSym Stmt
+    ) via (Default SymbStmt)
 
-newtype Program = Program [Stmt] deriving (Eq, Generic, ToCon SymbProgram)
+newtype Program = Program [Stmt]
+  deriving (Eq, Generic)
+  deriving (ToCon SymbProgram) via (Default Program)
 
 newtype SymbProgram = SymbProgram [SymbStmt]
   deriving
     ( Show,
       Eq,
       Generic,
-      Mergeable SymBool,
-      SymEval Model,
-      ToSym Program,
       Lift
     )
-  deriving (SEq SymBool) via (Default SymbProgram)
+  deriving
+    ( SEq SymBool,
+      Mergeable SymBool,
+      SymEval Model,
+      ToSym Program
+    ) via (Default SymbProgram)
 
 instance Show Stmt where
   show (AssertStmt e) = "assert " ++ show e

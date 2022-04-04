@@ -11,16 +11,20 @@ import Grisette.SymPrim.Term
 import Lang
 
 data ConcDirEnt = ConcDirEnt {concDirEntIno :: Integer, concDirEntExists :: Bool}
-  deriving (Show, Eq, Generic, ToCon DirEnt)
+  deriving (Show, Eq, Generic)
+  deriving (ToCon DirEnt) via (Default ConcDirEnt)
 
 data DirEnt = DirEnt {dirEntIno :: UnionM Integer, dirEntExists :: SymBool}
-  deriving (Show, Eq, Generic, Mergeable SymBool, ToSym ConcDirEnt, SimpleMergeable SymBool, SymEval Model)
+  deriving (Show, Eq, Generic)
+  deriving (Mergeable SymBool, ToSym ConcDirEnt, SimpleMergeable SymBool, SymEval Model) via (Default DirEnt)
 
 data ConcFile = ConcFile {concFileSize :: Integer, concFileOnDisk :: [Bool]}
-  deriving (Show, Eq, Generic, ToCon File)
+  deriving (Show, Eq, Generic)
+  deriving (ToCon File) via (Default ConcFile)
 
 data File = File {fileSize :: UnionM Integer, fileOnDisk :: UnionM [SymBool]}
-  deriving (Show, Eq, Generic, Mergeable SymBool, ToSym ConcFile, SimpleMergeable SymBool, SymEval Model)
+  deriving (Show, Eq, Generic)
+  deriving (Mergeable SymBool, ToSym ConcFile, SimpleMergeable SymBool, SymEval Model) via (Default File)
 
 data ConcExt4Fs = ConcExt4Fs
   { concExt4BlockSize :: Integer,
@@ -29,7 +33,8 @@ data ConcExt4Fs = ConcExt4Fs
     concExt4Fds :: [Integer],
     concExt4Files :: [ConcFile]
   }
-  deriving (Show, Eq, Generic, ToCon Ext4Fs)
+  deriving (Show, Eq, Generic)
+  deriving (ToCon Ext4Fs) via (Default ConcExt4Fs)
 
 data Ext4Fs = Ext4Fs
   { ext4BlockSize :: Integer,
@@ -38,7 +43,8 @@ data Ext4Fs = Ext4Fs
     ext4Fds :: [UnionM Integer],
     ext4Files :: [File]
   }
-  deriving (Show, Eq, Generic, ToSym ConcExt4Fs, SymEval Model)
+  deriving (Show, Eq, Generic)
+  deriving (ToSym ConcExt4Fs, SymEval Model) via (Default Ext4Fs)
 
 instance Mergeable SymBool Ext4Fs where
   mergeStrategy = SimpleStrategy $ \cond (Ext4Fs bs1 na1 dir1 fds1 files1) (Ext4Fs _ _ dir2 fds2 files2) ->

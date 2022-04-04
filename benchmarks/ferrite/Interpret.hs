@@ -16,7 +16,9 @@ interpretOps (x : xs) fs = do
 
 interpretConc :: forall conc fs. (FileSystem conc fs, Mergeable SymBool fs) => [SysCall] -> conc -> Maybe conc
 interpretConc s fs =
-  toCon (interpretOps (crack fs s) (toSym fs) :: UnionM fs)
+  (case interpretOps (crack fs s) (toSym fs) :: UnionM fs of
+    SingleU x -> Just x
+    _ -> Nothing) >>= toCon
 
 zoomy :: State SymGenState a -> State (SymGenState, [SymBool]) a
 zoomy s = do

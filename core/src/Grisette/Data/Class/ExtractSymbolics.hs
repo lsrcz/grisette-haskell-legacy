@@ -10,12 +10,13 @@ import Control.Monad.Except
 import Control.Monad.Trans.Maybe
 import qualified Data.ByteString as B
 import Data.Functor.Sum
-import GHC.Generics
+import Generics.Deriving
 
 class (Monoid symbolSet) => ExtractSymbolics symbolSet a where
   extractSymbolics :: a -> symbolSet
-  default extractSymbolics :: (Generic a, ExtractSymbolics' symbolSet (Rep a)) => a -> symbolSet
-  extractSymbolics = extractSymbolics' . from
+
+instance (Generic a, Monoid symbolSet, ExtractSymbolics' symbolSet (Rep a)) => ExtractSymbolics symbolSet (Default a) where
+  extractSymbolics = extractSymbolics' . from . unDefault
 
 class (Monoid symbolSet) => ExtractSymbolics' symbolSet a where
   extractSymbolics' :: a c -> symbolSet
@@ -65,25 +66,37 @@ instance (Monoid symbolSet) => ExtractSymbolics symbolSet B.ByteString where
   extractSymbolics _ = mempty
 
 -- Either
-instance
-  (Monoid symbolSet, ExtractSymbolics symbolSet a, ExtractSymbolics symbolSet b) =>
-  ExtractSymbolics symbolSet (Either a b)
+deriving via
+  (Default (Either a b))
+  instance
+    (Monoid symbolSet, ExtractSymbolics symbolSet a, ExtractSymbolics symbolSet b) =>
+    ExtractSymbolics symbolSet (Either a b)
 
 -- Maybe
-instance (Monoid symbolSet, ExtractSymbolics symbolSet a) => ExtractSymbolics symbolSet (Maybe a)
+deriving via
+  (Default (Maybe a))
+  instance
+    (Monoid symbolSet, ExtractSymbolics symbolSet a) => ExtractSymbolics symbolSet (Maybe a)
 
 -- List
-instance (Monoid symbolSet, ExtractSymbolics symbolSet a) => ExtractSymbolics symbolSet [a]
+deriving via
+  (Default [a])
+  instance
+    (Monoid symbolSet, ExtractSymbolics symbolSet a) => ExtractSymbolics symbolSet [a]
 
 -- (,)
-instance
-  (Monoid symbolSet, ExtractSymbolics symbolSet a, ExtractSymbolics symbolSet b) =>
-  ExtractSymbolics symbolSet (a, b)
+deriving via
+  (Default (a, b))
+  instance
+    (Monoid symbolSet, ExtractSymbolics symbolSet a, ExtractSymbolics symbolSet b) =>
+    ExtractSymbolics symbolSet (a, b)
 
 -- (,,)
-instance
-  (Monoid symbolSet, ExtractSymbolics symbolSet a, ExtractSymbolics symbolSet b, ExtractSymbolics symbolSet c) =>
-  ExtractSymbolics symbolSet (a, b, c)
+deriving via
+  (Default (a, b, c))
+  instance
+    (Monoid symbolSet, ExtractSymbolics symbolSet a, ExtractSymbolics symbolSet b, ExtractSymbolics symbolSet c) =>
+    ExtractSymbolics symbolSet (a, b, c)
 
 -- MaybeT
 instance (Monoid symbolSet, ExtractSymbolics symbolSet (m (Maybe a))) => ExtractSymbolics symbolSet (MaybeT m a) where
@@ -104,6 +117,8 @@ instance
   extractSymbolics (Coroutine v) = extractSymbolics v
 
 -- Sum
-instance
-  (Monoid symbolSet, ExtractSymbolics symbolSet (f a), ExtractSymbolics symbolSet (g a)) =>
-  ExtractSymbolics symbolSet (Sum f g a)
+deriving via
+  (Default (Sum f g a))
+  instance
+    (Monoid symbolSet, ExtractSymbolics symbolSet (f a), ExtractSymbolics symbolSet (g a)) =>
+    ExtractSymbolics symbolSet (Sum f g a)

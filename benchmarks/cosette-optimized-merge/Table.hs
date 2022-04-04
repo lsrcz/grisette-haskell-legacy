@@ -20,7 +20,8 @@ data Table = Table
     tableSchema :: Schema,
     tableContent :: RawTable
   }
-  deriving (Show, THSyntax.Lift, Generic, SymEval Model)
+  deriving (Show, THSyntax.Lift, Generic)
+  deriving (SymEval Model) via (Default Table)
 
 renameTable :: Name -> Table -> Table
 renameTable name t = t {tableName = name}

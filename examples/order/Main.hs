@@ -71,7 +71,7 @@ data Exceptions
   | AssumeViolation
   deriving (Show, Generic)
 
-instance (SymBoolOp bool) => Mergeable bool Exceptions
+deriving via (Default Exceptions) instance (SymBoolOp bool) => Mergeable bool Exceptions
 
 instance (SymBoolOp bool, Mergeable1 bool m, Mergeable bool e, Mergeable bool a) => Mergeable bool (ExceptT' e m a) where
   mergeStrategy = withMergeable @bool @m @(Either' e a) $ derivedMergeStrategy

@@ -51,6 +51,7 @@ library
       MultiParamTypeClasses
       RankNTypes
       ScopedTypeVariables
+      StandaloneDeriving
       TupleSections
       TypeApplications
       TypeFamilies
@@ -117,6 +118,7 @@ executable expr-interpreter
       MultiParamTypeClasses
       RankNTypes
       ScopedTypeVariables
+      StandaloneDeriving
       TupleSections
       TypeApplications
       TypeFamilies
@@ -184,6 +186,7 @@ executable expr-sketch
       MultiParamTypeClasses
       RankNTypes
       ScopedTypeVariables
+      StandaloneDeriving
       TupleSections
       TypeApplications
       TypeFamilies
@@ -249,6 +252,7 @@ executable genfunc
       MultiParamTypeClasses
       RankNTypes
       ScopedTypeVariables
+      StandaloneDeriving
       TupleSections
       TypeApplications
       TypeFamilies
@@ -316,6 +320,7 @@ executable location
       MultiParamTypeClasses
       RankNTypes
       ScopedTypeVariables
+      StandaloneDeriving
       TupleSections
       TypeApplications
       TypeFamilies
@@ -381,6 +386,7 @@ executable order
       MultiParamTypeClasses
       RankNTypes
       ScopedTypeVariables
+      StandaloneDeriving
       TupleSections
       TypeApplications
       TypeFamilies
@@ -449,6 +455,7 @@ executable stmt-sketch
       MultiParamTypeClasses
       RankNTypes
       ScopedTypeVariables
+      StandaloneDeriving
       TupleSections
       TypeApplications
       TypeFamilies
@@ -514,6 +521,7 @@ executable tutorial
       MultiParamTypeClasses
       RankNTypes
       ScopedTypeVariables
+      StandaloneDeriving
       TupleSections
       TypeApplications
       TypeFamilies

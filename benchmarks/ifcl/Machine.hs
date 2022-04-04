@@ -11,7 +11,8 @@ import Instructions
 import Value
 import Prelude hiding (pred)
 
-data Errors = EvalError deriving (Show, Eq, Generic, Mergeable SymBool)
+data Errors = EvalError deriving (Show, Eq, Generic)
+  deriving (Mergeable SymBool) via (Default Errors)
 
 instance TransformError ArrayException Errors where
   transformError _ = EvalError
@@ -69,8 +70,8 @@ data Machine = Machine
     stack :: UnionM [UnionM MemValue],
     mem :: UnionM [UnionM PCValue]
   }
-  deriving (Show, Eq, Generic, Mergeable SymBool)
-  deriving (SimpleMergeable SymBool, NFData)
+  deriving (Show, Eq, Generic, NFData)
+  deriving (SimpleMergeable SymBool, Mergeable SymBool) via (Default Machine)
 
 freshMachine :: Int -> Machine
 freshMachine memCell = Machine zeroLow (mrgReturn []) (mrgReturn $ replicate memCell (mrgReturn zeroLow))

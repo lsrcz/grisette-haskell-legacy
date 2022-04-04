@@ -8,9 +8,8 @@ import Grisette.Core
 import Grisette.SymPrim.Term
 
 data PCValue = PCValue {int :: SymInteger, label :: SymBool}
-  deriving (Show, Eq, Generic, Mergeable SymBool, SymEval Model)
-  deriving (SimpleMergeable SymBool, NFData)
-  deriving (SEq SymBool) via (Default PCValue)
+  deriving (Show, Eq, Generic, NFData)
+  deriving (SimpleMergeable SymBool, SEq SymBool, Mergeable SymBool, SymEval Model) via (Default PCValue)
 
 $(makeUnionMWrapper "u" ''PCValue)
 
@@ -30,5 +29,5 @@ zeroLow = PCValue 0 $ conc False
 data MemValue
   = MPCValue PCValue
   | ReturnAddr PCValue PCValue
-  deriving (Show, Eq, Generic, Mergeable SymBool, SymEval Model, NFData)
-  deriving (SEq SymBool) via (Default MemValue)
+  deriving (Show, Eq, Generic, NFData)
+  deriving (Mergeable SymBool, SymEval Model, SEq SymBool) via (Default MemValue)

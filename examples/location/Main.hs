@@ -16,7 +16,7 @@ data RawException
   | Error2
   deriving (Show, Generic)
 
-instance (SymBoolOp bool) => Mergeable bool RawException
+deriving via (Default RawException) instance (SymBoolOp bool) => Mergeable bool RawException
 
 x :: ExceptT (Exception RawException) UnionM ()
 x = $assertWithException Error1 (ssymb "x")

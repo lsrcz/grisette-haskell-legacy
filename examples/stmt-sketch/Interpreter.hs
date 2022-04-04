@@ -13,8 +13,8 @@ data SValue
   = SInt SymInteger
   | SBool SymBool
   | SUnit
-  deriving (Show, Eq, Generic, Mergeable SymBool)
-  deriving (SEq SymBool) via (Default SValue)
+  deriving (Show, Eq, Generic)
+  deriving (SEq SymBool, Mergeable SymBool) via (Default SValue)
 
 $(makeUnionMWrapper "u" ''SValue)
 
@@ -31,8 +31,8 @@ data Errors
   = AssertionError
   | BadType
   | UndefinedVariable
-  deriving (Show, Eq, Generic, Mergeable SymBool)
-  deriving (SEq SymBool) via (Default Errors)
+  deriving (Show, Eq, Generic)
+  deriving (SEq SymBool, Mergeable SymBool) via (Default Errors)
 
 instance TransformError Errors Errors where
   transformError = id

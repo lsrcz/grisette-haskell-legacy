@@ -145,7 +145,8 @@ data ConcExpr
   | ConcAdd ConcExpr ConcExpr
   | ConcSub ConcExpr ConcExpr
   | ConcEqv ConcExpr ConcExpr
-  deriving (Show, Eq, Generic, ToCon Expr)
+  deriving (Show, Eq, Generic)
+  deriving (ToCon Expr) via (Default ConcExpr)
 
 -- a + b - 2 == 10
 data Expr
@@ -154,12 +155,12 @@ data Expr
   | Sub (UnionM Expr) (UnionM Expr)
   | Eqv (UnionM Expr) (UnionM Expr)
   deriving (Show, Eq, Generic)
-  deriving anyclass
+  deriving
     ( Mergeable SymBool,
       SymEval Model,
-      ToSym ConcExpr
-    )
-  deriving (SEq SymBool) via (Default Expr)
+      ToSym ConcExpr,
+      SEq SymBool
+    ) via (Default Expr)
 
 $(makeUnionMWrapper "u" ''Expr)
 
@@ -274,15 +275,15 @@ sketch3 =
 --  | AssumptionViolation
 data Errors
   = InvalidProgram
-  deriving (Show, Eq, Generic, Mergeable SymBool)
-  deriving (SEq SymBool) via (Default Errors)
+  deriving (Show, Eq, Generic)
+  deriving (SEq SymBool, Mergeable SymBool) via (Default Errors)
 
 -- The interpretation result type
 data Value
   = VB SymBool
   | VI SymInteger
-  deriving (Eq, Show, Generic, Mergeable SymBool)
-  deriving (SEq SymBool) via (Default Value)
+  deriving (Eq, Show, Generic)
+  deriving (SEq SymBool, Mergeable SymBool) via (Default Value)
 
 $(makeUnionMWrapper "u" ''Value)
 

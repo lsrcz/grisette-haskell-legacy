@@ -8,8 +8,9 @@ import Control.Monad.Trans.Maybe
 import Control.Monad.Except
 import GHC.Generics
 import Test.Hspec.QuickCheck
+import Generics.Deriving
 
-data A = A1 | A2 SBool | A3 SBool SBool deriving (Generic, Show, Eq, ExtractSymbolics (S.HashSet Symbol))
+data A = A1 | A2 SBool | A3 SBool SBool deriving (Generic, Show, Eq) deriving (ExtractSymbolics (S.HashSet Symbol)) via (Default A)
 
 concreteExtractSymbolicsOkSpec :: (HasCallStack, ExtractSymbolics (S.HashSet Symbol) a) => (a, a) -> Expectation
 concreteExtractSymbolicsOkSpec x = extractSymbolics x `shouldBe` (S.empty :: S.HashSet Symbol)

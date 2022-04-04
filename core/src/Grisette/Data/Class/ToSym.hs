@@ -16,8 +16,9 @@ import Grisette.Data.Class.OrphanGeneric ()
 
 class ToSym a b where
   toSym :: a -> b
-  default toSym :: (Generic a, Generic b, ToSym' (Rep a) (Rep b)) => a -> b
-  toSym = to . toSym' . from
+
+instance (Generic a, Generic b, ToSym' (Rep a) (Rep b)) => ToSym a (Default b) where
+  toSym = Default . to . toSym' . from
 
 class ToSym' a b where
   toSym' :: a c -> b c
@@ -59,37 +60,52 @@ instance ToSym B.ByteString B.ByteString where
   toSym = id
 
 -- Either
-instance (ToSym e1 e2, ToSym a1 a2) => ToSym (Either e1 a1) (Either e2 a2)
+deriving via (Default (Either e2 a2)) instance (ToSym e1 e2, ToSym a1 a2) => ToSym (Either e1 a1) (Either e2 a2)
 
 -- Maybe
-instance ToSym a b => ToSym (Maybe a) (Maybe b)
+deriving via (Default (Maybe b)) instance ToSym a b => ToSym (Maybe a) (Maybe b)
 
 -- List
-instance (ToSym a b) => ToSym [a] [b]
+deriving via (Default [b]) instance (ToSym a b) => ToSym [a] [b]
 
 -- (,)
-instance (ToSym a1 b1, ToSym a2 b2) => ToSym (a1, a2) (b1, b2)
+deriving via (Default (b1, b2)) instance (ToSym a1 b1, ToSym a2 b2) => ToSym (a1, a2) (b1, b2)
 
 -- (,,)
-instance (ToSym a1 b1, ToSym a2 b2, ToSym a3 b3) => ToSym (a1, a2, a3) (b1, b2, b3)
+deriving via (Default (b1, b2, b3)) instance (ToSym a1 b1, ToSym a2 b2, ToSym a3 b3) => ToSym (a1, a2, a3) (b1, b2, b3)
 
 -- (,,,)
-instance (ToSym a1 a2, ToSym b1 b2, ToSym c1 c2, ToSym d1 d2) => ToSym (a1, b1, c1, d1) (a2, b2, c2, d2)
+deriving via
+  (Default (a2, b2, c2, d2))
+  instance
+    (ToSym a1 a2, ToSym b1 b2, ToSym c1 c2, ToSym d1 d2) => ToSym (a1, b1, c1, d1) (a2, b2, c2, d2)
 
 -- (,,,,)
-instance (ToSym a1 a2, ToSym b1 b2, ToSym c1 c2, ToSym d1 d2, ToSym e1 e2) =>
-  ToSym (a1, b1, c1, d1, e1) (a2, b2, c2, d2, e2)
+deriving via
+  (Default (a2, b2, c2, d2, e2))
+  instance
+    (ToSym a1 a2, ToSym b1 b2, ToSym c1 c2, ToSym d1 d2, ToSym e1 e2) =>
+    ToSym (a1, b1, c1, d1, e1) (a2, b2, c2, d2, e2)
 
 -- (,,,,,)
-instance (ToSym a1 a2, ToSym b1 b2, ToSym c1 c2, ToSym d1 d2, ToSym e1 e2, ToSym f1 f2) =>
+deriving via
+  (Default (a2, b2, c2, d2, e2, f2))
+  instance
+  (ToSym a1 a2, ToSym b1 b2, ToSym c1 c2, ToSym d1 d2, ToSym e1 e2, ToSym f1 f2) =>
   ToSym (a1, b1, c1, d1, e1, f1) (a2, b2, c2, d2, e2, f2)
 
 -- (,,,,,,)
-instance (ToSym a1 a2, ToSym b1 b2, ToSym c1 c2, ToSym d1 d2, ToSym e1 e2, ToSym f1 f2, ToSym g1 g2) =>
+deriving via
+  (Default (a2, b2, c2, d2, e2, f2, g2))
+  instance
+  (ToSym a1 a2, ToSym b1 b2, ToSym c1 c2, ToSym d1 d2, ToSym e1 e2, ToSym f1 f2, ToSym g1 g2) =>
   ToSym (a1, b1, c1, d1, e1, f1, g1) (a2, b2, c2, d2, e2, f2, g2)
 
 -- (,,,,,,,)
-instance (ToSym a1 a2, ToSym b1 b2, ToSym c1 c2, ToSym d1 d2, ToSym e1 e2, ToSym f1 f2, ToSym g1 g2, ToSym h1 h2) =>
+deriving via
+  (Default (a2, b2, c2, d2, e2, f2, g2, h2))
+  instance
+  (ToSym a1 a2, ToSym b1 b2, ToSym c1 c2, ToSym d1 d2, ToSym e1 e2, ToSym f1 f2, ToSym g1 g2, ToSym h1 h2) =>
   ToSym (a1, b1, c1, d1, e1, f1, g1, h1) (a2, b2, c2, d2, e2, f2, g2, h2)
 
 -- function
@@ -118,4 +134,6 @@ instance (ToSym (s1 -> m1 (a1, s1)) (s2 -> m2 (a2, s2))) => ToSym (StateStrict.S
   toSym (StateStrict.StateT f1) = StateStrict.StateT $ toSym f1
 
 -- Sum
-instance (ToSym (f a) (f1 a1), ToSym (g a) (g1 a1)) => ToSym (Sum f g a) (Sum f1 g1 a1)
+deriving via
+  (Default (Sum f1 g1 a1))
+  instance (ToSym (f a) (f1 a1), ToSym (g a) (g1 a1)) => ToSym (Sum f g a) (Sum f1 g1 a1)

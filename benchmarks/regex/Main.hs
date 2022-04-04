@@ -67,7 +67,8 @@ data ConcPatt
   | ConcAltPatt ConcPatt ConcPatt
   | ConcPlusPatt ConcPatt Bool
   | ConcEmptyPatt
-  deriving (Show, Generic, ToCon Patt)
+  deriving (Show, Generic)
+  deriving (ToCon Patt) via (Default ConcPatt)
 
 data Patt
   = PrimPatt Char
@@ -75,7 +76,8 @@ data Patt
   | AltPatt (UnionM Patt) (UnionM Patt)
   | PlusPatt (UnionM Patt) SymBool
   | EmptyPatt
-  deriving (Show, Generic, Eq, Hashable, ToSym ConcPatt, SymEval Model, Mergeable SymBool)
+  deriving (Show, Generic, Eq, Hashable)
+  deriving (ToSym ConcPatt, SymEval Model, Mergeable SymBool) via (Default Patt)
 
 toCoroU :: UnionM Patt -> PattCoro
 toCoroU u = getSingle $ mrgFmap toCoro u

@@ -5,21 +5,17 @@
 module Grisette.Data.Class.SOrd
   ( SOrd (..),
     SOrd' (..),
-    derivedSymLt,
-    derivedSymLe,
-    derivedSymGt,
-    derivedSymGe,
   )
 where
 
+import Control.Monad.Except
+import Control.Monad.Trans.Maybe
 import qualified Data.ByteString as B
-import GHC.Generics
+import Data.Functor.Sum
+import Generics.Deriving
 import Grisette.Control.Monad
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.PrimWrapper
-import Data.Functor.Sum
-import Control.Monad.Trans.Maybe
-import Control.Monad.Except
 
 class (SEq' bool f) => SOrd' bool f where
   (<~~) :: f a -> f a -> bool
@@ -130,6 +126,13 @@ class (SEq bool a) => SOrd bool a where
       (mrgIf (l ==~ r :: bool) (mrgReturn EQ) (mrgReturn GT))
   {-# MINIMAL (<=~) #-}
 
+instance (SEq bool a, Generic a, SOrd' bool (Rep a)) => SOrd bool (Default a) where
+  (Default l) <=~ (Default r) = l `derivedSymLe` r
+  (Default l) <~ (Default r) = l `derivedSymLt` r
+  (Default l) >=~ (Default r) = l `derivedSymGe` r
+  (Default l) >~ (Default r) = l `derivedSymGt` r
+  symCompare (Default l) (Default r) = derivedSymCompare l r
+
 instance (SymBoolOp bool) => SOrd bool Bool where
   l <=~ r = conc $ l <= r
   l <~ r = conc $ l < r
@@ -177,106 +180,59 @@ instance (SymBoolOp bool, SOrd bool a) => SOrd bool [a] where
   (>~) = symCompareSingleList False True
   symCompare = symCompareList
 
-instance (SymBoolOp bool, SOrd bool a) => SOrd bool (Maybe a) where
-  (<=~) = derivedSymLe
-  (<~) = derivedSymLt
-  (>=~) = derivedSymGe
-  (>~) = derivedSymGt
-  symCompare = derivedSymCompare
+deriving via (Default (Maybe a)) instance (SymBoolOp bool, SOrd bool a) => SOrd bool (Maybe a)
 
-instance (SymBoolOp bool, SOrd bool a, SOrd bool b) => SOrd bool (Either a b) where
-  (<=~) = derivedSymLe
-  (<~) = derivedSymLt
-  (>=~) = derivedSymGe
-  (>~) = derivedSymGt
-  symCompare = derivedSymCompare
+deriving via (Default (Either a b)) instance (SymBoolOp bool, SOrd bool a, SOrd bool b) => SOrd bool (Either a b)
 
-instance (SymBoolOp bool) => SOrd bool () where
-  (<=~) = derivedSymLe
-  (<~) = derivedSymLt
-  (>=~) = derivedSymGe
-  (>~) = derivedSymGt
-  symCompare = derivedSymCompare
+deriving via (Default ()) instance (SymBoolOp bool) => SOrd bool ()
 
-instance (SymBoolOp bool, SOrd bool a, SOrd bool b) => SOrd bool (a, b) where
-  (<=~) = derivedSymLe
-  (<~) = derivedSymLt
-  (>=~) = derivedSymGe
-  (>~) = derivedSymGt
-  symCompare = derivedSymCompare
+deriving via (Default (a, b)) instance (SymBoolOp bool, SOrd bool a, SOrd bool b) => SOrd bool (a, b)
 
-instance (SymBoolOp bool, SOrd bool a, SOrd bool b, SOrd bool c) => SOrd bool (a, b, c) where
-  (<=~) = derivedSymLe
-  (<~) = derivedSymLt
-  (>=~) = derivedSymGe
-  (>~) = derivedSymGt
-  symCompare = derivedSymCompare
+deriving via (Default (a, b, c)) instance (SymBoolOp bool, SOrd bool a, SOrd bool b, SOrd bool c) => SOrd bool (a, b, c)
 
-instance
-  (SymBoolOp bool, SOrd bool a, SOrd bool b, SOrd bool c, SOrd bool d) =>
-  SOrd bool (a, b, c, d)
-  where
-  (<=~) = derivedSymLe
-  (<~) = derivedSymLt
-  (>=~) = derivedSymGe
-  (>~) = derivedSymGt
-  symCompare = derivedSymCompare
+deriving via
+  (Default (a, b, c, d))
+  instance
+    (SymBoolOp bool, SOrd bool a, SOrd bool b, SOrd bool c, SOrd bool d) =>
+    SOrd bool (a, b, c, d)
 
-instance
-  (SymBoolOp bool, SOrd bool a, SOrd bool b, SOrd bool c, SOrd bool d, SOrd bool e) =>
-  SOrd bool (a, b, c, d, e)
-  where
-  (<=~) = derivedSymLe
-  (<~) = derivedSymLt
-  (>=~) = derivedSymGe
-  (>~) = derivedSymGt
-  symCompare = derivedSymCompare
+deriving via
+  (Default (a, b, c, d, e))
+  instance
+    (SymBoolOp bool, SOrd bool a, SOrd bool b, SOrd bool c, SOrd bool d, SOrd bool e) =>
+    SOrd bool (a, b, c, d, e)
 
-instance
-  (SymBoolOp bool, SOrd bool a, SOrd bool b, SOrd bool c, SOrd bool d, SOrd bool e, SOrd bool f) =>
-  SOrd bool (a, b, c, d, e, f)
-  where
-  (<=~) = derivedSymLe
-  (<~) = derivedSymLt
-  (>=~) = derivedSymGe
-  (>~) = derivedSymGt
-  symCompare = derivedSymCompare
+deriving via
+  (Default (a, b, c, d, e, f))
+  instance
+    (SymBoolOp bool, SOrd bool a, SOrd bool b, SOrd bool c, SOrd bool d, SOrd bool e, SOrd bool f) =>
+    SOrd bool (a, b, c, d, e, f)
 
-instance
-  (SymBoolOp bool, SOrd bool a, SOrd bool b, SOrd bool c, SOrd bool d, SOrd bool e, SOrd bool f, SOrd bool g) =>
-  SOrd bool (a, b, c, d, e, f, g)
-  where
-  (<=~) = derivedSymLe
-  (<~) = derivedSymLt
-  (>=~) = derivedSymGe
-  (>~) = derivedSymGt
-  symCompare = derivedSymCompare
+deriving via
+  (Default (a, b, c, d, e, f, g))
+  instance
+    (SymBoolOp bool, SOrd bool a, SOrd bool b, SOrd bool c, SOrd bool d, SOrd bool e, SOrd bool f, SOrd bool g) =>
+    SOrd bool (a, b, c, d, e, f, g)
 
-instance
-  ( SymBoolOp bool,
-    SOrd bool a,
-    SOrd bool b,
-    SOrd bool c,
-    SOrd bool d,
-    SOrd bool e,
-    SOrd bool f,
-    SOrd bool g,
-    SOrd bool h
-  ) =>
-  SOrd bool (a, b, c, d, e, f, g, h)
-  where
-  (<=~) = derivedSymLe
-  (<~) = derivedSymLt
-  (>=~) = derivedSymGe
-  (>~) = derivedSymGt
-  symCompare = derivedSymCompare
+deriving via
+  (Default (a, b, c, d, e, f, g, h))
+  instance
+    ( SymBoolOp bool,
+      SOrd bool a,
+      SOrd bool b,
+      SOrd bool c,
+      SOrd bool d,
+      SOrd bool e,
+      SOrd bool f,
+      SOrd bool g,
+      SOrd bool h
+    ) =>
+    SOrd bool (a, b, c, d, e, f, g, h)
 
-instance (SymBoolOp bool, SOrd bool (f a), SOrd bool (g a)) => SOrd bool (Sum f g a) where
-  (<=~) = derivedSymLe
-  (<~) = derivedSymLt
-  (>=~) = derivedSymGe
-  (>~) = derivedSymGt
-  symCompare = derivedSymCompare
+deriving via
+  (Default (Sum f g a))
+  instance
+    (SymBoolOp bool, SOrd bool (f a), SOrd bool (g a)) => SOrd bool (Sum f g a)
 
 instance (SymBoolOp bool) => SOrd bool B.ByteString where
   l <=~ r = conc $ l <= r

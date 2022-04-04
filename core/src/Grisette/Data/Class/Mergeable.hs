@@ -95,8 +95,9 @@ wrapMergeStrategy NoStrategy _ _ = NoStrategy
 
 class Mergeable bool a where
   mergeStrategy :: MergeStrategy bool a
-  default mergeStrategy :: (Generic a, Mergeable' bool (Rep a)) => MergeStrategy bool a
-  mergeStrategy = derivedMergeStrategy
+
+instance (Generic a, Mergeable' bool (Rep a)) => Mergeable bool (Default a) where
+  mergeStrategy = unsafeCoerce (derivedMergeStrategy :: MergeStrategy bool a)
   {-# NOINLINE mergeStrategy #-}
 
 derivedMergeStrategy :: (Generic a, Mergeable' bool (Rep a)) => MergeStrategy bool a
@@ -177,7 +178,7 @@ instance (Mergeable' bool a, Mergeable' bool b) => Mergeable' bool (a :*: b) whe
 -- instances
 
 -- Bool
-instance (SymBoolOp bool) => Mergeable bool Bool
+deriving via (Default Bool) instance (SymBoolOp bool) => Mergeable bool Bool
 
 -- Integer
 instance (SymBoolOp bool) => Mergeable bool Integer where
@@ -188,19 +189,19 @@ instance (SymBoolOp bool) => Mergeable bool Char where
   mergeStrategy = OrderedStrategy id $ \_ -> SimpleStrategy $ \_ t _ -> t
 
 -- ()
-instance (SymBoolOp bool) => Mergeable bool ()
+deriving via (Default ()) instance (SymBoolOp bool) => Mergeable bool ()
 
 -- ByteString
 instance (SymBoolOp bool) => Mergeable bool B.ByteString where
   mergeStrategy = OrderedStrategy id $ \_ -> SimpleStrategy $ \_ t _ -> t
 
 -- Either
-instance (SymBoolOp bool, Mergeable bool e, Mergeable bool a) => Mergeable bool (Either e a)
+deriving via (Default (Either e a)) instance (SymBoolOp bool, Mergeable bool e, Mergeable bool a) => Mergeable bool (Either e a)
 
 instance (SymBoolOp bool, Mergeable bool e) => Mergeable1 bool (Either e)
 
 -- Maybe
-instance (SymBoolOp bool, Mergeable bool a) => Mergeable bool (Maybe a)
+deriving via (Default (Maybe a)) instance (SymBoolOp bool, Mergeable bool a) => Mergeable bool (Maybe a)
 
 instance (SymBoolOp bool) => Mergeable1 bool Maybe
 
@@ -250,61 +251,72 @@ instance (SymBoolOp bool, Mergeable bool a) => Mergeable bool [a] where
 instance (SymBoolOp bool) => Mergeable1 bool []
 
 -- (,)
-instance (SymBoolOp bool, Mergeable bool a, Mergeable bool b) => Mergeable bool (a, b)
+deriving via (Default (a, b)) instance (SymBoolOp bool, Mergeable bool a, Mergeable bool b) => Mergeable bool (a, b)
 
 instance (SymBoolOp bool, Mergeable bool a) => Mergeable1 bool ((,) a)
 
 -- (,,)
-instance (SymBoolOp bool, Mergeable bool a, Mergeable bool b, Mergeable bool c) => Mergeable bool (a, b, c)
+deriving via
+  (Default (a, b, c))
+  instance
+    (SymBoolOp bool, Mergeable bool a, Mergeable bool b, Mergeable bool c) => Mergeable bool (a, b, c)
 
 instance (SymBoolOp bool, Mergeable bool a, Mergeable bool b) => Mergeable1 bool ((,,) a b)
 
 -- (,,,)
-instance
-  (SymBoolOp bool, Mergeable bool a, Mergeable bool b, Mergeable bool c, Mergeable bool d) =>
-  Mergeable bool (a, b, c, d)
+deriving via
+  (Default (a, b, c, d))
+  instance
+    (SymBoolOp bool, Mergeable bool a, Mergeable bool b, Mergeable bool c, Mergeable bool d) =>
+    Mergeable bool (a, b, c, d)
 
 instance
   (SymBoolOp bool, Mergeable bool a, Mergeable bool b, Mergeable bool c) =>
   Mergeable1 bool ((,,,) a b c)
 
 -- (,,,,)
-instance
-  (SymBoolOp bool, Mergeable bool a, Mergeable bool b, Mergeable bool c, Mergeable bool d, Mergeable bool e) =>
-  Mergeable bool (a, b, c, d, e)
+deriving via
+  (Default (a, b, c, d, e))
+  instance
+    (SymBoolOp bool, Mergeable bool a, Mergeable bool b, Mergeable bool c, Mergeable bool d, Mergeable bool e) =>
+    Mergeable bool (a, b, c, d, e)
 
 instance
   (SymBoolOp bool, Mergeable bool a, Mergeable bool b, Mergeable bool c, Mergeable bool d) =>
   Mergeable1 bool ((,,,,) a b c d)
 
 -- (,,,,,)
-instance
-  ( SymBoolOp bool,
-    Mergeable bool a,
-    Mergeable bool b,
-    Mergeable bool c,
-    Mergeable bool d,
-    Mergeable bool e,
-    Mergeable bool f
-  ) =>
-  Mergeable bool (a, b, c, d, e, f)
+deriving via
+  (Default (a, b, c, d, e, f))
+  instance
+    ( SymBoolOp bool,
+      Mergeable bool a,
+      Mergeable bool b,
+      Mergeable bool c,
+      Mergeable bool d,
+      Mergeable bool e,
+      Mergeable bool f
+    ) =>
+    Mergeable bool (a, b, c, d, e, f)
 
 instance
   (SymBoolOp bool, Mergeable bool a, Mergeable bool b, Mergeable bool c, Mergeable bool d, Mergeable bool e) =>
   Mergeable1 bool ((,,,,,) a b c d e)
 
 -- (,,,,,,)
-instance
-  ( SymBoolOp bool,
-    Mergeable bool a,
-    Mergeable bool b,
-    Mergeable bool c,
-    Mergeable bool d,
-    Mergeable bool e,
-    Mergeable bool f,
-    Mergeable bool g
-  ) =>
-  Mergeable bool (a, b, c, d, e, f, g)
+deriving via
+  (Default (a, b, c, d, e, f, g))
+  instance
+    ( SymBoolOp bool,
+      Mergeable bool a,
+      Mergeable bool b,
+      Mergeable bool c,
+      Mergeable bool d,
+      Mergeable bool e,
+      Mergeable bool f,
+      Mergeable bool g
+    ) =>
+    Mergeable bool (a, b, c, d, e, f, g)
 
 instance
   ( SymBoolOp bool,
@@ -318,18 +330,20 @@ instance
   Mergeable1 bool ((,,,,,,) a b c d e f)
 
 -- (,,,,,,,)
-instance
-  ( SymBoolOp bool,
-    Mergeable bool a,
-    Mergeable bool b,
-    Mergeable bool c,
-    Mergeable bool d,
-    Mergeable bool e,
-    Mergeable bool f,
-    Mergeable bool g,
-    Mergeable bool h
-  ) =>
-  Mergeable bool (a, b, c, d, e, f, g, h)
+deriving via
+  (Default (a, b, c, d, e, f, g, h))
+  instance
+    ( SymBoolOp bool,
+      Mergeable bool a,
+      Mergeable bool b,
+      Mergeable bool c,
+      Mergeable bool d,
+      Mergeable bool e,
+      Mergeable bool f,
+      Mergeable bool g,
+      Mergeable bool h
+    ) =>
+    Mergeable bool (a, b, c, d, e, f, g, h)
 
 instance
   ( SymBoolOp bool,
@@ -378,17 +392,25 @@ instance
 
 instance (SymBoolOp bool, Mergeable1 bool m, Mergeable1 bool sus) => Mergeable1 bool (Coroutine sus m)
 
-instance (SymBoolOp bool, Mergeable bool x, Mergeable bool y) => Mergeable bool (Yield x y)
+deriving via
+  (Default (Yield x y))
+  instance
+    (SymBoolOp bool, Mergeable bool x, Mergeable bool y) => Mergeable bool (Yield x y)
 
 instance (SymBoolOp bool, Mergeable bool x) => Mergeable1 bool (Yield x)
 
-instance (SymBoolOp bool, Mergeable bool x, Mergeable bool y) => Mergeable bool (Await x y)
+deriving via
+  (Default (Await x y))
+  instance
+    (SymBoolOp bool, Mergeable bool x, Mergeable bool y) => Mergeable bool (Await x y)
 
 instance (SymBoolOp bool, Mergeable bool x) => Mergeable1 bool (Await x)
 
-instance
-  (SymBoolOp bool, Mergeable bool req, Mergeable bool res, Mergeable bool x) =>
-  Mergeable bool (Request req res x)
+deriving via
+  (Default (Request req res x))
+  instance
+    (SymBoolOp bool, Mergeable bool req, Mergeable bool res, Mergeable bool x) =>
+    Mergeable bool (Request req res x)
 
 instance (SymBoolOp bool, Mergeable bool req, Mergeable bool res) => Mergeable1 bool (Request req res)
 
@@ -456,17 +478,38 @@ instance
     (Right LeqProof, NoStrategy) -> NoStrategy
 
 -- Ordering
-instance (SymBoolOp bool) => Mergeable bool Ordering
+deriving via
+  (Default Ordering)
+  instance
+    (SymBoolOp bool) => Mergeable bool Ordering
 
 -- Generic
-instance (SymBoolOp bool) => Mergeable bool (U1 x)
+deriving via
+  (Default (U1 x))
+  instance
+    (SymBoolOp bool) => Mergeable bool (U1 x)
 
-instance (SymBoolOp bool) => Mergeable bool (V1 x)
+deriving via
+  (Default (V1 x))
+  instance
+    (SymBoolOp bool) => Mergeable bool (V1 x)
 
-instance (SymBoolOp bool, Mergeable bool c) => Mergeable bool (K1 i c x)
+deriving via
+  (Default (K1 i c x))
+  instance
+    (SymBoolOp bool, Mergeable bool c) => Mergeable bool (K1 i c x)
 
-instance (SymBoolOp bool, Mergeable bool (a x)) => Mergeable bool (M1 i c a x)
+deriving via
+  (Default (M1 i c a x))
+  instance
+    (SymBoolOp bool, Mergeable bool (a x)) => Mergeable bool (M1 i c a x)
 
-instance (SymBoolOp bool, Mergeable bool (a x), Mergeable bool (b x)) => Mergeable bool ((a :+: b) x)
+deriving via
+  (Default ((a :+: b) x))
+  instance
+    (SymBoolOp bool, Mergeable bool (a x), Mergeable bool (b x)) => Mergeable bool ((a :+: b) x)
 
-instance (SymBoolOp bool, Mergeable bool (a x), Mergeable bool (b x)) => Mergeable bool ((a :*: b) x)
+deriving via
+  (Default ((a :*: b) x))
+  instance
+    (SymBoolOp bool, Mergeable bool (a x), Mergeable bool (b x)) => Mergeable bool ((a :*: b) x)

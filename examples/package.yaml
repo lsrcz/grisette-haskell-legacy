@@ -58,6 +58,7 @@ default-extensions:
 - MultiParamTypeClasses
 - RankNTypes
 - ScopedTypeVariables
+- StandaloneDeriving
 - TupleSections
 - TypeApplications
 - TypeFamilies

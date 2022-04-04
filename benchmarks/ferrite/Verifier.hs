@@ -41,4 +41,4 @@ verify config (Litmus _ make setupProc prog allowCond) =
         r <- solveWithTranslation Verify config verifCond
         case r of
           Left _ -> return Nothing
-          Right mo -> return $ toCon $ symeval True mo verifFs
+          Right mo -> return $ (case symeval True mo verifFs of; SingleU v -> Just v; _ -> Nothing) >>= toCon

@@ -10,12 +10,14 @@ import Control.Monad.Trans.Maybe
 import qualified Data.ByteString as B
 import Data.Functor.Sum
 import GHC.Generics
+import Generics.Deriving
 import Generics.Deriving.Instances ()
 
 class ToCon a b where
   toCon :: a -> Maybe b
-  default toCon :: (Generic a, Generic b, ToCon' (Rep a) (Rep b)) => a -> Maybe b
-  toCon v = fmap to $ toCon' $ from v
+
+instance (Generic a, Generic b, ToCon' (Rep a) (Rep b)) => ToCon a (Default b) where
+  toCon v = fmap (Default . to) $ toCon' $ from v
 
 class ToCon' a b where
   toCon' :: a c -> Maybe (b c)
@@ -60,38 +62,53 @@ instance ToCon B.ByteString B.ByteString where
   toCon = Just
 
 -- Either
-instance (ToCon e1 e2, ToCon a1 a2) => ToCon (Either e1 a1) (Either e2 a2)
+deriving via (Default (Either e2 a2)) instance (ToCon e1 e2, ToCon a1 a2) => ToCon (Either e1 a1) (Either e2 a2)
 
 -- Maybe
-instance (ToCon a1 a2) => ToCon (Maybe a1) (Maybe a2)
+deriving via (Default (Maybe a2)) instance (ToCon a1 a2) => ToCon (Maybe a1) (Maybe a2)
 
 -- List
-instance (ToCon a b) => ToCon [a] [b]
+deriving via (Default [b]) instance (ToCon a b) => ToCon [a] [b]
 
 -- (,)
-instance (ToCon a1 a2, ToCon b1 b2) => ToCon (a1, b1) (a2, b2)
+deriving via (Default (a2, b2)) instance (ToCon a1 a2, ToCon b1 b2) => ToCon (a1, b1) (a2, b2)
 
 -- (,,)
-instance (ToCon a1 a2, ToCon b1 b2, ToCon c1 c2) => ToCon (a1, b1, c1) (a2, b2, c2)
+deriving via (Default (a2, b2, c2)) instance (ToCon a1 a2, ToCon b1 b2, ToCon c1 c2) => ToCon (a1, b1, c1) (a2, b2, c2)
 
 -- (,,,)
-instance (ToCon a1 a2, ToCon b1 b2, ToCon c1 c2, ToCon d1 d2) => ToCon (a1, b1, c1, d1) (a2, b2, c2, d2)
+deriving via
+  (Default (a2, b2, c2, d2))
+  instance
+    (ToCon a1 a2, ToCon b1 b2, ToCon c1 c2, ToCon d1 d2) => ToCon (a1, b1, c1, d1) (a2, b2, c2, d2)
 
 -- (,,,,)
-instance (ToCon a1 a2, ToCon b1 b2, ToCon c1 c2, ToCon d1 d2, ToCon e1 e2) =>
-  ToCon (a1, b1, c1, d1, e1) (a2, b2, c2, d2, e2)
+deriving via
+  (Default (a2, b2, c2, d2, e2))
+  instance
+    (ToCon a1 a2, ToCon b1 b2, ToCon c1 c2, ToCon d1 d2, ToCon e1 e2) =>
+    ToCon (a1, b1, c1, d1, e1) (a2, b2, c2, d2, e2)
 
 -- (,,,,,)
-instance (ToCon a1 a2, ToCon b1 b2, ToCon c1 c2, ToCon d1 d2, ToCon e1 e2, ToCon f1 f2) =>
-  ToCon (a1, b1, c1, d1, e1, f1) (a2, b2, c2, d2, e2, f2)
+deriving via
+  (Default (a2, b2, c2, d2, e2, f2))
+  instance
+    (ToCon a1 a2, ToCon b1 b2, ToCon c1 c2, ToCon d1 d2, ToCon e1 e2, ToCon f1 f2) =>
+    ToCon (a1, b1, c1, d1, e1, f1) (a2, b2, c2, d2, e2, f2)
 
 -- (,,,,,,)
-instance (ToCon a1 a2, ToCon b1 b2, ToCon c1 c2, ToCon d1 d2, ToCon e1 e2, ToCon f1 f2, ToCon g1 g2) =>
-  ToCon (a1, b1, c1, d1, e1, f1, g1) (a2, b2, c2, d2, e2, f2, g2)
+deriving via
+  (Default (a2, b2, c2, d2, e2, f2, g2))
+  instance
+    (ToCon a1 a2, ToCon b1 b2, ToCon c1 c2, ToCon d1 d2, ToCon e1 e2, ToCon f1 f2, ToCon g1 g2) =>
+    ToCon (a1, b1, c1, d1, e1, f1, g1) (a2, b2, c2, d2, e2, f2, g2)
 
 -- (,,,,,,,)
-instance (ToCon a1 a2, ToCon b1 b2, ToCon c1 c2, ToCon d1 d2, ToCon e1 e2, ToCon f1 f2, ToCon g1 g2, ToCon h1 h2) =>
-  ToCon (a1, b1, c1, d1, e1, f1, g1, h1) (a2, b2, c2, d2, e2, f2, g2, h2)
+deriving via
+  (Default (a2, b2, c2, d2, e2, f2, g2, h2))
+  instance
+    (ToCon a1 a2, ToCon b1 b2, ToCon c1 c2, ToCon d1 d2, ToCon e1 e2, ToCon f1 f2, ToCon g1 g2, ToCon h1 h2) =>
+    ToCon (a1, b1, c1, d1, e1, f1, g1, h1) (a2, b2, c2, d2, e2, f2, g2, h2)
 
 -- MaybeT
 instance
@@ -114,4 +131,7 @@ instance
   toCon (ExceptT v) = toCon v
 
 -- Sum
-instance (ToCon (f a) (f1 a1), ToCon (g a) (g1 a1)) => ToCon (Sum f g a) (Sum f1 g1 a1)
+deriving via
+  (Default (Sum f1 g1 a1))
+  instance
+    (ToCon (f a) (f1 a1), ToCon (g a) (g1 a1)) => ToCon (Sum f g a) (Sum f1 g1 a1)

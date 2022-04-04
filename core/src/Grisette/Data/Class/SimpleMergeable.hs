@@ -23,6 +23,7 @@ import GHC.Generics
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.Utils.CConst
+import Generics.Deriving
 
 class SimpleMergeable' bool f where
   mrgIte' :: bool -> f a -> f a -> f a
@@ -44,8 +45,9 @@ instance (SimpleMergeable' bool a, SimpleMergeable' bool b) => (SimpleMergeable'
 
 class Mergeable bool a => SimpleMergeable bool a where
   mrgIte :: bool -> a -> a -> a
-  default mrgIte :: (Generic a, SimpleMergeable' bool (Rep a)) => bool -> a -> a -> a
-  mrgIte cond t f = to $ mrgIte' cond (from t) (from f)
+
+instance (Generic a, Mergeable bool (Default a), SimpleMergeable' bool (Rep a)) => SimpleMergeable bool (Default a) where
+  mrgIte cond (Default a) (Default b) = Default $ to $ mrgIte' cond (from a) (from b)
 
 class (Mergeable1 bool u) => SimpleMergeable1 bool u where
   withSimpleMergeableT :: forall a t. (SimpleMergeable bool a) => (SimpleMergeable bool (u a) => t a) -> t a

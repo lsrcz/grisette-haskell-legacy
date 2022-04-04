@@ -8,13 +8,15 @@ import Grisette.Core
 import Grisette.SymPrim.Term
 
 data Coord = Coord SymInteger SymInteger
-  deriving (Show, Generic, Mergeable SymBool, SymGen SymBool ())
+  deriving (Show, Generic, SymGen SymBool ())
+  deriving (Mergeable SymBool) via (Default Coord)
 
 data Move
   = ExactCoord Coord
   | MoveLeft (UnionM Move)
   | MoveRight (UnionM Move)
-  deriving (Show, Generic, Mergeable SymBool)
+  deriving (Show, Generic)
+  deriving (Mergeable SymBool) via (Default Move)
 
 instance SymGenSimple (Sym Bool) () Coord where
   genSymSimpleIndexed _ = genSymSimpleIndexedWithDerivedNoSpec @SymBool

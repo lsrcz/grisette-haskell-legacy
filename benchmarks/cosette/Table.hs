@@ -20,7 +20,8 @@ data Table = Table
     tableSchema :: Schema,
     tableContent :: UnionM RawTable
   }
-  deriving (Show, THSyntax.Lift, Generic, SymEval Model)
+  deriving (Show, THSyntax.Lift, Generic)
+  deriving (SymEval Model) via (Default Table)
 
 instance Mergeable SymBool Table where
   mergeStrategy = SimpleStrategy $ mrgIte @SymBool
