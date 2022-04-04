@@ -311,9 +311,9 @@ spec = do
         bvextend as `shouldBe` Sym (bvtext (Proxy @2) True ast)
     describe "BVExtract for Sym BV" $ do
       it "bvextract for SymPrim" $ do
-        bvextract (Proxy @2) (Proxy @1) au
+        bvextract (Proxy @2) au
           `shouldBe` Sym (bvtextract (Proxy @2) (Proxy @1) aut)
-        bvextract (Proxy @2) (Proxy @1) as
+        bvextract (Proxy @2) as
           `shouldBe` Sym (bvtextract (Proxy @2) (Proxy @1) ast)
     describe "conversion from Char to Sym BV" $ do
       it "toSym" $ do

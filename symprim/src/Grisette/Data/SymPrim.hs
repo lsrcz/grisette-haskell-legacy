@@ -272,9 +272,9 @@ instance
     1 <= ow,
     1 <= w
   ) =>
-  BVExtract (Sym (SignedBV ow)) ix w (Sym (SignedBV w))
+  BVExtract (Sym (SignedBV ow)) ix (Sym (SignedBV w))
   where
-  bvextract pix pw (Sym v) = Sym $ bvtextract pix pw v
+  bvextract pix (Sym v) = Sym $ bvtextract pix (Proxy @w) v
 
 instance ToCon (SymSignedBV 8) Char where
   toCon (Conc (SignedBV (BV v))) = Just $ chr $ fromInteger v
@@ -333,9 +333,9 @@ instance
     1 <= ow,
     1 <= w
   ) =>
-  BVExtract (Sym (UnsignedBV ow)) ix w (Sym (UnsignedBV w))
+  BVExtract (Sym (UnsignedBV ow)) ix (Sym (UnsignedBV w))
   where
-  bvextract pix pw (Sym v) = Sym $ bvtextract pix pw v
+  bvextract pix (Sym v) = Sym $ bvtextract pix (Proxy @w) v
 
 instance (SupportedPrim (UnsignedBV n)) => Bits (Sym (UnsignedBV n)) where
   Sym l .&. Sym r = Sym $ withPrim @(UnsignedBV n) $ bitand l r

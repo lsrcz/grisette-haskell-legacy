@@ -238,23 +238,23 @@ spec = do
           unboundedConfig
           True
           ()
-          [bvextract (Proxy @2) (Proxy @2) a ==~ conc 1, a ==~ conc 0b10101]
+          [bvextract (Proxy @2) a ==~ (conc 1 :: SymSignedBV 2), a ==~ conc 0b10101]
         testCegis
           unboundedConfig
           False
           ()
-          [bvextract (Proxy @2) (Proxy @2) a ==~ conc 1, a ==~ conc 0b10001]
+          [bvextract (Proxy @2) a ==~ (conc 1 :: SymSignedBV 2), a ==~ conc 0b10001]
       it "Extract should work when lowered twice" $ do
         testCegis
           unboundedConfig
           True
           a
-          [bvextract (Proxy @2) (Proxy @2) (bvconcat a b) ==~ conc 1]
+          [bvextract (Proxy @2) (bvconcat a b) ==~ (conc 1 :: SymSignedBV 2)]
         testCegis
           unboundedConfig
           True
           b
-          [bvextract (Proxy @7) (Proxy @2) (bvconcat a b) ==~ conc 1]
+          [bvextract (Proxy @7) (bvconcat a b) ==~ (conc 1 :: SymSignedBV 2)]
     describe "Concat" $ do
       it "Concat should work" $ do
         testCegis
@@ -272,12 +272,12 @@ spec = do
           unboundedConfig
           True
           (a, c)
-          [bvconcat c (bvextract (Proxy @2) (Proxy @2) (bvconcat a b)) ==~ bvconcat c (conc 1 :: SymSignedBV 2)]
+          [bvconcat c (bvextract (Proxy @2) (bvconcat a b) :: SymSignedBV 2) ==~ bvconcat c (conc 1 :: SymSignedBV 2)]
         testCegis
           unboundedConfig
           True
           (b, c)
-          [bvconcat c (bvextract (Proxy @7) (Proxy @2) (bvconcat a b)) ==~ bvconcat c (conc 1 :: SymSignedBV 2)]
+          [bvconcat c (bvextract (Proxy @7) (bvconcat a b) :: SymSignedBV 2) ==~ bvconcat c (conc 1 :: SymSignedBV 2)]
     describe "Zext" $ do
       it "bvzeroExtend should work" $ do
         testCegis
@@ -305,12 +305,12 @@ spec = do
           unboundedConfig
           True
           a
-          [bvzeroExtend (bvextract (Proxy @2) (Proxy @2) (bvconcat a b)) ==~ (conc 1 :: SymSignedBV 10)]
+          [bvzeroExtend (bvextract (Proxy @2) (bvconcat a b) :: SymSignedBV 2) ==~ (conc 1 :: SymSignedBV 10)]
         testCegis
           unboundedConfig
           True
           b
-          [bvzeroExtend (bvextract (Proxy @7) (Proxy @2) (bvconcat a b)) ==~ (conc 1 :: SymSignedBV 10)]
+          [bvzeroExtend (bvextract (Proxy @7) (bvconcat a b) :: SymSignedBV 2) ==~ (conc 1 :: SymSignedBV 10)]
     describe "Sext" $ do
       it "bvsignExtend should work" $ do
         testCegis
@@ -338,9 +338,10 @@ spec = do
           unboundedConfig
           True
           a
-          [bvsignExtend (bvextract (Proxy @2) (Proxy @2) (bvconcat a b)) ==~ (conc 1 :: SymSignedBV 10)]
+          [bvsignExtend (bvextract (Proxy @2) (bvconcat a b) :: SymSignedBV 2) ==~ (conc 1 :: SymSignedBV 10)]
         testCegis
           unboundedConfig
           True
           b
-          [bvsignExtend (bvextract (Proxy @7) (Proxy @2) (bvconcat a b)) ==~ (conc 1 :: SymSignedBV 10)]
+          [bvsignExtend (bvextract (Proxy @7) (bvconcat a b) :: SymSignedBV 2) ==~ (conc 1 :: SymSignedBV 10)]
+
