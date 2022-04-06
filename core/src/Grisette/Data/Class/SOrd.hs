@@ -17,6 +17,7 @@ import Grisette.Control.Monad
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.PrimWrapper
 
+-- | Auxiliary class for 'SOrd' instance derivation
 class (SEq' bool f) => SOrd' bool f where
   (<~~) :: f a -> f a -> bool
   (<=~~) :: f a -> f a -> bool
@@ -106,6 +107,10 @@ derivedSymGe x y = from x >=~~ from y
 derivedSymCompare :: (Generic a, SOrd' bool (Rep a), MonadUnion bool u) => a -> a -> u Ordering
 derivedSymCompare x y = symCompare' (from x) (from y)
 
+-- | Symbolic total order. Note that we can't use Haskell's 'Ord' class since symbolic comparison won't necessarily return
+-- a concrete 'Bool' or 'Ordering' value.
+--
+-- The @bool@ type is the symbolic boolean type to return.
 class (SEq bool a) => SOrd bool a where
   (<~) :: a -> a -> bool
   (<=~) :: a -> a -> bool

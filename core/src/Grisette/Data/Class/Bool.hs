@@ -46,16 +46,14 @@ instance (SymBoolOp bool, SEq' bool a, SEq' bool b) => SEq' bool (a :*: b) where
   (a1 :*: b1) ==~~ (a2 :*: b2) = (a1 ==~~ a2) &&~ (b1 ==~~ b2)
 
 -- | Symbolic Equality. Note that we can't use Haskell's 'Eq' class since symbolic comparison won't necessarily return
--- | a concrete 'Bool' value.
--- |
--- | The @bool@ type is the symbolic boolean type to return.
+-- a concrete 'Bool' value.
+--
+-- The @bool@ type is the symbolic boolean type to return.
 class (SymBoolOp bool) => SEq bool a where
   (==~) :: a -> a -> bool
   a ==~ b = nots $ a /=~ b
   infix 4 ==~
 
-  -- default (==~) :: (Generic a, SEq' bool (Rep a)) => a -> a -> bool
-  -- x ==~ y = from x ==~~ from y
   (/=~) :: a -> a -> bool
   a /=~ b = nots $ a ==~ b
   infix 4 /=~
@@ -64,6 +62,7 @@ class (SymBoolOp bool) => SEq bool a where
 instance (Generic a, SymBoolOp bool, SEq' bool (Rep a)) => SEq bool (Default a) where
   Default l ==~ Default r = from l ==~~ from r
 
+-- | Logical operators for symbolic booleans. 
 class LogicalOp b where
   (||~) :: b -> b -> b
   a ||~ b = nots $ nots a &&~ nots b
@@ -83,9 +82,11 @@ instance LogicalOp Bool where
   (&&~) = (&&)
   nots = not
 
+-- | ITE operator for symbolic primitives, including symbolic boolean, integer, etc.
 class ITEOp b v where
   ites :: b -> v -> v -> v
 
+-- | Aggregation for the operations on symbolic boolean types
 class (SimpleMergeable b b, SEq b b, Eq b, LogicalOp b, PrimWrapper b Bool, ITEOp b b) => SymBoolOp b
 
 -- Bool

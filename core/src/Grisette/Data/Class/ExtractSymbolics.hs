@@ -12,6 +12,13 @@ import qualified Data.ByteString as B
 import Data.Functor.Sum
 import Generics.Deriving
 
+-- | Extracts all the symbolic variables that are transitively contained in the given value.
+--  
+-- >>> extractSymbolics ("a" :: SymBool) :: HashSet TermSymbol
+-- fromList [a]
+-- 
+-- >>> extractSymbolics (mrgIf "a" (mrgReturn ["b"]) (mrgReturn ["c", "d"]) :: UnionM [SymBool]) :: HashSet TermSymbol
+-- fromList [a,b,c,d]
 class (Monoid symbolSet) => ExtractSymbolics symbolSet a where
   extractSymbolics :: a -> symbolSet
 

@@ -3,9 +3,13 @@ module Grisette.Data.Class.Function
   )
 where
 
+-- | Abstraction for function-like types.
 class Function f where
+  -- | Argument type
   type Arg f
+  -- | Return type
   type Ret f
+  -- | Function application operator
   (#) :: f -> Arg f -> Ret f
   infixl 9 #
 

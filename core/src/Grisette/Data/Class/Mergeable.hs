@@ -7,6 +7,10 @@
 
 module Grisette.Data.Class.Mergeable
   ( MergeStrategy (..),
+    Mergeable (..),
+    Mergeable' (..),
+    Mergeable1 (..),
+    withMergeable,
     derivedMergeStrategy,
     wrapMergeStrategy,
     DynamicOrderedIdx (..),
@@ -14,10 +18,6 @@ module Grisette.Data.Class.Mergeable
     buildStrategyList,
     resolveStrategy,
     resolveStrategy',
-    Mergeable (..),
-    Mergeable' (..),
-    Mergeable1 (..),
-    withMergeable,
   )
 where
 
@@ -41,6 +41,8 @@ import Grisette.Data.Class.OrphanGeneric ()
 import Grisette.Data.Class.Utils.CConst
 import Unsafe.Coerce
 
+-- | Helper type for combining arbitrary number of indices into one.
+-- Useful when trying to write efficient merge strategy for lists / vectors.
 data DynamicOrderedIdx where
   DynamicOrderedIdx :: forall idx. (Show idx, Ord idx, Typeable idx) => idx -> DynamicOrderedIdx
 
@@ -57,9 +59,11 @@ instance Ord DynamicOrderedIdx where
 instance Show DynamicOrderedIdx where
   show (DynamicOrderedIdx a) = show a
 
+-- Resolves the indices and the terminal merge strategy for a value of some 'Mergeable' type.
 resolveStrategy :: forall bool x. (Mergeable bool x) => x -> ([DynamicOrderedIdx], MergeStrategy bool x)
 resolveStrategy x = resolveStrategy' x mergeStrategy
 
+-- Resolves the indices and the terminal merge strategy for a value given a merge strategy for its type.
 resolveStrategy' :: forall bool x. x -> MergeStrategy bool x -> ([DynamicOrderedIdx], MergeStrategy bool x)
 resolveStrategy' x = go
   where
@@ -71,6 +75,34 @@ resolveStrategy' x = go
         ss = subStrategy idx
     go s = ([], s)
 
+-- | Merge strategy types.
+--
+-- A merge strategy encodes how to merge a __/subset/__ of the values of a given type.
+--
+-- The 'SimpleStrategy' merges values with a simple merge function.
+-- For example,
+--
+--    (1) the symbolic boolean values can be directly merged with 'ites'.
+-- 
+--    (2) the set @{1}@, which is a subset of the values of the type @Integer@,
+--        can be simply merged as the set contains only a single value.
+--
+--    (3) all the 'Just' values of the type @Maybe SymBool@ can be simply merged
+--        by merging the wrapped symbolic boolean with ites.
+-- 
+-- The 'OrderedStrategy' merges values by first grouping the values with an indexing
+-- function. Each group with be merged in a subtree with a sub-strategy for the index.
+-- Grisette will use these information to generate efficient SMT formula.
+-- For example,
+--
+--    (1) all the integers can be merged with 'OrderedStrategy' by indexing with identity map
+--        and use the 'SimpleStrategy' shown before as the sub-strategies.
+--
+--    (2) all the @Maybe SymBool@ values can be merged with 'OrderedStrategy' by
+--        indexing with 'Data.Maybe.isJust'.
+--
+-- The 'NoStrategy' does not perform any merging.
+-- For example, we cannot merge functions that returns concrete lists. 
 data MergeStrategy bool a where
   SimpleStrategy :: (bool -> a -> a -> a) -> MergeStrategy bool a
   OrderedStrategy ::
@@ -80,7 +112,20 @@ data MergeStrategy bool a where
     MergeStrategy bool a
   NoStrategy :: MergeStrategy bool a
 
-wrapMergeStrategy :: MergeStrategy bool a -> (a -> b) -> (b -> a) -> MergeStrategy bool b
+-- | Useful utility function for building merge strategies manually.
+--
+-- For example, to build the merge strategy for the just branch of 'Maybe a', 
+-- one could write
+--
+-- > wrapMergeStrategy Just fromMaybe mergeStrategy :: MergeStrategy (Maybe a)
+wrapMergeStrategy ::
+  -- | The merge strategy to be wrapped
+  MergeStrategy bool a ->
+  -- | The wrap function
+  (a -> b) ->
+  -- | The unwrap function, which does not have to be defined for every value
+  (b -> a) ->
+  MergeStrategy bool b
 wrapMergeStrategy (SimpleStrategy m) wrap unwrap =
   SimpleStrategy
     ( \cond ifTrue ifFalse ->
@@ -93,6 +138,9 @@ wrapMergeStrategy (OrderedStrategy idxFun substrategy) wrap unwrap =
 wrapMergeStrategy NoStrategy _ _ = NoStrategy
 {-# INLINE wrapMergeStrategy #-}
 
+-- | Each type is associated with a root merge strategy given by 'mergeStrategy'.
+-- The root merge strategy should be able to merge every value of the type.
+-- Grisette will use the root merge strategy to merge the values of the type.
 class Mergeable bool a where
   mergeStrategy :: MergeStrategy bool a
 
@@ -100,11 +148,17 @@ instance (Generic a, Mergeable' bool (Rep a)) => Mergeable bool (Default a) wher
   mergeStrategy = unsafeCoerce (derivedMergeStrategy :: MergeStrategy bool a)
   {-# NOINLINE mergeStrategy #-}
 
+-- | Generic derivation for the 'Mergeable' class.
 derivedMergeStrategy :: (Generic a, Mergeable' bool (Rep a)) => MergeStrategy bool a
 derivedMergeStrategy = wrapMergeStrategy mergeStrategy' to from
 {-# INLINE derivedMergeStrategy #-}
 
+-- | Lifting of the 'Mergeable' class to unary type constructors.
 class Mergeable1 bool (u :: * -> *) where
+  -- | Resolves the 'Mergeable' constraint through the type constructor.
+  --
+  -- Usually you will not need to write this function manually.
+  -- It should be available after you implement the 'Mergeable' class.
   withMergeableT :: forall a t. (Mergeable bool a) => (Mergeable bool (u a) => t a) -> t a
   default withMergeableT ::
     (forall b. Mergeable bool b => Mergeable bool (u b)) =>
@@ -114,10 +168,11 @@ class Mergeable1 bool (u :: * -> *) where
     t a
   withMergeableT v = v
 
+-- | Resolves the 'Mergeable' constraint through a 'Mergeable1' type constructor.
 withMergeable :: forall bool u a b. (Mergeable1 bool u, Mergeable bool a) => (Mergeable bool (u a) => b) -> b
 withMergeable v = unCConst $ withMergeableT @bool @u @a @(CConst (Mergeable bool (u a)) b) $ CConst v
 
--- generic derivation
+-- | Auxiliary class for the generic derivation for the 'Mergeable' class.
 class Mergeable' bool f where
   mergeStrategy' :: MergeStrategy bool (f a)
 
@@ -205,6 +260,7 @@ deriving via (Default (Maybe a)) instance (SymBoolOp bool, Mergeable bool a) => 
 
 instance (SymBoolOp bool) => Mergeable1 bool Maybe
 
+-- | Helper type for building efficient merge strategy for list-like containers.
 data StrategyList container where
   StrategyList ::
     forall bool a container.
@@ -212,6 +268,7 @@ data StrategyList container where
     container (MergeStrategy bool a) ->
     StrategyList container
 
+-- | Helper function for building efficient merge strategy for list-like containers.
 buildStrategyList ::
   forall bool a container.
   (Mergeable bool a, Functor container) =>
