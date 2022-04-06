@@ -4,7 +4,6 @@
 module Parser where
 
 import Control.Monad.Combinators.Expr as E
-import Control.Monad.State.Strict as ST
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C
 import Data.Void
@@ -17,7 +16,7 @@ import Text.Megaparsec
 import Text.Megaparsec.Byte
 import qualified Text.Megaparsec.Byte.Lexer as L
 
-type Parser = ParsecT Void B.ByteString (ST.State GenSymState)
+type Parser = ParsecT Void B.ByteString GenSymFresh
 
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme space

@@ -50,9 +50,9 @@ import Grisette.Data.Class.SimpleMergeable
 
 type GenSymState = (Int, String)
 
-type GenSymFresh a = State GenSymState a
+type GenSymFresh = State GenSymState
 
-type GenSymFreshT m a = StateT GenSymState m a
+type GenSymFreshT = StateT GenSymState
 
 runGenSymFresh :: GenSymFresh a -> String -> a
 runGenSymFresh st s = evalState st (0, s)
