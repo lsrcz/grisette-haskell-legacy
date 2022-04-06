@@ -26,7 +26,7 @@ import Grisette.Data.SMT.Lowering
 import Grisette.Data.SymPrim
 import Grisette.Data.Class.Bool
 import Data.SBV.Control (Query)
-import Grisette.Data.Class.SymEval
+import Grisette.Data.Class.Evaluate
 import Grisette.Control.Exception
 import Grisette.Control.Monad
 
@@ -139,14 +139,14 @@ cegisWith config foralls assumption assertion = SBV.runSMTWith (sbvConfig config
     negphi = assertion &&~ nots assumption
     check :: Model -> IO (Either SBVC.CheckSatResult PM.Model)
     check candidate = do
-      let evaluated = symeval False candidate negphi
+      let evaluated = evaluate False candidate negphi
       r <- solveWith config evaluated
       return $ do
         m <- r
         return $ exact m forallSymbols
     guess :: Model -> SymBiMap -> Query (SymBiMap, Either SBVC.CheckSatResult PM.Model)
     guess candidate origm = do
-      let Sym evaluated = symeval False candidate phi
+      let Sym evaluated = evaluate False candidate phi
       let (lowered, newm) = lowerSinglePrim' config evaluated origm
       SBV.constrain lowered
       r <- SBVC.checkSat

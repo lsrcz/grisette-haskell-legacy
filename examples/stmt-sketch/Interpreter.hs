@@ -130,4 +130,4 @@ synthesis method config s = do
   m <- solveWithTranslation method config (interpretProgram s)
   case m of
     Left _ -> return Nothing
-    Right mo -> return $ toCon $ symeval True mo s
+    Right mo -> return $ toCon $ evaluate True mo s

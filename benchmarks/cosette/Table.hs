@@ -21,7 +21,7 @@ data Table = Table
     tableContent :: UnionM RawTable
   }
   deriving (Show, THSyntax.Lift, Generic)
-  deriving (SymEval Model) via (Default Table)
+  deriving (Evaluate Model) via (Default Table)
 
 instance Mergeable SymBool Table where
   mergeStrategy = SimpleStrategy $ mrgIte @SymBool

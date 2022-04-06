@@ -39,7 +39,7 @@ import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.SOrd
 import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.Class.SymEval
+import Grisette.Data.Class.Evaluate
 import Grisette.Data.Class.SymGen
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
@@ -108,8 +108,8 @@ instance (SupportedPrim a) => ToCon (Sym a) (Sym a) where
 instance (SupportedPrim a) => ToCon (Sym a) a where
   toCon = concView
 
-instance (SupportedPrim a) => SymEval Model (Sym a) where
-  symeval fillDefault model (Sym t) = Sym $ evaluateTerm fillDefault model t
+instance (SupportedPrim a) => Evaluate Model (Sym a) where
+  evaluate fillDefault model (Sym t) = Sym $ evaluateTerm fillDefault model t
 
 instance (SupportedPrim a) => ExtractSymbolics (S.HashSet TermSymbol) (Sym a) where
   extractSymbolics (Sym t) = extractSymbolicsTerm t

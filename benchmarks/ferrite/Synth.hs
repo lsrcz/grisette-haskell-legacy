@@ -50,5 +50,5 @@ synth config (Litmus fsBound make setupProc prog allowCond) =
               m <- cegisWithTranslation Synth config (crashes, order) synthCond
               case m of
                 Left _ -> return sol
-                Right mo -> go (Just $ symeval True mo progWithSyncs) $ symeval True mo cost
+                Right mo -> go (Just $ evaluate True mo progWithSyncs) $ evaluate True mo cost
    in go Nothing (fromIntegral $ length progWithSyncs)

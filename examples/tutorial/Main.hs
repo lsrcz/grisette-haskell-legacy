@@ -157,7 +157,7 @@ data Expr
   deriving (Show, Eq, Generic)
   deriving
     ( Mergeable SymBool,
-      SymEval Model,
+      Evaluate Model,
       ToSym ConcExpr,
       SEq SymBool
     ) via (Default Expr)
@@ -198,7 +198,7 @@ mergedSymbExpr3 =
     (uAdd (uConst "b1") (uConst "c1"))
     (uAdd (uConst "b2") (uConst "c2"))
 
--- SymEval will be discussed later
+-- Evaluate will be discussed later
 
 -- Maually constructing the sym exprs are laborious and error-prone, how to build them given some specification?
 -- The SymGen type class
@@ -343,7 +343,7 @@ result i = do
   m <- solveWithTranslation (RefResult i) (UnboundedReasoning z3) $ interpretExprU sketch4
   case m of
     Left _ -> putStrLn "No such expression"
-    Right mo -> print (toCon $ symeval True mo sketch4 :: Maybe ConcExpr)
+    Right mo -> print (toCon $ evaluate True mo sketch4 :: Maybe ConcExpr)
 
 -- True means that for all values that are not mentioned in the model, we should fill in a default value.
 -- This is possible because the partial evaluator may strip some variables

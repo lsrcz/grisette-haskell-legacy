@@ -77,7 +77,7 @@ data Patt
   | PlusPatt (UnionM Patt) SymBool
   | EmptyPatt
   deriving (Show, Generic, Eq, Hashable)
-  deriving (ToSym ConcPatt, SymEval Model, Mergeable SymBool) via (Default Patt)
+  deriving (ToSym ConcPatt, Evaluate Model, Mergeable SymBool) via (Default Patt)
 
 toCoroU :: UnionM Patt -> PattCoro
 toCoroU u = getSingle $ mrgFmap toCoro u
@@ -102,11 +102,11 @@ synthesisRegexCompiled config patt coro reg strs =
   let constraints = conformsFirst coro reg  <$> strs
       constraint = foldr (&&~) (conc True) constraints
    in do
-        _ <- timeItAll "symeval" $ constraint `deepseq` return ()
+        _ <- timeItAll "evaluate" $ constraint `deepseq` return ()
         solveRes <- timeItAll "lowering/solving" $ solveWith config constraint
         case solveRes of
           Left _ -> return Nothing
-          Right mo -> return $ Just $ symevalToCon mo patt
+          Right mo -> return $ Just $ evaluateToCon mo patt
 
 synthesisRegex :: GrisetteSMTConfig b -> UnionM Patt -> B.ByteString -> [B.ByteString] -> IO (Maybe ConcPatt)
 synthesisRegex config patt = synthesisRegexCompiled config patt (toCoroU patt)

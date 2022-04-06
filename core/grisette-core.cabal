@@ -36,6 +36,7 @@ library
       Grisette.Data.Class.BitVector
       Grisette.Data.Class.Bool
       Grisette.Data.Class.Error
+      Grisette.Data.Class.Evaluate
       Grisette.Data.Class.ExtractSymbolics
       Grisette.Data.Class.Function
       Grisette.Data.Class.Integer
@@ -44,7 +45,6 @@ library
       Grisette.Data.Class.PrimWrapper
       Grisette.Data.Class.SimpleMergeable
       Grisette.Data.Class.SOrd
-      Grisette.Data.Class.SymEval
       Grisette.Data.Class.SymGen
       Grisette.Data.Class.ToCon
       Grisette.Data.Class.ToSym
@@ -113,12 +113,12 @@ test-suite spec
       Grisette.Control.Monad.UnionMBaseSpec
       Grisette.Control.MonadSpec
       Grisette.Data.Class.BoolSpec
+      Grisette.Data.Class.EvaluateSpec
       Grisette.Data.Class.ExtractSymbolicsSpec
       Grisette.Data.Class.MergeableSpec
       Grisette.Data.Class.SEqSpec
       Grisette.Data.Class.SimpleMergeableSpec
       Grisette.Data.Class.SOrdSpec
-      Grisette.Data.Class.SymEvalSpec
       Grisette.Data.Class.SymGenSpec
       Grisette.Data.Class.ToConSpec
       Grisette.Data.Class.ToSymSpec

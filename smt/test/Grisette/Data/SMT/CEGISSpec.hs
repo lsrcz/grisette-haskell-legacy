@@ -15,7 +15,7 @@ import Grisette.Data.Class.Error
 import Grisette.Data.Class.ExtractSymbolics
 import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.SOrd
-import Grisette.Data.Class.SymEval
+import Grisette.Data.Class.Evaluate
 import Grisette.Data.Prim.InternedTerm
 import Grisette.Data.SMT.Config
 import Grisette.Data.SMT.Solving
@@ -33,7 +33,7 @@ testCegis config shouldSuccess a bs = do
       where
         verify [] = return ()
         verify (v : vs) = do
-          y <- solveWith config (symeval False m $ nots v)
+          y <- solveWith config (evaluate False m $ nots v)
           case y of
             Left _ -> do
               verify vs

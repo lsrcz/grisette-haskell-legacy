@@ -43,12 +43,12 @@ verifyEENI config end indistinguishable steps progSpec =
         gassertWithError AssumptionViolation (end m1k p1)
         gassertWithError AssertionViolation (indistinguishable m0k p0 m1k p1)
    in do
-        _ <- timeItAll "symeval1" $ runExceptT r0 `deepseq` return ()
-        _ <- timeItAll "symeval2" $ runExceptT r1 `deepseq` return ()
+        _ <- timeItAll "evaluate1" $ runExceptT r0 `deepseq` return ()
+        _ <- timeItAll "evaluate2" $ runExceptT r1 `deepseq` return ()
         m <- timeItAll "lowering/solve" $ solveWithTranslation VerifyEENI config res
         case m of
           Left _ -> do return Nothing
-          Right mo -> return $ Just $ EENIWitness (symeval True mo p0) (symeval True mo p1)
+          Right mo -> return $ Just $ EENIWitness (evaluate True mo p0) (evaluate True mo p1)
 
 runCexCase ::
   (SymGenSimple SymBool pspec Program) =>

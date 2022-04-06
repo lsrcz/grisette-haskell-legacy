@@ -9,13 +9,13 @@ import Grisette.Data.Class.ExtractSymbolics
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.SOrd
 import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.Class.SymEval
+import Grisette.Data.Class.Evaluate
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
 import Test.Hspec
 import Utils.SBool
 import Grisette.Data.Class.Error
-import Control.Exception
+import Control.Exception hiding (evaluate)
 import Control.Monad.Except
 
 spec :: Spec
@@ -33,8 +33,8 @@ spec = do
       AssertionError >=~ AssertionError `shouldBe` CBool True
       AssertionError >~ AssertionError `shouldBe` CBool False
       AssertionError `symCompare` AssertionError `shouldBe` (mrgReturn EQ :: UnionMBase SBool Ordering)
-    it "SymEval for AssertionError" $ do
-      symeval False () AssertionError `shouldBe` AssertionError
+    it "Evaluate for AssertionError" $ do
+      evaluate False () AssertionError `shouldBe` AssertionError
     it "ExtractSymbolics for AssertionError" $ do
       extractSymbolics AssertionError `shouldBe` (S.empty :: S.HashSet Symbol)
     it "SimpleMergeable for AssertionError" $ do
@@ -86,9 +86,9 @@ spec = do
       AssumptionViolation >=~ AssumptionViolation `shouldBe` CBool True
       AssumptionViolation >~ AssumptionViolation `shouldBe` CBool False
       AssumptionViolation `symCompare` AssumptionViolation `shouldBe` (mrgReturn EQ :: UnionMBase SBool Ordering)
-    it "SymEval for VerificationConditions" $ do
-      symeval False () AssertionViolation `shouldBe` AssertionViolation
-      symeval False () AssumptionViolation `shouldBe` AssumptionViolation
+    it "Evaluate for VerificationConditions" $ do
+      evaluate False () AssertionViolation `shouldBe` AssertionViolation
+      evaluate False () AssumptionViolation `shouldBe` AssumptionViolation
     it "ExtractSymbolics for AssertionError" $ do
       extractSymbolics AssertionViolation `shouldBe` (S.empty :: S.HashSet Symbol)
       extractSymbolics AssumptionViolation `shouldBe` (S.empty :: S.HashSet Symbol)

@@ -16,7 +16,7 @@ data ConcDirEnt = ConcDirEnt {concDirEntIno :: Integer, concDirEntExists :: Bool
 
 data DirEnt = DirEnt {dirEntIno :: UnionM Integer, dirEntExists :: SymBool}
   deriving (Show, Eq, Generic)
-  deriving (Mergeable SymBool, ToSym ConcDirEnt, SimpleMergeable SymBool, SymEval Model) via (Default DirEnt)
+  deriving (Mergeable SymBool, ToSym ConcDirEnt, SimpleMergeable SymBool, Evaluate Model) via (Default DirEnt)
 
 data ConcFile = ConcFile {concFileSize :: Integer, concFileOnDisk :: [Bool]}
   deriving (Show, Eq, Generic)
@@ -24,7 +24,7 @@ data ConcFile = ConcFile {concFileSize :: Integer, concFileOnDisk :: [Bool]}
 
 data File = File {fileSize :: UnionM Integer, fileOnDisk :: UnionM [SymBool]}
   deriving (Show, Eq, Generic)
-  deriving (Mergeable SymBool, ToSym ConcFile, SimpleMergeable SymBool, SymEval Model) via (Default File)
+  deriving (Mergeable SymBool, ToSym ConcFile, SimpleMergeable SymBool, Evaluate Model) via (Default File)
 
 data ConcExt4Fs = ConcExt4Fs
   { concExt4BlockSize :: Integer,
@@ -44,7 +44,7 @@ data Ext4Fs = Ext4Fs
     ext4Files :: [File]
   }
   deriving (Show, Eq, Generic)
-  deriving (ToSym ConcExt4Fs, SymEval Model) via (Default Ext4Fs)
+  deriving (ToSym ConcExt4Fs, Evaluate Model) via (Default Ext4Fs)
 
 instance Mergeable SymBool Ext4Fs where
   mergeStrategy = SimpleStrategy $ \cond (Ext4Fs bs1 na1 dir1 fds1 files1) (Ext4Fs _ _ dir2 fds2 files2) ->

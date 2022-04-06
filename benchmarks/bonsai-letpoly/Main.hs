@@ -91,13 +91,13 @@ main = timeItAll "Overall" $ do
   --print $ mrgFmap (const ()) $ typer #~ f7
   --print $ mrgFmap (const ()) $ eval #~ f7
   let result = lift f7 >>= execLetPoly
-  _ <- timeItAll "symeval" $ runExceptT result `deepseq` return ()
+  _ <- timeItAll "evaluate" $ runExceptT result `deepseq` return ()
   r <- timeItAll "lower/solve" $ solveWithTranslation VerifyTyper (BoundedReasoning @7 boolector {verbose = False}) result
   case r of
     Left _ -> putStrLn "Verified"
     Right mo -> do
       putStrLn "Found bad"
-      print $ showConcTree letPolySyntax <$> (toCon $ symeval True mo f7 :: Maybe ConcLetPolyTree)
-      print $ symeval True mo result
-      print $ symeval False mo f7
-      print $ symeval True mo (lift f7) >>= execLetPoly
+      print $ showConcTree letPolySyntax <$> (toCon $ evaluate True mo f7 :: Maybe ConcLetPolyTree)
+      print $ evaluate True mo result
+      print $ evaluate False mo f7
+      print $ evaluate True mo (lift f7) >>= execLetPoly

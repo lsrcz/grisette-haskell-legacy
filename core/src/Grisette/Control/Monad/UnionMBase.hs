@@ -20,7 +20,7 @@ import Data.Functor.Classes
 import Data.Hashable
 import Data.IORef
 import Data.String
-import GHC.IO
+import GHC.IO hiding (evaluate)
 import Grisette.Control.Monad
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.ExtractSymbolics
@@ -29,7 +29,7 @@ import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.SOrd
 import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.Class.SymEval
+import Grisette.Data.Class.Evaluate
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
 import Grisette.Data.Class.UnionOp
@@ -188,14 +188,14 @@ instance (SymBoolOp bool, ToCon a b) => ToCon (UnionMBase bool a) b where
       go (Single x) = toCon x
       go _ = Nothing
 
-instance (SymBoolOp bool, Mergeable bool a, SymEval model a, SymEval model bool) => SymEval model (UnionMBase bool a) where
-  symeval fillDefault model x = go $ underlyingUnion x
+instance (SymBoolOp bool, Mergeable bool a, Evaluate model a, Evaluate model bool) => Evaluate model (UnionMBase bool a) where
+  evaluate fillDefault model x = go $ underlyingUnion x
     where
       go :: UnionBase bool a -> UnionMBase bool a
-      go (Single v) = mrgReturn $ symeval fillDefault model v
+      go (Single v) = mrgReturn $ evaluate fillDefault model v
       go (Guard _ _ cond t f) =
         mrgIf
-          (symeval fillDefault model cond)
+          (evaluate fillDefault model cond)
           (go t)
           (go f)
 

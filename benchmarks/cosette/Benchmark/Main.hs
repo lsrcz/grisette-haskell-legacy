@@ -24,18 +24,18 @@ main = timeItAll "Overall" $ do
     Right m -> do
       putStrLn "Found counter example:"
       putStrLn "t:"
-      print $ symeval True m t
+      print $ evaluate True m t
       putStrLn "tr:"
-      print $ symeval True m tr
+      print $ evaluate True m tr
       putStrLn "ta:"
-      print $ symeval True m ta
+      print $ evaluate True m ta
       putStrLn "tb:"
-      print $ symeval True m tb
+      print $ evaluate True m tb
       putStrLn "q1 execution result:"
-      print $ symeval True m $$(denoteSql q1)
+      print $ evaluate True m $$(denoteSql q1)
       putStrLn "q1r execution result:"
-      print $ symeval True m $$(denoteSql q1r)
+      print $ evaluate True m $$(denoteSql q1r)
       putStrLn "q4 execution result:"
-      print $ symeval True m r1
+      print $ evaluate True m r1
       putStrLn "q4r execution result:"
-      print $ symeval True m r1r
+      print $ evaluate True m r1r

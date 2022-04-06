@@ -32,7 +32,7 @@ data Instruction
   | Return1B PCValue
   | Return1AB PCValue
   deriving (Show, Eq, Generic)
-  deriving (SEq SymBool, Mergeable SymBool, SymEval Model) via (Default Instruction)
+  deriving (SEq SymBool, Mergeable SymBool, Evaluate Model) via (Default Instruction)
 
 $(makeUnionMWrapper "u" ''Instruction)
 

@@ -20,7 +20,7 @@ data SymbExpr
   | SSubExpr (UnionM SymbExpr) (UnionM SymbExpr)
   | SMulExpr (UnionM SymbExpr) (UnionM SymbExpr)
   deriving (Show, Eq, Generic)
-  deriving (SEq SymBool, Mergeable SymBool, SymEval Model, ToSym ConcExpr) via (Default SymbExpr)
+  deriving (SEq SymBool, Mergeable SymBool, Evaluate Model, ToSym ConcExpr) via (Default SymbExpr)
 
 $(makeUnionMWrapper "u" ''SymbExpr)
 
@@ -35,4 +35,4 @@ synthesis config s i = do
   m <- solveWith config (interpret #~ s ==~ toSym i)
   case m of
     Left _ -> return Nothing
-    Right mo -> return $ toCon $ symeval True mo s
+    Right mo -> return $ toCon $ evaluate True mo s

@@ -37,7 +37,7 @@ data ConcPoint = ConcPoint Integer Integer deriving (Show, Generic)
 
 data Point = Point SymInteger SymInteger
   deriving (Show, Generic, SymGen SymBool ())
-  deriving (SymEval Model, Mergeable SymBool) via (Default Point)
+  deriving (Evaluate Model, Mergeable SymBool) via (Default Point)
 
 instance SymGenSimple SymBool () Point where
   genSymSimpleIndexed () = do
@@ -67,7 +67,7 @@ unsafeSet g x y v =
 
 data Dir = N | S | W | E
   deriving (Show, Generic)
-  deriving (Mergeable SymBool, SymEval Model, ToCon Dir) via (Default Dir)
+  deriving (Mergeable SymBool, Evaluate Model, ToCon Dir) via (Default Dir)
 
 translatePoint :: Point -> Dir -> Point
 translatePoint (Point x y) N = Point (x - 1) y
@@ -111,7 +111,7 @@ data ConcInstruction = ConcMove ConcPoint Dir | ConcMix ConcPoint
 
 data Instruction = Move Point (UnionM Dir) | Mix Point
   deriving (Show, Generic)
-  deriving (Mergeable SymBool, SymEval Model) via (Default Instruction)
+  deriving (Mergeable SymBool, Evaluate Model) via (Default Instruction)
 
 instance SymGen SymBool () Instruction where
   genSymIndexed _ = do
@@ -148,11 +148,11 @@ synthesizeProgram config i initst f = go 0 (mrgReturn initst)
             cond = newst >>= f
          in do
               print num
-              _ <- timeItAll "symeval" $ runExceptT cond `deepseq` return cond
+              _ <- timeItAll "evaluate" $ runExceptT cond `deepseq` return cond
               r <- timeItAll "lower/solve" $ solveWithTranslation Synth config cond
               case r of
                 Left _ -> go (num + 1) newst
-                Right m -> return $ toCon $ symeval True m $ take (num + 1) lst
+                Right m -> return $ toCon $ evaluate True m $ take (num + 1) lst
 
 initSt :: Grid
 initSt = unsafeSet (unsafeSet (makeGrid 5 5) 0 0 (uJust "a")) 0 2 (uJust "b")

@@ -195,10 +195,10 @@ main = timeItAll "Overall" $ do
       )
 
   let result = lift f8 >>= execStlc
-  _ <- timeItAll "symeval" $ runExceptT result `deepseq` return ()
+  _ <- timeItAll "evaluate" $ runExceptT result `deepseq` return ()
   r <- timeItAll "lower/solve" $ solveWithTranslation VerifyTyper (BoundedReasoning @6 boolector) result
   case r of
     Left _ -> putStrLn "Verified"
     Right mo -> do
       putStrLn "Found bad"
-      print $ showConcTree stlcSyntax <$> (toCon $ symeval True mo f8 :: Maybe (ConcSTLCTree))
+      print $ showConcTree stlcSyntax <$> (toCon $ evaluate True mo f8 :: Maybe (ConcSTLCTree))

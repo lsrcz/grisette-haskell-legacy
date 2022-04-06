@@ -22,7 +22,7 @@ import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.SOrd
 import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.Class.SymEval
+import Grisette.Data.Class.Evaluate
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
 
@@ -43,7 +43,7 @@ instance (SymBoolOp bool) => SOrd bool AssertionError where
   _ >~ _ = conc False
   _ `symCompare` _ = mrgReturn EQ
 
-deriving via (Default AssertionError) instance SymEval a AssertionError
+deriving via (Default AssertionError) instance Evaluate a AssertionError
 
 deriving via (Default AssertionError) instance (Monoid a) => ExtractSymbolics a AssertionError
 
@@ -64,7 +64,7 @@ instance (SymBoolOp bool) => SOrd bool VerificationConditions where
   l >~ r = conc $ l > r
   l `symCompare` r = mrgReturn $ l `compare` r
 
-deriving via (Default VerificationConditions) instance SymEval a VerificationConditions
+deriving via (Default VerificationConditions) instance Evaluate a VerificationConditions
 
 deriving via (Default VerificationConditions) instance (Monoid a) => ExtractSymbolics a VerificationConditions
 

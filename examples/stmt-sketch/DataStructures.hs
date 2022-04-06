@@ -41,7 +41,7 @@ data SymbExpr
   deriving
     ( SEq SymBool,
       Mergeable SymBool,
-      SymEval Model,
+      Evaluate Model,
       ToSym ConcExpr
     ) via (Default SymbExpr)
 
@@ -60,7 +60,7 @@ newtype SIdentifier = SIdentifier SymInteger
     ( SEq SymBool,
       Mergeable SymBool,
       SimpleMergeable SymBool,
-      SymEval Model,
+      Evaluate Model,
       ToSym Identifier
     ) via (Default SIdentifier)
 
@@ -127,7 +127,7 @@ data SymbStmt
   deriving
     ( SEq SymBool,
       Mergeable SymBool,
-      SymEval Model,
+      Evaluate Model,
       ToSym Stmt
     ) via (Default SymbStmt)
 
@@ -145,7 +145,7 @@ newtype SymbProgram = SymbProgram [SymbStmt]
   deriving
     ( SEq SymBool,
       Mergeable SymBool,
-      SymEval Model,
+      Evaluate Model,
       ToSym Program
     ) via (Default SymbProgram)
 

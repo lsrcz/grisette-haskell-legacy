@@ -39,8 +39,8 @@ module Grisette.Core
     withSimpleMergeableU,
     withUnionSimpleMergeableU,
     SOrd (..),
-    SymEval (..),
-    symevalToCon,
+    Evaluate (..),
+    evaluateToCon,
     SymGenState,
     SymGen (..),
     genSym,
@@ -118,7 +118,7 @@ import Grisette.Data.Class.OrphanGeneric ()
 import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.SOrd
 import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.Class.SymEval
+import Grisette.Data.Class.Evaluate
 import Grisette.Data.Class.SymGen
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym

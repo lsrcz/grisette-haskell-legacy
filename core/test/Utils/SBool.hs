@@ -10,7 +10,7 @@ import Grisette.Data.Class.SOrd
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.Mergeable
 import Grisette.Control.Monad
-import Grisette.Data.Class.SymEval
+import Grisette.Data.Class.Evaluate
 import qualified Data.HashMap.Strict as M
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
@@ -34,20 +34,20 @@ instance Mergeable SBool SBool where
 instance SimpleMergeable SBool SBool where
   mrgIte = ites
 
-instance SymEval (M.HashMap Symbol Bool) SBool where
-  symeval _ _ c@(CBool _) = c
-  symeval fillDefault model s@(SSBool sym) = case M.lookup (SSymbol sym) model of
+instance Evaluate (M.HashMap Symbol Bool) SBool where
+  evaluate _ _ c@(CBool _) = c
+  evaluate fillDefault model s@(SSBool sym) = case M.lookup (SSymbol sym) model of
     Just v -> CBool v
     Nothing -> if fillDefault then (CBool False) else s
-  symeval fillDefault model s@(ISBool i sym) = case M.lookup (ISymbol i sym) model of
+  evaluate fillDefault model s@(ISBool i sym) = case M.lookup (ISymbol i sym) model of
     Just v -> CBool v
     Nothing -> if fillDefault then (CBool False) else s
-  symeval fillDefault model (Or l r) = symeval fillDefault model l ||~ symeval fillDefault model r
-  symeval fillDefault model (And l r) = symeval fillDefault model l &&~ symeval fillDefault model r
-  symeval fillDefault model (Not v) = nots (symeval fillDefault model v)
-  symeval fillDefault model (Equal l r) = symeval fillDefault model l ==~ symeval fillDefault model r
-  symeval fillDefault model (ITE c l r) = ites (symeval fillDefault model c)
-    (symeval fillDefault model l) (symeval fillDefault model r)
+  evaluate fillDefault model (Or l r) = evaluate fillDefault model l ||~ evaluate fillDefault model r
+  evaluate fillDefault model (And l r) = evaluate fillDefault model l &&~ evaluate fillDefault model r
+  evaluate fillDefault model (Not v) = nots (evaluate fillDefault model v)
+  evaluate fillDefault model (Equal l r) = evaluate fillDefault model l ==~ evaluate fillDefault model r
+  evaluate fillDefault model (ITE c l r) = ites (evaluate fillDefault model c)
+    (evaluate fillDefault model l) (evaluate fillDefault model r)
 
 instance SEq SBool SBool where
   (CBool l) ==~ (CBool r) = CBool (l == r)

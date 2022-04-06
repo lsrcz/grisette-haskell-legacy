@@ -51,8 +51,8 @@ v = do
 main :: IO()
 main = do
   Right mo <- cegisWithTranslation X (UnboundedReasoning z3) input v
-  print (symeval False mo input2)
+  print (evaluate False mo input2)
   Right mo1 <- cegisWithTranslation X (UnboundedReasoning z3) (ssymb "a" :: Sym Bool) m1
-  print (symeval False mo1 m)
+  print (evaluate False mo1 m)
   Right mo2 <- cegisWithTranslation Y (UnboundedReasoning z3) (ssymb "a" :: Sym Bool) (lift m)
-  print (symeval False mo2 m)
+  print (evaluate False mo2 m)

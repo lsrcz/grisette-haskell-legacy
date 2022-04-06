@@ -44,6 +44,6 @@ main = do
   case m of
     Right mm -> do
       putStrLn "Not verified, counter example: "
-      print $ symeval False mm sketch
-      print $ symeval True mm sketch
+      print $ evaluate False mm sketch
+      print $ evaluate True mm sketch
     Left _ -> putStrLn "Verified"

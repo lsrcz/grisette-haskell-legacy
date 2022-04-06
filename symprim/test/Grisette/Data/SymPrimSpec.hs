@@ -18,7 +18,7 @@ import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.SOrd
 import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.Class.SymEval
+import Grisette.Data.Class.Evaluate
 import Grisette.Data.Class.SymGen
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
@@ -80,14 +80,14 @@ spec = do
       toCon (ssymb "a" :: Sym Bool) `shouldBe` (Nothing :: Maybe Bool)
     it "ToCon to concrete" $ do
       toCon True `shouldBe` Just True
-  describe "SymEval for SymPrim" $ do
-    it "symeval for SymPrim should work" $ do
+  describe "Evaluate for SymPrim" $ do
+    it "evaluate for SymPrim should work" $ do
       let m1 = Model.empty
       let m2 = Model.insert m1 (TermSymbol (Proxy @Integer) (SimpleSymbol "a")) (1 :: Integer)
       let m3 = Model.insert m2 (TermSymbol (Proxy @Bool) (SimpleSymbol "b")) True
-      symeval False m3 (ites ("c" :: Sym Bool) "a" ("a" + "a" :: Sym Integer))
+      evaluate False m3 (ites ("c" :: Sym Bool) "a" ("a" + "a" :: Sym Integer))
         `shouldBe` ites ("c" :: Sym Bool) 1 2
-      symeval True m3 (ites ("c" :: Sym Bool) "a" ("a" + "a" :: Sym Integer)) `shouldBe` 2
+      evaluate True m3 (ites ("c" :: Sym Bool) "a" ("a" + "a" :: Sym Integer)) `shouldBe` 2
   describe "ExtractSymbolics" $ do
     it "extractSymbolics for SymPrim should work" $ do
       extractSymbolics (ites ("c" :: Sym Bool) ("a" :: Sym Integer) ("b" :: Sym Integer))

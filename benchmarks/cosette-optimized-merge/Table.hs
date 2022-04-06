@@ -21,7 +21,7 @@ data Table = Table
     tableContent :: RawTable
   }
   deriving (Show, THSyntax.Lift, Generic)
-  deriving (SymEval Model) via (Default Table)
+  deriving (Evaluate Model) via (Default Table)
 
 renameTable :: Name -> Table -> Table
 renameTable name t = t {tableName = name}

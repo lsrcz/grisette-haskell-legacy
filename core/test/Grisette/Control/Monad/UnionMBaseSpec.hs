@@ -15,7 +15,7 @@ import Grisette.Data.Class.Function
 import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.SOrd
 import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.Class.SymEval
+import Grisette.Data.Class.Evaluate
 import Grisette.Data.Class.SymGen
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
@@ -327,8 +327,8 @@ spec = do
           Maybe Integer
         )
         `shouldBe` Nothing
-  describe "SymEval for UnionMBase" $ do
-    it "SymEval for UnionMBase should work" $ do
+  describe "Evaluate for UnionMBase" $ do
+    it "Evaluate for UnionMBase should work" $ do
       let model = M.empty :: M.HashMap Symbol Bool
       let model1 =
             M.fromList
@@ -337,21 +337,21 @@ spec = do
                 (SSymbol "c", True)
               ] ::
               M.HashMap Symbol Bool
-      symeval False model (mrgReturn $ SSBool "a") `shouldBe` (mrgReturn $ SSBool "a" :: UnionMBase SBool SBool)
-      symeval True model (mrgReturn $ SSBool "a") `shouldBe` (mrgReturn $ CBool False :: UnionMBase SBool SBool)
-      symeval False model1 (mrgReturn $ SSBool "a") `shouldBe` (mrgReturn $ CBool True :: UnionMBase SBool SBool)
-      symeval True model1 (mrgReturn $ SSBool "a") `shouldBe` (mrgReturn $ CBool True :: UnionMBase SBool SBool)
-      symeval False model1 (mrgIf (SSBool "a") (mrgReturn $ Left (SSBool "d")) (mrgReturn $ Right (SSBool "e")))
+      evaluate False model (mrgReturn $ SSBool "a") `shouldBe` (mrgReturn $ SSBool "a" :: UnionMBase SBool SBool)
+      evaluate True model (mrgReturn $ SSBool "a") `shouldBe` (mrgReturn $ CBool False :: UnionMBase SBool SBool)
+      evaluate False model1 (mrgReturn $ SSBool "a") `shouldBe` (mrgReturn $ CBool True :: UnionMBase SBool SBool)
+      evaluate True model1 (mrgReturn $ SSBool "a") `shouldBe` (mrgReturn $ CBool True :: UnionMBase SBool SBool)
+      evaluate False model1 (mrgIf (SSBool "a") (mrgReturn $ Left (SSBool "d")) (mrgReturn $ Right (SSBool "e")))
         `shouldBe` (mrgReturn $ Left $ SSBool "d" :: UnionMBase SBool (Either SBool SBool))
-      symeval True model1 (mrgIf (SSBool "a") (mrgReturn $ Left (SSBool "d")) (mrgReturn $ Right (SSBool "e")))
+      evaluate True model1 (mrgIf (SSBool "a") (mrgReturn $ Left (SSBool "d")) (mrgReturn $ Right (SSBool "e")))
         `shouldBe` (mrgReturn $ Left $ CBool False :: UnionMBase SBool (Either SBool SBool))
-      symeval False model1 (mrgIf (SSBool "d") (mrgReturn $ Left (SSBool "a")) (mrgReturn $ Right (SSBool "b")))
+      evaluate False model1 (mrgIf (SSBool "d") (mrgReturn $ Left (SSBool "a")) (mrgReturn $ Right (SSBool "b")))
         `shouldBe` ( mrgIf (SSBool "d") (mrgReturn $ Left $ CBool True) (mrgReturn $ Right $ CBool False) ::
                        UnionMBase SBool (Either SBool SBool)
                    )
-      symeval True model1 (mrgIf (SSBool "d") (mrgReturn $ Left (SSBool "a")) (mrgReturn $ Right (SSBool "b")))
+      evaluate True model1 (mrgIf (SSBool "d") (mrgReturn $ Left (SSBool "a")) (mrgReturn $ Right (SSBool "b")))
         `shouldBe` (mrgReturn $ Right $ CBool False :: UnionMBase SBool (Either SBool SBool))
-      symeval False model1 (mrgIf (SSBool "a") (mrgReturn $ Left (SSBool "b")) (mrgReturn $ Right (SSBool "c")))
+      evaluate False model1 (mrgIf (SSBool "a") (mrgReturn $ Left (SSBool "b")) (mrgReturn $ Right (SSBool "c")))
         `shouldBe` (mrgReturn $ Left $ CBool False :: UnionMBase SBool (Either SBool SBool))
   describe "ExtractSymbolics for UnionMBase" $ do
     it "ExtractSymbolic for UnionMBase should work" $ do

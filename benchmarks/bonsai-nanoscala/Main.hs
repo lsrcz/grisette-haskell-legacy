@@ -110,10 +110,10 @@ main = timeItAll "Overall" $ do
   print $ eval qnode
 
   let result = lift f10 >>= execDot
-  _ <- timeItAll "symeval" $ runExceptT result `deepseq` return ()
+  _ <- timeItAll "evaluate" $ runExceptT result `deepseq` return ()
   r <- timeItAll "lower/solve" $ solveWithTranslation VerifyTyper (BoundedReasoning @6 boolector) result
   case r of
     Left _ -> putStrLn "Verified"
     Right mo -> do
       putStrLn "Found bad"
-      print $ showConcTree dotSyntax <$> (toCon $ symeval True mo f10 :: Maybe ConcDotTree)
+      print $ showConcTree dotSyntax <$> (toCon $ evaluate True mo f10 :: Maybe ConcDotTree)
