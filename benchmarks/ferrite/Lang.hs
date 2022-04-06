@@ -33,12 +33,12 @@ removeDisabledSyncs (x : xs) = x : removeDisabledSyncs xs
 
 newtype GenEfsync = GenEfsync Integer
 
-instance SymGen SymBool GenEfsync SysCall
+instance GenSym SymBool GenEfsync SysCall
 
-instance SymGenSimple SymBool GenEfsync SysCall where
-  genSymSimpleIndexed (GenEfsync n) = do
+instance GenSymSimple SymBool GenEfsync SysCall where
+  genSymSimpleFresh (GenEfsync n) = do
     fds <- choose 0 [1 .. n -1]
-    b <- genSymSimpleIndexed @SymBool ()
+    b <- genSymSimpleFresh @SymBool ()
     return $ Efsync fds b
 
 data InodeOp

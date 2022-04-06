@@ -94,16 +94,16 @@ instance Show ConcExpr where
 instance Show Identifier where
   show (Identifier i) = "v" ++ show i
 
-instance SymGen SymBool () SIdentifier where
-  genSymIndexed _ = genSymIndexedWithDerivedNoSpec
+instance GenSym SymBool () SIdentifier where
+  genSymFresh _ = derivedNoSpecGenSymFresh
 
-instance SymGenSimple SymBool () SIdentifier where
-  genSymSimpleIndexed _ = genSymSimpleIndexedWithDerivedNoSpec @SymBool
+instance GenSymSimple SymBool () SIdentifier where
+  genSymSimpleFresh _ = derivedNoSpecGenSymSimpleFresh @SymBool
 
-instance SymGen SymBool [Integer] SIdentifier
+instance GenSym SymBool [Integer] SIdentifier
 
-instance SymGenSimple SymBool [Integer] SIdentifier where
-  genSymSimpleIndexed l =
+instance GenSymSimple SymBool [Integer] SIdentifier where
+  genSymSimpleFresh l =
     let l1 = SIdentifier . conc <$> l
      in simpleChoose @SymBool (head l1) (tail l1)
 

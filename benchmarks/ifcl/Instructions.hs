@@ -60,40 +60,40 @@ data InstructionSpec
   | Return1ABIns
   deriving (Show, Eq, Ord)
 
-instance SymGen SymBool InstructionSpec Instruction
+instance GenSym SymBool InstructionSpec Instruction
 
-instance SymGenSimple SymBool InstructionSpec Instruction where
-  genSymSimpleIndexed HaltIns = return Halt
-  genSymSimpleIndexed NoopIns = return Noop
-  genSymSimpleIndexed PushIns = Push <$> genSymSimpleIndexed @SymBool ()
-  genSymSimpleIndexed PopIns = return Pop
-  genSymSimpleIndexed StoreIns = return Store
-  genSymSimpleIndexed LoadIns = return Load
-  genSymSimpleIndexed AddIns = return Add
-  genSymSimpleIndexed Add1Ins = return Add1
-  genSymSimpleIndexed Load1Ins = return Load1
-  genSymSimpleIndexed Store1ABIns = return Store1AB
-  genSymSimpleIndexed Store1BIns = return Store1B
-  genSymSimpleIndexed JumpIns = return Jump
-  genSymSimpleIndexed Jump1ABIns = return Jump1AB
-  genSymSimpleIndexed Jump1BIns = return Jump1B
-  genSymSimpleIndexed StoreCRIns = return StoreCR
-  genSymSimpleIndexed PopCRIns = return PopCR
-  genSymSimpleIndexed ReturnIns = return Return
-  genSymSimpleIndexed CallIns =
-    Call <$> genSymSimpleIndexed @SymBool () <*> genSymSimpleIndexed @SymBool ()
-  genSymSimpleIndexed Call1BIns = Call1B <$> genSymSimpleIndexed @SymBool ()
-  genSymSimpleIndexed Return1BIns = Return1B <$> genSymSimpleIndexed @SymBool ()
-  genSymSimpleIndexed Return1ABIns = Return1AB <$> genSymSimpleIndexed @SymBool ()
+instance GenSymSimple SymBool InstructionSpec Instruction where
+  genSymSimpleFresh HaltIns = return Halt
+  genSymSimpleFresh NoopIns = return Noop
+  genSymSimpleFresh PushIns = Push <$> genSymSimpleFresh @SymBool ()
+  genSymSimpleFresh PopIns = return Pop
+  genSymSimpleFresh StoreIns = return Store
+  genSymSimpleFresh LoadIns = return Load
+  genSymSimpleFresh AddIns = return Add
+  genSymSimpleFresh Add1Ins = return Add1
+  genSymSimpleFresh Load1Ins = return Load1
+  genSymSimpleFresh Store1ABIns = return Store1AB
+  genSymSimpleFresh Store1BIns = return Store1B
+  genSymSimpleFresh JumpIns = return Jump
+  genSymSimpleFresh Jump1ABIns = return Jump1AB
+  genSymSimpleFresh Jump1BIns = return Jump1B
+  genSymSimpleFresh StoreCRIns = return StoreCR
+  genSymSimpleFresh PopCRIns = return PopCR
+  genSymSimpleFresh ReturnIns = return Return
+  genSymSimpleFresh CallIns =
+    Call <$> genSymSimpleFresh @SymBool () <*> genSymSimpleFresh @SymBool ()
+  genSymSimpleFresh Call1BIns = Call1B <$> genSymSimpleFresh @SymBool ()
+  genSymSimpleFresh Return1BIns = Return1B <$> genSymSimpleFresh @SymBool ()
+  genSymSimpleFresh Return1ABIns = Return1AB <$> genSymSimpleFresh @SymBool ()
 
-instance SymGen SymBool [InstructionSpec] Instruction where
-  genSymIndexed spec =
+instance GenSym SymBool [InstructionSpec] Instruction where
+  genSymFresh spec =
     let uniqSpec = uniq $ sort spec
      in do
-          l <- traverse (genSymSimpleIndexed @SymBool) uniqSpec
+          l <- traverse (genSymSimpleFresh @SymBool) uniqSpec
           choose (head l) (tail l)
 
-instance SymGen SymBool Instruction Instruction
+instance GenSym SymBool Instruction Instruction
 
-instance SymGenSimple SymBool Instruction Instruction where
-  genSymSimpleIndexed i = genSymIndexedWithDerivedSameShape @SymBool i
+instance GenSymSimple SymBool Instruction Instruction where
+  genSymSimpleFresh i = derivedSameShapeGenSymSimpleFresh @SymBool i

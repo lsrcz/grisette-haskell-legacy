@@ -31,7 +31,7 @@ synth config (Litmus fsBound make setupProc prog allowCond) =
       newfs
         | not (null setupProc) = fromJust $ interpretConc setupProc fs
         | otherwise = fs
-      progWithSyncs = runSymGenIndexed' (insertSynthSyncs fsBound prog) "syncs"
+      progWithSyncs = runGenSymFresh (insertSynthSyncs fsBound prog) "syncs"
       prog1 = crack newfs progWithSyncs
 
       order =

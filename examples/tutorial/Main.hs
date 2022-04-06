@@ -23,7 +23,7 @@ symbBool = ssymb "a" -- simple symbolic
 symbBoolOverloadedStr :: Sym Bool
 symbBoolOverloadedStr = "a" -- simple symbolic
 
--- Indexed names
+-- Fresh names
 isymbBool :: Sym Bool
 isymbBool = isymb 0 "a" -- indexed symbolic "a#0"
 
@@ -201,14 +201,14 @@ mergedSymbExpr3 =
 -- Evaluate will be discussed later
 
 -- Maually constructing the sym exprs are laborious and error-prone, how to build them given some specification?
--- The SymGen type class
+-- The GenSym type class
 -- This type class need to be manually written as we cannot guess the user intent
 -- We do have some derivation rules for some specific spec types. But they are very restricted.
 
--- type SymGenState = (Int, String) -- current index + name
+-- type GenSymState = (Int, String) -- current index + name
 
--- class (SymBoolOp bool, Mergeable bool a) => SymGen bool spec a where
---   genSymIndexed :: (MonadState SymGenState m) => spec -> m (UnionMBase bool a)
+-- class (SymBoolOp bool, Mergeable bool a) => GenSym bool spec a where
+--   genSymFresh :: (MonadState GenSymState m) => spec -> m (UnionMBase bool a)
 
 -- Some predefined specs
 -- generating a list for symbolic boolean with length in 0-2
@@ -216,11 +216,11 @@ symGenList :: UnionM [SymBool]
 symGenList = genSym (ListSpec {genListMinLength = 0, genListMaxLength = 2, genListSubSpec = ()}) "a"
 
 -- recursively generate Exprs given a depth
-instance SymGen SymBool Integer Expr where
-  genSymIndexed i =
+instance GenSym SymBool Integer Expr where
+  genSymFresh i =
     if i <= 0
       then do
-        f <- genSymSimpleIndexed @SymBool ()
+        f <- genSymSimpleFresh @SymBool ()
         return $ uConst f
       else -- You still need to write this mrgReturn.
       -- I realized that forcing the user to insert mrgReturn/mrgReturn everywhere is not a good idea
@@ -230,9 +230,9 @@ instance SymGen SymBool Integer Expr where
       -- In scala we can use implicit conversions.
       -- No need for metaprogramming
       do
-        f <- genSymSimpleIndexed @SymBool ()
-        l <- genSymSimpleIndexed @SymBool (i - 1)
-        r <- genSymSimpleIndexed @SymBool (i - 1)
+        f <- genSymSimpleFresh @SymBool ()
+        l <- genSymSimpleFresh @SymBool (i - 1)
+        r <- genSymSimpleFresh @SymBool (i - 1)
         choose (Const f) [Add l r, Sub l r, Eqv l r]
 
 sketch1 :: UnionM Expr
@@ -247,18 +247,18 @@ sketch2 = genSym (2 :: Integer) "b"
 -- if (a ?? b < 2) {
 -- }
 -- here ?? is an operator
-instance SymGen SymBool () (UnionM Expr -> UnionM Expr -> UnionM Expr)
+instance GenSym SymBool () (UnionM Expr -> UnionM Expr -> UnionM Expr)
 
-instance SymGenSimple SymBool () (UnionM Expr -> UnionM Expr -> UnionM Expr) where
-  genSymSimpleIndexed _ = simpleChoose @SymBool uAdd [uSub, uEqv]
+instance GenSymSimple SymBool () (UnionM Expr -> UnionM Expr -> UnionM Expr) where
+  genSymSimpleFresh _ = simpleChoose @SymBool uAdd [uSub, uEqv]
 
 sketch3 :: UnionM Expr
 sketch3 =
-  runSymGenIndexed
+  runGenSymFresh
     ( do
-        op <- genSymSimpleIndexed @SymBool ()
-        l :: UnionM Expr <- genSymIndexed @SymBool (0 :: Integer)
-        r :: UnionM Expr <- genSymIndexed @SymBool (0 :: Integer)
+        op <- genSymSimpleFresh @SymBool ()
+        l :: UnionM Expr <- genSymFresh @SymBool (0 :: Integer)
+        r :: UnionM Expr <- genSymFresh @SymBool (0 :: Integer)
         return $ op l r
     )
     "a"
@@ -329,9 +329,9 @@ instance SolverTranslation RefResult Errors Value where
 -- 1 ??op 2
 sketch4 :: UnionM Expr
 sketch4 =
-  runSymGenIndexed
+  runGenSymFresh
     ( do
-        op <- genSymSimpleIndexed @SymBool ()
+        op <- genSymSimpleFresh @SymBool ()
         return $ op (uConst 1 :: UnionM Expr) (uConst 2 :: UnionM Expr)
     )
     "a"
@@ -351,7 +351,7 @@ result i = do
 -- Construcing the sketch is still so hard? We can write a parser for a sketch like language and
 -- directly construct the symbolic program with it.
 --
---   genSymIndexed :: (MonadState SymGenState m) => spec -> m (UnionMBase bool a)
+--   genSymFresh :: (MonadState GenSymState m) => spec -> m (UnionMBase bool a)
 --                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
 -- You can add a state monad to your parser monad stack, and you can generate symbolic programs with it
 

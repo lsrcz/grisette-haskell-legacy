@@ -14,7 +14,7 @@ import Grisette.Data.Class.Evaluate
 import qualified Data.HashMap.Strict as M
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
-import Grisette.Data.Class.SymGen
+import Grisette.Data.Class.GenSym
 import Control.Monad.State
 
 data SBool
@@ -124,16 +124,16 @@ instance ToSym Bool SBool where
 instance ToSym SBool SBool where
   toSym = id
 
-instance SymGen SBool () SBool where
+instance GenSym SBool () SBool where
 
-instance SymGenSimple SBool () SBool where
-  genSymSimpleIndexed _ = do
+instance GenSymSimple SBool () SBool where
+  genSymSimpleFresh _ = do
     (i, s) <- get
     put (i + 1, s)
     return $ ISBool i s
 
-instance SymGen SBool SBool SBool where
+instance GenSym SBool SBool SBool where
 
-instance SymGenSimple SBool SBool SBool where
-  genSymSimpleIndexed _ = genSymSimpleIndexed @SBool ()
+instance GenSymSimple SBool SBool SBool where
+  genSymSimpleFresh _ = genSymSimpleFresh @SBool ()
 

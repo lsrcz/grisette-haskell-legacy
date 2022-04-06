@@ -80,10 +80,10 @@ type Program = [UnionM Instruction]
 
 newtype Exact = Exact [InstructionSpec]
 
-instance SymGen SymBool Exact Program
+instance GenSym SymBool Exact Program
 
-instance SymGenSimple SymBool Exact Program where
-  genSymSimpleIndexed (Exact spec) = traverse genSymIndexed spec
+instance GenSymSimple SymBool Exact Program where
+  genSymSimpleFresh (Exact spec) = traverse genSymFresh spec
 
 loc :: Program -> Int
 loc = length

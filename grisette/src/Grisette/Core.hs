@@ -41,21 +41,21 @@ module Grisette.Core
     SOrd (..),
     Evaluate (..),
     evaluateToCon,
-    SymGenState,
-    SymGen (..),
+    GenSymState,
+    GenSymFresh,
+    GenSymFreshT,
+    runGenSymFresh,
+    runGenSymFreshT,
+    GenSym (..),
+    GenSymSimple (..),
     genSym,
-    SymGenSimple (..),
     genSymSimple,
-    SymGenNoSpec (..),
-    SymGenSimpleNoSpec (..),
-    genSymIndexedWithDerivedNoSpec,
-    genSymSimpleIndexedWithDerivedNoSpec,
-    genSymIndexedWithDerivedSameShape,
+    derivedNoSpecGenSymFresh,
+    derivedNoSpecGenSymSimpleFresh,
+    derivedSameShapeGenSymSimpleFresh,
     choose,
     simpleChoose,
     chooseU,
-    runSymGenIndexed,
-    runSymGenIndexed',
     NumGenBound(..),
     NumGenUpperBound(..),
     ListSpec (..),
@@ -119,7 +119,7 @@ import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.SOrd
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.Evaluate
-import Grisette.Data.Class.SymGen
+import Grisette.Data.Class.GenSym
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
 import Grisette.Data.Class.UnionOp

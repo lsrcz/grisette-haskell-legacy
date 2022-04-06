@@ -33,7 +33,7 @@ import Grisette.Data.Class.Evaluate
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
 import Grisette.Data.Class.UnionOp
-import Grisette.Data.Class.SymGen
+import Grisette.Data.Class.GenSym
 import Grisette.Data.UnionBase
 import Language.Haskell.TH.Syntax
 import Data.MemoTrie
@@ -297,20 +297,20 @@ instance (SymBoolOp bool) => Traversable (UnionMBase bool) where
   sequenceA u = freshUAny <$> sequenceAUnion (underlyingUnion u)
   -}
 
--- SymGen
-instance (SymBoolOp bool, SymGen bool spec a, Mergeable bool a) => SymGen bool spec (UnionMBase bool a) where
+-- GenSym
+instance (SymBoolOp bool, GenSym bool spec a, Mergeable bool a) => GenSym bool spec (UnionMBase bool a) where
 
-instance (SymBoolOp bool, SymGen bool spec a) => SymGenSimple bool spec (UnionMBase bool a) where
-  genSymSimpleIndexed spec = do
-    res <- genSymIndexed spec
+instance (SymBoolOp bool, GenSym bool spec a) => GenSymSimple bool spec (UnionMBase bool a) where
+  genSymSimpleFresh spec = do
+    res <- genSymFresh spec
     if not (isMerged res) then error "Not merged" else return res
 
-instance (SymBoolOp bool, SymGen bool a a, SymGenSimple bool () bool, Mergeable bool a) =>
-  SymGen bool (UnionMBase bool a) a where
-  genSymIndexed spec = go (underlyingUnion $ merge spec)
+instance (SymBoolOp bool, GenSym bool a a, GenSymSimple bool () bool, Mergeable bool a) =>
+  GenSym bool (UnionMBase bool a) a where
+  genSymFresh spec = go (underlyingUnion $ merge spec)
     where
-      go (Single x) = genSymIndexed x
-      go (Guard _ _ _ t f) = mrgIf <$> genSymSimpleIndexed @bool () <*> go t <*> go f
+      go (Single x) = genSymFresh x
+      go (Guard _ _ _ t f) = mrgIf <$> genSymSimpleFresh @bool () <*> go t <*> go f
 
 -- Concrete Key HashMaps
 class (Eq t, Ord t, Hashable t) => IsConcrete t

@@ -55,14 +55,14 @@ showConcTree stx (ConcBonsaiNode l r) = do
   rs <- showConcTree stx r
   return $ B.append "[ " (B.append ls (B.append " " (B.append rs " ]")))
 
-instance (KnownNat n, 1 <= n) => SymGen SymBool Int (BonsaiTree (SymUnsignedBV n)) where
-  genSymIndexed depth =
+instance (KnownNat n, 1 <= n) => GenSym SymBool Int (BonsaiTree (SymUnsignedBV n)) where
+  genSymFresh depth =
     if depth <= 1
-      then uBonsaiLeaf <$> genSymSimpleIndexed @SymBool ()
+      then uBonsaiLeaf <$> genSymSimpleFresh @SymBool ()
       else do
-        l <- genSymIndexed $ depth - 1
-        r <- genSymIndexed $ depth - 1
-        sym <- genSymSimpleIndexed @SymBool ()
+        l <- genSymFresh $ depth - 1
+        r <- genSymFresh $ depth - 1
+        sym <- genSymSimpleFresh @SymBool ()
         choose (BonsaiLeaf sym) [BonsaiNode l r]
 
 unsafeLeaf :: (KnownNat n, 1 <= n) => OptimSyntaxSpec n -> B.ByteString -> BonsaiTree (SymUnsignedBV n)

@@ -40,7 +40,7 @@ import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.SOrd
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.Evaluate
-import Grisette.Data.Class.SymGen
+import Grisette.Data.Class.GenSym
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
 import Grisette.Data.MemoUtils
@@ -114,19 +114,19 @@ instance (SupportedPrim a) => Evaluate Model (Sym a) where
 instance (SupportedPrim a) => ExtractSymbolics (S.HashSet TermSymbol) (Sym a) where
   extractSymbolics (Sym t) = extractSymbolicsTerm t
 
-instance (SymBoolOp (Sym Bool), SupportedPrim a) => SymGen (Sym Bool) () (Sym a) where
-  genSymIndexed _ = mrgReturn <$> genSymSimpleIndexed @(Sym Bool) ()
+instance (SymBoolOp (Sym Bool), SupportedPrim a) => GenSym (Sym Bool) () (Sym a) where
+  genSymFresh _ = mrgReturn <$> genSymSimpleFresh @(Sym Bool) ()
 
-instance (SymBoolOp (Sym Bool), SupportedPrim a) => SymGenSimple (Sym Bool) () (Sym a) where
-  genSymSimpleIndexed _ = do
+instance (SymBoolOp (Sym Bool), SupportedPrim a) => GenSymSimple (Sym Bool) () (Sym a) where
+  genSymSimpleFresh _ = do
     (i, s) <- get
     put (i + 1, s)
     return $ isymb i s
 
-instance (SymBoolOp (Sym Bool), SupportedPrim a) => SymGen (Sym Bool) (Sym a) (Sym a)
+instance (SymBoolOp (Sym Bool), SupportedPrim a) => GenSym (Sym Bool) (Sym a) (Sym a)
 
-instance (SymBoolOp (Sym Bool), SupportedPrim a) => SymGenSimple (Sym Bool) (Sym a) (Sym a) where
-  genSymSimpleIndexed _ = genSymSimpleIndexed @SymBool ()
+instance (SymBoolOp (Sym Bool), SupportedPrim a) => GenSymSimple (Sym Bool) (Sym a) (Sym a) where
+  genSymSimpleFresh _ = genSymSimpleFresh @SymBool ()
 
 instance (SupportedPrim a) => Show (Sym a) where
   show (Sym t) = pformat t

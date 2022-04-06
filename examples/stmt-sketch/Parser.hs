@@ -4,7 +4,7 @@
 module Parser where
 
 import Control.Monad.Combinators.Expr as E
-import Control.Monad.State as ST
+import Control.Monad.State.Strict as ST
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C
 import Data.Void
@@ -17,7 +17,7 @@ import Text.Megaparsec
 import Text.Megaparsec.Byte
 import qualified Text.Megaparsec.Byte.Lexer as L
 
-type Parser = ParsecT Void B.ByteString (ST.State SymGenState)
+type Parser = ParsecT Void B.ByteString (ST.State GenSymState)
 
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme space
@@ -44,19 +44,19 @@ intHoleRangeExpr = do
 intHoleExpr :: Parser (UnionM SymbExpr)
 intHoleExpr = do
   _ <- symbol "??i"
-  i <- genSymSimpleIndexed @SymBool ()
+  i <- genSymSimpleFresh @SymBool ()
   return $ uSIntConstantExpr i
 
 boolHoleExpr :: Parser (UnionM SymbExpr)
 boolHoleExpr = do
   _ <- symbol "??b"
-  b <- genSymSimpleIndexed @SymBool ()
+  b <- genSymSimpleFresh @SymBool ()
   return $ uSBoolConstantExpr b
 
 identHole :: Parser SIdentifier
 identHole = do
   _ <- symbol "??v"
-  genSymSimpleIndexed @SymBool ()
+  genSymSimpleFresh @SymBool ()
 
 concIdent :: Parser SIdentifier
 concIdent = do
@@ -186,7 +186,7 @@ program = do
   return $ SymbProgram s
 
 getSketch :: B.ByteString -> String -> SymbProgram
-getSketch code name = case runSymGenIndexed (runParserT program "a" code) name of
+getSketch code name = case runGenSymFresh (runParserT program "a" code) name of
   Left i -> error $ errorBundlePretty i
   Right i -> i
 
@@ -203,7 +203,7 @@ sketch =
       error $ things ++ " are not handled by the cosette quasiquoter"
 
 compile :: B.ByteString -> Q Exp
-compile s = case runSymGenIndexed (runParserT program "input" $ B.tail y) (C.unpack n) of
+compile s = case runGenSymFresh (runParserT program "input" $ B.tail y) (C.unpack n) of
   Left peb -> fail $ errorBundlePretty peb
   Right qu ->
     [|qu|]

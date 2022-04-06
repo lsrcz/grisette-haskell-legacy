@@ -13,15 +13,15 @@ data PCValue = PCValue {int :: SymInteger, label :: SymBool}
 
 $(makeUnionMWrapper "u" ''PCValue)
 
-instance SymGen SymBool () PCValue
+instance GenSym SymBool () PCValue
 
-instance SymGenSimple SymBool () PCValue where
-  genSymSimpleIndexed () = genSymSimpleIndexedWithDerivedNoSpec @SymBool
+instance GenSymSimple SymBool () PCValue where
+  genSymSimpleFresh () = derivedNoSpecGenSymSimpleFresh @SymBool
 
-instance SymGen SymBool PCValue PCValue
+instance GenSym SymBool PCValue PCValue
 
-instance SymGenSimple SymBool PCValue PCValue where
-  genSymSimpleIndexed i = genSymIndexedWithDerivedSameShape @SymBool i
+instance GenSymSimple SymBool PCValue PCValue where
+  genSymSimpleFresh i = derivedSameShapeGenSymSimpleFresh @SymBool i
 
 zeroLow :: PCValue
 zeroLow = PCValue 0 $ conc False

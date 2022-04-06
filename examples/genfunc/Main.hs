@@ -8,7 +8,7 @@ import Grisette.Core
 import Grisette.SymPrim.Term
 
 data Coord = Coord SymInteger SymInteger
-  deriving (Show, Generic, SymGen SymBool ())
+  deriving (Show, Generic, GenSym SymBool ())
   deriving (Mergeable SymBool) via (Default Coord)
 
 data Move
@@ -18,29 +18,29 @@ data Move
   deriving (Show, Generic)
   deriving (Mergeable SymBool) via (Default Move)
 
-instance SymGenSimple (Sym Bool) () Coord where
-  genSymSimpleIndexed _ = genSymSimpleIndexedWithDerivedNoSpec @SymBool
+instance GenSymSimple (Sym Bool) () Coord where
+  genSymSimpleFresh _ = derivedNoSpecGenSymSimpleFresh @SymBool
 
 $(makeUnionMWrapper "u" ''Move)
 
-instance SymGen (Sym Bool) (Int, Coord) Move where
-  genSymIndexed (v, coord) =
+instance GenSym (Sym Bool) (Int, Coord) Move where
+  genSymFresh (v, coord) =
     if v <= 0
       then do
         return $ uExactCoord coord
       else do
-        m <- genSymIndexed @SymBool (v - 1, coord)
+        m <- genSymFresh @SymBool (v - 1, coord)
         choose (ExactCoord coord) [MoveLeft m, MoveRight m]
 
-instance SymGen (Sym Bool) Int (Coord -> UnionM Move) where
+instance GenSym (Sym Bool) Int (Coord -> UnionM Move) where
 
-instance SymGenSimple (Sym Bool) Int (Coord -> UnionM Move) where
-  genSymSimpleIndexed v =
+instance GenSymSimple (Sym Bool) Int (Coord -> UnionM Move) where
+  genSymSimpleFresh v =
     if v <= 0
       then do
         return uExactCoord 
       else do
-        m <- genSymSimpleIndexed @SymBool (v - 1)
+        m <- genSymSimpleFresh @SymBool (v - 1)
         simpleChoose @SymBool uExactCoord [uMoveLeft . m, uMoveRight . m]
 
 -- The following should lie in Grisette lib
@@ -51,16 +51,16 @@ extractArgFromUnionMBaseOfFunc :: (SymBoolOp bool, Mergeable bool b) => UnionMBa
 extractArgFromUnionMBaseOfFunc l a = mrgFmap (\x -> x a) l
 
 instance
-  (SymBoolOp bool, SymGenSimple bool () bool, SymGenSimple bool spec (a -> b), Mergeable bool b) =>
-  SymGen bool (ListSpec spec) (a -> UnionMBase bool [b])
+  (SymBoolOp bool, GenSymSimple bool () bool, GenSymSimple bool spec (a -> b), Mergeable bool b) =>
+  GenSym bool (ListSpec spec) (a -> UnionMBase bool [b])
   where
 
 instance
-  (SymBoolOp bool, SymGenSimple bool () bool, SymGenSimple bool spec (a -> b), Mergeable bool b) =>
-  SymGenSimple bool (ListSpec spec) (a -> UnionMBase bool [b])
+  (SymBoolOp bool, GenSymSimple bool () bool, GenSymSimple bool spec (a -> b), Mergeable bool b) =>
+  GenSymSimple bool (ListSpec spec) (a -> UnionMBase bool [b])
   where
-  genSymSimpleIndexed spec = do
-    l <- genSymIndexed @bool @(ListSpec spec) @[a -> b] spec
+  genSymSimpleFresh spec = do
+    l <- genSymFresh @bool @(ListSpec spec) @[a -> b] spec
     return $ extractArgFromUnionMBaseOfFunc (extractArgFromListOfFunc <$> l)
 
 -- The previous section should lie in Grisette lib

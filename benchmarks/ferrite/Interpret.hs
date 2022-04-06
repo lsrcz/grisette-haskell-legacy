@@ -20,16 +20,16 @@ interpretConc s fs =
     SingleU x -> Just x
     _ -> Nothing) >>= toCon
 
-zoomy :: State SymGenState a -> State (SymGenState, [SymBool]) a
+zoomy :: State GenSymState a -> State (GenSymState, [SymBool]) a
 zoomy s = do
   (inner, l) <- get
   (a, newInner) <- lift $ runStateT s inner
   put (newInner, l)
   return a
 
-nonDet :: State (SymGenState, [SymBool]) SymBool
+nonDet :: State (GenSymState, [SymBool]) SymBool
 nonDet = do
-  v <- zoomy (genSymSimpleIndexed @SymBool ())
+  v <- zoomy (genSymSimpleFresh @SymBool ())
   modify $ second (v :)
   return v
 
@@ -39,7 +39,7 @@ interpretOrderOps ::
   [UnionM InodeOp] ->
   [UnionM Integer] ->
   UnionM fs ->
-  State (SymGenState, [SymBool]) (UnionM fs)
+  State (GenSymState, [SymBool]) (UnionM fs)
 interpretOrderOps _ [] fs = return fs
 interpretOrderOps l (x : xs) fs = do
   let fs1 = do
@@ -79,11 +79,11 @@ reorderOk fs iops = go
 validOrdering :: forall conc fs. (FileSystem conc fs) => conc -> [UnionM InodeOp] -> [UnionM Integer] -> SymBool
 validOrdering fs iops ordering = isPermutation ordering &&~ reorderOk fs iops ordering
 
-insertSynthSyncs :: Integer -> [SysCall] -> State SymGenState [SysCall]
+insertSynthSyncs :: Integer -> [SysCall] -> State GenSymState [SysCall]
 insertSynthSyncs i [] = do
-  e <- genSymSimpleIndexed @SymBool (GenEfsync i)
+  e <- genSymSimpleFresh @SymBool (GenEfsync i)
   return [e]
 insertSynthSyncs i (x : xs) = do
-  e <- genSymSimpleIndexed @SymBool (GenEfsync i)
+  e <- genSymSimpleFresh @SymBool (GenEfsync i)
   tl <- insertSynthSyncs i xs
   return $ e : x : tl

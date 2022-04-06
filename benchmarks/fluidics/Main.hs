@@ -36,13 +36,13 @@ data ConcPoint = ConcPoint Integer Integer deriving (Show, Generic)
   deriving (ToCon Point) via (Default ConcPoint)
 
 data Point = Point SymInteger SymInteger
-  deriving (Show, Generic, SymGen SymBool ())
+  deriving (Show, Generic, GenSym SymBool ())
   deriving (Evaluate Model, Mergeable SymBool) via (Default Point)
 
-instance SymGenSimple SymBool () Point where
-  genSymSimpleIndexed () = do
-    x <- genSymSimpleIndexed @SymBool ()
-    y <- genSymSimpleIndexed @SymBool ()
+instance GenSymSimple SymBool () Point where
+  genSymSimpleFresh () = do
+    x <- genSymSimpleFresh @SymBool ()
+    y <- genSymSimpleFresh @SymBool ()
     return $ Point x y
 
 gridRef :: Point -> StateT Grid (ExceptT () UnionM) (UnionM (Maybe B.ByteString))
@@ -75,8 +75,8 @@ translatePoint (Point x y) S = Point (x + 1) y
 translatePoint (Point x y) W = Point x (y - 1)
 translatePoint (Point x y) E = Point x (y + 1)
 
-instance SymGen SymBool () Dir where
-  genSymIndexed () = choose N [S, W, E]
+instance GenSym SymBool () Dir where
+  genSymFresh () = choose N [S, W, E]
 
 move :: Point -> Dir -> StateT Grid (ExceptT () UnionM) ()
 move p d = do
@@ -113,10 +113,10 @@ data Instruction = Move Point (UnionM Dir) | Mix Point
   deriving (Show, Generic)
   deriving (Mergeable SymBool, Evaluate Model) via (Default Instruction)
 
-instance SymGen SymBool () Instruction where
-  genSymIndexed _ = do
-    p <- genSymSimpleIndexed @SymBool ()
-    d <- genSymIndexed ()
+instance GenSym SymBool () Instruction where
+  genSymFresh _ = do
+    p <- genSymSimpleFresh @SymBool ()
+    d <- genSymFresh ()
     choose (Move p d) [Mix p]
 
 interpretInstruction :: Instruction -> StateT Grid (ExceptT () UnionM) ()

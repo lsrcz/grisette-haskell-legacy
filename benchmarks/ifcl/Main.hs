@@ -21,7 +21,7 @@ instance SolverTranslation VerifyEENI VerificationConditions () where
   valueTranslation _ _ = conc False
 
 verifyEENI ::
-  (SymGenSimple SymBool pspec Program) =>
+  (GenSymSimple SymBool pspec Program) =>
   GrisetteSMTConfig n ->
   (Machine -> Program -> SymBool) ->
   (Machine -> Program -> Machine -> Program -> SymBool) ->
@@ -51,7 +51,7 @@ verifyEENI config end indistinguishable steps progSpec =
           Right mo -> return $ Just $ EENIWitness (evaluate True mo p0) (evaluate True mo p1)
 
 runCexCase ::
-  (SymGenSimple SymBool pspec Program) =>
+  (GenSymSimple SymBool pspec Program) =>
   String ->
   GrisetteSMTConfig n ->
   (Machine -> Program -> SymBool) ->
@@ -66,7 +66,7 @@ runCexCase name config end steps progSpec = do
     Just v -> print v >> return v
 
 runValidCase ::
-  (SymGenSimple SymBool pspec Program) =>
+  (GenSymSimple SymBool pspec Program) =>
   String ->
   GrisetteSMTConfig n ->
   (Machine -> Program -> SymBool) ->

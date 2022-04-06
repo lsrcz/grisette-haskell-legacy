@@ -40,17 +40,17 @@ data ExprSpec = ExprSpec
   }
   deriving (Show)
 
-instance SymGen (Sym Bool) Integer LitExpr where
-  genSymIndexed listLength = do
-    b <- genSymSimpleIndexed @SymBool ()
-    l <- genSymIndexed @SymBool listLength
+instance GenSym (Sym Bool) Integer LitExpr where
+  genSymFresh listLength = do
+    b <- genSymSimpleFresh @SymBool ()
+    l <- genSymFresh @SymBool listLength
     choose (BoolLit b) [ListLit l, UnitLit]
 
-instance SymGen (Sym Bool) ExprSpec OpsExpr where
-  genSymIndexed (ExprSpec d l) = do
-    l1 <- genSymIndexed @SymBool (ExprSpec (d - 1) l)
-    l2 <- genSymIndexed @SymBool (ExprSpec (d - 1) l)
-    v <- genSymSimpleIndexed @SymBool ()
+instance GenSym (Sym Bool) ExprSpec OpsExpr where
+  genSymFresh (ExprSpec d l) = do
+    l1 <- genSymFresh @SymBool (ExprSpec (d - 1) l)
+    l2 <- genSymFresh @SymBool (ExprSpec (d - 1) l)
+    v <- genSymSimpleFresh @SymBool ()
     choose
       (HeadExpr l1)
       [ TailExpr l1,
@@ -60,15 +60,15 @@ instance SymGen (Sym Bool) ExprSpec OpsExpr where
         VarExpr v
       ]
 
-instance SymGen (Sym Bool) ExprSpec Expr where
-  genSymIndexed e@(ExprSpec d l) =
+instance GenSym (Sym Bool) ExprSpec Expr where
+  genSymFresh e@(ExprSpec d l) =
     if d <= 0
         then do
-          lit <- genSymIndexed @SymBool l
+          lit <- genSymFresh @SymBool l
           return $ mrgFmap Lit lit
         else do
-          lit <- genSymIndexed @SymBool l
-          ops <- genSymIndexed @SymBool e
+          lit <- genSymFresh @SymBool l
+          ops <- genSymFresh @SymBool e
           chooseU (Lit <$> lit) [Ops <$> ops]
 
 data Stmt
@@ -77,10 +77,10 @@ data Stmt
   deriving (Generic, Show)
   deriving (Evaluate Model, Mergeable SymBool) via (Default Stmt)
 
-instance SymGen (Sym Bool) ExprSpec Stmt where
-  genSymIndexed e = do
-    expr <- genSymIndexed @SymBool e
-    vari <- genSymSimpleIndexed @SymBool ()
+instance GenSym (Sym Bool) ExprSpec Stmt where
+  genSymFresh e = do
+    expr <- genSymFresh @SymBool e
+    vari <- genSymSimpleFresh @SymBool ()
     choose (DefineStmt vari expr) [ValueStmt expr]
 
 data Error

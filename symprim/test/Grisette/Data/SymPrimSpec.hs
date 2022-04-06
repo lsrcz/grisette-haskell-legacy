@@ -19,7 +19,7 @@ import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.SOrd
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.Evaluate
-import Grisette.Data.Class.SymGen
+import Grisette.Data.Class.GenSym
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
 import Grisette.Data.Prim.BV
@@ -96,8 +96,8 @@ spec = do
             TermSymbol (Proxy @Integer) (SimpleSymbol "a"),
             TermSymbol (Proxy @Integer) (SimpleSymbol "b")
           ]
-  describe "SymGen" $ do
-    it "SymGen for SymPrim should work" $ do
+  describe "GenSym" $ do
+    it "GenSym for SymPrim should work" $ do
       (genSym () "a" :: UnionM (Sym Bool)) `shouldBe` mrgReturn (isymb 0 "a")
       (genSymSimple @SymBool () "a" :: Sym Bool) `shouldBe` isymb 0 "a"
       (genSym (ssymb "a" :: Sym Bool) "a" :: UnionM (Sym Bool)) `shouldBe` mrgReturn (isymb 0 "a")

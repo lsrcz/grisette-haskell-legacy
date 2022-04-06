@@ -3,7 +3,7 @@
 module Parser where
 
 import Control.Monad.Combinators.Expr
-import Control.Monad.State as ST
+import Control.Monad.State.Strict as ST
 import qualified Data.ByteString as B
 import Data.Void
 import Expr
@@ -13,7 +13,7 @@ import Text.Megaparsec
 import Text.Megaparsec.Byte
 import qualified Text.Megaparsec.Byte.Lexer as L
 
-type Parser = ParsecT Void B.ByteString (ST.State SymGenState)
+type Parser = ParsecT Void B.ByteString (ST.State GenSymState)
 
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme space
@@ -40,7 +40,7 @@ intHoleRangeExpr = do
 intHoleExpr :: Parser (UnionM SymbExpr)
 intHoleExpr = do
   _ <- symbol "??i"
-  i <- genSymSimpleIndexed @SymBool ()
+  i <- genSymSimpleFresh @SymBool ()
   return $ uSConstantExpr i
 
 binary :: B.ByteString -> (a -> a -> a) -> Operator Parser a
@@ -93,6 +93,6 @@ exprWholeString = do
   return e
 
 getSketch :: B.ByteString -> String -> UnionM SymbExpr
-getSketch code name = case runSymGenIndexed (runParserT exprWholeString "a" code) name of
+getSketch code name = case runGenSymFresh (runParserT exprWholeString "a" code) name of
   Left i -> error $ errorBundlePretty i
   Right i -> i

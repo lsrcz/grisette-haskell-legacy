@@ -16,7 +16,7 @@ import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.SOrd
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.Evaluate
-import Grisette.Data.Class.SymGen
+import Grisette.Data.Class.GenSym
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
 import Grisette.Data.Class.UnionOp
@@ -456,8 +456,8 @@ spec = do
   describe "IsString for UnionMBase" $ do
     it "IsString for UnionMBase should work" $ do
       ("x" :: UnionMBase SBool B.ByteString) `shouldBe` mrgReturn "x"
-  describe "SymGen for UnionMBase" $ do
-    it "SymGen for UnionMBase with spec" $ do
+  describe "GenSym for UnionMBase" $ do
+    it "GenSym for UnionMBase with spec" $ do
       (genSym (ListSpec 1 3 ()) "a" :: UnionMBase SBool (UnionMBase SBool [SBool]))
         `shouldBe` mrgReturn
           ( mrgIf
@@ -478,7 +478,7 @@ spec = do
               (mrgReturn [ISBool 1 "a", ISBool 2 "a"])
               (mrgReturn [ISBool 0 "a", ISBool 1 "a", ISBool 2 "a"])
           )
-    it "SymGen for UnionMBase with same shape" $ do
+    it "GenSym for UnionMBase with same shape" $ do
       ( genSym
           ( mrgIf
               (SSBool "a")

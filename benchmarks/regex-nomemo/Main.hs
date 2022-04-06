@@ -7,7 +7,7 @@ import Control.DeepSeq
 import Control.Monad
 import Control.Monad.Coroutine hiding (merge)
 import Control.Monad.Coroutine.SuspensionFunctors
-import Control.Monad.State
+import Control.Monad.State.Strict
 import Control.Monad.Trans.Maybe
 import Data.Bifunctor
 import qualified Data.ByteString.Char8 as B
@@ -174,7 +174,7 @@ str7 = "c"
 
 sk1 :: UnionM Patt
 sk1 =
-  runSymGenIndexed
+  runGenSymFresh
     (choose (PrimPatt 'a') [PrimPatt 'b'])
     "a"
     -}
@@ -198,13 +198,13 @@ sks = do
   s1 <- seqOrAlt
   s2 <- seqOrAlt
   f1 <- freshPrim
-  b <- genSymSimpleIndexed @SymBool ()
+  b <- genSymSimpleFresh @SymBool ()
   let s3 = SeqPatt s1 f1
   let p = PlusPatt (mrgReturn s3) b
   return $ SeqPatt s2 (mrgReturn p)
 
 sk :: Patt
-sk = runSymGenIndexed sks "a"
+sk = runGenSymFresh sks "a"
 
 r :: Patt
 r =
