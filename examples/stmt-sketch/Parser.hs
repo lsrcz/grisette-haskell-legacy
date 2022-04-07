@@ -15,6 +15,7 @@ import Language.Haskell.TH.Quote
 import Text.Megaparsec
 import Text.Megaparsec.Byte
 import qualified Text.Megaparsec.Byte.Lexer as L
+import Data.String
 
 type Parser = ParsecT Void B.ByteString GenSymFresh
 
@@ -184,7 +185,7 @@ program = do
   eof
   return $ SymbProgram s
 
-getSketch :: B.ByteString -> String -> SymbProgram
+getSketch :: B.ByteString -> GenSymIdent -> SymbProgram
 getSketch code name = case runGenSymFresh (runParserT program "a" code) name of
   Left i -> error $ errorBundlePretty i
   Right i -> i
@@ -202,7 +203,7 @@ sketch =
       error $ things ++ " are not handled by the cosette quasiquoter"
 
 compile :: B.ByteString -> Q Exp
-compile s = case runGenSymFresh (runParserT program "input" $ B.tail y) (C.unpack n) of
+compile s = case runGenSymFresh (runParserT program "input" $ B.tail y) (fromString $ C.unpack n) of
   Left peb -> fail $ errorBundlePretty peb
   Right qu ->
     [|qu|]

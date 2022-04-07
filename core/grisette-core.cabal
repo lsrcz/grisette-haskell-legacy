@@ -89,6 +89,7 @@ library
     , hashable
     , hashtables
     , intern
+    , loch-th
     , monad-coroutine
     , monad-memo
     , mtl
@@ -163,6 +164,7 @@ test-suite spec
     , hspec ==2.*
     , hspec-junit-formatter
     , intern
+    , loch-th
     , monad-coroutine
     , monad-memo
     , mtl

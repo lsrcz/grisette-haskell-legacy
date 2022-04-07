@@ -8,24 +8,27 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Grisette.Data.Class.GenSym
-  ( GenSymState,
-    GenSymFresh,
+  ( GenSymIndex,
+    pattern GenSymIndex,
+    GenSymIdent,
+    pattern GenSymIdent,
+    name,
+    nameWithInfo,
+    nameWithLoc,
     GenSymFreshT,
+    GenSymFresh,
+    runGenSymFreshT,
+    runGenSymFresh,
     genSym,
     genSymSimple,
-    runGenSymFresh,
-    runGenSymFreshT,
     GenSym (..),
     GenSymSimple (..),
-    {-
-    GenSymNoSpec (..),
-    GenSymSimpleNoSpec (..),
-    -}
     derivedNoSpecGenSymFresh,
     derivedNoSpecGenSymSimpleFresh,
     derivedSameShapeGenSymSimpleFresh,
@@ -35,51 +38,151 @@ module Grisette.Data.Class.GenSym
     ListSpec (..),
     SimpleListSpec (..),
     NumGenBound (..),
-    NumGenUpperBound (..)
+    NumGenUpperBound (..),
   )
 where
 
 import Control.Monad.Except
+import Control.Monad.Identity
+import Control.Monad.Reader
 import Control.Monad.State.Strict
 import Control.Monad.Trans.Maybe
+import Data.Bifunctor
+import Data.String
+import Data.Typeable
 import Generics.Deriving
 import Grisette.Control.Monad
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.SimpleMergeable
+import Language.Haskell.TH
+import Debug.Trace.LocationTH (__LOCATION__)
+import Data.List (intercalate)
 
+newtype GenSymIndex = GenSymIndex Int
+  deriving (Show)
+  deriving (Num) via Int
+
+newtype GenSymIdent = GenSymIdent String
+
+instance Show GenSymIdent where
+  show (GenSymIdent i) = i
+
+instance IsString GenSymIdent where
+  fromString = name
+
+name :: String -> GenSymIdent
+name = GenSymIdent . ("s_"++)
+
+nameWithInfo :: forall a. (Typeable a, Show a) => String -> a -> GenSymIdent
+nameWithInfo s v =
+      GenSymIdent $
+        intercalate "/"
+          [ "withInfo",
+            replace s,
+            show $ typeRep (Proxy @a),
+            show $ typeRepFingerprint $ typeRep (Proxy @a),
+            show v
+          ]
+  where
+    replace [] = []
+    replace ('/':xs) = '/' : '/' : replace xs
+    replace (c:xs) = c : replace xs
+
+nameWithLoc :: String -> Q Exp
+nameWithLoc s = [| nameWithInfo s $__LOCATION__ |]
+
+newtype GenSymFreshT m a = GenSymFreshT {runGenSymFreshT' :: GenSymIdent -> GenSymIndex -> m (a, GenSymIndex)}
+
+runGenSymFreshT :: (Monad m) => GenSymFreshT m a -> GenSymIdent -> m a
+runGenSymFreshT m ident = fst <$> runGenSymFreshT' m ident (GenSymIndex 0)
+
+instance (Functor f) => Functor (GenSymFreshT f) where
+  fmap f (GenSymFreshT s) = GenSymFreshT $ \ident idx -> first f <$> s ident idx
+
+instance (Applicative m, Monad m) => Applicative (GenSymFreshT m) where
+  pure a = GenSymFreshT $ \_ idx -> pure (a, idx)
+  GenSymFreshT fs <*> GenSymFreshT as = GenSymFreshT $ \ident idx -> do
+    (f, idx') <- fs ident idx
+    (a, idx'') <- as ident idx'
+    return (f a, idx'')
+
+instance (Monad m) => Monad (GenSymFreshT m) where
+  return a = GenSymFreshT $ \_ idx -> return (a, idx)
+  (GenSymFreshT s) >>= f = GenSymFreshT $ \ident idx -> do
+    (a, idx') <- s ident idx
+    runGenSymFreshT' (f a) ident idx'
+
+type GenSymFresh = GenSymFreshT Identity
+
+runGenSymFresh :: GenSymFresh a -> GenSymIdent -> a
+runGenSymFresh m ident = runIdentity $ runGenSymFreshT m ident
+
+instance (Monad m) => MonadState GenSymIndex (GenSymFreshT m) where
+  state f = GenSymFreshT $ \_ idx -> return $ f idx
+  put newidx = GenSymFreshT $ \_ _ -> return ((), newidx)
+  get = GenSymFreshT $ \_ idx -> return (idx, idx)
+
+instance (Monad m) => MonadReader GenSymIdent (GenSymFreshT m) where
+  ask = GenSymFreshT $ curry return
+  local f (GenSymFreshT s) = GenSymFreshT $ \ident idx -> s (f ident) idx
+  reader f = GenSymFreshT $ \r s -> return (f r, s)
+
+{-
 type GenSymState = (Int, String)
 
 type GenSymFresh = State GenSymState
 
 type GenSymFreshT = StateT GenSymState
+-}
+{-
 
 runGenSymFresh :: GenSymFresh a -> String -> a
 runGenSymFresh st s = evalState st (0, s)
 
 runGenSymFreshT :: (Monad m) => GenSymFreshT m a -> String -> m a
 runGenSymFreshT st s = evalStateT st (0, s)
+-}
 
 class (SymBoolOp bool, Mergeable bool a) => GenSym bool spec a where
-  genSymFresh :: (MonadState GenSymState m, MonadUnion bool u) => spec -> m (u a)
+  genSymFresh ::
+    ( MonadState GenSymIndex m,
+      MonadReader GenSymIdent m,
+      MonadUnion bool u
+    ) =>
+    spec ->
+    m (u a)
   default genSymFresh ::
     (GenSymSimple bool spec a) =>
-    (MonadState GenSymState m, MonadUnion bool u) =>
+    ( MonadState GenSymIndex m,
+      MonadReader GenSymIdent m,
+      MonadUnion bool u
+    ) =>
     spec ->
     m (u a)
   genSymFresh spec = mrgReturn @bool <$> genSymSimpleFresh @bool spec
 
-genSym :: (GenSym bool spec a, MonadUnion bool u) => spec -> String -> u a
+genSym :: (GenSym bool spec a, MonadUnion bool u) => spec -> GenSymIdent -> u a
 genSym = runGenSymFresh . genSymFresh
 
 class GenSym bool spec a => GenSymSimple bool spec a where
-  genSymSimpleFresh :: (MonadState GenSymState m) => spec -> m a
+  genSymSimpleFresh ::
+    ( MonadState GenSymIndex m,
+      MonadReader GenSymIdent m
+    ) =>
+    spec ->
+    m a
 
-genSymSimple :: forall bool spec a. (GenSymSimple bool spec a) => spec -> String -> a
+genSymSimple :: forall bool spec a. (GenSymSimple bool spec a) => spec -> GenSymIdent -> a
 genSymSimple = runGenSymFresh . (genSymSimpleFresh @bool)
 
 class GenSymNoSpec bool a where
-  genSymFreshNoSpec :: (MonadState GenSymState m, MonadUnion bool u) => m (u (a c))
+  genSymFreshNoSpec ::
+    ( MonadState GenSymIndex m,
+      MonadReader GenSymIdent m,
+      MonadUnion bool u
+    ) =>
+    m (u (a c))
 
 instance (SymBoolOp bool) => GenSymNoSpec bool U1 where
   genSymFreshNoSpec = return $ mrgReturn U1
@@ -100,7 +203,13 @@ instance
   ) =>
   GenSymNoSpec bool (a :+: b)
   where
-  genSymFreshNoSpec :: forall m u c. (MonadState GenSymState m, MonadUnion bool u) => m (u ((a :+: b) c))
+  genSymFreshNoSpec ::
+    forall m u c.
+    ( MonadState GenSymIndex m,
+      MonadReader GenSymIdent m,
+      MonadUnion bool u
+    ) =>
+    m (u ((a :+: b) c))
   genSymFreshNoSpec = do
     cond :: bool <- genSymSimpleFresh @bool ()
     l :: u (a c) <- genSymFreshNoSpec
@@ -111,7 +220,13 @@ instance
   (SymBoolOp bool, GenSymSimple bool () bool, GenSymNoSpec bool a, GenSymNoSpec bool b) =>
   GenSymNoSpec bool (a :*: b)
   where
-  genSymFreshNoSpec :: forall m u c. (MonadState GenSymState m, MonadUnion bool u) => m (u ((a :*: b) c))
+  genSymFreshNoSpec ::
+    forall m u c.
+    ( MonadState GenSymIndex m,
+      MonadReader GenSymIdent m,
+      MonadUnion bool u
+    ) =>
+    m (u ((a :*: b) c))
   genSymFreshNoSpec = do
     l :: u (a c) <- genSymFreshNoSpec
     r :: u (b c) <- genSymFreshNoSpec
@@ -127,14 +242,15 @@ derivedNoSpecGenSymFresh ::
     SymBoolOp bool,
     GenSymNoSpec bool (Rep a),
     Mergeable bool a,
-    MonadState GenSymState m,
+    MonadState GenSymIndex m,
+    MonadReader GenSymIdent m,
     MonadUnion bool u
   ) =>
   m (u a)
 derivedNoSpecGenSymFresh = mrgFmap to <$> genSymFreshNoSpec @bool @(Rep a)
 
 class GenSymSimpleNoSpec bool a where
-  genSymSimpleFreshNoSpec :: (MonadState GenSymState m) => m (a c)
+  genSymSimpleFreshNoSpec :: (MonadState GenSymIndex m, MonadReader GenSymIdent m) => m (a c)
 
 instance (SymBoolOp bool) => GenSymSimpleNoSpec bool U1 where
   genSymSimpleFreshNoSpec = return U1
@@ -157,12 +273,22 @@ instance
 -- Never use on recursive types
 derivedNoSpecGenSymSimpleFresh ::
   forall bool a m.
-  (Generic a, SymBoolOp bool, GenSymSimpleNoSpec bool (Rep a), MonadState GenSymState m) =>
+  ( Generic a,
+    SymBoolOp bool,
+    GenSymSimpleNoSpec bool (Rep a),
+    MonadState GenSymIndex m,
+    MonadReader GenSymIdent m
+  ) =>
   m a
 derivedNoSpecGenSymSimpleFresh = to <$> genSymSimpleFreshNoSpec @bool @(Rep a)
 
 class GenSymSameShape bool a where
-  genSymSameShapeFresh :: (MonadState GenSymState m) => a c -> m (a c)
+  genSymSameShapeFresh ::
+    ( MonadState GenSymIndex m,
+      MonadReader GenSymIdent m
+    ) =>
+    a c ->
+    m (a c)
 
 instance (SymBoolOp bool) => GenSymSameShape bool U1 where
   genSymSameShapeFresh _ = return U1
@@ -192,7 +318,11 @@ instance
 -- Can be used on recursive types
 derivedSameShapeGenSymSimpleFresh ::
   forall bool a m.
-  (Generic a, GenSymSameShape bool (Rep a), MonadState GenSymState m) =>
+  ( Generic a,
+    GenSymSameShape bool (Rep a),
+    MonadState GenSymIndex m,
+    MonadReader GenSymIdent m
+  ) =>
   a ->
   m a
 derivedSameShapeGenSymSimpleFresh a = to <$> genSymSameShapeFresh @bool @(Rep a) (from a)
@@ -202,7 +332,8 @@ choose ::
   ( SymBoolOp bool,
     Mergeable bool a,
     GenSymSimple bool () bool,
-    MonadState GenSymState m,
+    MonadState GenSymIndex m,
+    MonadReader GenSymIdent m,
     MonadUnion bool u
   ) =>
   a ->
@@ -216,7 +347,12 @@ choose x (r : rs) = do
 
 simpleChoose ::
   forall bool a m.
-  (SymBoolOp bool, SimpleMergeable bool a, GenSymSimple bool () bool, MonadState GenSymState m) =>
+  ( SymBoolOp bool,
+    SimpleMergeable bool a,
+    GenSymSimple bool () bool,
+    MonadState GenSymIndex m,
+    MonadReader GenSymIdent m
+  ) =>
   a ->
   [a] ->
   m a
@@ -231,7 +367,8 @@ chooseU ::
   ( SymBoolOp bool,
     Mergeable bool a,
     GenSymSimple bool () bool,
-    MonadState GenSymState m,
+    MonadState GenSymIndex m,
+    MonadReader GenSymIdent m,
     MonadUnion bool u
   ) =>
   u a ->
@@ -274,8 +411,7 @@ instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSym bool (NumGenBound
   genSymFresh (NumGenBound l u) =
     if u < l
       then error $ "Bad bounds (upper bound should >= lower bound): " ++ show (l, u)
-      else
-        choose l [l + 1 .. u]
+      else choose l [l + 1 .. u]
 
 -- Char
 instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSym bool Char Char where
@@ -343,7 +479,7 @@ instance
     let (x : xs) = reverse $ scanr (:) [] l
     choose x xs
     where
-      gl :: (MonadState GenSymState m) => Integer -> m [a]
+      gl :: (MonadState GenSymIndex m, MonadReader GenSymIdent m) => Integer -> m [a]
       gl v1
         | v1 <= 0 = return []
         | otherwise = do
@@ -370,7 +506,7 @@ instance
         let (x : xs) = drop (fromInteger minLen) $ reverse $ scanr (:) [] l
         choose x xs
     where
-      gl :: (MonadState GenSymState m) => Integer -> m [a]
+      gl :: (MonadState GenSymIndex m, MonadReader GenSymIdent m) => Integer -> m [a]
       gl currLen
         | currLen <= 0 = return []
         | otherwise = do
@@ -410,7 +546,7 @@ instance
       else do
         gl len
     where
-      gl :: (MonadState GenSymState m) => Integer -> m [a]
+      gl :: (MonadState GenSymIndex m, MonadReader GenSymIdent m) => Integer -> m [a]
       gl currLen
         | currLen <= 0 = return []
         | otherwise = do
@@ -433,7 +569,8 @@ instance
     GenSym bool bspec b,
     Mergeable bool b
   ) =>
-  GenSym bool (aspec, bspec) (a, b) where
+  GenSym bool (aspec, bspec) (a, b)
+  where
   genSymFresh (aspec, bspec) = do
     a1 <- genSymFresh aspec
     b1 <- genSymFresh bspec
@@ -452,7 +589,7 @@ instance
   ) =>
   GenSymSimple bool (aspec, bspec) (a, b)
   where
-  genSymSimpleFresh (aspec, bspec) =  do
+  genSymSimpleFresh (aspec, bspec) = do
     (,)
       <$> genSymSimpleFresh @bool aspec
       <*> genSymSimpleFresh @bool bspec
@@ -486,7 +623,8 @@ instance
     GenSym bool cspec c,
     Mergeable bool c
   ) =>
-  GenSym bool (aspec, bspec, cspec) (a, b, c) where
+  GenSym bool (aspec, bspec, cspec) (a, b, c)
+  where
   genSymFresh (aspec, bspec, cspec) = do
     a1 <- genSymFresh aspec
     b1 <- genSymFresh bspec
@@ -556,7 +694,8 @@ instance
     GenSym bool dspec d,
     Mergeable bool d
   ) =>
-  GenSym bool (aspec, bspec, cspec, dspec) (a, b, c, d) where
+  GenSym bool (aspec, bspec, cspec, dspec) (a, b, c, d)
+  where
   genSymFresh (aspec, bspec, cspec, dspec) = do
     a1 <- genSymFresh aspec
     b1 <- genSymFresh bspec
@@ -637,7 +776,8 @@ instance
     GenSym bool espec e,
     Mergeable bool e
   ) =>
-  GenSym bool (aspec, bspec, cspec, dspec, espec) (a, b, c, d, e) where
+  GenSym bool (aspec, bspec, cspec, dspec, espec) (a, b, c, d, e)
+  where
   genSymFresh (aspec, bspec, cspec, dspec, espec) = do
     a1 <- genSymFresh aspec
     b1 <- genSymFresh bspec
@@ -729,7 +869,8 @@ instance
     GenSym bool fspec f,
     Mergeable bool f
   ) =>
-  GenSym bool (aspec, bspec, cspec, dspec, espec, fspec) (a, b, c, d, e, f) where
+  GenSym bool (aspec, bspec, cspec, dspec, espec, fspec) (a, b, c, d, e, f)
+  where
   genSymFresh (aspec, bspec, cspec, dspec, espec, fspec) = do
     a1 <- genSymFresh aspec
     b1 <- genSymFresh bspec
@@ -832,7 +973,8 @@ instance
     GenSym bool gspec g,
     Mergeable bool g
   ) =>
-  GenSym bool (aspec, bspec, cspec, dspec, espec, fspec, gspec) (a, b, c, d, e, f, g) where
+  GenSym bool (aspec, bspec, cspec, dspec, espec, fspec, gspec) (a, b, c, d, e, f, g)
+  where
   genSymFresh (aspec, bspec, cspec, dspec, espec, fspec, gspec) = do
     a1 <- genSymFresh aspec
     b1 <- genSymFresh bspec
@@ -946,7 +1088,8 @@ instance
     GenSym bool hspec h,
     Mergeable bool h
   ) =>
-  GenSym bool (aspec, bspec, cspec, dspec, espec, fspec, gspec, hspec) (a, b, c, d, e, f, g, h) where
+  GenSym bool (aspec, bspec, cspec, dspec, espec, fspec, gspec, hspec) (a, b, c, d, e, f, g, h)
+  where
   genSymFresh (aspec, bspec, cspec, dspec, espec, fspec, gspec, hspec) = do
     a1 <- genSymFresh aspec
     b1 <- genSymFresh bspec

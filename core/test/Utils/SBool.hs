@@ -16,6 +16,7 @@ import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
 import Grisette.Data.Class.GenSym
 import Control.Monad.State
+import Control.Monad.Reader
 
 data SBool
   = CBool Bool
@@ -128,8 +129,9 @@ instance GenSym SBool () SBool where
 
 instance GenSymSimple SBool () SBool where
   genSymSimpleFresh _ = do
-    (i, s) <- get
-    put (i + 1, s)
+    GenSymIdent s <- ask
+    idx@(GenSymIndex i) <- get
+    put $ idx + 1
     return $ ISBool i s
 
 instance GenSym SBool SBool SBool where

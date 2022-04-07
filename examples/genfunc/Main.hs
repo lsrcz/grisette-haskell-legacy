@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Main where
@@ -65,10 +66,10 @@ instance
 
 -- The previous section should lie in Grisette lib
 
-genSketch :: ListSpec Int -> String -> Coord -> UnionM [UnionM Move]
+genSketch :: ListSpec Int -> GenSymIdent -> Coord -> UnionM [UnionM Move]
 genSketch (ListSpec minl maxl sub) name coord = genSym (ListSpec minl maxl (sub, coord)) name
 
-genSketchBetter :: ListSpec Int -> String -> Coord -> UnionM [UnionM Move]
+genSketchBetter :: ListSpec Int -> GenSymIdent -> Coord -> UnionM [UnionM Move]
 genSketchBetter (ListSpec minl maxl sub) = genSymSimple @SymBool (ListSpec minl maxl sub)
 
 sketch :: Coord -> UnionM [UnionM Move]

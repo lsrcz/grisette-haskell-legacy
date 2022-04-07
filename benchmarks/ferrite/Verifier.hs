@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Verifier where
 
 import Control.Monad.State.Strict
@@ -33,7 +34,7 @@ verify config (Litmus _ make setupProc prog allowCond) =
           (SimpleListSpec (fromIntegral $ length prog1) (NumGenUpperBound @Integer (fromIntegral $ length prog1 - 1)))
           "order"
 
-      (verifFs, _) = runState (interpretOrderOps prog1 order (mrgReturn $ (toSym newfs :: fs))) ((0, "crash"), [])
+      (verifFs, _) = runGenSymFresh (runStateT (interpretOrderOps prog1 order (mrgReturn $ (toSym newfs :: fs))) []) "crash"
       allowed = allowCond (toSym newfs) #~ verifFs
 
       verifCond = gassertWithError AssertionError (validOrdering fs prog1 order `implies` allowed)

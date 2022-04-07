@@ -16,6 +16,7 @@ where
 import Control.DeepSeq
 import Control.Monad.Except
 import Control.Monad.State
+import Control.Monad.Reader
 import Data.BitVector.Sized (knownNat, pattern BV)
 import Data.BitVector.Sized.Signed (SignedBV (..), mkSignedBV)
 import Data.BitVector.Sized.Unsigned
@@ -119,8 +120,9 @@ instance (SymBoolOp (Sym Bool), SupportedPrim a) => GenSym (Sym Bool) () (Sym a)
 
 instance (SymBoolOp (Sym Bool), SupportedPrim a) => GenSymSimple (Sym Bool) () (Sym a) where
   genSymSimpleFresh _ = do
-    (i, s) <- get
-    put (i + 1, s)
+    GenSymIdent s <- ask
+    idx@(GenSymIndex i) <- get
+    put $ idx + 1
     return $ isymb i s
 
 instance (SymBoolOp (Sym Bool), SupportedPrim a) => GenSym (Sym Bool) (Sym a) (Sym a)

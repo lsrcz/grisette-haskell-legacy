@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Grisette.Data.Class.GenSymSpec where
 
 import Control.Monad.Except
@@ -14,18 +16,18 @@ spec = do
     describe "GenSym for SBool" $ do
       it "GenSym for SBool with ()" $ do
         (genSym @SBool () "a" :: UnionMBase SBool SBool)
-          `shouldBe` mrgReturn (ISBool 0 "a")
+          `shouldBe` mrgReturn (ISBool 0 "s_a")
         (genSymSimple @SBool () "a" :: SBool)
-          `shouldBe` ISBool 0 "a"
+          `shouldBe` ISBool 0 "s_a"
       it "GenSym for SBool with SBool" $ do
         (genSym @SBool (CBool True) "a" :: UnionMBase SBool SBool)
-          `shouldBe` mrgReturn (ISBool 0 "a")
+          `shouldBe` mrgReturn (ISBool 0 "s_a")
         (genSymSimple @SBool (CBool True) "a" :: SBool)
-          `shouldBe` ISBool 0 "a"
+          `shouldBe` ISBool 0 "s_a"
     describe "GenSym for Bool" $ do
       it "GenSym for Bool with ()" $ do
         (genSym @SBool () "a" :: UnionMBase SBool Bool)
-          `shouldBe` mrgIf (ISBool 0 "a") (mrgReturn False) (mrgReturn True)
+          `shouldBe` mrgIf (ISBool 0 "s_a") (mrgReturn False) (mrgReturn True)
       it "GenSym for Bool with Bool" $ do
         (genSym @SBool True "a" :: UnionMBase SBool Bool)
           `shouldBe` mrgReturn True
@@ -43,10 +45,10 @@ spec = do
           `shouldBe` 1
       it "GenSym for Integer with upper bound" $ do
         (genSym @SBool (NumGenUpperBound (2 :: Integer)) "a" :: UnionMBase SBool Integer)
-          `shouldBe` mrgIf (ISBool 0 "a") (mrgReturn 0) (mrgIf (ISBool 1 "a") (mrgReturn 1) (mrgReturn 2))
+          `shouldBe` mrgIf (ISBool 0 "s_a") (mrgReturn 0) (mrgIf (ISBool 1 "s_a") (mrgReturn 1) (mrgReturn 2))
       it "GenSym for Integer with bound" $ do
         (genSym @SBool (NumGenBound (-1 :: Integer) 1) "a" :: UnionMBase SBool Integer)
-          `shouldBe` mrgIf (ISBool 0 "a") (mrgReturn (-1)) (mrgIf (ISBool 1 "a") (mrgReturn 0) (mrgReturn 1))
+          `shouldBe` mrgIf (ISBool 0 "s_a") (mrgReturn (-1)) (mrgIf (ISBool 1 "s_a") (mrgReturn 0) (mrgReturn 1))
     describe "GenSym for Char" $ do
       it "GenSym for Char with Char" $ do
         (genSym @SBool 'x' "a" :: UnionMBase SBool Char)
@@ -54,93 +56,93 @@ spec = do
         (genSymSimple @SBool 'x' "a" :: Char) `shouldBe` 'x'
       it "GenSym for Integer with upper bound" $ do
         (genSym @SBool (NumGenUpperBound @Char (toEnum 3)) "a" :: UnionMBase SBool Char)
-          `shouldBe` mrgIf (ISBool 0 "a") (mrgReturn $ toEnum 0) (mrgIf (ISBool 1 "a") (mrgReturn $ toEnum 1) (mrgReturn $ toEnum 2))
+          `shouldBe` mrgIf (ISBool 0 "s_a") (mrgReturn $ toEnum 0) (mrgIf (ISBool 1 "s_a") (mrgReturn $ toEnum 1) (mrgReturn $ toEnum 2))
       it "GenSym for Integer with bound" $ do
         (genSym @SBool (NumGenBound 'a' 'd') "a" :: UnionMBase SBool Char)
-          `shouldBe` mrgIf (ISBool 0 "a") (mrgReturn 'a') (mrgIf (ISBool 1 "a") (mrgReturn 'b') (mrgReturn 'c'))
+          `shouldBe` mrgIf (ISBool 0 "s_a") (mrgReturn 'a') (mrgIf (ISBool 1 "s_a") (mrgReturn 'b') (mrgReturn 'c'))
     describe "GenSym for Maybe" $ do
       it "GenSym for Maybe with Maybe" $ do
-        (genSym (Just (SSBool "a")) "a" :: UnionMBase SBool (Maybe SBool)) `shouldBe` mrgReturn (Just (ISBool 0 "a"))
+        (genSym (Just (SSBool "a")) "a" :: UnionMBase SBool (Maybe SBool)) `shouldBe` mrgReturn (Just (ISBool 0 "s_a"))
         (genSym (Nothing :: Maybe SBool) "a" :: UnionMBase SBool (Maybe SBool)) `shouldBe` mrgReturn Nothing
-        (genSymSimple @SBool (Just (SSBool "a")) "a" :: Maybe SBool) `shouldBe` Just (ISBool 0 "a")
+        (genSymSimple @SBool (Just (SSBool "a")) "a" :: Maybe SBool) `shouldBe` Just (ISBool 0 "s_a")
         (genSymSimple @SBool (Nothing :: Maybe SBool) "a" :: Maybe SBool) `shouldBe` Nothing
       it "GenSym for Maybe with ()" $ do
         (genSym () "a" :: UnionMBase SBool (Maybe SBool))
-          `shouldBe` mrgIf (ISBool 0 "a") (mrgReturn Nothing) (mrgReturn (Just (ISBool 1 "a")))
+          `shouldBe` mrgIf (ISBool 0 "s_a") (mrgReturn Nothing) (mrgReturn (Just (ISBool 1 "s_a")))
     describe "GenSym for Either" $ do
       it "GenSym for Either with Either" $ do
         (genSym (Left (SSBool "a") :: Either SBool SBool) "a" :: UnionMBase SBool (Either SBool SBool))
-          `shouldBe` mrgReturn (Left (ISBool 0 "a"))
+          `shouldBe` mrgReturn (Left (ISBool 0 "s_a"))
         (genSym (Right (SSBool "a") :: Either SBool SBool) "a" :: UnionMBase SBool (Either SBool SBool))
-          `shouldBe` mrgReturn (Right (ISBool 0 "a"))
+          `shouldBe` mrgReturn (Right (ISBool 0 "s_a"))
         (genSymSimple @SBool (Left (SSBool "a") :: Either SBool SBool) "a" :: Either SBool SBool)
-          `shouldBe` Left (ISBool 0 "a")
+          `shouldBe` Left (ISBool 0 "s_a")
         (genSymSimple @SBool (Right (SSBool "a") :: Either SBool SBool) "a" :: Either SBool SBool)
-          `shouldBe` Right (ISBool 0 "a")
+          `shouldBe` Right (ISBool 0 "s_a")
       it "GenSym for Either with ()" $ do
         (genSym () "a" :: UnionMBase SBool (Either SBool SBool))
-          `shouldBe` mrgIf (ISBool 0 "a") (mrgReturn $ Left $ ISBool 1 "a") (mrgReturn $ Right $ ISBool 2 "a")
+          `shouldBe` mrgIf (ISBool 0 "s_a") (mrgReturn $ Left $ ISBool 1 "s_a") (mrgReturn $ Right $ ISBool 2 "s_a")
     describe "GenSym for List" $ do
       it "GenSym for List with max length" $ do
         (genSym (0 :: Integer) "a" :: UnionMBase SBool [SBool]) `shouldBe` mrgReturn []
         (genSym (3 :: Integer) "a" :: UnionMBase SBool [SBool])
           `shouldBe` mrgIf
-            (ISBool 3 "a")
+            (ISBool 3 "s_a")
             (mrgReturn [])
             ( mrgIf
-                (ISBool 4 "a")
-                (mrgReturn [ISBool 2 "a"])
+                (ISBool 4 "s_a")
+                (mrgReturn [ISBool 2 "s_a"])
                 ( mrgIf
-                    (ISBool 5 "a")
-                    (mrgReturn [ISBool 1 "a", ISBool 2 "a"])
-                    (mrgReturn [ISBool 0 "a", ISBool 1 "a", ISBool 2 "a"])
+                    (ISBool 5 "s_a")
+                    (mrgReturn [ISBool 1 "s_a", ISBool 2 "s_a"])
+                    (mrgReturn [ISBool 0 "s_a", ISBool 1 "s_a", ISBool 2 "s_a"])
                 )
             )
       it "GenSym for List with min & max length" $ do
         (genSym (ListSpec 1 3 ()) "a" :: UnionMBase SBool [SBool])
           `shouldBe` mrgIf
-            (ISBool 3 "a")
-            (mrgReturn [ISBool 2 "a"])
+            (ISBool 3 "s_a")
+            (mrgReturn [ISBool 2 "s_a"])
             ( mrgIf
-                (ISBool 4 "a")
-                (mrgReturn [ISBool 1 "a", ISBool 2 "a"])
-                (mrgReturn [ISBool 0 "a", ISBool 1 "a", ISBool 2 "a"])
+                (ISBool 4 "s_a")
+                (mrgReturn [ISBool 1 "s_a", ISBool 2 "s_a"])
+                (mrgReturn [ISBool 0 "s_a", ISBool 1 "s_a", ISBool 2 "s_a"])
             )
         (genSym (ListSpec 1 2 (ListSpec 1 2 ())) "a" :: UnionMBase SBool [UnionMBase SBool [SBool]])
           `shouldBe` mrgIf
-            (ISBool 6 "a")
+            (ISBool 6 "s_a")
             ( mrgReturn
                 [ mrgIf
-                    (ISBool 5 "a")
-                    (mrgReturn [ISBool 4 "a"])
-                    (mrgReturn [ISBool 3 "a", ISBool 4 "a"])
+                    (ISBool 5 "s_a")
+                    (mrgReturn [ISBool 4 "s_a"])
+                    (mrgReturn [ISBool 3 "s_a", ISBool 4 "s_a"])
                 ]
             )
             ( mrgReturn
                 [ mrgIf
-                    (ISBool 2 "a")
-                    (mrgReturn [ISBool 1 "a"])
-                    (mrgReturn [ISBool 0 "a", ISBool 1 "a"]),
+                    (ISBool 2 "s_a")
+                    (mrgReturn [ISBool 1 "s_a"])
+                    (mrgReturn [ISBool 0 "s_a", ISBool 1 "s_a"]),
                   mrgIf
-                    (ISBool 5 "a")
-                    (mrgReturn [ISBool 4 "a"])
-                    (mrgReturn [ISBool 3 "a", ISBool 4 "a"])
+                    (ISBool 5 "s_a")
+                    (mrgReturn [ISBool 4 "s_a"])
+                    (mrgReturn [ISBool 3 "s_a", ISBool 4 "s_a"])
                 ]
             )
       it "GenSym for List with exact length" $ do
         (genSym (SimpleListSpec 2 ()) "a" :: UnionMBase SBool [SBool])
-          `shouldBe` mrgReturn [ISBool 0 "a", ISBool 1 "a"]
+          `shouldBe` mrgReturn [ISBool 0 "s_a", ISBool 1 "s_a"]
         (genSymSimple @SBool (SimpleListSpec 2 ()) "a" :: [SBool])
-          `shouldBe` [ISBool 0 "a", ISBool 1 "a"]
+          `shouldBe` [ISBool 0 "s_a", ISBool 1 "s_a"]
         (genSym (SimpleListSpec 2 (SimpleListSpec 2 ())) "a" :: UnionMBase SBool [[SBool]])
-          `shouldBe` mrgReturn [[ISBool 0 "a", ISBool 1 "a"], [ISBool 2 "a", ISBool 3 "a"]]
+          `shouldBe` mrgReturn [[ISBool 0 "s_a", ISBool 1 "s_a"], [ISBool 2 "s_a", ISBool 3 "s_a"]]
         (genSymSimple @SBool (SimpleListSpec 2 (SimpleListSpec 2 ())) "a" :: [[SBool]])
-          `shouldBe` [[ISBool 0 "a", ISBool 1 "a"], [ISBool 2 "a", ISBool 3 "a"]]
+          `shouldBe` [[ISBool 0 "s_a", ISBool 1 "s_a"], [ISBool 2 "s_a", ISBool 3 "s_a"]]
       it "GenSym for List with same shape" $ do
         (genSym [[CBool True], [SSBool "a", SSBool "b"]] "a" :: UnionMBase SBool [[SBool]])
-          `shouldBe` mrgReturn [[ISBool 0 "a"], [ISBool 1 "a", ISBool 2 "a"]]
+          `shouldBe` mrgReturn [[ISBool 0 "s_a"], [ISBool 1 "s_a", ISBool 2 "s_a"]]
         (genSymSimple @SBool [[CBool True], [SSBool "a", SSBool "b"]] "a" :: [[SBool]])
-          `shouldBe` [[ISBool 0 "a"], [ISBool 1 "a", ISBool 2 "a"]]
+          `shouldBe` [[ISBool 0 "s_a"], [ISBool 1 "s_a", ISBool 2 "s_a"]]
     describe "GenSym for ()" $ do
       it "GenSym for () with ()" $ do
         (genSym () "a" :: UnionMBase SBool ()) `shouldBe` mrgReturn ()
@@ -149,14 +151,14 @@ spec = do
       it "GenSym for (,) with some spec" $ do
         (genSym (NumGenUpperBound @Integer 1, NumGenUpperBound @Integer 1) "a" :: UnionMBase SBool (Integer, Integer))
           `shouldBe` do
-            x1 <- mrgIf (ISBool 0 "a") (mrgReturn 0) (mrgReturn 1)
-            x2 <- mrgIf (ISBool 1 "a") (mrgReturn 0) (mrgReturn 1)
+            x1 <- mrgIf (ISBool 0 "s_a") (mrgReturn 0) (mrgReturn 1)
+            x2 <- mrgIf (ISBool 1 "s_a") (mrgReturn 0) (mrgReturn 1)
             mrgReturn (x1, x2)
         (genSymSimple @SBool ((), [[SSBool "b"], [SSBool "b", SSBool "c"]]) "a" :: (SBool, [[SBool]]))
-          `shouldBe` (ISBool 0 "a", [[ISBool 1 "a"], [ISBool 2 "a", ISBool 3 "a"]])
+          `shouldBe` (ISBool 0 "s_a", [[ISBool 1 "s_a"], [ISBool 2 "s_a", ISBool 3 "s_a"]])
       it "GenSym for (,) with no spec" $ do
-        (genSym () "a" :: UnionMBase SBool (SBool, SBool)) `shouldBe` mrgReturn (ISBool 0 "a", ISBool 1 "a")
-        (genSymSimple @SBool () "a" :: (SBool, SBool)) `shouldBe` (ISBool 0 "a", ISBool 1 "a")
+        (genSym () "a" :: UnionMBase SBool (SBool, SBool)) `shouldBe` mrgReturn (ISBool 0 "s_a", ISBool 1 "s_a")
+        (genSymSimple @SBool () "a" :: (SBool, SBool)) `shouldBe` (ISBool 0 "s_a", ISBool 1 "s_a")
     describe "GenSym for (,,)" $ do
       it "GenSym for (,,) with some spec" $ do
         ( genSym
@@ -168,16 +170,17 @@ spec = do
             UnionMBase SBool (Integer, Integer, Integer)
           )
           `shouldBe` do
-            x1 <- mrgIf (ISBool 0 "a") (mrgReturn 0) (mrgReturn 1)
-            x2 <- mrgIf (ISBool 1 "a") (mrgReturn 0) (mrgReturn 1)
-            x3 <- mrgIf (ISBool 2 "a") (mrgReturn 0) (mrgReturn 1)
+            x1 <- mrgIf (ISBool 0 "s_a") (mrgReturn 0) (mrgReturn 1)
+            x2 <- mrgIf (ISBool 1 "s_a") (mrgReturn 0) (mrgReturn 1)
+            x3 <- mrgIf (ISBool 2 "s_a") (mrgReturn 0) (mrgReturn 1)
             mrgReturn (x1, x2, x3)
         (genSymSimple @SBool ((), [[SSBool "b"], [SSBool "b", SSBool "c"]], ()) "a" :: (SBool, [[SBool]], SBool))
-          `shouldBe` (ISBool 0 "a", [[ISBool 1 "a"], [ISBool 2 "a", ISBool 3 "a"]], ISBool 4 "a")
+          `shouldBe` (ISBool 0 "s_a", [[ISBool 1 "s_a"], [ISBool 2 "s_a", ISBool 3 "s_a"]], ISBool 4 "s_a")
       it "GenSym for (,,) with no spec" $ do
         (genSym () "a" :: UnionMBase SBool (SBool, SBool, SBool))
-          `shouldBe` mrgReturn (ISBool 0 "a", ISBool 1 "a", ISBool 2 "a")
-        (genSymSimple @SBool () "a" :: (SBool, SBool, SBool)) `shouldBe` (ISBool 0 "a", ISBool 1 "a", ISBool 2 "a")
+          `shouldBe` mrgReturn (ISBool 0 "s_a", ISBool 1 "s_a", ISBool 2 "s_a")
+        (genSymSimple @SBool () "a" :: (SBool, SBool, SBool))
+          `shouldBe` (ISBool 0 "s_a", ISBool 1 "s_a", ISBool 2 "s_a")
     describe "GenSym for (,,,)" $ do
       it "GenSym for (,,,) with some spec" $ do
         ( genSym
@@ -190,22 +193,26 @@ spec = do
             UnionMBase SBool (Integer, Integer, Integer, Integer)
           )
           `shouldBe` do
-            x1 <- mrgIf (ISBool 0 "a") (mrgReturn 0) (mrgReturn 1)
-            x2 <- mrgIf (ISBool 1 "a") (mrgReturn 0) (mrgReturn 1)
-            x3 <- mrgIf (ISBool 2 "a") (mrgReturn 0) (mrgReturn 1)
-            x4 <- mrgIf (ISBool 3 "a") (mrgReturn 0) (mrgReturn 1)
+            x1 <- mrgIf (ISBool 0 "s_a") (mrgReturn 0) (mrgReturn 1)
+            x2 <- mrgIf (ISBool 1 "s_a") (mrgReturn 0) (mrgReturn 1)
+            x3 <- mrgIf (ISBool 2 "s_a") (mrgReturn 0) (mrgReturn 1)
+            x4 <- mrgIf (ISBool 3 "s_a") (mrgReturn 0) (mrgReturn 1)
             mrgReturn (x1, x2, x3, x4)
         ( genSymSimple @SBool
             ((), [[SSBool "b"], [SSBool "b", SSBool "c"]], (), ())
             "a" ::
             (SBool, [[SBool]], SBool, SBool)
           )
-          `shouldBe` (ISBool 0 "a", [[ISBool 1 "a"], [ISBool 2 "a", ISBool 3 "a"]], ISBool 4 "a", ISBool 5 "a")
+          `shouldBe` ( ISBool 0 "s_a",
+                       [[ISBool 1 "s_a"], [ISBool 2 "s_a", ISBool 3 "s_a"]],
+                       ISBool 4 "s_a",
+                       ISBool 5 "s_a"
+                     )
       it "GenSym for (,,,) with no spec" $ do
         (genSym () "a" :: UnionMBase SBool (SBool, SBool, SBool, SBool))
-          `shouldBe` mrgReturn (ISBool 0 "a", ISBool 1 "a", ISBool 2 "a", ISBool 3 "a")
+          `shouldBe` mrgReturn (ISBool 0 "s_a", ISBool 1 "s_a", ISBool 2 "s_a", ISBool 3 "s_a")
         (genSymSimple @SBool () "a" :: (SBool, SBool, SBool, SBool))
-          `shouldBe` (ISBool 0 "a", ISBool 1 "a", ISBool 2 "a", ISBool 3 "a")
+          `shouldBe` (ISBool 0 "s_a", ISBool 1 "s_a", ISBool 2 "s_a", ISBool 3 "s_a")
     describe "GenSym for (,,,,)" $ do
       it "GenSym for (,,,,) with some spec" $ do
         ( genSym
@@ -219,23 +226,34 @@ spec = do
             UnionMBase SBool (Integer, Integer, Integer, Integer, Integer)
           )
           `shouldBe` do
-            x1 <- mrgIf (ISBool 0 "a") (mrgReturn 0) (mrgReturn 1)
-            x2 <- mrgIf (ISBool 1 "a") (mrgReturn 0) (mrgReturn 1)
-            x3 <- mrgIf (ISBool 2 "a") (mrgReturn 0) (mrgReturn 1)
-            x4 <- mrgIf (ISBool 3 "a") (mrgReturn 0) (mrgReturn 1)
-            x5 <- mrgIf (ISBool 4 "a") (mrgReturn 0) (mrgReturn 1)
+            x1 <- mrgIf (ISBool 0 "s_a") (mrgReturn 0) (mrgReturn 1)
+            x2 <- mrgIf (ISBool 1 "s_a") (mrgReturn 0) (mrgReturn 1)
+            x3 <- mrgIf (ISBool 2 "s_a") (mrgReturn 0) (mrgReturn 1)
+            x4 <- mrgIf (ISBool 3 "s_a") (mrgReturn 0) (mrgReturn 1)
+            x5 <- mrgIf (ISBool 4 "s_a") (mrgReturn 0) (mrgReturn 1)
             mrgReturn (x1, x2, x3, x4, x5)
         ( genSymSimple @SBool
             ((), [[SSBool "b"], [SSBool "b", SSBool "c"]], (), (), ())
             "a" ::
             (SBool, [[SBool]], SBool, SBool, SBool)
           )
-          `shouldBe` (ISBool 0 "a", [[ISBool 1 "a"], [ISBool 2 "a", ISBool 3 "a"]], ISBool 4 "a", ISBool 5 "a", ISBool 6 "a")
+          `shouldBe` ( ISBool 0 "s_a",
+                       [[ISBool 1 "s_a"], [ISBool 2 "s_a", ISBool 3 "s_a"]],
+                       ISBool 4 "s_a",
+                       ISBool 5 "s_a",
+                       ISBool 6 "s_a"
+                     )
       it "GenSym for (,,,,) with no spec" $ do
         (genSym () "a" :: UnionMBase SBool (SBool, SBool, SBool, SBool, SBool))
-          `shouldBe` mrgReturn (ISBool 0 "a", ISBool 1 "a", ISBool 2 "a", ISBool 3 "a", ISBool 4 "a")
+          `shouldBe` mrgReturn
+            (ISBool 0 "s_a", ISBool 1 "s_a", ISBool 2 "s_a", ISBool 3 "s_a", ISBool 4 "s_a")
         (genSymSimple @SBool () "a" :: (SBool, SBool, SBool, SBool, SBool))
-          `shouldBe` (ISBool 0 "a", ISBool 1 "a", ISBool 2 "a", ISBool 3 "a", ISBool 4 "a")
+          `shouldBe` ( ISBool 0 "s_a",
+                       ISBool 1 "s_a",
+                       ISBool 2 "s_a",
+                       ISBool 3 "s_a",
+                       ISBool 4 "s_a"
+                     )
     describe "GenSym for (,,,,,)" $ do
       it "GenSym for (,,,,,) with some spec" $ do
         ( genSym
@@ -250,30 +268,43 @@ spec = do
             UnionMBase SBool (Integer, Integer, Integer, Integer, Integer, Integer)
           )
           `shouldBe` do
-            x1 <- mrgIf (ISBool 0 "a") (mrgReturn 0) (mrgReturn 1)
-            x2 <- mrgIf (ISBool 1 "a") (mrgReturn 0) (mrgReturn 1)
-            x3 <- mrgIf (ISBool 2 "a") (mrgReturn 0) (mrgReturn 1)
-            x4 <- mrgIf (ISBool 3 "a") (mrgReturn 0) (mrgReturn 1)
-            x5 <- mrgIf (ISBool 4 "a") (mrgReturn 0) (mrgReturn 1)
-            x6 <- mrgIf (ISBool 5 "a") (mrgReturn 0) (mrgReturn 1)
+            x1 <- mrgIf (ISBool 0 "s_a") (mrgReturn 0) (mrgReturn 1)
+            x2 <- mrgIf (ISBool 1 "s_a") (mrgReturn 0) (mrgReturn 1)
+            x3 <- mrgIf (ISBool 2 "s_a") (mrgReturn 0) (mrgReturn 1)
+            x4 <- mrgIf (ISBool 3 "s_a") (mrgReturn 0) (mrgReturn 1)
+            x5 <- mrgIf (ISBool 4 "s_a") (mrgReturn 0) (mrgReturn 1)
+            x6 <- mrgIf (ISBool 5 "s_a") (mrgReturn 0) (mrgReturn 1)
             mrgReturn (x1, x2, x3, x4, x5, x6)
         ( genSymSimple @SBool
             ((), [[SSBool "b"], [SSBool "b", SSBool "c"]], (), (), (), ())
             "a" ::
             (SBool, [[SBool]], SBool, SBool, SBool, SBool)
           )
-          `shouldBe` ( ISBool 0 "a",
-                       [[ISBool 1 "a"], [ISBool 2 "a", ISBool 3 "a"]],
-                       ISBool 4 "a",
-                       ISBool 5 "a",
-                       ISBool 6 "a",
-                       ISBool 7 "a"
+          `shouldBe` ( ISBool 0 "s_a",
+                       [[ISBool 1 "s_a"], [ISBool 2 "s_a", ISBool 3 "s_a"]],
+                       ISBool 4 "s_a",
+                       ISBool 5 "s_a",
+                       ISBool 6 "s_a",
+                       ISBool 7 "s_a"
                      )
       it "GenSym for (,,,,,) with no spec" $ do
         (genSym () "a" :: UnionMBase SBool (SBool, SBool, SBool, SBool, SBool, SBool))
-          `shouldBe` mrgReturn (ISBool 0 "a", ISBool 1 "a", ISBool 2 "a", ISBool 3 "a", ISBool 4 "a", ISBool 5 "a")
+          `shouldBe` mrgReturn
+            ( ISBool 0 "s_a",
+              ISBool 1 "s_a",
+              ISBool 2 "s_a",
+              ISBool 3 "s_a",
+              ISBool 4 "s_a",
+              ISBool 5 "s_a"
+            )
         (genSymSimple @SBool () "a" :: (SBool, SBool, SBool, SBool, SBool, SBool))
-          `shouldBe` (ISBool 0 "a", ISBool 1 "a", ISBool 2 "a", ISBool 3 "a", ISBool 4 "a", ISBool 5 "a")
+          `shouldBe` ( ISBool 0 "s_a",
+                       ISBool 1 "s_a",
+                       ISBool 2 "s_a",
+                       ISBool 3 "s_a",
+                       ISBool 4 "s_a",
+                       ISBool 5 "s_a"
+                     )
     describe "GenSym for (,,,,,,)" $ do
       it "GenSym for (,,,,,,) with some spec" $ do
         ( genSym
@@ -289,40 +320,47 @@ spec = do
             UnionMBase SBool (Integer, Integer, Integer, Integer, Integer, Integer, Integer)
           )
           `shouldBe` do
-            x1 <- mrgIf (ISBool 0 "a") (mrgReturn 0) (mrgReturn 1)
-            x2 <- mrgIf (ISBool 1 "a") (mrgReturn 0) (mrgReturn 1)
-            x3 <- mrgIf (ISBool 2 "a") (mrgReturn 0) (mrgReturn 1)
-            x4 <- mrgIf (ISBool 3 "a") (mrgReturn 0) (mrgReturn 1)
-            x5 <- mrgIf (ISBool 4 "a") (mrgReturn 0) (mrgReturn 1)
-            x6 <- mrgIf (ISBool 5 "a") (mrgReturn 0) (mrgReturn 1)
-            x7 <- mrgIf (ISBool 6 "a") (mrgReturn 0) (mrgReturn 1)
+            x1 <- mrgIf (ISBool 0 "s_a") (mrgReturn 0) (mrgReturn 1)
+            x2 <- mrgIf (ISBool 1 "s_a") (mrgReturn 0) (mrgReturn 1)
+            x3 <- mrgIf (ISBool 2 "s_a") (mrgReturn 0) (mrgReturn 1)
+            x4 <- mrgIf (ISBool 3 "s_a") (mrgReturn 0) (mrgReturn 1)
+            x5 <- mrgIf (ISBool 4 "s_a") (mrgReturn 0) (mrgReturn 1)
+            x6 <- mrgIf (ISBool 5 "s_a") (mrgReturn 0) (mrgReturn 1)
+            x7 <- mrgIf (ISBool 6 "s_a") (mrgReturn 0) (mrgReturn 1)
             mrgReturn (x1, x2, x3, x4, x5, x6, x7)
         ( genSymSimple @SBool
             ((), [[SSBool "b"], [SSBool "b", SSBool "c"]], (), (), (), (), ())
             "a" ::
             (SBool, [[SBool]], SBool, SBool, SBool, SBool, SBool)
           )
-          `shouldBe` ( ISBool 0 "a",
-                       [[ISBool 1 "a"], [ISBool 2 "a", ISBool 3 "a"]],
-                       ISBool 4 "a",
-                       ISBool 5 "a",
-                       ISBool 6 "a",
-                       ISBool 7 "a",
-                       ISBool 8 "a"
+          `shouldBe` ( ISBool 0 "s_a",
+                       [[ISBool 1 "s_a"], [ISBool 2 "s_a", ISBool 3 "s_a"]],
+                       ISBool 4 "s_a",
+                       ISBool 5 "s_a",
+                       ISBool 6 "s_a",
+                       ISBool 7 "s_a",
+                       ISBool 8 "s_a"
                      )
       it "GenSym for (,,,,,,) with no spec" $ do
         (genSym () "a" :: UnionMBase SBool (SBool, SBool, SBool, SBool, SBool, SBool, SBool))
           `shouldBe` mrgReturn
-            ( ISBool 0 "a",
-              ISBool 1 "a",
-              ISBool 2 "a",
-              ISBool 3 "a",
-              ISBool 4 "a",
-              ISBool 5 "a",
-              ISBool 6 "a"
+            ( ISBool 0 "s_a",
+              ISBool 1 "s_a",
+              ISBool 2 "s_a",
+              ISBool 3 "s_a",
+              ISBool 4 "s_a",
+              ISBool 5 "s_a",
+              ISBool 6 "s_a"
             )
         (genSymSimple @SBool () "a" :: (SBool, SBool, SBool, SBool, SBool, SBool, SBool))
-          `shouldBe` (ISBool 0 "a", ISBool 1 "a", ISBool 2 "a", ISBool 3 "a", ISBool 4 "a", ISBool 5 "a", ISBool 6 "a")
+          `shouldBe` ( ISBool 0 "s_a",
+                       ISBool 1 "s_a",
+                       ISBool 2 "s_a",
+                       ISBool 3 "s_a",
+                       ISBool 4 "s_a",
+                       ISBool 5 "s_a",
+                       ISBool 6 "s_a"
+                     )
     describe "GenSym for (,,,,,,,)" $ do
       it "GenSym for (,,,,,,,) with some spec" $ do
         ( genSym
@@ -339,50 +377,50 @@ spec = do
             UnionMBase SBool (Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer)
           )
           `shouldBe` do
-            x1 <- mrgIf (ISBool 0 "a") (mrgReturn 0) (mrgReturn 1)
-            x2 <- mrgIf (ISBool 1 "a") (mrgReturn 0) (mrgReturn 1)
-            x3 <- mrgIf (ISBool 2 "a") (mrgReturn 0) (mrgReturn 1)
-            x4 <- mrgIf (ISBool 3 "a") (mrgReturn 0) (mrgReturn 1)
-            x5 <- mrgIf (ISBool 4 "a") (mrgReturn 0) (mrgReturn 1)
-            x6 <- mrgIf (ISBool 5 "a") (mrgReturn 0) (mrgReturn 1)
-            x7 <- mrgIf (ISBool 6 "a") (mrgReturn 0) (mrgReturn 1)
-            x8 <- mrgIf (ISBool 7 "a") (mrgReturn 0) (mrgReturn 1)
+            x1 <- mrgIf (ISBool 0 "s_a") (mrgReturn 0) (mrgReturn 1)
+            x2 <- mrgIf (ISBool 1 "s_a") (mrgReturn 0) (mrgReturn 1)
+            x3 <- mrgIf (ISBool 2 "s_a") (mrgReturn 0) (mrgReturn 1)
+            x4 <- mrgIf (ISBool 3 "s_a") (mrgReturn 0) (mrgReturn 1)
+            x5 <- mrgIf (ISBool 4 "s_a") (mrgReturn 0) (mrgReturn 1)
+            x6 <- mrgIf (ISBool 5 "s_a") (mrgReturn 0) (mrgReturn 1)
+            x7 <- mrgIf (ISBool 6 "s_a") (mrgReturn 0) (mrgReturn 1)
+            x8 <- mrgIf (ISBool 7 "s_a") (mrgReturn 0) (mrgReturn 1)
             mrgReturn (x1, x2, x3, x4, x5, x6, x7, x8)
         ( genSymSimple @SBool
             ((), [[SSBool "b"], [SSBool "b", SSBool "c"]], (), (), (), (), (), ())
             "a" ::
             (SBool, [[SBool]], SBool, SBool, SBool, SBool, SBool, SBool)
           )
-          `shouldBe` ( ISBool 0 "a",
-                       [[ISBool 1 "a"], [ISBool 2 "a", ISBool 3 "a"]],
-                       ISBool 4 "a",
-                       ISBool 5 "a",
-                       ISBool 6 "a",
-                       ISBool 7 "a",
-                       ISBool 8 "a",
-                       ISBool 9 "a"
+          `shouldBe` ( ISBool 0 "s_a",
+                       [[ISBool 1 "s_a"], [ISBool 2 "s_a", ISBool 3 "s_a"]],
+                       ISBool 4 "s_a",
+                       ISBool 5 "s_a",
+                       ISBool 6 "s_a",
+                       ISBool 7 "s_a",
+                       ISBool 8 "s_a",
+                       ISBool 9 "s_a"
                      )
       it "GenSym for (,,,,,,,) with no spec" $ do
         (genSym () "a" :: UnionMBase SBool (SBool, SBool, SBool, SBool, SBool, SBool, SBool, SBool))
           `shouldBe` mrgReturn
-            ( ISBool 0 "a",
-              ISBool 1 "a",
-              ISBool 2 "a",
-              ISBool 3 "a",
-              ISBool 4 "a",
-              ISBool 5 "a",
-              ISBool 6 "a",
-              ISBool 7 "a"
+            ( ISBool 0 "s_a",
+              ISBool 1 "s_a",
+              ISBool 2 "s_a",
+              ISBool 3 "s_a",
+              ISBool 4 "s_a",
+              ISBool 5 "s_a",
+              ISBool 6 "s_a",
+              ISBool 7 "s_a"
             )
         (genSymSimple @SBool () "a" :: (SBool, SBool, SBool, SBool, SBool, SBool, SBool, SBool))
-          `shouldBe` ( ISBool 0 "a",
-                       ISBool 1 "a",
-                       ISBool 2 "a",
-                       ISBool 3 "a",
-                       ISBool 4 "a",
-                       ISBool 5 "a",
-                       ISBool 6 "a",
-                       ISBool 7 "a"
+          `shouldBe` ( ISBool 0 "s_a",
+                       ISBool 1 "s_a",
+                       ISBool 2 "s_a",
+                       ISBool 3 "s_a",
+                       ISBool 4 "s_a",
+                       ISBool 5 "s_a",
+                       ISBool 6 "s_a",
+                       ISBool 7 "s_a"
                      )
     describe "GenSym for MaybeT" $ do
       it "GenSym for MaybeT with same shape" $ do
@@ -393,29 +431,29 @@ spec = do
         (genSym (MaybeT (Just Nothing) :: MaybeT Maybe SBool) "a" :: UnionMBase SBool (MaybeT Maybe SBool))
           `shouldBe` mrgReturn (MaybeT (Just Nothing))
         (genSymSimple @SBool (MaybeT (Just (Just $ SSBool "a")) :: MaybeT Maybe SBool) "a" :: MaybeT Maybe SBool)
-          `shouldBe` MaybeT (Just (Just $ ISBool 0 "a"))
+          `shouldBe` MaybeT (Just (Just $ ISBool 0 "s_a"))
         (genSym (MaybeT (Just (Just $ SSBool "a")) :: MaybeT Maybe SBool) "a" :: UnionMBase SBool (MaybeT Maybe SBool))
-          `shouldBe` mrgReturn (MaybeT (Just (Just $ ISBool 0 "a")))
+          `shouldBe` mrgReturn (MaybeT (Just (Just $ ISBool 0 "s_a")))
         (genSymSimple @SBool (MaybeT (Just (Just $ SSBool "a")) :: MaybeT Maybe SBool) "a" :: MaybeT Maybe SBool)
-          `shouldBe` MaybeT (Just (Just $ ISBool 0 "a"))
+          `shouldBe` MaybeT (Just (Just $ ISBool 0 "s_a"))
       it "GenSym for MaybeT with general spec" $ do
         (genSym () "a" :: UnionMBase SBool (MaybeT Maybe SBool))
           `shouldBe` mrgIf
-            (ISBool 0 "a")
+            (ISBool 0 "s_a")
             (mrgReturn $ MaybeT Nothing)
             ( mrgIf
-                (ISBool 1 "a")
+                (ISBool 1 "s_a")
                 (mrgReturn $ MaybeT $ Just Nothing)
-                (mrgReturn $ MaybeT $ Just $ Just $ ISBool 2 "a")
+                (mrgReturn $ MaybeT $ Just $ Just $ ISBool 2 "s_a")
             )
         (genSymSimple @SBool (Nothing :: Maybe (Maybe SBool)) "a" :: MaybeT Maybe SBool)
           `shouldBe` MaybeT Nothing
         (genSymSimple @SBool (Just $ Nothing :: Maybe (Maybe SBool)) "a" :: MaybeT Maybe SBool)
           `shouldBe` MaybeT (Just Nothing)
         (genSymSimple @SBool (Just $ Just $ SSBool "a" :: Maybe (Maybe SBool)) "a" :: MaybeT Maybe SBool)
-          `shouldBe` MaybeT (Just (Just $ ISBool 0 "a"))
+          `shouldBe` MaybeT (Just (Just $ ISBool 0 "s_a"))
         (genSymSimple @SBool (Just $ Just $ SSBool "a" :: Maybe (Maybe SBool)) "a" :: MaybeT Maybe SBool)
-          `shouldBe` MaybeT (Just (Just $ ISBool 0 "a"))
+          `shouldBe` MaybeT (Just (Just $ ISBool 0 "s_a"))
 
     describe "GenSym for ExceptT" $ do
       it "GenSym for ExceptT with same shape" $ do
@@ -426,32 +464,36 @@ spec = do
         ( genSym (ExceptT $ Just $ Left $ SSBool "a" :: ExceptT SBool Maybe SBool) "a" ::
             UnionMBase SBool (ExceptT SBool Maybe SBool)
           )
-          `shouldBe` mrgReturn (ExceptT $ Just $ Left $ ISBool 0 "a")
+          `shouldBe` mrgReturn (ExceptT $ Just $ Left $ ISBool 0 "s_a")
         ( genSymSimple @SBool
             (ExceptT $ Just $ Left $ SSBool "a" :: ExceptT SBool Maybe SBool)
             "a" ::
             ExceptT SBool Maybe SBool
           )
-          `shouldBe` ExceptT (Just $ Left $ ISBool 0 "a")
+          `shouldBe` ExceptT (Just $ Left $ ISBool 0 "s_a")
         ( genSym (ExceptT $ Just $ Right $ SSBool "a" :: ExceptT SBool Maybe SBool) "a" ::
             UnionMBase SBool (ExceptT SBool Maybe SBool)
           )
-          `shouldBe` mrgReturn (ExceptT $ Just $ Right $ ISBool 0 "a")
+          `shouldBe` mrgReturn (ExceptT $ Just $ Right $ ISBool 0 "s_a")
         ( genSymSimple @SBool
             (ExceptT $ Just $ Right $ SSBool "a" :: ExceptT SBool Maybe SBool)
             "a" ::
             ExceptT SBool Maybe SBool
           )
-          `shouldBe` ExceptT (Just $ Right $ ISBool 0 "a")
+          `shouldBe` ExceptT (Just $ Right $ ISBool 0 "s_a")
     it "GenSym for ExceptT with general spec" $ do
       (genSym () "a" :: UnionMBase SBool (ExceptT SBool Maybe SBool))
-        `shouldBe`
-        mrgIf (ISBool 0 "a") (mrgReturn $ ExceptT Nothing)
-          (mrgIf (ISBool 1 "a") (mrgReturn $ ExceptT $ Just $ Left $ ISBool 2 "a")
-            (mrgReturn $ ExceptT $ Just $ Right $ ISBool 3 "a"))
+        `shouldBe` mrgIf
+          (ISBool 0 "s_a")
+          (mrgReturn $ ExceptT Nothing)
+          ( mrgIf
+              (ISBool 1 "s_a")
+              (mrgReturn $ ExceptT $ Just $ Left $ ISBool 2 "s_a")
+              (mrgReturn $ ExceptT $ Just $ Right $ ISBool 3 "s_a")
+          )
       (genSymSimple @SBool (Nothing :: Maybe (Either SBool SBool)) "a" :: ExceptT SBool Maybe SBool)
         `shouldBe` ExceptT Nothing
       (genSymSimple @SBool (Just $ Left $ SSBool "a" :: Maybe (Either SBool SBool)) "a" :: ExceptT SBool Maybe SBool)
-        `shouldBe` ExceptT (Just (Left $ ISBool 0 "a"))
+        `shouldBe` ExceptT (Just (Left $ ISBool 0 "s_a"))
       (genSymSimple @SBool (Just $ Right $ SSBool "a" :: Maybe (Either SBool SBool)) "a" :: ExceptT SBool Maybe SBool)
-        `shouldBe` ExceptT (Just (Right $ ISBool 0 "a"))
+        `shouldBe` ExceptT (Just (Right $ ISBool 0 "s_a"))

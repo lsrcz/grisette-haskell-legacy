@@ -179,21 +179,21 @@ sk1 =
     "a"
     -}
 
-freshPrim :: State (Int, String) (UnionM Patt)
+freshPrim :: GenSymFresh (UnionM Patt)
 freshPrim = choose (PrimPatt 'd') [PrimPatt 'c', PrimPatt 'b', PrimPatt 'a', EmptyPatt]
 
-binFreshPrim :: (UnionM Patt -> UnionM Patt -> Patt) -> State (Int, String) Patt
+binFreshPrim :: (UnionM Patt -> UnionM Patt -> Patt) -> GenSymFresh Patt
 binFreshPrim f = do
   f1 <- freshPrim
   f f1 <$> freshPrim
 
-seqOrAlt :: State (Int, String) (UnionM Patt)
+seqOrAlt :: GenSymFresh (UnionM Patt)
 seqOrAlt = do
   s <- binFreshPrim SeqPatt
   a <- binFreshPrim AltPatt
   choose s [a]
 
-sks :: State (Int, String) Patt
+sks :: GenSymFresh Patt
 sks = do
   s1 <- seqOrAlt
   s2 <- seqOrAlt

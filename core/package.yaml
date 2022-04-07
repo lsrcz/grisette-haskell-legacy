@@ -29,6 +29,7 @@ dependencies:
 - parameterized-utils
 - hashtables
 - Unique
+- loch-th
 
 default-extensions:
 - BangPatterns

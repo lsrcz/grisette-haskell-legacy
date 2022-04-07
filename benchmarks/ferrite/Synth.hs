@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Synth where
 
 import Control.Monad.State.Strict
@@ -39,7 +40,7 @@ synth config (Litmus fsBound make setupProc prog allowCond) =
           (SimpleListSpec (fromIntegral $ length prog1) (NumGenUpperBound @Integer (fromIntegral $ length prog1 - 1)))
           "order"
       --order = [0,1,2,4,5,3,6]
-      (synthFs, (_, crashes)) = runState (interpretOrderOps prog1 order (mrgReturn $ (toSym newfs :: fs))) ((0, "crash"), [])
+      (synthFs, crashes) = runGenSymFresh (runStateT (interpretOrderOps prog1 order (mrgReturn $ (toSym newfs :: fs))) []) "crash"
       allowed = allowCond (toSym newfs) #~ synthFs
 
       cost = syncCost progWithSyncs

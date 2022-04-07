@@ -461,22 +461,22 @@ spec = do
       (genSym (ListSpec 1 3 ()) "a" :: UnionMBase SBool (UnionMBase SBool [SBool]))
         `shouldBe` mrgReturn
           ( mrgIf
-              (ISBool 3 "a")
-              (mrgReturn [ISBool 2 "a"])
+              (ISBool 3 "s_a")
+              (mrgReturn [ISBool 2 "s_a"])
               ( mrgIf
-                  (ISBool 4 "a")
-                  (mrgReturn [ISBool 1 "a", ISBool 2 "a"])
-                  (mrgReturn [ISBool 0 "a", ISBool 1 "a", ISBool 2 "a"])
+                  (ISBool 4 "s_a")
+                  (mrgReturn [ISBool 1 "s_a", ISBool 2 "s_a"])
+                  (mrgReturn [ISBool 0 "s_a", ISBool 1 "s_a", ISBool 2 "s_a"])
               )
           )
       (genSymSimple @SBool (ListSpec 1 3 ()) "a" :: UnionMBase SBool [SBool])
         `shouldBe` mrgIf
-          (ISBool 3 "a")
-          (mrgReturn [ISBool 2 "a"])
+          (ISBool 3 "s_a")
+          (mrgReturn [ISBool 2 "s_a"])
           ( mrgIf
-              (ISBool 4 "a")
-              (mrgReturn [ISBool 1 "a", ISBool 2 "a"])
-              (mrgReturn [ISBool 0 "a", ISBool 1 "a", ISBool 2 "a"])
+              (ISBool 4 "s_a")
+              (mrgReturn [ISBool 1 "s_a", ISBool 2 "s_a"])
+              (mrgReturn [ISBool 0 "s_a", ISBool 1 "s_a", ISBool 2 "s_a"])
           )
     it "GenSym for UnionMBase with same shape" $ do
       ( genSym
@@ -489,7 +489,7 @@ spec = do
           "a" ::
           UnionMBase SBool [SBool]
         )
-        `shouldBe` mrgIf (ISBool 0 "a") (mrgReturn [ISBool 1 "a"]) (mrgReturn [ISBool 2 "a", ISBool 3 "a"])
+        `shouldBe` mrgIf (ISBool 0 "s_a") (mrgReturn [ISBool 1 "s_a"]) (mrgReturn [ISBool 2 "s_a", ISBool 3 "s_a"])
   describe "Concrete Key HashMaps" $ do
     it "Concrete Key HashMap should work" $ do
       mrgIte
