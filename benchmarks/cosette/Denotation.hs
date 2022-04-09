@@ -26,9 +26,9 @@ denoteSql (QueryLeftOuterJoin q1 q2 i1 i2) =
   [||leftOuterJoin $$(denoteSql q1) $$(denoteSql q2) i1 i2||]
 denoteSql (QueryLeftOuterJoin2 q1 q2 q12) =
   [||leftOuterJoin2 $$(denoteSql q1) $$(denoteSql q2) $$(denoteSql q12)||]
-denoteSql (QueryRename q name) = [||renameTable name $$(denoteSql q)||]
-denoteSql (QueryRenameFull q name scheme) =
-  [||renameTableFull name scheme $$(denoteSql q)||]
+denoteSql (QueryRename q nm) = [||renameTable nm $$(denoteSql q)||]
+denoteSql (QueryRenameFull q nm scheme) =
+  [||renameTableFull nm scheme $$(denoteSql q)||]
 denoteSql (QueryUnionAll q1 q2) =
   [||unionAll $$(denoteSql q1) $$(denoteSql q2)||]
 denoteSql qs@(QuerySelect cols q f) =
@@ -83,8 +83,8 @@ extractSchema (QueryNamed n) = fail $ "There are unresolved tables " ++ show n
 extractSchema (QueryTable t) = tableQualifiedSchema t
 extractSchema (QueryJoin q1 q2) =
   extractSchema q1 ++ extractSchema q2
-extractSchema (QueryRenameFull _ name schema) =
-  fmap (B.append (B.append name ".")) schema
+extractSchema (QueryRenameFull _ nm schema) =
+  fmap (B.append (B.append nm ".")) schema
 extractSchema (QuerySelect cols _ _) =
   fmap (const "dummy") cols
 extractSchema q = fail $ "I don't know how to extract schema for the query " ++ show q

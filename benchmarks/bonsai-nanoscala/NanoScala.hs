@@ -59,12 +59,12 @@ eval' = htmemo2 $ \tree env ->
   bonsaiMatchCustomError
     BonsaiExecError
     [ dotLiteral "let" *= ((placeHolder *= (placeHolder *= placeHolder)) *= (placeHolder *= placeHolder))
-        ==> \name _ _ value expr -> do
+        ==> \nm _ _ value expr -> do
           v <- eval' #~ value # env
-          env1 <- envAddTree BonsaiExecError env name v
+          env1 <- envAddTree BonsaiExecError env nm v
           eval' #~ expr # env1,
-      dotLiteral "val" *= (placeHolder *= placeHolder) ==> \name term -> do
-        n <- extractName BonsaiExecError name
+      dotLiteral "val" *= (placeHolder *= placeHolder) ==> \nm term -> do
+        n <- extractName BonsaiExecError nm
         e <- eval' #~ term # env
         mrgReturn $ dotMakeU "value" n e,
       dotLiteral "typ" *= (placeHolder *= placeHolder) ==> \_ _ -> mrgReturn $ uBonsaiLeaf $ uRight "empty",
@@ -72,8 +72,8 @@ eval' = htmemo2 $ \tree env ->
         av <- eval' #~ a # env
         bv <- eval' #~ b # env
         mrgReturn $ dotJoinU av bv,
-      dotLiteral "var" *= placeHolder ==> \name -> do
-        n <- extractName BonsaiExecError name
+      dotLiteral "var" *= placeHolder ==> \nm -> do
+        n <- extractName BonsaiExecError nm
         envResolveU BonsaiExecError env n,
       dotLiteral "die" *= placeHolder ==> \_ -> throwError BonsaiExecError,
       dotLiteral "make-null" *= placeHolder ==> \_ -> mrgReturn $ uBonsaiLeaf $ uRight "dummy1",
@@ -89,7 +89,7 @@ type DotT = UnionM (Either (SymUnsignedBV DotBitWidth) B.ByteString)
 type DotResult = BonsaiTree DotT
 
 dotFindU :: B.ByteString -> SymUnsignedBV DotBitWidth -> UnionM DotResult -> UnionM (Maybe (UnionM DotResult))
-dotFindU kind name tb = dotFind kind name #~ tb
+dotFindU kind nm tb = dotFind kind nm #~ tb
 
 unsafeBV :: B.ByteString -> SymUnsignedBV DotBitWidth
 unsafeBV s = fromJust $ toSym $ terminalToBV dotSyntax s
@@ -101,29 +101,29 @@ terminalLiteral :: B.ByteString -> Pattern DotT 0
 terminalLiteral s = literal $ uLeft $ unsafeBV s
 
 dotFind :: B.ByteString -> SymUnsignedBV DotBitWidth -> DotResult -> UnionM (Maybe (UnionM DotResult))
-dotFind kind name tb =
+dotFind kind nm tb =
   mrgFmap (join . rightToMaybe) $
     runExceptT $
       bonsaiMatchCustomError
         BonsaiTypeError
         [ terminalLiteral "and" *= (placeHolder *= placeHolder) ==> \l r -> do
-            lv <- lift $ dotFindU kind name l
+            lv <- lift $ dotFindU kind nm l
             case lv of
               Nothing -> do
-                rv <- lift $ dotFindU kind name r
+                rv <- lift $ dotFindU kind nm r
                 mrgReturn rv
               Just v -> uJust v,
           placeHolder *= placeHolder ==> \k v ->
-            let e = uBonsaiNode (uBonsaiLeaf $ uRight kind) (uBonsaiLeaf $ uLeft name)
+            let e = uBonsaiNode (uBonsaiLeaf $ uRight kind) (uBonsaiLeaf $ uLeft nm)
              in mrgIf (e ==~ k) (uJust v) uNothing
         ]
         tb
 
 dotMake :: B.ByteString -> SymUnsignedBV DotBitWidth -> DotResult -> DotResult
-dotMake kind name tr = BonsaiNode (uBonsaiNode (uBonsaiLeaf $ uRight kind) (uBonsaiLeaf $ uLeft name)) (mrgReturn tr)
+dotMake kind nm tr = BonsaiNode (uBonsaiNode (uBonsaiLeaf $ uRight kind) (uBonsaiLeaf $ uLeft nm)) (mrgReturn tr)
 
 dotMakeU :: B.ByteString -> SymUnsignedBV DotBitWidth -> UnionM DotResult -> UnionM DotResult
-dotMakeU kind name = uBonsaiNode (uBonsaiNode (uBonsaiLeaf $ uRight kind) (uBonsaiLeaf $ uLeft name))
+dotMakeU kind nm = uBonsaiNode (uBonsaiNode (uBonsaiLeaf $ uRight kind) (uBonsaiLeaf $ uLeft nm))
 
 dotJoin :: DotResult -> DotResult -> DotResult
 dotJoin l r = BonsaiNode (uBonsaiLeaf $ uLeft andBV) (uBonsaiNode (mrgReturn l) (mrgReturn r))
@@ -162,19 +162,19 @@ reduceType = htmup htmemo3 $ \reccount env strict tree ->
                     av <- reduceTypeR env True #~ a
                     bv <- reduceTypeR env True #~ b
                     mrgReturn $ dotJoinU av bv,
-              dotLiteral "get" *= (placeHolder *= placeHolder) ==> \tbl name -> do
-                n <- extractName BonsaiTypeError name
+              dotLiteral "get" *= (placeHolder *= placeHolder) ==> \tbl nm -> do
+                n <- extractName BonsaiTypeError nm
                 t <- type' #~ tbl # env
                 r <- lift $ dotFindU "type" n t
                 case r of
                   Nothing -> throwError BonsaiTypeError
                   Just umb -> mrgReturn umb,
-              dotLiteral "typ" *= (placeHolder *= placeHolder) ==> \name t -> do
-                n <- extractName BonsaiTypeError name
+              dotLiteral "typ" *= (placeHolder *= placeHolder) ==> \nm t -> do
+                n <- extractName BonsaiTypeError nm
                 t1 <- reduceTypeR env True #~ t
                 return $ dotMakeU "type" n t1,
-              dotLiteral "val" *= (placeHolder *= placeHolder) ==> \name t -> do
-                n <- extractName BonsaiTypeError name
+              dotLiteral "val" *= (placeHolder *= placeHolder) ==> \nm t -> do
+                n <- extractName BonsaiTypeError nm
                 t1 <- reduceTypeR env True #~ t
                 return $ dotMakeU "value" n t1,
               dotLiteral "range" *= (placeHolder *= placeHolder) ==> \f t -> do
@@ -215,32 +215,32 @@ type' = htmemo2 $ \tree env ->
   bonsaiMatchCustomError
     BonsaiTypeError
     [ dotLiteral "let" *= ((placeHolder *= (placeHolder *= placeHolder)) *= (placeHolder *= placeHolder))
-        ==> \name intype outtype value expr -> do
+        ==> \nm intype outtype value expr -> do
           it <- reduceType 0 env True #~ intype
           it' <- type' #~ value # env
           subi <- subType 0 it' it
           gassertWithError BonsaiTypeError subi
 
-          newenv <- envAddTree BonsaiTypeError env name it
+          newenv <- envAddTree BonsaiTypeError env nm it
 
           ot <- reduceType 0 newenv True #~ outtype
           ot' <- type' #~ expr # newenv
           subo <- subType 0 ot' ot
           gassertWithError BonsaiTypeError subo
 
-          newenv' <- envAddTree BonsaiTypeError env name it'
+          newenv' <- envAddTree BonsaiTypeError env nm it'
           reduceType 0 newenv' True #~ outtype,
-      dotLiteral "val" *= (placeHolder *= placeHolder) ==> \name term -> do
-        n <- extractName BonsaiTypeError name
+      dotLiteral "val" *= (placeHolder *= placeHolder) ==> \nm term -> do
+        n <- extractName BonsaiTypeError nm
         t <- type' #~ term # env
         return $ dotMakeU "value" n t,
-      dotLiteral "typ" *= (placeHolder *= placeHolder) ==> \name term -> do
-        n <- extractName BonsaiTypeError name
+      dotLiteral "typ" *= (placeHolder *= placeHolder) ==> \nm term -> do
+        n <- extractName BonsaiTypeError nm
         t <- type' #~ term # env
         return $ dotMakeU "type" n t,
       dotLiteral "and" *= (placeHolder *= placeHolder) ==> \_ _ -> throwError BonsaiTypeError,
-      dotLiteral "var" *= placeHolder ==> \name -> do
-        n <- extractName BonsaiTypeError name
+      dotLiteral "var" *= placeHolder ==> \nm -> do
+        n <- extractName BonsaiTypeError nm
         t <- envResolve' 3 BonsaiTypeError env n
         return $ mrgReturn t,
       dotLiteral "die" *= placeHolder ==> \expr -> do

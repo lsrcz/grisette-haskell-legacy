@@ -97,7 +97,7 @@ getBlockLength :: Fd -> State Ext4FsCrackState Integer
 getBlockLength fd = gets $ \s -> fromJust $ M.lookup fd (blockLengths s)
 
 getNameIno :: Name -> StateT Ext4Fs UnionM (UnionM Integer)
-getNameIno name = merge $ gets $ \(Ext4Fs _ _ dir _ _) -> dirEntIno $ dir !! fromInteger name
+getNameIno nm = merge $ gets $ \(Ext4Fs _ _ dir _ _) -> dirEntIno $ dir !! fromInteger nm
 
 getFdINode :: Fd -> StateT Ext4Fs UnionM (UnionM Integer)
 getFdINode fd = merge $ gets $ \(Ext4Fs _ _ _ fds _) -> fds !! fromInteger fd
@@ -108,7 +108,7 @@ getFile ino = StateT $ \s -> do
   mrgReturn (ext4Files s !! fromInteger i, s)
 
 getDirEnt :: Name -> StateT Ext4Fs UnionM DirEnt
-getDirEnt name = merge $ gets $ \(Ext4Fs _ _ dir _ _) -> dir !! fromInteger name
+getDirEnt nm = merge $ gets $ \(Ext4Fs _ _ dir _ _) -> dir !! fromInteger nm
 
 updateL :: Int -> a -> [a] -> [a]
 updateL 0 x (_ : ys) = x : ys
@@ -121,9 +121,9 @@ updateFile ino f = StateT $ \(Ext4Fs bs na dir fd files) -> do
   mrgReturn ((), Ext4Fs bs na dir fd $ updateL (fromIntegral i) f files)
 
 updateDirEnt :: Name -> DirEnt -> StateT Ext4Fs UnionM ()
-updateDirEnt name d = merge $
+updateDirEnt nm d = merge $
   modify $ \(Ext4Fs bs na dir fd files) ->
-    Ext4Fs bs na (updateL (fromInteger name) d dir) fd files
+    Ext4Fs bs na (updateL (fromInteger nm) d dir) fd files
 
 updateFdIno :: Fd -> UnionM Ino -> StateT Ext4Fs UnionM ()
 updateFdIno fd ino = merge $
@@ -144,14 +144,14 @@ instance FileSystem ConcExt4Fs Ext4Fs where
               ]
           )
       go [] = return []
-      go (Creat name : xs) = do
+      go (Creat nm : xs) = do
         nextFd <- gets ext4NextFd
-        let ino = concDirEntIno (dir !! fromIntegral name)
+        let ino = concDirEntIno (dir !! fromIntegral nm)
         let cnt = concFileOnDisk (files !! fromIntegral ino)
         r <- go xs
         updateLength nextFd $ fromIntegral $ length cnt
         updateNextFd
-        return $! uIDirAdd name nextFd : r
+        return $! uIDirAdd nm nextFd : r
       go (Write fd content : xs) = do
         offset <- getLength fd
         let offsetEnd = offset + fromIntegral (length content)
@@ -208,9 +208,9 @@ instance FileSystem ConcExt4Fs Ext4Fs where
   execute f i =
     execStateT
       ( case i of
-          IDirAdd name fd -> do
-            DirEnt ino _ <- getDirEnt name
-            updateDirEnt name $ DirEnt ino (conc True)
+          IDirAdd nm fd -> do
+            DirEnt ino _ <- getDirEnt nm
+            updateDirEnt nm $ DirEnt ino (conc True)
             updateFdIno fd ino
           IDirRename name1 name2 -> unless (name1 == name2) $ do
             newIno <- getNameIno name1
@@ -251,8 +251,8 @@ instance FileSystem ConcExt4Fs Ext4Fs where
         File _ onDisk <- getFile ino
         let newFile = File (mrgReturn sz) onDisk
         updateFile ino newFile
-  ondisk (Ext4Fs _ _ dirs _ files) name =
-    let DirEnt ino exists = dirs !! fromIntegral name
+  ondisk (Ext4Fs _ _ dirs _ files) nm =
+    let DirEnt ino exists = dirs !! fromIntegral nm
      in mrgIf
           exists
           ( do

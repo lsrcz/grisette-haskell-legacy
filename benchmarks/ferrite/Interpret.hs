@@ -1,7 +1,6 @@
 module Interpret where
 
 import Control.Monad.State.Strict
-import Data.Bifunctor
 import Fs
 import Grisette.Core
 import Grisette.SymPrim.Term

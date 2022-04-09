@@ -34,8 +34,8 @@ envAddTree ::
   UnionM t ->
   ExceptT BonsaiError UnionM (Env n t)
 envAddTree err env t v = do
-  name <- extractName err t
-  mrgReturn $ envAdd env name v
+  nm <- extractName err t
+  mrgReturn $ envAdd env nm v
 
 envResolveU ::
   (Mergeable SymBool t, KnownNat n, 1 <= n) =>

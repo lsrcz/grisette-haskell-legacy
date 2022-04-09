@@ -63,10 +63,10 @@ instance (KnownNat n, 1 <= n) => GenSym SymBool Int (BonsaiTree (SymUnsignedBV n
         l <- genSymFresh $ depth - 1
         r <- genSymFresh $ depth - 1
         sym <- genSymSimpleFresh @SymBool ()
-        choose (BonsaiLeaf sym) [BonsaiNode l r]
+        choose [BonsaiLeaf sym, BonsaiNode l r]
 
 unsafeLeaf :: (KnownNat n, 1 <= n) => OptimSyntaxSpec n -> B.ByteString -> BonsaiTree (SymUnsignedBV n)
-unsafeLeaf stx name = BonsaiLeaf $ conc $ fromJust $ terminalToBV stx name
+unsafeLeaf stx nm = BonsaiLeaf $ conc $ fromJust $ terminalToBV stx nm
 
 data BonsaiError
   = BonsaiTypeError

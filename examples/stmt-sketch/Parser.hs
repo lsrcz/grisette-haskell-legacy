@@ -185,7 +185,7 @@ program = do
   return $ SymbProgram s
 
 getSketch :: B.ByteString -> GenSymIdent -> SymbProgram
-getSketch code name = case runGenSymFresh (runParserT program "a" code) name of
+getSketch code nm = case runGenSymFresh (runParserT program "a" code) nm of
   Left i -> error $ errorBundlePretty i
   Right i -> i
 

@@ -8,9 +8,9 @@ import Grisette.SymPrim.Term
 import Table
 
 xproduct :: Table -> Table -> Name -> Table
-xproduct a@(Table _ _ ca) b@(Table _ _ cb) name =
+xproduct a@(Table _ _ ca) b@(Table _ _ cb) nm =
   Table
-    name
+    nm
     (schemaJoin a b)
     (merge $ xproductRaw <$> ca <*> cb)
 

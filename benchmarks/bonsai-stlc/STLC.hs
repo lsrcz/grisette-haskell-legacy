@@ -64,21 +64,21 @@ callNode :: STLCTree -> STLCTree -> STLCTree
 callNode l r = pairNode (simpleNode "call") $ pairNode l r
 
 lambdaNode :: B.ByteString -> STLCTree -> STLCTree -> STLCTree
-lambdaNode name ty =
+lambdaNode nm ty =
   pairNode
     ( pairNode
         (simpleNode "lambda")
         ( pairNode
-            (simpleNode name)
+            (simpleNode nm)
             ty
         )
     )
 
 uopNode :: B.ByteString -> STLCTree -> STLCTree
-uopNode name = callNode (simpleNode name)
+uopNode nm = callNode (simpleNode nm)
 
 bopNode :: B.ByteString -> STLCTree -> STLCTree -> STLCTree
-bopNode name l = callNode (callNode (unsafeLeaf stlcSyntax name) l)
+bopNode nm l = callNode (callNode (unsafeLeaf stlcSyntax nm) l)
 
 consNode :: STLCTree -> STLCTree -> STLCTree
 consNode = bopNode "cons"
@@ -129,8 +129,8 @@ typer' = htmemo2 $ \tree env {-trace (show tree) $ trace (show env) $-} ->
       stlcLiteral "tl" ==> mrgReturn (mrgReturn (arrowTy listOfIntTy listOfIntTy)),
       stlcLiteral "+" ==> mrgReturn (mrgReturn (arrowTy intTy (arrowTy intTy intTy))),
       ((stlcLiteral "lambda" *= (placeHolder *= placeHolder)) *= placeHolder)
-        ==> ( \name ty expr -> do
-                n <- lift name
+        ==> ( \nm ty expr -> do
+                n <- lift nm
                 _ <- gassertWithError BonsaiTypeError (isAvailableNameNode n)
                 let BonsaiLeaf sym = n -- will never call fail because we have partial evaluation
                 res <- typer' #~ expr # envAdd env sym ty
@@ -242,8 +242,8 @@ interpreter' = htmemo3 $ \tree env reccount {-trace (show tree) $ trace (show en
           stlcLiteral "cons" ==> mrgReturn (uSTLCBuiltin (conc (fromJust (terminalToBV stlcSyntax "cons")))),
           stlcLiteral "+" ==> mrgReturn (uSTLCBuiltin (conc (fromJust (terminalToBV stlcSyntax "+")))),
           ((stlcLiteral "lambda" *= (placeHolder *= placeHolder)) *= placeHolder)
-            ==> ( \name _ expr -> do
-                    l <- lift name
+            ==> ( \nm _ expr -> do
+                    l <- lift nm
                     gassertWithError BonsaiExecError (isAvailableNameNode l)
                     let BonsaiLeaf sym = l
                     mrgReturn (uSTLCLambda sym expr env)
@@ -256,7 +256,7 @@ interpreter' = htmemo3 $ \tree env reccount {-trace (show tree) $ trace (show en
                     case funcvv of
                       f@STLCBuiltin {} -> applyBuiltin f argv
                       f@STLCPartiallyAppliedBuiltin {} -> applyBuiltin f argv
-                      STLCLambda name expr env1 -> interpreter' #~ expr # envAdd env1 name argv # (reccount + 1)
+                      STLCLambda nm expr env1 -> interpreter' #~ expr # envAdd env1 nm argv # (reccount + 1)
                       _ -> throwError BonsaiExecError
                 ),
           placeHolder

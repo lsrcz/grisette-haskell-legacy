@@ -91,6 +91,6 @@ exprWholeString = do
   return e
 
 getSketch :: B.ByteString -> GenSymIdent -> UnionM SymbExpr
-getSketch code name = case runGenSymFresh (runParserT exprWholeString "a" code) name of
+getSketch code nm = case runGenSymFresh (runParserT exprWholeString "a" code) nm of
   Left i -> error $ errorBundlePretty i
   Right i -> i

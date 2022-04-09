@@ -22,22 +22,22 @@ pairNode :: DotTree -> DotTree -> DotTree
 pairNode l r = BonsaiNode (mrgReturn l) (mrgReturn r)
 
 valNode :: B.ByteString -> DotTree -> DotTree
-valNode name term = pairNode (simpleNode "val") $ pairNode (simpleNode name) term
+valNode nm term = pairNode (simpleNode "val") $ pairNode (simpleNode nm) term
 
 typNode :: B.ByteString -> DotTree -> DotTree
-typNode name term = pairNode (simpleNode "typ") $ pairNode (simpleNode name) term
+typNode nm term = pairNode (simpleNode "typ") $ pairNode (simpleNode nm) term
 
 andNode :: DotTree -> DotTree -> DotTree
 andNode l r = pairNode (simpleNode "and") $ pairNode l r
 
 letNode :: B.ByteString -> DotTree -> DotTree -> DotTree -> DotTree -> DotTree
-letNode name inty outty value expr =
+letNode nm inty outty value expr =
   pairNode (simpleNode "let") $
-    pairNode (pairNode (simpleNode name) $ pairNode inty outty) $
+    pairNode (pairNode (simpleNode nm) $ pairNode inty outty) $
       pairNode value expr
 
 varNode :: B.ByteString -> DotTree
-varNode name = pairNode (simpleNode "var") $ simpleNode name
+varNode nm = pairNode (simpleNode "var") $ simpleNode nm
 
 nullNode :: DotTree
 nullNode = simpleNode "null"
@@ -55,12 +55,12 @@ nothingNode :: DotTree
 nothingNode = simpleNode "Nothing"
 
 getNode :: DotTree -> B.ByteString -> DotTree
-getNode term name = pairNode (simpleNode "get") $ pairNode term (simpleNode name)
+getNode term nm = pairNode (simpleNode "get") $ pairNode term (simpleNode nm)
 
 rangeNode :: B.ByteString -> DotTree -> DotTree -> DotTree
-rangeNode name lower upper =
+rangeNode nm lower upper =
   pairNode (simpleNode "typ") $
-    pairNode (simpleNode name) $ pairNode (simpleNode "range") $ pairNode lower upper
+    pairNode (simpleNode nm) $ pairNode (simpleNode "range") $ pairNode lower upper
 
 aNode :: DotTree
 aNode = simpleNode "a"

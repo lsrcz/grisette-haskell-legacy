@@ -62,7 +62,7 @@ pairNode :: LetPolyTree -> LetPolyTree -> LetPolyTree
 pairNode l r = BonsaiNode (mrgReturn l) (mrgReturn r)
 
 letTerm :: B.ByteString -> LetPolyTree -> LetPolyTree -> LetPolyTree
-letTerm name t1 = pairNode (pairNode (pairNode (simpleNode "let") (simpleNode name)) t1)
+letTerm nm t1 = pairNode (pairNode (pairNode (simpleNode "let") (simpleNode nm)) t1)
 
 callTerm :: LetPolyTree -> LetPolyTree -> LetPolyTree
 callTerm l r = pairNode (simpleNode "call") $ pairNode l r
@@ -77,8 +77,8 @@ assignTerm :: LetPolyTree -> LetPolyTree -> LetPolyTree -> LetPolyTree
 assignTerm ref t1 = pairNode (pairNode (pairNode (simpleNode ":=") ref) t1)
 
 lambdaTerm :: B.ByteString -> LetPolyTree -> LetPolyTree -> LetPolyTree
-lambdaTerm name t1 t2 =
-  pairNode (pairNode (simpleNode "lambda") (simpleNode name)) $
+lambdaTerm nm t1 t2 =
+  pairNode (pairNode (simpleNode "lambda") (simpleNode nm)) $
     pairNode t1 t2
 
 opTerm :: B.ByteString -> LetPolyTree -> LetPolyTree
@@ -174,21 +174,21 @@ typer' tree env =
       letPolyLiteral "*" *= placeHolder ==> \v -> do
         t <- typer' #~ v # env
         derefTy #~ t,
-      ((letPolyLiteral "let" *= placeHolder) *= placeHolder) *= placeHolder ==> \name v expr -> do
-        n <- extractName BonsaiTypeError name
+      ((letPolyLiteral "let" *= placeHolder) *= placeHolder) *= placeHolder ==> \nm v expr -> do
+        n <- extractName BonsaiTypeError nm
         isValidName BonsaiTypeError n
         t <- typer' #~ v # env
         let newenv = envAdd env n t
         typer' #~ expr # newenv,
-      ((letPolyLiteral ":=" *= placeHolder) *= placeHolder) *= placeHolder ==> \name expr1 expr2 -> do
-        rt <- typer' #~ name # env
+      ((letPolyLiteral ":=" *= placeHolder) *= placeHolder) *= placeHolder ==> \nm expr1 expr2 -> do
+        rt <- typer' #~ nm # env
         dt <- derefTy #~ rt
         e1ty <- typer' #~ expr1 # env
 
         typeCompatible #~ e1ty #~ dt
         typer' #~ expr2 # env,
-      (letPolyLiteral "lambda" *= placeHolder) *= (placeHolder *= placeHolder) ==> \name ty expr -> do
-        n <- extractName BonsaiTypeError name
+      (letPolyLiteral "lambda" *= placeHolder) *= (placeHolder *= placeHolder) ==> \nm ty expr -> do
+        n <- extractName BonsaiTypeError nm
         isValidName BonsaiTypeError n
         let newenv = envAdd env n ty
         exprTy <- typer' #~ expr # newenv
@@ -320,8 +320,8 @@ simpleEvalList evalFunc named ref =
           res <- getRefEnv #~ ptr # newRef
           uTuple2 res newRef
         _ -> throwError BonsaiExecError,
-    (letPolyLiteral "lambda" *= placeHolder) *= (placeHolder *= placeHolder) ==> \name _ expr -> do
-      n <- extractName BonsaiExecError name
+    (letPolyLiteral "lambda" *= placeHolder) *= (placeHolder *= placeHolder) ==> \nm _ expr -> do
+      n <- extractName BonsaiExecError nm
       isValidName BonsaiExecError n
       uTuple2 (uLetPolyLambda n expr named) ref,
     ((letPolyLiteral ":=" *= placeHolder) *= placeHolder) *= placeHolder ==> \cell v1 expr -> do
@@ -356,8 +356,8 @@ simpleEval' named ref tree =
 eval' :: EvalType
 eval' named ref tree =
   evalMatch
-    ( [ ((letPolyLiteral "let" *= placeHolder) *= placeHolder) *= placeHolder ==> \name v1 v2 -> do
-          n <- extractName BonsaiExecError name
+    ( [ ((letPolyLiteral "let" *= placeHolder) *= placeHolder) *= placeHolder ==> \nm v1 v2 -> do
+          n <- extractName BonsaiExecError nm
           isValidName BonsaiExecError n
           (v1r, newRef) <- eval' named ref #~ v1
           let newNamed = envAdd named n v1r

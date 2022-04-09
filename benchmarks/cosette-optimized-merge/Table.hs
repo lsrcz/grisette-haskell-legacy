@@ -24,12 +24,12 @@ data Table = Table
   deriving (Evaluate Model) via (Default Table)
 
 renameTable :: Name -> Table -> Table
-renameTable name t = t {tableName = name}
+renameTable nm t = t {tableName = nm}
 
 renameTableFull :: Name -> Schema -> Table -> Table
-renameTableFull name schema t
+renameTableFull nm schema t
   | length schema /= length (tableSchema t) = error "Bad cols"
-  | otherwise = t {tableName = name, tableSchema = schema}
+  | otherwise = t {tableName = nm, tableSchema = schema}
 
 tableQualifiedSchema :: Table -> Schema
 tableQualifiedSchema t = fmap (B.append (B.append (tableName t) ".")) (tableSchema t)

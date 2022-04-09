@@ -67,7 +67,7 @@ instance
 -- The previous section should lie in Grisette lib
 
 genSketch :: ListSpec Int -> GenSymIdent -> Coord -> UnionM [UnionM Move]
-genSketch (ListSpec minl maxl sub) name coord = genSym (ListSpec minl maxl (sub, coord)) name
+genSketch (ListSpec minl maxl sub) nm coord = genSym (ListSpec minl maxl (sub, coord)) nm
 
 genSketchBetter :: ListSpec Int -> GenSymIdent -> Coord -> UnionM [UnionM Move]
 genSketchBetter (ListSpec minl maxl sub) = genSymSimple @SymBool (ListSpec minl maxl sub)

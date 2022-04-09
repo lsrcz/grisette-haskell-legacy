@@ -7,7 +7,7 @@ import Grisette.SymPrim.Term
 import Table
 
 xproduct :: Table -> Table -> Name -> Table
-xproduct a@(Table _ _ ca) b@(Table _ _ cb) name = Table name (schemaJoin a b) (xproductRaw ca cb)
+xproduct a@(Table _ _ ca) b@(Table _ _ cb) nm = Table nm (schemaJoin a b) (xproductRaw ca cb)
 
 xproductRaw :: RawTable -> RawTable -> RawTable
 xproductRaw x y = (\((l1, n1), (l2, n2)) -> (l1 ++ l2, n1 * n2)) <$> cartesProd x y
