@@ -103,9 +103,7 @@ instance GenSymSimple SymBool () SIdentifier where
 instance GenSym SymBool [Integer] SIdentifier
 
 instance GenSymSimple SymBool [Integer] SIdentifier where
-  genSymSimpleFresh l =
-    let l1 = SIdentifier . conc <$> l
-     in simpleChoose @SymBool (head l1) (tail l1)
+  genSymSimpleFresh l = simpleChoose @SymBool (SIdentifier . conc <$> l)
 
 data Stmt
   = AssignStmt Identifier ConcExpr

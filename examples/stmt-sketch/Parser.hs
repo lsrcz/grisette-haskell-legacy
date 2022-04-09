@@ -37,8 +37,7 @@ intlst = between (symbol "??[") (symbol "]") (sepBy1 L.decimal (symbol ","))
 intHoleRangeExpr :: Parser (UnionM SymbExpr)
 intHoleRangeExpr = do
   l <- intlst
-  let x = conc @SymInteger <$> l
-  (i :: UnionM SymInteger) <- choose @SymBool (head x) (tail x)
+  (i :: UnionM SymInteger) <- choose @SymBool (conc @SymInteger <$> l)
   return $ uSIntConstantExpr $ getSingle i
 
 intHoleExpr :: Parser (UnionM SymbExpr)
@@ -70,12 +69,12 @@ identExpr :: Parser (UnionM SymbExpr)
 identExpr = uSVarExpr <$> ident
 
 binary :: B.ByteString -> (a -> a -> a) -> Operator Parser a
-binary name f = E.InfixL (f <$ symbol name)
+binary nm f = E.InfixL (f <$ symbol nm)
 
 opHoleOperator :: Operator Parser (UnionM SymbExpr)
 opHoleOperator = E.InfixL $ do
   _ <- symbol "??op"
-  simpleChoose @SymBool uSAddExpr [uSSubExpr, uSMulExpr, uSLtExpr,
+  simpleChoose @SymBool [uSAddExpr, uSSubExpr, uSMulExpr, uSLtExpr,
     uSEqExpr, uSAndExpr, uSOrExpr]
 
 addOp :: Parser (UnionM SymbExpr -> UnionM SymbExpr -> UnionM SymbExpr)
@@ -108,7 +107,7 @@ opBetterHole :: Operator Parser (UnionM SymbExpr)
 opBetterHole = E.InfixL $ do
   ops <- between (symbol "??{") (symbol "}") $
     sepBy (choice [addOp, subOp, mulOp, ltOp, eqOp, andOp, orOp]) (symbol ",")
-  simpleChoose @SymBool (head ops) (tail ops)
+  simpleChoose @SymBool ops
 
 -- hole op is handled separately
 operatorTable :: [[Operator Parser (UnionM SymbExpr)]]

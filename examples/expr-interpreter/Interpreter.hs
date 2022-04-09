@@ -44,7 +44,7 @@ instance GenSym (Sym Bool) Integer LitExpr where
   genSymFresh listLength = do
     b <- genSymSimpleFresh @SymBool ()
     l <- genSymFresh @SymBool listLength
-    choose (BoolLit b) [ListLit l, UnitLit]
+    choose [BoolLit b, ListLit l, UnitLit]
 
 instance GenSym (Sym Bool) ExprSpec OpsExpr where
   genSymFresh (ExprSpec d l) = do
@@ -52,8 +52,8 @@ instance GenSym (Sym Bool) ExprSpec OpsExpr where
     l2 <- genSymFresh @SymBool (ExprSpec (d - 1) l)
     v <- genSymSimpleFresh @SymBool ()
     choose
-      (HeadExpr l1)
-      [ TailExpr l1,
+      [ HeadExpr l1,
+        TailExpr l1,
         ConsExpr l1 l2,
         AndExpr l1 l2,
         NotExpr l1,
@@ -69,7 +69,7 @@ instance GenSym (Sym Bool) ExprSpec Expr where
         else do
           lit <- genSymFresh @SymBool l
           ops <- genSymFresh @SymBool e
-          chooseU (Lit <$> lit) [Ops <$> ops]
+          chooseU [Lit <$> lit, Ops <$> ops]
 
 data Stmt
   = DefineStmt SymInteger (UnionM Expr)
@@ -81,7 +81,7 @@ instance GenSym (Sym Bool) ExprSpec Stmt where
   genSymFresh e = do
     expr <- genSymFresh @SymBool e
     vari <- genSymSimpleFresh @SymBool ()
-    choose (DefineStmt vari expr) [ValueStmt expr]
+    choose [DefineStmt vari expr, ValueStmt expr]
 
 data Error
   = Typer TyperError

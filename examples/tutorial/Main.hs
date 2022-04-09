@@ -233,7 +233,7 @@ instance GenSym SymBool Integer Expr where
         f <- genSymSimpleFresh @SymBool ()
         l <- genSymSimpleFresh @SymBool (i - 1)
         r <- genSymSimpleFresh @SymBool (i - 1)
-        choose (Const f) [Add l r, Sub l r, Eqv l r]
+        choose [Const f, Add l r, Sub l r, Eqv l r]
 
 sketch1 :: UnionM Expr
 sketch1 = genSym (1 :: Integer) "a"
@@ -250,7 +250,7 @@ sketch2 = genSym (2 :: Integer) "b"
 instance GenSym SymBool () (UnionM Expr -> UnionM Expr -> UnionM Expr)
 
 instance GenSymSimple SymBool () (UnionM Expr -> UnionM Expr -> UnionM Expr) where
-  genSymSimpleFresh _ = simpleChoose @SymBool uAdd [uSub, uEqv]
+  genSymSimpleFresh _ = simpleChoose @SymBool [uAdd, uSub, uEqv]
 
 sketch3 :: UnionM Expr
 sketch3 =

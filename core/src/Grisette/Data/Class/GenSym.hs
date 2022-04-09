@@ -336,14 +336,14 @@ choose ::
     MonadReader GenSymIdent m,
     MonadUnion bool u
   ) =>
-  a ->
   [a] ->
   m (u a)
-choose x [] = return $ mrgReturn x
-choose x (r : rs) = do
+choose [x] = return $ mrgReturn x
+choose (r : rs) = do
   b <- genSymSimpleFresh @bool ()
-  res <- choose r rs
-  return $ mrgIf b (mrgReturn x) res
+  res <- choose rs
+  return $ mrgIf b (mrgReturn r) res
+choose [] = error "choose expects at least one value"
 
 simpleChoose ::
   forall bool a m.
@@ -353,14 +353,14 @@ simpleChoose ::
     MonadState GenSymIndex m,
     MonadReader GenSymIdent m
   ) =>
-  a ->
   [a] ->
   m a
-simpleChoose x [] = return x
-simpleChoose x (r : rs) = do
+simpleChoose [x] = return x
+simpleChoose (r : rs) = do
   b <- genSymSimpleFresh @bool ()
-  res <- simpleChoose @bool r rs
-  return $ mrgIte @bool b x res
+  res <- simpleChoose @bool rs
+  return $ mrgIte @bool b r res
+simpleChoose [] = error "simpleChoose expects at least one value"
 
 chooseU ::
   forall bool a m u.
@@ -371,14 +371,14 @@ chooseU ::
     MonadReader GenSymIdent m,
     MonadUnion bool u
   ) =>
-  u a ->
   [u a] ->
   m (u a)
-chooseU x [] = return x
-chooseU x (r : rs) = do
+chooseU [x] = return x
+chooseU (r : rs) = do
   b <- genSymSimpleFresh @bool ()
-  res <- chooseU r rs
-  return $ mrgIf b x res
+  res <- chooseU rs
+  return $ mrgIf b r res
+chooseU [] = error "chooseU expects at least one value"
 
 -- Bool
 instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSym bool Bool Bool where
@@ -405,13 +405,13 @@ instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSym bool (NumGenUpper
   genSymFresh (NumGenUpperBound upperBound) =
     if upperBound < 0
       then error $ "Bad upper bound (should be >= 0): " ++ show upperBound
-      else choose 0 [1 .. upperBound]
+      else choose [0, 1 .. upperBound]
 
 instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSym bool (NumGenBound Integer) Integer where
   genSymFresh (NumGenBound l u) =
     if u < l
       then error $ "Bad bounds (upper bound should >= lower bound): " ++ show (l, u)
-      else choose l [l + 1 .. u]
+      else choose [l, l + 1 .. u]
 
 -- Char
 instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSym bool Char Char where
@@ -421,10 +421,10 @@ instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSymSimple bool Char C
   genSymSimpleFresh v = return v
 
 instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSym bool (NumGenUpperBound Char) Char where
-  genSymFresh (NumGenUpperBound upperBound) = choose (toEnum 0) (toEnum <$> [1 .. fromEnum upperBound - 1])
+  genSymFresh (NumGenUpperBound upperBound) = choose (toEnum <$> [0 .. fromEnum upperBound - 1])
 
 instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSym bool (NumGenBound Char) Char where
-  genSymFresh (NumGenBound l u) = choose l (toEnum <$> [fromEnum l + 1 .. fromEnum u - 1])
+  genSymFresh (NumGenBound l u) = choose (toEnum <$> [fromEnum l .. fromEnum u - 1])
 
 -- Either
 instance
@@ -476,8 +476,8 @@ instance
   where
   genSymFresh v = do
     l <- gl v
-    let (x : xs) = reverse $ scanr (:) [] l
-    choose x xs
+    let xs = reverse $ scanr (:) [] l
+    choose xs
     where
       gl :: (MonadState GenSymIndex m, MonadReader GenSymIdent m) => Integer -> m [a]
       gl v1
@@ -503,8 +503,8 @@ instance
       then error $ "Bad lengthes: " ++ show (minLen, maxLen)
       else do
         l <- gl maxLen
-        let (x : xs) = drop (fromInteger minLen) $ reverse $ scanr (:) [] l
-        choose x xs
+        let xs = drop (fromInteger minLen) $ reverse $ scanr (:) [] l
+        choose xs
     where
       gl :: (MonadState GenSymIndex m, MonadReader GenSymIdent m) => Integer -> m [a]
       gl currLen

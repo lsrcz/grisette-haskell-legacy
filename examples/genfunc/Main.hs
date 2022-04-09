@@ -31,7 +31,7 @@ instance GenSym (Sym Bool) (Int, Coord) Move where
         return $ uExactCoord coord
       else do
         m <- genSymFresh @SymBool (v - 1, coord)
-        choose (ExactCoord coord) [MoveLeft m, MoveRight m]
+        choose [ExactCoord coord, MoveLeft m, MoveRight m]
 
 instance GenSym (Sym Bool) Int (Coord -> UnionM Move) where
 
@@ -42,7 +42,7 @@ instance GenSymSimple (Sym Bool) Int (Coord -> UnionM Move) where
         return uExactCoord 
       else do
         m <- genSymSimpleFresh @SymBool (v - 1)
-        simpleChoose @SymBool uExactCoord [uMoveLeft . m, uMoveRight . m]
+        simpleChoose @SymBool [uExactCoord, uMoveLeft . m, uMoveRight . m]
 
 -- The following should lie in Grisette lib
 extractArgFromListOfFunc :: [a -> b] -> a -> [b]

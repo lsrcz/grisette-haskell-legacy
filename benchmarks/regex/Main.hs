@@ -180,7 +180,7 @@ sk1 =
     -}
 
 freshPrim :: GenSymFresh (UnionM Patt)
-freshPrim = choose (PrimPatt 'd') [PrimPatt 'c', PrimPatt 'b', PrimPatt 'a', EmptyPatt]
+freshPrim = choose [PrimPatt 'd', PrimPatt 'c', PrimPatt 'b', PrimPatt 'a', EmptyPatt]
 
 binFreshPrim :: (UnionM Patt -> UnionM Patt -> Patt) -> GenSymFresh Patt
 binFreshPrim f = do
@@ -191,7 +191,7 @@ seqOrAlt :: GenSymFresh (UnionM Patt)
 seqOrAlt = do
   s <- binFreshPrim SeqPatt
   a <- binFreshPrim AltPatt
-  choose s [a]
+  choose [s, a]
 
 sks :: GenSymFresh Patt
 sks = do
