@@ -18,10 +18,15 @@ import Language.Haskell.TH.Syntax
 import Data.MemoTrie
 import Grisette.Data.MemoUtils
 
+-- | The default union implementation.
 data UnionBase b a
-  = Single a
-  | -- left most value / invariant maintained / cond / true branch / false branch
-    Guard a !Bool !b (UnionBase b a) (UnionBase b a)
+  = Single a              -- ^ A single value
+  | Guard                 -- ^ A guard value
+      a                   -- ^ Cached leftmost value
+      !Bool               -- ^ Is merged invariant already maintained?
+      !b                  -- ^ Guard condition
+      (UnionBase b a)     -- ^ True branch
+      (UnionBase b a)     -- ^ False branch
   deriving (Generic, Eq, Lift, Generic1)
 
 instance (Eq b) => Eq1 (UnionBase b) where
@@ -55,6 +60,9 @@ instance NFData2 UnionBase where
   liftRnf2 _b _a (Single a) = _a a
   liftRnf2 _b _a (Guard a bo b l r) = _a a `seq` rnf bo `seq` _b b `seq` liftRnf2 _b _a l `seq` liftRnf2 _b _a r
 
+-- | Build 'Guard' with leftmost cache correctly maintained.
+--
+-- Usually you should never directly try to build a 'Guard' with its constructor.
 guardWithLeftMost :: (SymBoolOp b) => Bool -> b -> UnionBase b a -> UnionBase b a -> UnionBase b a
 guardWithLeftMost inv cond t = Guard (leftMost t) inv cond t
 
@@ -83,11 +91,15 @@ instance (Hashable b, Hashable a) => Hashable (UnionBase b a) where
   s `hashWithSalt` (Single a) = s `hashWithSalt` (0 :: Int) `hashWithSalt` a
   s `hashWithSalt` (Guard _ _ c l r) = s `hashWithSalt` (1 :: Int) `hashWithSalt` c `hashWithSalt` l `hashWithSalt` r
 
+-- | Fully reconstruct a 'UnionBase' to maintain the merged invariant.
 fullReconstruct :: (SymBoolOp bool) => MergeStrategy bool a -> UnionBase bool a -> UnionBase bool a
 fullReconstruct strategy (Guard _ False cond t f) =
   guardWithStrategyInv strategy cond (fullReconstruct strategy t) (fullReconstruct strategy f)
 fullReconstruct _ u = u
 
+-- | Use a specific strategy to build a 'Guard' value.
+--
+-- The merged invariant will be maintained in the result.
 guardWithStrategy ::
   (SymBoolOp bool) =>
   MergeStrategy bool a ->

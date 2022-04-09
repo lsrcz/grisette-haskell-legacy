@@ -14,12 +14,12 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module Grisette.Data.Class.GenSym
-  ( GenSymIndex,
-    pattern GenSymIndex,
+  ( GenSymIndex (..),
     GenSymIdent,
     pattern GenSymIdent,
     name,
     nameWithInfo,
+    FileLocation (..),
     nameWithLoc,
     GenSymFreshT,
     GenSymFresh,
@@ -59,10 +59,34 @@ import Language.Haskell.TH
 import Debug.Trace.LocationTH (__LOCATION__)
 import Data.List (intercalate)
 
+-- | Index type used for 'GenSym'.
+--
+-- To generate fresh variables, a monadic stateful context will be maintained.
+-- Every time a new variable is generated, the index will be increased.
 newtype GenSymIndex = GenSymIndex Int
   deriving (Show)
   deriving (Num) via Int
 
+-- | Identifier type used for 'GenSym'
+--
+-- The constructor is hidden intentionally.
+-- You can construct an identifier by:
+--
+--   * a raw name
+--
+--     >>> name "a"
+--     s_a
+--
+--   * bundle the calling file location with the name to ensure global uniqueness
+--
+-- >>> $(nameWithLoc "a")
+-- withInfo/a/FileLocation/80432a51e5b129f60172b1172804ec01/<interactive>:42:4-18
+--
+--   * bundle the calling file location with some user provided information
+--
+-- >>> nameWithInfo "a" (1 :: Int)
+-- withInfo/a/Int/b1460030427ac0fa458cbf347f168b53/1
+--
 newtype GenSymIdent = GenSymIdent String
 
 instance Show GenSymIdent where
@@ -71,9 +95,18 @@ instance Show GenSymIdent where
 instance IsString GenSymIdent where
   fromString = name
 
+-- | Simple name identifier.
+-- The same identifier refers to the same symbolic variable in the whole program.
+--
+-- The user need to ensure uniqueness by themselves if they need to.
 name :: String -> GenSymIdent
 name = GenSymIdent . ("s_"++)
 
+-- | Identifier with extra information.
+-- The same name with the same information
+-- refers to the same symbolic variable in the whole program.
+--
+-- The user need to ensure uniqueness by themselves if they need to.
 nameWithInfo :: forall a. (Typeable a, Show a) => String -> a -> GenSymIdent
 nameWithInfo s v =
       GenSymIdent $
@@ -89,11 +122,36 @@ nameWithInfo s v =
     replace ('/':xs) = '/' : '/' : replace xs
     replace (c:xs) = c : replace xs
 
-nameWithLoc :: String -> Q Exp
-nameWithLoc s = [| nameWithInfo s $__LOCATION__ |]
+-- File location type.
+data FileLocation = FileLocation {locPath :: String, locLineno :: Int, locSpan :: (Int, Int)}
 
+instance Show FileLocation where
+  show (FileLocation p l (s1, s2)) = p ++ ":" ++ show l ++ ":" ++ show s1 ++ "-" ++ show s2
+
+parseFileLocation :: String -> FileLocation
+parseFileLocation str =
+  let
+    r = reverse str
+    (s2, r1) = break (=='-') r
+    (s1, r2) = break (==':') $ tail r1
+    (l, p) = break (==':') $ tail r2
+  in
+    FileLocation (reverse $ tail p) (read $ reverse l) (read $ reverse s1, read $ reverse s2)
+
+-- | Identifier with the current location as extra information.
+--
+-- The uniqueness is ensured for the call to 'nameWithLoc' at different location.
+nameWithLoc :: String -> Q Exp
+nameWithLoc s = [| nameWithInfo s (parseFileLocation $__LOCATION__) |]
+
+-- | A symbolic generation monad transformer.
+-- It is a reader monad transformer for identifiers and
+-- a state monad transformer for indices.
+--
+-- Each time a fresh symbolic variable is generated, the index should be increased.
 newtype GenSymFreshT m a = GenSymFreshT {runGenSymFreshT' :: GenSymIdent -> GenSymIndex -> m (a, GenSymIndex)}
 
+-- | Run the symbolic generation with the given identifier and 0 as the initial index.
 runGenSymFreshT :: (Monad m) => GenSymFreshT m a -> GenSymIdent -> m a
 runGenSymFreshT m ident = fst <$> runGenSymFreshT' m ident (GenSymIndex 0)
 
@@ -113,8 +171,10 @@ instance (Monad m) => Monad (GenSymFreshT m) where
     (a, idx') <- s ident idx
     runGenSymFreshT' (f a) ident idx'
 
+-- | 'GenSymFreshT' specialized with Identity.
 type GenSymFresh = GenSymFreshT Identity
 
+-- | Run the symbolic generation with the given identifier and 0 as the initial index.
 runGenSymFresh :: GenSymFresh a -> GenSymIdent -> a
 runGenSymFresh m ident = runIdentity $ runGenSymFreshT m ident
 
@@ -128,23 +188,44 @@ instance (Monad m) => MonadReader GenSymIdent (GenSymFreshT m) where
   local f (GenSymFreshT s) = GenSymFreshT $ \ident idx -> s (f ident) idx
   reader f = GenSymFreshT $ \r s -> return (f r, s)
 
-{-
-type GenSymState = (Int, String)
-
-type GenSymFresh = State GenSymState
-
-type GenSymFreshT = StateT GenSymState
--}
-{-
-
-runGenSymFresh :: GenSymFresh a -> String -> a
-runGenSymFresh st s = evalState st (0, s)
-
-runGenSymFreshT :: (Monad m) => GenSymFreshT m a -> String -> m a
-runGenSymFreshT st s = evalStateT st (0, s)
--}
-
+-- | Class of types in which symbolic values can be generated with respect to some specification.
+--
+-- The result will be wrapped in a union-like monad.
+-- This ensures that we can generate those types with complex merging rules.
+--
+-- The uniqueness with be managed with the a monadic context. 'GenSymFresh' and 'GenSymFreshT' can be useful.
 class (SymBoolOp bool, Mergeable bool a) => GenSym bool spec a where
+  -- | Generate a symbolic value given some specification. The uniqueness is ensured.
+  --
+  -- The following example generates a symbolic boolean. No specification is needed.
+  --
+  -- >>> runGenSymFresh (genSymFresh ()) "a" :: UnionM SymBool
+  -- UMrg (Single s_a@0)
+  --
+  -- The following example generates booleans, which cannot be merged into a single value with type 'Bool'.
+  -- No specification is needed.
+  --
+  -- >>> runGenSymFresh (genSymFresh ()) "a" :: UnionM Bool
+  -- UMrg (Guard s_a@0 (Single False) (Single True))
+  --
+  -- The following example generates @Maybe Bool@s.
+  -- There are more than one symbolic primitives introduced, and their uniqueness is ensured.
+  -- No specification is needed.
+  --
+  -- >>> runGenSymFresh (genSymFresh ()) "a" :: UnionM (Maybe Bool)
+  -- UMrg (Guard s_a@0 (Single Nothing) (Guard s_a@1 (Single (Just False)) (Single (Just True))))
+  --
+  -- The following example generates lists of symbolic booleans with length 1 to 2.
+  --
+  -- >>> runGenSymFresh (genSymFresh (ListSpec 1 2 ())) "a" :: UnionM [SymBool]
+  -- UMrg (Guard s_a@2 (Single [s_a@1]) (Single [s_a@0,s_a@1]))
+  --
+  -- When multiple symbolic variables are generated, the uniqueness can be ensured.
+  --
+  -- >>> runGenSymFresh (do; a <- genSymFresh (); b <- genSymFresh (); return (a, b)) "a" :: (UnionM SymBool, UnionM SymBool)
+  -- (UMrg (Single s_a@0),UMrg (Single s_a@1))
+  --
+  -- N.B.: the examples are not executable solely with @grisette-core@ package, and need support from @grisette-symprim@ package.
   genSymFresh ::
     ( MonadState GenSymIndex m,
       MonadReader GenSymIdent m,
@@ -162,10 +243,39 @@ class (SymBoolOp bool, Mergeable bool a) => GenSym bool spec a where
     m (u a)
   genSymFresh spec = mrgReturn @bool <$> genSymSimpleFresh @bool spec
 
+-- | Generate a symbolic variable wrapped in a Union without the monadic context.
+-- The uniqueness need to be ensured by the uniqueness of the provided identifier.
 genSym :: (GenSym bool spec a, MonadUnion bool u) => spec -> GenSymIdent -> u a
 genSym = runGenSymFresh . genSymFresh
 
+-- | Class of types in which symbolic values can be generated with respect to some specification.
+--
+-- The result will __/not/__ be wrapped in a union-like monad.
+--
+-- The uniqueness with be managed with the a monadic context. 'GenSymFresh' and 'GenSymFreshT' can be useful.
 class GenSym bool spec a => GenSymSimple bool spec a where
+  -- | Generate a symbolic value given some specification. The uniqueness is ensured.
+  --
+  -- The following example generates a symbolic boolean. No specification is needed.
+  -- As the symbolic primitive implementations are decoupled from the core Grisette constructs in the system,
+  -- The user need to tell the system which set of symbolic primitives to use (by telling the system the symbolic boolean types).
+  -- Thus the type application to 'SymBool' is necessary here.
+  --
+  -- >>> :set -XTypeApplications
+  -- >>> runGenSymFresh (genSymSimpleFresh @SymBool ()) "a" :: SymBool
+  -- s_a@0
+  --
+  -- The example shows that why the system cannot infer the symbolic boolean type.
+  --
+  -- >>> runGenSymFresh (genSymSimpleFresh @SymBool ()) "a" :: ()
+  -- ()
+  --
+  -- The following code generates list of symbolic boolean with length 2.
+  -- As the length is fixed, we don't have to wrap the result in unions.
+  --
+  -- >>> runGenSymFresh (genSymSimpleFresh @SymBool (SimpleListSpec 2 ())) "a" :: [SymBool]
+  --
+  -- N.B.: the examples are not executable solely with @grisette-core@ package, and need support from @grisette-symprim@ package.
   genSymSimpleFresh ::
     ( MonadState GenSymIndex m,
       MonadReader GenSymIdent m
@@ -173,6 +283,8 @@ class GenSym bool spec a => GenSymSimple bool spec a where
     spec ->
     m a
 
+-- | Generate a simple symbolic variable wrapped in a Union without the monadic context.
+-- The uniqueness need to be ensured by the uniqueness of the provided identifier.
 genSymSimple :: forall bool spec a. (GenSymSimple bool spec a) => spec -> GenSymIdent -> a
 genSymSimple = runGenSymFresh . (genSymSimpleFresh @bool)
 
@@ -235,7 +347,13 @@ instance
       r1 <- r
       return $ l1 :*: r1
 
--- Never use on recursive types
+-- | We cannot provide DerivingVia style derivation for 'GenSym'.
+--
+-- This 'genSymFresh' implementation is for the types that does not need any specification.
+-- It will generate product types by generating each fields with '()' as specification,
+-- and generate all possible values for a sum type.
+-- 
+-- N.B. Never use on recursive types
 derivedNoSpecGenSymFresh ::
   forall bool a m u.
   ( Generic a,
@@ -270,7 +388,13 @@ instance
     r :: b c <- genSymSimpleFreshNoSpec @bool
     return $ l :*: r
 
--- Never use on recursive types
+-- | We cannot provide DerivingVia style derivation for 'GenSymSimple'.
+--
+-- This 'genSymSimpleFresh' implementation is for the types that does not need any specification.
+-- It will generate product types by generating each fields with '()' as specification.
+-- It will not work on sum types.
+-- 
+-- N.B. Never use on recursive types
 derivedNoSpecGenSymSimpleFresh ::
   forall bool a m.
   ( Generic a,
@@ -315,7 +439,14 @@ instance
     r :: b c <- genSymSameShapeFresh @bool b
     return $ l :*: r
 
--- Can be used on recursive types
+-- | We cannot provide DerivingVia style derivation for 'GenSymSimple'.
+--
+-- This 'genSymSimpleFresh' implementation is for the types that can be generated with a reference value of the same type.
+--
+-- For sum types, it will generate the result with the same data constructor.
+-- For product types, it will generate the result by generating each field with the corresponding reference value.
+-- 
+-- N.B. Can be used on recursive types
 derivedSameShapeGenSymSimpleFresh ::
   forall bool a m.
   ( Generic a,
@@ -327,6 +458,11 @@ derivedSameShapeGenSymSimpleFresh ::
   m a
 derivedSameShapeGenSymSimpleFresh a = to <$> genSymSameShapeFresh @bool @(Rep a) (from a)
 
+-- | Symbolically chooses one of the provided values.
+-- The procedure creates @n - 1@ fresh symbolic boolean variables every time it is evaluated, and use
+-- these variables to conditionally select one of the @n@ provided expressions.
+--
+-- The result will be wrapped in a union-like monad, and also a monad maintaining the 'GenSym' context.
 choose ::
   forall bool a m u.
   ( SymBoolOp bool,
@@ -345,6 +481,11 @@ choose (r : rs) = do
   return $ mrgIf b (mrgReturn r) res
 choose [] = error "choose expects at least one value"
 
+-- | Symbolically chooses one of the provided values.
+-- The procedure creates @n - 1@ fresh symbolic boolean variables every time it is evaluated, and use
+-- these variables to conditionally select one of the @n@ provided expressions.
+--
+-- The result will __/not/__ be wrapped in a union-like monad, but will be wrapped in a monad maintaining the 'GenSym' context.
 simpleChoose ::
   forall bool a m.
   ( SymBoolOp bool,
@@ -362,6 +503,11 @@ simpleChoose (r : rs) = do
   return $ mrgIte @bool b r res
 simpleChoose [] = error "simpleChoose expects at least one value"
 
+-- | Symbolically chooses one of the provided values wrapped in union-like monads.
+-- The procedure creates @n - 1@ fresh symbolic boolean variables every time it is evaluated, and use
+-- these variables to conditionally select one of the @n@ provided expressions.
+--
+-- The result will be wrapped in a union-like monad, and also a monad maintaining the 'GenSym' context.
 chooseU ::
   forall bool a m u.
   ( SymBoolOp bool,
@@ -397,8 +543,10 @@ instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSym bool Integer Inte
 instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSymSimple bool Integer Integer where
   genSymSimpleFresh v = return v
 
+-- Specification for numbers with upper bound (inclusive). The result would chosen from [0 .. upperbound].
 newtype NumGenUpperBound a = NumGenUpperBound a
 
+-- Specification for numbers with lower bound and upper bound (inclusive)
 data NumGenBound a = NumGenBound a a
 
 instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSym bool (NumGenUpperBound Integer) Integer where
@@ -487,10 +635,11 @@ instance
           r <- gl (v1 - 1)
           return $ l : r
 
+-- | Specification for list generation.
 data ListSpec spec = ListSpec
-  { genListMinLength :: Integer,
-    genListMaxLength :: Integer,
-    genListSubSpec :: spec
+  { genListMinLength :: Integer, -- ^ The minimum length of the generated lists
+    genListMaxLength :: Integer, -- ^ The maximum length of the generated lists
+    genListSubSpec :: spec       -- ^ Each element in the lists will be generated with the sub-specification
   }
   deriving (Show)
 
@@ -524,9 +673,10 @@ instance
   where
   genSymSimpleFresh v = derivedSameShapeGenSymSimpleFresh @bool v
 
+-- | Specification for list generation of a specific length.
 data SimpleListSpec spec = SimpleListSpec
-  { genSimpleListLength :: Integer,
-    genSimpleListSubSpec :: spec
+  { genSimpleListLength :: Integer, -- ^ The length of the generated list
+    genSimpleListSubSpec :: spec    -- ^ Each element in the list will be generated with the sub-specification
   }
   deriving (Show)
 

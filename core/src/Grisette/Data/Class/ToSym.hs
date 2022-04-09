@@ -14,7 +14,9 @@ import Data.Functor.Sum
 import Generics.Deriving
 import Grisette.Data.Class.OrphanGeneric ()
 
+-- | Convert a concrete value to symbolic value.
 class ToSym a b where
+  -- | Convert a concrete value to symbolic value.
   toSym :: a -> b
 
 instance (Generic a, Generic b, ToSym' (Rep a) (Rep b)) => ToSym a (Default b) where

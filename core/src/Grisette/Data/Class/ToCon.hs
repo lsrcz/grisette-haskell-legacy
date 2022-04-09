@@ -13,7 +13,10 @@ import GHC.Generics
 import Generics.Deriving
 import Generics.Deriving.Instances ()
 
+-- | Convert a symbolic value to concrete value if possible.
 class ToCon a b where
+  -- | Convert a symbolic value to concrete value if possible.
+  -- If the symbolic value cannot be converted to concrete, the result will be 'Nothing'.
   toCon :: a -> Maybe b
 
 instance (Generic a, Generic b, ToCon' (Rep a) (Rep b)) => ToCon a (Default b) where

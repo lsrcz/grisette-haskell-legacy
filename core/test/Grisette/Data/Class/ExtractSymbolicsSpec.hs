@@ -1,4 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE OverloadedStrings #-}
+
 module Grisette.Data.Class.ExtractSymbolicsSpec where
 import Test.Hspec
 import qualified Data.HashSet as S
@@ -9,6 +11,7 @@ import Control.Monad.Except
 import GHC.Generics
 import Test.Hspec.QuickCheck
 import Generics.Deriving
+import qualified Data.ByteString as B
 
 data A = A1 | A2 SBool | A3 SBool SBool deriving (Generic, Show, Eq) deriving (ExtractSymbolics (S.HashSet Symbol)) via (Default A)
 
@@ -58,8 +61,8 @@ spec = do
     it "ExtractSymbolics for (,)" $ do
       extractSymbolics (SSBool "a", SSBool "b") `shouldBe` S.fromList [SSymbol "a", SSymbol "b"]
     it "ExtractSymbolics for ByteString" $ do
-      extractSymbolics "" `shouldBe` (S.empty :: S.HashSet Symbol)
-      extractSymbolics "a" `shouldBe` (S.empty :: S.HashSet Symbol)
+      extractSymbolics ("" :: B.ByteString) `shouldBe` (S.empty :: S.HashSet Symbol)
+      extractSymbolics ("a" :: B.ByteString) `shouldBe` (S.empty :: S.HashSet Symbol)
   describe "deriving ExtractSymbolics for ADT" $ do
     it "derived ExtractSymbolics for simple ADT" $ do
       extractSymbolics A1 `shouldBe` (S.empty :: S.HashSet Symbol)
