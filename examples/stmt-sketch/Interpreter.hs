@@ -5,9 +5,7 @@ import Control.Monad.Except
 import Control.Monad.State
 import DataStructures
 import Generics.Deriving
-import Grisette.Backend.SBV
-import Grisette.Core hiding (AssertionError)
-import Grisette.SymPrim.Term
+import Grisette hiding (AssertionError)
 
 data SValue
   = SInt SymInteger

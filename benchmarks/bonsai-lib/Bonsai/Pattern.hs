@@ -6,7 +6,7 @@ module Bonsai.Pattern where
 import Bonsai.BonsaiTree
 import Control.Monad.Except
 import GHC.TypeLits
-import Grisette.SymPrim.Term
+import Grisette
 
 data Pattern a n where
   LiteralPattern :: a -> Pattern a 0

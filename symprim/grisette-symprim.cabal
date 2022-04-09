@@ -45,6 +45,8 @@ library
       Grisette.Data.SymPrim
       Grisette.Data.TabularFunc
       Grisette.Data.Union
+      Grisette.Internal.IR.SymPrim
+      Grisette.IR.SymPrim
   other-modules:
       Paths_grisette_symprim
   hs-source-dirs:

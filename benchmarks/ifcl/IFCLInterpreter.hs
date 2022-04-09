@@ -1,9 +1,7 @@
 module IFCLInterpreter where
 
 import Control.Monad.Except
-import Grisette.Core
-import Grisette.Lib
-import Grisette.SymPrim.Term
+import Grisette
 import Instructions
 import Machine
 import Value

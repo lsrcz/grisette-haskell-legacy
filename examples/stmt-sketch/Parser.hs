@@ -8,8 +8,7 @@ import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C
 import Data.Void
 import DataStructures
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 import Language.Haskell.TH
 import Language.Haskell.TH.Quote
 import Text.Megaparsec

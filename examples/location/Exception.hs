@@ -3,7 +3,7 @@
 module Exception where
 
 import Control.Monad.Except
-import Grisette.Core
+import Grisette
 import Language.Haskell.TH
 
 type Exception raw = raw

@@ -1,6 +1,6 @@
 {-# LANGUAGE PatternSynonyms #-}
 
-module Grisette.SymPrim.Term
+module Grisette.IR.SymPrim
   ( UnionM,
     type (=->) (..),
     Sym (..),

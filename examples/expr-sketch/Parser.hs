@@ -6,8 +6,7 @@ import Control.Monad.Combinators.Expr
 import qualified Data.ByteString as B
 import Data.Void
 import Expr
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 import Text.Megaparsec
 import Text.Megaparsec.Byte
 import qualified Text.Megaparsec.Byte.Lexer as L

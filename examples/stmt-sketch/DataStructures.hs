@@ -3,8 +3,7 @@ module DataStructures where
 
 import Data.List (intercalate)
 import Generics.Deriving
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 import Language.Haskell.TH.Syntax (Lift)
 
 data ConcExpr

@@ -8,10 +8,7 @@ import Control.Monad.State.Strict
 import qualified Data.ByteString as B
 import Data.Maybe (isJust)
 import GHC.Generics
-import Grisette.Backend.SBV
-import Grisette.Core
-import Grisette.Lib
-import Grisette.SymPrim.Term
+import Grisette
 import Utils.Timing
 
 type Grid = [[UnionM (Maybe B.ByteString)]]

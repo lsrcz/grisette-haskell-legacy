@@ -7,8 +7,7 @@ import Data.Bifunctor
 import qualified Data.ByteString as B
 import Data.HashMap.Strict as M
 import Evaluator
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 import Language.Haskell.TH
 import Syntax
 import Table

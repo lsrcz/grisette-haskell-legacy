@@ -28,13 +28,7 @@ flag fast
 
 library
   exposed-modules:
-      Grisette.Backend.SBV
-      Grisette.Core
-      Grisette.Internal.Backend.SBV
-      Grisette.Internal.Core
-      Grisette.Internal.SymPrim.Term
-      Grisette.Lib
-      Grisette.SymPrim.Term
+      Grisette
   other-modules:
       Paths_grisette
   hs-source-dirs:

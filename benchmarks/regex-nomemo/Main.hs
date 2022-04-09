@@ -14,12 +14,9 @@ import qualified Data.ByteString.Char8 as B
 import Data.Hashable
 import Data.Maybe
 import GHC.Generics
-import Grisette.Backend.SBV
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 import Text.Regex.PCRE
 import Utils.Timing
-import Grisette.Lib
 import qualified Data.ByteString.Char8 as C
 
 type PattCoro = B.ByteString -> Integer -> Coroutine (Yield (UnionM Integer)) UnionM ()

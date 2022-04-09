@@ -4,8 +4,7 @@ module Value where
 
 import Control.DeepSeq
 import Generics.Deriving
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 
 data PCValue = PCValue {int :: SymInteger, label :: SymBool}
   deriving (Show, Eq, Generic, NFData)

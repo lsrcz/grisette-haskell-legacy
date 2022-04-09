@@ -2,8 +2,7 @@ module Interpret where
 
 import Control.Monad.State.Strict
 import Fs
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 import Lang
 
 interpretOps :: (FileSystem conc fs, Mergeable SymBool fs) => [UnionM InodeOp] -> fs -> UnionM fs

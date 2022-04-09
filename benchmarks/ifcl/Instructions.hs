@@ -5,8 +5,7 @@ module Instructions where
 import Data.List (sort)
 import Data.List.Unique
 import GHC.Generics
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 import Value
 
 data Instruction

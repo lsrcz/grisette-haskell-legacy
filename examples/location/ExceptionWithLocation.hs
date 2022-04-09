@@ -6,7 +6,7 @@ import Control.Monad.Except
 import qualified Data.ByteString.UTF8 as B
 import Debug.Trace.LocationTH (__LOCATION__)
 import GHC.Generics
-import Grisette.Core
+import Grisette
 import Language.Haskell.TH
 
 data Exception raw = ExceptionWithLocation raw B.ByteString deriving (Show, Generic)

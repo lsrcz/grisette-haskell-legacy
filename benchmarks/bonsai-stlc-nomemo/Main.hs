@@ -6,9 +6,7 @@ module Main where
 import Bonsai.BonsaiTree
 import Control.DeepSeq
 import Control.Monad.Except
-import Grisette.Backend.SBV
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 import Bonsai.Match
 import Bonsai.Pattern
 import STLC

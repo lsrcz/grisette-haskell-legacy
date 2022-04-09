@@ -1,6 +1,6 @@
 module Litmus where
 
-import Grisette.SymPrim.Term
+import Grisette
 import Lang
 
 data Litmus conc fs = Litmus

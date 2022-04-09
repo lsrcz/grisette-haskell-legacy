@@ -2,9 +2,7 @@ module Evaluator where
 
 import Data.Bifunctor
 import qualified Data.ByteString as B
-import Grisette.Core
-import Grisette.Lib
-import Grisette.SymPrim.Term
+import Grisette
 import Table
 
 xproduct :: Table -> Table -> Name -> Table

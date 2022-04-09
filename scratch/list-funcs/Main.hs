@@ -4,9 +4,7 @@
 {-# LANGUAGE TypeOperators #-}
 module Main where
 
-import Grisette.Core
-import Grisette.SymPrim.Term
-import Grisette.Lib
+import Grisette
 
 symFilter1 :: forall bool u a. (SymBoolOp bool, MonadUnion bool u, Mergeable bool a) => (a -> bool) -> [a] -> u [a]
 symFilter1 f l = go l (mrgReturn [])

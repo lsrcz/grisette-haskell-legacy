@@ -4,8 +4,7 @@ module Interpreter where
 import Control.Monad.Except
 import Control.Monad.State
 import GHC.Generics
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 
 data Expr
   = Lit LitExpr

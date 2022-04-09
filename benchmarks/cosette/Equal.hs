@@ -3,8 +3,7 @@
 module Equal where
 
 import Denotation
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 import Language.Haskell.TH
 import Syntax
 import Table

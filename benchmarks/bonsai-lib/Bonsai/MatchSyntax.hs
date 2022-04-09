@@ -4,8 +4,7 @@ import Bonsai.BonsaiTree
 import qualified Data.ByteString as B
 import qualified Data.HashSet as S
 import GHC.TypeLits
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 import Bonsai.SyntaxSpec
 
 matchSyntax ::

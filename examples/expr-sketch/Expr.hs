@@ -2,9 +2,7 @@
 module Expr where
 
 import Generics.Deriving
-import Grisette.Backend.SBV
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 
 data ConcExpr
   = ConstantExpr Integer

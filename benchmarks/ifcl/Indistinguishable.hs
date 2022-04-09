@@ -1,7 +1,6 @@
 module Indistinguishable where
 
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 import Instructions
 import Machine
 import Value

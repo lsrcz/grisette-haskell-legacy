@@ -1,7 +1,6 @@
 module Fs where
 
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 import Lang
 
 class (ToSym conc symb, ToCon symb conc, Evaluate Model symb) => FileSystem conc symb | conc -> symb, symb -> conc where

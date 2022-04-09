@@ -3,8 +3,7 @@
 module Lang where
 
 import GHC.Generics
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 
 type Ino = Integer
 

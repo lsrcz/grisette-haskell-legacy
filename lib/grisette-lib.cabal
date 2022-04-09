@@ -31,6 +31,7 @@ library
       Grisette.Control.Monad.Coroutine
       Grisette.Data.List
       Grisette.Data.StringError
+      Grisette.Lib
   other-modules:
       Paths_grisette_lib
   hs-source-dirs:

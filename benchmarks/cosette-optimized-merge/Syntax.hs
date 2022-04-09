@@ -5,7 +5,7 @@ module Syntax where
 
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C
-import Grisette.SymPrim.Term
+import Grisette
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax
 import Table

@@ -3,9 +3,7 @@ module Main where
 
 import Control.DeepSeq
 import Control.Monad.Except
-import Grisette.Backend.SBV
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 import IFCLInterpreter
 import Indistinguishable
 import Instructions
@@ -59,8 +57,8 @@ runCexCase ::
   Int ->
   pspec ->
   IO EENIWitness
-runCexCase name config end steps progSpec = do
-  putStrLn $ "Running " ++ name
+runCexCase nm config end steps progSpec = do
+  putStrLn $ "Running " ++ nm
   r <- verifyEENI config end memIndistinguishable steps progSpec
   case r of
     Nothing -> error "Warning: failed to find the counter example"
@@ -74,8 +72,8 @@ runValidCase ::
   Int ->
   pspec ->
   IO ()
-runValidCase name config end steps progSpec = do
-  putStrLn $ "Running " ++ name
+runValidCase nm config end steps progSpec = do
+  putStrLn $ "Running " ++ nm
   r <- verifyEENI config end memIndistinguishable steps progSpec
   case r of
     Nothing -> putStrLn "Verified"

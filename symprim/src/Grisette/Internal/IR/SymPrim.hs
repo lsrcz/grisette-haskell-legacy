@@ -1,6 +1,6 @@
 {-# LANGUAGE PatternSynonyms #-}
 
-module Grisette.Internal.SymPrim.Term
+module Grisette.Internal.IR.SymPrim
   ( Union,
     UnaryOp (..),
     BinaryOp (..),

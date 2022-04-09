@@ -3,8 +3,7 @@ module Bonsai.Env where
 import Bonsai.BonsaiTree
 import Control.Monad.Except
 import GHC.TypeNats
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 
 type EnvSingle n t = [(SymUnsignedBV n, UnionM t)]
 

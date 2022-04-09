@@ -2,9 +2,7 @@
 {-# LANGUAGE DataKinds #-}
 module Main where
 
-import Grisette.Core
-import Grisette.SymPrim.Term
-import Grisette.Backend.SBV
+import Grisette
 import Control.Monad.Except
 import Data.Bits
 

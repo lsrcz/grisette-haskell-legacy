@@ -5,8 +5,7 @@
 module Main where
 
 import GHC.Generics
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 
 data Coord = Coord SymInteger SymInteger
   deriving (Show, Generic, GenSym SymBool ())

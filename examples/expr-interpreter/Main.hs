@@ -4,9 +4,7 @@
 
 module Main where
 
-import Grisette.Backend.SBV
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 import Interpreter
 
 p1 :: [Stmt]

@@ -4,9 +4,7 @@ import Control.DeepSeq
 import Control.Exception
 import Control.Monad.Except
 import GHC.Generics
-import Grisette.Core
-import Grisette.Lib
-import Grisette.SymPrim.Term hiding (insert)
+import Grisette hiding (insert)
 import Instructions
 import Value
 import Prelude hiding (pred)

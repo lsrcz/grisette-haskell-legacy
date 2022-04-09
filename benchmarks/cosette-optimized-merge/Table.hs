@@ -4,8 +4,7 @@ module Table where
 
 import qualified Data.ByteString as B
 import GHC.Generics
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 import Instances.TH.Lift ()
 import qualified Language.Haskell.TH.Syntax as THSyntax
 

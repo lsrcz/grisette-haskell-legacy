@@ -6,9 +6,7 @@ import Bonsai.BonsaiTree
 import Control.DeepSeq
 import Control.Monad.Except
 import qualified Data.ByteString as B
-import Grisette.Backend.SBV
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 import Bonsai.Match
 import NanoScala
 import Bonsai.Pattern

@@ -2,9 +2,7 @@ module Main where
 
 import Ext4
 import Fs
-import Grisette.Backend.SBV
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 import Lang
 import Litmus
 import Synth

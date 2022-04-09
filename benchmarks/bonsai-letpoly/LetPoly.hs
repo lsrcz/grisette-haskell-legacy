@@ -11,8 +11,7 @@ import qualified Data.ByteString as B
 import Data.Maybe
 import Bonsai.Env
 import GHC.Generics
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 import Bonsai.Match
 import Bonsai.MatchSyntax
 import Bonsai.Pattern

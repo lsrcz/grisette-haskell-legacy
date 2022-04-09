@@ -8,8 +8,7 @@ import Benchmark.Queries
 import Control.DeepSeq
 import Denotation
 import Equal
-import Grisette.Backend.SBV
-import Grisette.Core
+import Grisette
 import Utils.Timing
 
 main :: IO ()

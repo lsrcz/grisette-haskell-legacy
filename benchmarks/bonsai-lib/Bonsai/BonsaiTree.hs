@@ -13,9 +13,7 @@ import Data.Maybe
 import Data.MemoTrie
 import Generics.Deriving
 import GHC.TypeNats
-import Grisette.Backend.SBV
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 import Bonsai.SyntaxSpec
 
 data ConcBonsaiTree leaf

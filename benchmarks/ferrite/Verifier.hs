@@ -4,9 +4,7 @@ module Verifier where
 import Control.Monad.State.Strict
 import Data.Maybe
 import Fs
-import Grisette.Backend.SBV
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 import Interpret
 import Litmus
 

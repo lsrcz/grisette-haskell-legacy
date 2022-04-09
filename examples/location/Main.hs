@@ -8,8 +8,7 @@ import Control.Monad.Except (ExceptT)
 -- import Exception
 import ExceptionWithLocation
 import GHC.Generics
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 
 data RawException
   = Error1

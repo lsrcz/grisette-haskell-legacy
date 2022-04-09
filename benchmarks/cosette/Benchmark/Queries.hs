@@ -4,7 +4,7 @@
 
 module Benchmark.Queries where
 
-import Grisette.Core
+import Grisette
 import Quasiquote
 import Syntax
 import Table

@@ -7,9 +7,7 @@ import Control.Monad.Except
 import Data.BitVector.Sized.Signed as BVS
 import Data.BitVector.Sized.Unsigned as BVU
 import GHC.Generics
-import Grisette.Backend.SBV
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 
 -- Symbolic primitives
 symbBool :: Sym Bool

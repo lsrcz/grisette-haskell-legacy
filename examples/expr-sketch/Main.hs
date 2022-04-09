@@ -3,7 +3,7 @@
 module Main where
 
 import Expr
-import Grisette.Backend.SBV
+import Grisette
 import Parser
 
 main :: IO ()

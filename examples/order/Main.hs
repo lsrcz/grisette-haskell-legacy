@@ -6,8 +6,7 @@ import Control.Monad.Except
 import Control.Monad.Trans.Except
 import Data.Functor.Classes
 import GHC.Generics
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 import Unsafe.Coerce
 
 newtype Either' a b = Either' {getEither' :: Either a b} deriving (Show, Generic)

@@ -6,8 +6,7 @@ import Data.HashMap.Strict as M
 import Data.Maybe
 import Fs
 import GHC.Generics
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 import Lang
 
 data ConcDirEnt = ConcDirEnt {concDirEntIno :: Integer, concDirEntExists :: Bool}

@@ -5,8 +5,7 @@ module Bonsai.Match where
 import Bonsai.BonsaiTree
 import Control.Monad.Except
 import GHC.Generics
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 import Bonsai.Pattern
 
 data PrivateMatchError e

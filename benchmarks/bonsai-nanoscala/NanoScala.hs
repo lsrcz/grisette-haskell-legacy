@@ -10,8 +10,7 @@ import qualified Data.ByteString as B
 import Data.Either.Combinators
 import Data.Maybe
 import Bonsai.Env
-import Grisette.Core
-import Grisette.SymPrim.Term
+import Grisette
 import Bonsai.Match
 import Bonsai.MatchSyntax
 import Bonsai.Pattern
