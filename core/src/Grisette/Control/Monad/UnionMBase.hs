@@ -7,7 +7,7 @@
 module Grisette.Control.Monad.UnionMBase
   ( UnionMBase (..),
     IsConcrete,
-    reconstructToMonadUnion,
+    liftToMonadUnion,
     underlyingUnion,
     isMerged,
     (#~),
@@ -17,32 +17,68 @@ where
 import Control.DeepSeq
 import Control.Monad.Identity (Identity (..))
 import Data.Functor.Classes
+import qualified Data.HashMap.Lazy as HML
 import Data.Hashable
 import Data.IORef
+import Data.MemoTrie
 import Data.String
 import GHC.IO hiding (evaluate)
 import Grisette.Control.Monad
 import Grisette.Data.Class.Bool
+import Grisette.Data.Class.Evaluate
 import Grisette.Data.Class.ExtractSymbolics
 import Grisette.Data.Class.Function
+import Grisette.Data.Class.GenSym
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.SOrd
 import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.Class.Evaluate
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
 import Grisette.Data.Class.UnionOp
-import Grisette.Data.Class.GenSym
+import Grisette.Data.MemoUtils
 import Grisette.Data.UnionBase
 import Language.Haskell.TH.Syntax
-import Data.MemoTrie
-import Grisette.Data.MemoUtils
-import qualified Data.HashMap.Lazy as HML
 
+-- | 'UnionBase' enhanced with 'Mergeable' knowledge propagation.
+--
+-- The 'UnionMBase' has two data constructors, 'UAny' and 'UMrg' (hidden intentionally).
+--
+-- The 'UAny' data constructor wraps an arbitrary 'UnionMBase'.
+-- It is constructed when no 'Mergeable' knowledge is available (for example, when constructed with Haskell\'s 'return').
+--
+-- The 'UMrg' data constructor wraps a merged 'UnionMBase' along with the 'Mergeable' constraint.
+-- This constraint can be propagated to the context without 'Mergeable' knowledge,
+-- and helps the system to merge the resulting 'UnionBase'.
+--
+-- /Examples:/
+--
+-- 'return' cannot resolve the 'Mergeable' constraint.
+--
+-- >>> return 1 :: UnionM Integer
+-- UAny (Single 1)
+--
+-- 'guard' cannot resolve the 'Mergeable' constraint.
+--
+-- >>> guard (ssymb "a") (return 1) (guard (ssymb "b") (return 1) (return 2)) :: UnionM Integer
+-- UAny (Guard a (Single 1) (Guard b (Single 1) (Single 2)))
+--
+-- The system can merge the final result if the 'Mergeable' knowledge is introduced by 'mrgReturn':
+--
+-- >>> guard (ssymb "a") (return 1) (guard (ssymb "b") (return 1) (return 2)) >>= \x -> mrgReturn $ x + 1 :: UnionM Integer
+-- UMrg (Guard (|| a b) (Single 2) (Single 3))
 data UnionMBase bool a where
-  UAny :: IORef (Either (UnionBase bool a) (UnionMBase bool a)) -> UnionBase bool a -> UnionMBase bool a
-  UMrg :: (Mergeable bool a) => UnionBase bool a -> UnionMBase bool a
+  -- | 'UnionMBase' with no 'Mergeable' knowledge.
+  UAny ::
+    -- | Cached merging result.
+    IORef (Either (UnionBase bool a) (UnionMBase bool a)) ->
+    -- | Original 'UnionBase'.
+    UnionBase bool a ->
+    UnionMBase bool a
+  -- | 'UnionMBase' with 'Mergeable' knowledge.
+  UMrg :: (Mergeable bool a) =>
+    UnionBase bool a ->
+    UnionMBase bool a
 
 instance (SymBoolOp b, HasTrie b, HasTrie a, Mergeable b a) => HasTrie (UnionMBase b a) where
   newtype (UnionMBase b a) :->: x = UnionMBaseTrie (UnionBase b a :->: x)
@@ -145,8 +181,9 @@ instance (SymBoolOp bool, SEq bool a) => SEq bool (UnionMBase bool a) where
     y1 <- y
     mrgReturn $ x1 ==~ y1
 
-reconstructToMonadUnion :: (SymBoolOp bool, Mergeable bool a, MonadUnion bool u) => UnionMBase bool a -> u a
-reconstructToMonadUnion u = go (underlyingUnion u)
+-- | Lift the 'UnionMBase' to any 'MonadUnion'.
+liftToMonadUnion :: (SymBoolOp bool, Mergeable bool a, MonadUnion bool u) => UnionMBase bool a -> u a
+liftToMonadUnion u = go (underlyingUnion u)
   where
     go (Single v) = mrgReturn v
     go (Guard _ _ c t f) = mrgIf c (go t) (go f)
@@ -168,7 +205,7 @@ instance (SymBoolOp bool, SOrd bool a) => SOrd bool (UnionMBase bool a) where
     x1 <- x
     y1 <- y
     mrgReturn $ x1 >~ y1
-  x `symCompare` y = reconstructToMonadUnion $ do
+  x `symCompare` y = liftToMonadUnion $ do
     x1 <- x
     y1 <- y
     x1 `symCompare` y1
@@ -276,6 +313,7 @@ instance
   UnionMBase bool (Arg f) ->
   Ret f
 (#~) f u = getSingle $ mrgFmap (f #) u
+
 infixl 9 #~
 
 instance (SymBoolOp bool, IsString a, Mergeable bool a) => IsString (UnionMBase bool a) where
@@ -298,21 +336,26 @@ instance (SymBoolOp bool) => Traversable (UnionMBase bool) where
   -}
 
 -- GenSym
-instance (SymBoolOp bool, GenSym bool spec a, Mergeable bool a) => GenSym bool spec (UnionMBase bool a) where
+instance (SymBoolOp bool, GenSym bool spec a, Mergeable bool a) => GenSym bool spec (UnionMBase bool a)
 
 instance (SymBoolOp bool, GenSym bool spec a) => GenSymSimple bool spec (UnionMBase bool a) where
   genSymSimpleFresh spec = do
     res <- genSymFresh spec
     if not (isMerged res) then error "Not merged" else return res
 
-instance (SymBoolOp bool, GenSym bool a a, GenSymSimple bool () bool, Mergeable bool a) =>
-  GenSym bool (UnionMBase bool a) a where
+instance
+  (SymBoolOp bool, GenSym bool a a, GenSymSimple bool () bool, Mergeable bool a) =>
+  GenSym bool (UnionMBase bool a) a
+  where
   genSymFresh spec = go (underlyingUnion $ merge spec)
     where
       go (Single x) = genSymFresh x
       go (Guard _ _ _ t f) = mrgIf <$> genSymSimpleFresh @bool () <*> go t <*> go f
 
 -- Concrete Key HashMaps
+-- | Tag for concrete types.
+-- Useful for specifying the merge strategy for some parametrized types where we should have different
+-- merge strategy for symbolic and concrete ones.
 class (Eq t, Ord t, Hashable t) => IsConcrete t
 
 instance IsConcrete Bool
@@ -323,15 +366,22 @@ instance (SymBoolOp bool, IsConcrete k, Mergeable bool t) => Mergeable bool (HML
   mergeStrategy = SimpleStrategy mrgIte
 
 instance (SymBoolOp bool, IsConcrete k, Mergeable bool t) => SimpleMergeable bool (HML.HashMap k (UnionMBase bool (Maybe t))) where
-  mrgIte cond l r = 
+  mrgIte cond l r =
     HML.unionWith (mrgIf cond) ul ur
     where
-      ul = foldr (\k m -> case HML.lookup k m of
-        Nothing -> HML.insert k (mrgReturn Nothing) m
-        _ -> m
-        ) l (HML.keys r)
-      ur = foldr (\k m -> case HML.lookup k m of
-        Nothing -> HML.insert k (mrgReturn Nothing) m
-        _ -> m
-        ) r (HML.keys l)
-
+      ul =
+        foldr
+          ( \k m -> case HML.lookup k m of
+              Nothing -> HML.insert k (mrgReturn Nothing) m
+              _ -> m
+          )
+          l
+          (HML.keys r)
+      ur =
+        foldr
+          ( \k m -> case HML.lookup k m of
+              Nothing -> HML.insert k (mrgReturn Nothing) m
+              _ -> m
+          )
+          r
+          (HML.keys l)

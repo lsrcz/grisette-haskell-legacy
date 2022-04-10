@@ -8,6 +8,7 @@ import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Control.Monad
 
+-- | 'lift' with 'Mergeable' knowledge propagation.
 mrgLift ::
   forall bool t m a.
   (MonadUnion bool (t m), MonadTrans t, Monad m, Mergeable bool a) =>

@@ -14,7 +14,18 @@ import Grisette.Data.Class.Mergeable
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax
 
-makeUnionMWrapper' :: [String] -> Name -> Q [Dec]
+-- | Generate constructor wrappers that wraps the result in a union-like monad with provided names.
+--
+-- > $(makeUnionMWrapper' ["uTuple2"] ''(,))
+--
+-- uTuple2 :: (SymBoolOp bool, Monad u, Mergeable bool t1, Mergeable bool t2, MonadUnion bool u) => t1 -> t2 -> u (t1, t2)
+-- uTuple2 = \v1 v2 -> mrgReturn (v1, v2)
+makeUnionMWrapper' ::
+  -- | Names for generated wrappers
+  [String] ->
+  -- | The type to generate the wrappers for
+  Name ->
+  Q [Dec]
 makeUnionMWrapper' names typName = do
   constructors <- getConstructors typName
   when (length names /= length constructors) $
@@ -36,18 +47,33 @@ getConstructorName (RecGadtC [name] _ _) = return $ occName name
 getConstructorName c = fail $ "Unsupported constructor at this time: " ++ pprint c
 
 getConstructors :: Name -> Q [Con]
-getConstructors typName = do 
+getConstructors typName = do
   d <- reify typName
   case d of
     TyConI (DataD _ _ _ _ constructors _) -> return constructors
     TyConI (NewtypeD _ _ _ _ constructor _) -> return [constructor]
     _ -> fail $ "Unsupported declaration: " ++ pprint d
 
-makeUnionMWrapper :: String -> Name -> Q [Dec]
+-- | Generate constructor wrappers that wraps the result in a union-like monad.
+--
+-- > $(makeUnionMWrapper "u" ''Maybe)
+--
+-- generates
+--
+-- > uNothing :: (SymBoolOp bool, Monad u, Mergeable bool t, MonadUnion bool u) => u (Maybe t)
+-- > uNothing = mrgReturn Nothing
+-- > uJust :: (SymBoolOp bool, Monad u, Mergeable bool t, MonadUnion bool u) => t -> u (Maybe t)
+-- > uJust = \x -> mrgReturn (Just x)
+makeUnionMWrapper ::
+  -- | Prefix for generated wrappers
+  String ->
+  -- | The type to generate the wrappers for
+  Name ->
+  Q [Dec]
 makeUnionMWrapper prefix typName = do
   constructors <- getConstructors typName
   constructorNames <- sequence $ getConstructorName <$> constructors
-  makeUnionMWrapper' ((prefix++) <$> constructorNames) typName
+  makeUnionMWrapper' ((prefix ++) <$> constructorNames) typName
 
 augmentNormalCExpr :: Int -> Exp -> Q Exp
 augmentNormalCExpr n f = do

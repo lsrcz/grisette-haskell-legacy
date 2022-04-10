@@ -1,7 +1,14 @@
 {-# LANGUAGE PatternSynonyms #-}
 
 module Grisette.Core
-  ( SEq (..),
+  ( -- * Note for the examples
+    --
+    -- | This module does not contain actual implementation for symbolic primitive types, and
+    -- the examples in this module cannot be executed solely with @grisette-core@ package.
+    -- They rely on the implementation in @grisette-symprim@ package.
+
+    -- * Symbolic Operators
+    SEq (..),
     SOrd (..),
     LogicalOp (..),
     SymBoolOp,
@@ -17,74 +24,12 @@ module Grisette.Core
     Function (..),
     (#~),
 
-    AssertionError (..),
-    VerificationConditions (..),
-    ArithException (..),
-    TransformError (..),
-    gthrowError,
-    gassertWithError,
-    gassert,
-
-    MergeStrategy (..),
-    derivedMergeStrategy,
-    wrapMergeStrategy,
-    Mergeable (..),
-    Mergeable1 (..),
-    withMergeable,
-    SimpleMergeable (..),
-    SimpleMergeable1 (..),
-    UnionSimpleMergeable1 (..),
-    withSimpleMergeable,
-    withUnionSimpleMergeable,
-    withSimpleMergeableU,
-    withUnionSimpleMergeableU,
-    MonadUnion (..),
-    getSingle,
-
-    ExtractSymbolics (..),
+    -- * Symbolic Primitives
     PrimWrapper (..),
     pattern Conc,
+    ExtractSymbolics (..),
 
-    GenSymIndex (..),
-    GenSymIdent,
-    pattern GenSymIdent,
-    name,
-    nameWithInfo,
-    FileLocation (..),
-    nameWithLoc,
-    GenSymFresh,
-    GenSymFreshT,
-    runGenSymFresh,
-    runGenSymFreshT,
-    GenSym (..),
-    GenSymSimple (..),
-    genSym,
-    genSymSimple,
-    derivedNoSpecGenSymFresh,
-    derivedNoSpecGenSymSimpleFresh,
-    derivedSameShapeGenSymSimpleFresh,
-    choose,
-    simpleChoose,
-    chooseU,
-    NumGenBound(..),
-    NumGenUpperBound(..),
-    ListSpec (..),
-    SimpleListSpec (..),
-
-    Evaluate (..),
-    evaluateToCon,
-    ToCon (..),
-    ToSym (..),
-
-    
-    mrgFmap,
-    mrgLift,
-    mrgFoldM,
-    (>>~),
-    mrgMzero,
-    mrgMplus,
-    mrgMsum,
-
+    -- * UnionM Monad
     UnionMBase,
     IsConcrete,
     UnionOp (..),
@@ -93,6 +38,87 @@ module Grisette.Core
     makeUnionMWrapper,
     makeUnionMWrapper',
 
+    -- * Merging
+    MergeStrategy (..),
+    derivedMergeStrategy,
+    wrapMergeStrategy,
+    Mergeable (..),
+    Mergeable1 (..),
+    withMergeable,
+    SimpleMergeable (..),
+    SimpleMergeable1 (..),
+    withSimpleMergeable,
+    withSimpleMergeableU,
+    UnionSimpleMergeable1 (..),
+    withUnionSimpleMergeable,
+    withUnionSimpleMergeableU,
+    MonadUnion (..),
+    getSingle,
+
+    -- * Wrapped Monadic Combinators with Mergeable Knowledge Propagaion
+    mrgFmap,
+    mrgLift,
+    mrgFoldM,
+    (>>~),
+    mrgMzero,
+    mrgMplus,
+    mrgMsum,
+    
+    -- * Standard Errors
+    AssertionError (..),
+    VerificationConditions (..),
+    ArithException (..),
+    TransformError (..),
+    gthrowError,
+    gassertWithError,
+    gassert,
+    gassume,
+
+    -- * Symbolic Generation
+    -- ** Symbolic Generation Context
+    GenSymIndex (..),
+    GenSymIdent,
+    pattern GenSymIdent,
+    name,
+    nameWithInfo,
+    FileLocation (..),
+    nameWithLoc,
+
+    -- ** Symbolic Generation Monad
+    GenSymFresh,
+    GenSymFreshT,
+    runGenSymFresh,
+    runGenSymFreshT,
+
+    -- ** Symbolic Generation Class
+    GenSym (..),
+    GenSymSimple (..),
+    genSym,
+    genSymSimple,
+
+    -- ** Symbolic Generation Class Derivation
+    derivedNoSpecGenSymFresh,
+    derivedNoSpecGenSymSimpleFresh,
+    derivedSameShapeGenSymSimpleFresh,
+
+    -- ** Symbolic choice
+    choose,
+    simpleChoose,
+    chooseU,
+
+    -- ** Useful specifications
+    NumGenBound(..),
+    NumGenUpperBound(..),
+    ListSpec (..),
+    SimpleListSpec (..),
+
+    -- * Evaluation and Conversion between Concrete and Symbolic values
+    Evaluate (..),
+    evaluateToCon,
+    ToCon (..),
+    ToSym (..),
+  
+    -- * Memoization
     MemoHashMap (..),
     emptyMemoHashMap,
     enum',
@@ -102,6 +128,7 @@ module Grisette.Core
     htmup,
     htmemoFix,
 
+    -- * Bundled Constructor Wrappers
     uTrue,
     uFalse,
     uunit,
@@ -116,6 +143,7 @@ module Grisette.Core
     uAssertionViolation,
     uAssumptionViolation,
 
+    -- * Type Class Derivation
     Default(..),
   )
 where
