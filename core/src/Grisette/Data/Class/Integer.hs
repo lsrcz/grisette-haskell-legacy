@@ -20,6 +20,10 @@ import Grisette.Control.Monad
 
 -- | Safe signed 'div' and 'mod' with monadic error handling in multi-path execution.
 class SignedDivMod bool a where
+  -- | Safe signed 'div' with monadic error handling in multi-path execution.
+  --
+  -- >>> divs (ssymb "a") (ssymb "b") :: ExceptT AssertionError UnionM SymInteger
+  -- ExceptT (UMrg (Guard (== b 0I) (Single (Left AssertionError)) (Single (Right (/I a b)))))
   divs :: (MonadError e uf, MonadUnion bool uf, TransformError ArithException e) => a -> a -> uf a
   mods :: (MonadError e uf, MonadUnion bool uf, TransformError ArithException e) => a -> a -> uf a
 

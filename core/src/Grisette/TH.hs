@@ -17,9 +17,11 @@ import Language.Haskell.TH.Syntax
 -- | Generate constructor wrappers that wraps the result in a union-like monad with provided names.
 --
 -- > $(makeUnionMWrapper' ["uTuple2"] ''(,))
+-- 
+-- generates
 --
--- uTuple2 :: (SymBoolOp bool, Monad u, Mergeable bool t1, Mergeable bool t2, MonadUnion bool u) => t1 -> t2 -> u (t1, t2)
--- uTuple2 = \v1 v2 -> mrgReturn (v1, v2)
+-- > uTuple2 :: (SymBoolOp bool, Monad u, Mergeable bool t1, Mergeable bool t2, MonadUnion bool u) => t1 -> t2 -> u (t1, t2)
+-- > uTuple2 = \v1 v2 -> mrgReturn (v1, v2)
 makeUnionMWrapper' ::
   -- | Names for generated wrappers
   [String] ->

@@ -103,11 +103,38 @@ resolveStrategy' x = go
 --
 -- The 'NoStrategy' does not perform any merging.
 -- For example, we cannot merge functions that returns concrete lists. 
+--
+-- Usually the user does not have to implement 'MergeStrategy' manually,
+-- and the derived 'Mergeable' type class for ADTs is sufficient.
 data MergeStrategy bool a where
-  SimpleStrategy :: (bool -> a -> a -> a) -> MergeStrategy bool a
+  -- | Simple mergeable strategy.
+  --
+  -- For symbolic booleans, we can implement its merge strategy as follows:
+  --
+  -- > SimpleStrategy ites :: MergeStrategy SymBool SymBool
+  SimpleStrategy ::
+    -- | Merge function.
+    (bool -> a -> a -> a) ->
+    MergeStrategy bool a
+  -- | Ordered mergeable strategy.
+  --
+  -- For Integers, we can implement its merge strategy as follows:
+  --
+  -- > OrderedStrategy id (\_ -> SimpleStrategy $ \_ t _ -> t)
+  --
+  -- For @Maybe SymBool@, we can implement its merge strategy as follows:
+  --
+  -- > OrderedStrategy
+  -- >   (\case; Nothing -> False; Just _ -> True)
+  -- >   (\idx ->
+  -- >      if idx
+  -- >        then SimpleStrategy $ \_ t _ -> t
+  -- >        else SimpleStrategy $ \cond (Just l) (Just r) -> Just $ ites cond l r)
   OrderedStrategy ::
     (Ord idx, Typeable idx, Show idx) =>
+    -- | Indexing function
     (a -> idx) ->
+    -- | Sub-strategy function
     (idx -> MergeStrategy bool a) ->
     MergeStrategy bool a
   NoStrategy :: MergeStrategy bool a

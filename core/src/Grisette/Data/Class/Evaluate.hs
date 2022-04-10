@@ -15,7 +15,17 @@ import Generics.Deriving
 import Generics.Deriving.Instances ()
 import Grisette.Data.Class.ToCon
 
+-- | Evaluating symbolic variables with some model.
+--
+-- Usually the model is created with the solver, rather than by hand.
 class Evaluate model a where
+  -- | Evaluate a symbolic variable with some model, possibly fill in values for the missing variables.
+  --
+  -- >>> let model = insert empty (TermSymbol (Proxy @Integer) (SimpleSymbol "a")) (1 :: Integer)
+  -- >>> evaluate False model ([ssymb "a", ssymb "b"] :: [SymInteger])
+  -- [1I,b]
+  -- >>> evaluate True model ([ssymb "a", ssymb "b"] :: [SymInteger])
+  -- [1I,0I]
   evaluate :: Bool -> model -> a -> a
 
 instance (Generic a, Evaluate' model (Rep a)) => Evaluate model (Default a) where
@@ -40,6 +50,12 @@ instance (Evaluate' model a, Evaluate' model b) => Evaluate' model (a :+: b) whe
 instance (Evaluate' model a, Evaluate' model b) => Evaluate' model (a :*: b) where
   evaluate' fillDefault model (a :*: b) = evaluate' fillDefault model a :*: evaluate' fillDefault model b
 
+-- | Evaluate a symbolic variable with some model, fill in values for the missing variables,
+-- and transform to concrete ones
+--
+-- >>> let model = insert empty (TermSymbol (Proxy @Integer) (SimpleSymbol "a")) (1 :: Integer)
+-- >>> evaluateToCon model ([ssymb "a", ssymb "b"] :: [SymInteger]) :: [Integer]
+-- [1,0]
 evaluateToCon :: (ToCon a b, Evaluate model a) => model -> a -> b
 evaluateToCon model a = fromJust $ toCon $ evaluate True model a
 

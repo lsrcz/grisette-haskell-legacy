@@ -307,6 +307,11 @@ instance
     f1 <- f
     mrgReturn $ f1 # a
 
+-- | Helper for applying functions on 'UnionMBase'.
+--
+-- >>> let f :: Integer -> UnionM Integer = \x -> mrgIf (ssymb "a") (mrgReturn $ x + 1) (mrgReturn $ x + 2)
+-- >>> f #~ (mrgIf (ssymb "b" :: SymBool) (mrgReturn 0) (mrgReturn 2))
+-- UMrg (Guard (&& b a) (Single 1) (Guard b (Single 2) (Guard a (Single 3) (Single 4))))
 (#~) ::
   (SymBoolOp bool, Function f, SimpleMergeable bool (Ret f)) =>
   f ->

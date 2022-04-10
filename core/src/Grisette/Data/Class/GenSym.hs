@@ -463,6 +463,9 @@ derivedSameShapeGenSymSimpleFresh a = to <$> genSymSameShapeFresh @bool @(Rep a)
 -- these variables to conditionally select one of the @n@ provided expressions.
 --
 -- The result will be wrapped in a union-like monad, and also a monad maintaining the 'GenSym' context.
+--
+-- >>> runGenSymFresh (choose [1,2,3]) "a" :: UnionM Integer
+-- UMrg (Guard s_a@0 (Single 1) (Guard s_a@1 (Single 2) (Single 3)))
 choose ::
   forall bool a m u.
   ( SymBoolOp bool,
@@ -486,6 +489,10 @@ choose [] = error "choose expects at least one value"
 -- these variables to conditionally select one of the @n@ provided expressions.
 --
 -- The result will __/not/__ be wrapped in a union-like monad, but will be wrapped in a monad maintaining the 'GenSym' context.
+-- Similar to 'genSymSimpleFresh', you need to tell the system what symbolic boolean type to use.
+--
+-- >>> runGenSymFresh (simpleChoose @SymBool [ssymb "b", ssymb "c", ssymb "d"]) "a" :: SymInteger
+-- (ite s_a@0 b (ite s_a@1 c d))
 simpleChoose ::
   forall bool a m.
   ( SymBoolOp bool,
@@ -508,6 +515,11 @@ simpleChoose [] = error "simpleChoose expects at least one value"
 -- these variables to conditionally select one of the @n@ provided expressions.
 --
 -- The result will be wrapped in a union-like monad, and also a monad maintaining the 'GenSym' context.
+--
+-- >>> let a = runGenSymFresh (choose [1, 2]) "a" :: UnionM Integer
+-- >>> let b = runGenSymFresh (choose [2, 3]) "b" :: UnionM Integer
+-- >>> runGenSymFresh (chooseU [a, b]) "c" :: UnionM Integer
+-- UMrg (Guard (&& s_c@0 s_a@0) (Single 1) (Guard (|| s_c@0 s_b@0) (Single 2) (Single 3)))
 chooseU ::
   forall bool a m u.
   ( SymBoolOp bool,
@@ -543,10 +555,16 @@ instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSym bool Integer Inte
 instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSymSimple bool Integer Integer where
   genSymSimpleFresh v = return v
 
--- Specification for numbers with upper bound (inclusive). The result would chosen from [0 .. upperbound].
+-- | Specification for numbers with upper bound (inclusive). The result would chosen from [0 .. upperbound].
+--
+-- >>> runGenSymFresh (genSymFresh (NumGenUpperBound @Integer 3)) "c" :: UnionM Integer
+-- UMrg (Guard s_c@0 (Single 0) (Guard s_c@1 (Single 1) (Guard s_c@2 (Single 2) (Single 3))))
 newtype NumGenUpperBound a = NumGenUpperBound a
 
--- Specification for numbers with lower bound and upper bound (inclusive)
+-- | Specification for numbers with lower bound and upper bound (inclusive)
+--
+-- >>> runGenSymFresh (genSymFresh (NumGenBound @Integer 0 3)) "c" :: UnionM Integer
+-- UMrg (Guard s_c@0 (Single 0) (Guard s_c@1 (Single 1) (Guard s_c@2 (Single 2) (Single 3))))
 data NumGenBound a = NumGenBound a a
 
 instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSym bool (NumGenUpperBound Integer) Integer where
@@ -636,6 +654,9 @@ instance
           return $ l : r
 
 -- | Specification for list generation.
+--
+-- >>> runGenSymFresh (genSymFresh (ListSpec 0 2 ())) "c" :: UnionM [SymBool]
+-- UMrg (Guard s_c@2 (Single []) (Guard s_c@3 (Single [s_c@1]) (Single [s_c@0,s_c@1])))
 data ListSpec spec = ListSpec
   { genListMinLength :: Integer, -- ^ The minimum length of the generated lists
     genListMaxLength :: Integer, -- ^ The maximum length of the generated lists
@@ -674,6 +695,9 @@ instance
   genSymSimpleFresh v = derivedSameShapeGenSymSimpleFresh @bool v
 
 -- | Specification for list generation of a specific length.
+--
+-- >>> runGenSymFresh (genSymSimpleFresh @SymBool (SimpleListSpec 2 ())) "c" :: [SymBool]
+-- [s_c@0,s_c@1]
 data SimpleListSpec spec = SimpleListSpec
   { genSimpleListLength :: Integer, -- ^ The length of the generated list
     genSimpleListSubSpec :: spec    -- ^ Each element in the list will be generated with the sub-specification

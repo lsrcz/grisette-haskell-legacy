@@ -41,6 +41,14 @@ class (UnionSimpleMergeable1 bool u, Monad u) => MonadUnion bool u | u -> bool w
   a >>=~ f = merge $ a >>= f
 
 -- | Extract the value from a union-like monad if the value has a simply mergeable type.
+--
+-- 'Grisette.Data.Class.UnionOp.guard' will not merge the results.
+-- 'getSingle' will merge it and extract the single value.
+--
+-- >>> guard (ssymb "a") (return $ ssymb "b") (return $ ssymb "c") :: UnionM SymBool
+-- UAny (Guard a (Single b) (Single c))
+-- >>> getSingle it
+-- (ite a b c)
 getSingle :: forall bool u a. (SimpleMergeable bool a, MonadUnion bool u, UnionOp bool u) => u a -> a
 getSingle u = case merge u of
   SingleU x -> x
