@@ -276,7 +276,7 @@ instance
   ) =>
   BVSelect (Sym (SignedBV ow)) ix w (Sym (SignedBV w))
   where
-  bvselect pix pw (Sym v) = Sym $ bvtextract pix pw v
+  bvselect pix pw (Sym v) = Sym $ bvtselect pix pw v
 
 instance ToCon (SymSignedBV 8) Char where
   toCon (Conc (SignedBV (BV v))) = Just $ chr $ fromInteger v
@@ -337,7 +337,7 @@ instance
   ) =>
   BVSelect (Sym (UnsignedBV ow)) ix w (Sym (UnsignedBV w))
   where
-  bvselect pix pw (Sym v) = Sym $ bvtextract pix pw v
+  bvselect pix pw (Sym v) = Sym $ bvtselect pix pw v
 
 instance (SupportedPrim (UnsignedBV n)) => Bits (Sym (UnsignedBV n)) where
   Sym l .&. Sym r = Sym $ withPrim @(UnsignedBV n) $ bitand l r

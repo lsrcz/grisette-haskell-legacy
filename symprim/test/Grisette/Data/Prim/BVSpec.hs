@@ -9,69 +9,69 @@ import Test.Hspec
 
 spec :: Spec
 spec = do
-  describe "BVTExtract" $ do
-    describe "BVTExtract construction" $ do
-      it "BVTExtract on concrete" $ do
-        bvtextract
+  describe "BVTSelect" $ do
+    describe "BVTSelect construction" $ do
+      it "BVTSelect on concrete" $ do
+        bvtselect
           (Proxy @0)
           (Proxy @1)
           (concTerm 6 :: Term (BVU.UnsignedBV 4))
           `shouldBe` concTerm 0
-        bvtextract
+        bvtselect
           (Proxy @1)
           (Proxy @1)
           (concTerm 6 :: Term (BVU.UnsignedBV 4))
           `shouldBe` concTerm 1
-        bvtextract
+        bvtselect
           (Proxy @2)
           (Proxy @1)
           (concTerm 6 :: Term (BVU.UnsignedBV 4))
           `shouldBe` concTerm 1
-        bvtextract
+        bvtselect
           (Proxy @3)
           (Proxy @1)
           (concTerm 6 :: Term (BVU.UnsignedBV 4))
           `shouldBe` concTerm 0
-        bvtextract
+        bvtselect
           (Proxy @0)
           (Proxy @2)
           (concTerm 6 :: Term (BVU.UnsignedBV 4))
           `shouldBe` concTerm 2
-        bvtextract
+        bvtselect
           (Proxy @1)
           (Proxy @2)
           (concTerm 6 :: Term (BVU.UnsignedBV 4))
           `shouldBe` concTerm 3
-        bvtextract
+        bvtselect
           (Proxy @2)
           (Proxy @2)
           (concTerm 6 :: Term (BVU.UnsignedBV 4))
           `shouldBe` concTerm 1
-        bvtextract
+        bvtselect
           (Proxy @0)
           (Proxy @3)
           (concTerm 6 :: Term (BVU.UnsignedBV 4))
           `shouldBe` concTerm 6
-        bvtextract
+        bvtselect
           (Proxy @1)
           (Proxy @3)
           (concTerm 6 :: Term (BVU.UnsignedBV 4))
           `shouldBe` concTerm 3
-        bvtextract
+        bvtselect
           (Proxy @0)
           (Proxy @4)
           (concTerm 6 :: Term (BVU.UnsignedBV 4))
           `shouldBe` concTerm 6
-      it "BVTExtract on symbolic" $ do
-        bvtextract
+      it "BVTSelect on symbolic" $ do
+        bvtselect
           (Proxy @2)
           (Proxy @1)
           (ssymbTerm "a" :: Term (BVU.UnsignedBV 4))
-          `shouldBe` constructUnary (BVTExtract @2 @1 @4 Proxy) (ssymbTerm "a" :: Term (BVU.UnsignedBV 4))
-    describe "BVTExtract pattern" $ do
-      it "extractView should work" $ do
-        case extractView (bvtextract (Proxy @1) (Proxy @2) (ssymbTerm "a" :: Term (BVU.UnsignedBV 4))) of
-          Just (ExtractMatchResult _ v1 :: ExtractMatchResult BVU.UnsignedBV 2 4) -> do
+          `shouldBe` constructUnary (BVTSelect @2 @1 @4 Proxy) (ssymbTerm "a" :: Term (BVU.UnsignedBV 4))
+    describe "BVTSelect pattern" $ do
+      it "selectView should work" $ do
+        case selectView (bvtselect (Proxy @1) (Proxy @2) (ssymbTerm "a" :: Term (BVU.UnsignedBV 4))) of
+          Just (SelectMatchResult _ v1 :: SelectMatchResult BVU.UnsignedBV 2 4) -> do
             True `shouldBe` True
             v1 `shouldBe` ssymbTerm "a"
           _ -> return () :: Expectation

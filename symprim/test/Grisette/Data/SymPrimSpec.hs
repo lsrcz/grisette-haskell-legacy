@@ -312,9 +312,9 @@ spec = do
     describe "bvselect for Sym BV" $ do
       it "bvselect for SymPrim" $ do
         bvselect (Proxy @2) (Proxy @1) au
-          `shouldBe` Sym (bvtextract (Proxy @2) (Proxy @1) aut)
+          `shouldBe` Sym (bvtselect (Proxy @2) (Proxy @1) aut)
         bvselect (Proxy @2) (Proxy @1) as
-          `shouldBe` Sym (bvtextract (Proxy @2) (Proxy @1) ast)
+          `shouldBe` Sym (bvtselect (Proxy @2) (Proxy @1) ast)
     describe "conversion from Char to Sym BV" $ do
       it "toSym" $ do
         toSym 'a' `shouldBe` (conc 97 :: SymSignedBV 8)

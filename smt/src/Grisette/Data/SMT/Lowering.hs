@@ -298,15 +298,15 @@ lowerSinglePrimImpl' config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) =
     extractBV :: Maybe (State SymBiMap (TermTy integerBitWidth a))
     extractBV = case (R.typeRep @x, R.typeRep @a) of
       (UnsignedBVType (_ :: proxy xn), UnsignedBVType (_ :: proxy an)) ->
-        case extractView @BVU.UnsignedBV @an @xn t of
-          Just (ExtractMatchResult (_ :: proxy1 ix) (t1 :: Term (BVU.UnsignedBV xn))) ->
+        case selectView @BVU.UnsignedBV @an @xn t of
+          Just (SelectMatchResult (_ :: proxy1 ix) (t1 :: Term (BVU.UnsignedBV xn))) ->
             Just $
               ev @ix @an @xn $
                 lowerUnaryTerm' config t t1 (SBV.bvExtract (Proxy @(an + ix - 1)) (Proxy @ix))
           _ -> Nothing
       (SignedBVType (_ :: proxy xn), SignedBVType (_ :: proxy an)) ->
-        case extractView @BVS.SignedBV @an @xn t of
-          Just (ExtractMatchResult (_ :: proxy1 ix) (t1 :: Term (BVS.SignedBV xn))) ->
+        case selectView @BVS.SignedBV @an @xn t of
+          Just (SelectMatchResult (_ :: proxy1 ix) (t1 :: Term (BVS.SignedBV xn))) ->
             Just $
               ev @ix @an @xn $
                 lowerUnaryTerm' config t t1 (SBV.bvExtract (Proxy @(an + ix - 1)) (Proxy @ix))
@@ -647,15 +647,15 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) m 
     extractBV :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
     extractBV = case (R.typeRep @x, R.typeRep @a) of
       (UnsignedBVType (_ :: proxy xn), UnsignedBVType (_ :: proxy an)) ->
-        case extractView @BVU.UnsignedBV @an @xn t of
-          Just (ExtractMatchResult (_ :: proxy1 ix) (t1 :: Term (BVU.UnsignedBV xn))) ->
+        case selectView @BVU.UnsignedBV @an @xn t of
+          Just (SelectMatchResult (_ :: proxy1 ix) (t1 :: Term (BVU.UnsignedBV xn))) ->
             Just $
               ev @ix @an @xn $
                 lowerUnaryTerm config t t1 (SBV.bvExtract (Proxy @(an + ix - 1)) (Proxy @ix)) m
           _ -> Nothing
       (SignedBVType (_ :: proxy xn), SignedBVType (_ :: proxy an)) ->
-        case extractView @BVS.SignedBV @an @xn t of
-          Just (ExtractMatchResult (_ :: proxy1 ix) (t1 :: Term (BVS.SignedBV xn))) ->
+        case selectView @BVS.SignedBV @an @xn t of
+          Just (SelectMatchResult (_ :: proxy1 ix) (t1 :: Term (BVS.SignedBV xn))) ->
             Just $
               ev @ix @an @xn $
                 lowerUnaryTerm config t t1 (SBV.bvExtract (Proxy @(an + ix - 1)) (Proxy @ix)) m

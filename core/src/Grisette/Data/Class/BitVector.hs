@@ -58,7 +58,7 @@ class BVSelect bv1 (ix :: Nat) (w :: Nat) bv2 | bv1 w -> bv2 where
 -- | Extract a smaller bitvector from a larger one from bits @i@ down to @j@.
 bvextract ::
   forall proxy i j bv1 bv2.
-  (BVSelect bv1 j (i - j) bv2) =>
+  (BVSelect bv1 j (i - j + 1) bv2) =>
   -- | The start position to extract from, @0 <= i < n@ must hold where @n@ is the size of the output bitvector
   proxy i ->
   -- | The end position to extract from, @0 <= j <= i@ must hold
@@ -66,4 +66,4 @@ bvextract ::
   -- | Bitvector to extract from
   bv1 ->
   bv2
-bvextract _ _ = bvselect (Proxy @j) (Proxy @(i - j))
+bvextract _ _ = bvselect (Proxy @j) (Proxy @(i - j + 1))

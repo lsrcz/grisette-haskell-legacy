@@ -9,8 +9,8 @@ module Grisette.Data.Prim.BV
     pattern SignedBVTerm,
     pattern UnsignedBVConcTerm,
     pattern UnsignedBVTerm,
-    BVTExtract (..),
-    bvtextract,
+    BVTSelect (..),
+    bvtselect,
     BVTConcat (..),
     bvtconcat,
     concatView,
@@ -19,8 +19,8 @@ module Grisette.Data.Prim.BV
     bvtext,
     extensionView,
     ExtensionMatchResult (..),
-    extractView,
-    ExtractMatchResult (..),
+    selectView,
+    SelectMatchResult (..),
     UnderlyingBV(..),
   )
 where
@@ -75,29 +75,29 @@ instance UnderlyingBV BVS.SignedBV where
   unwrap = BVS.asBV
   wrap = BVS.SignedBV
 
--- extract
-data BVTExtract (w :: Nat) (ow :: Nat) where
-  BVTExtract :: forall ix w ow. (KnownNat ix, KnownNat w, KnownNat ow, 1 <= ow, 1 <= w, ix + w <= ow) => Proxy ix -> BVTExtract w ow
+-- select
+data BVTSelect (w :: Nat) (ow :: Nat) where
+  BVTSelect :: forall ix w ow. (KnownNat ix, KnownNat w, KnownNat ow, 1 <= ow, 1 <= w, ix + w <= ow) => Proxy ix -> BVTSelect w ow
 
-instance Eq (BVTExtract w ow) where
-  BVTExtract p1 == BVTExtract p2 = natVal p1 == natVal p2
+instance Eq (BVTSelect w ow) where
+  BVTSelect p1 == BVTSelect p2 = natVal p1 == natVal p2
 
-instance Hashable (BVTExtract w ow) where
-  s `hashWithSalt` (BVTExtract p) = s `hashWithSalt` natVal p
+instance Hashable (BVTSelect w ow) where
+  s `hashWithSalt` (BVTSelect p) = s `hashWithSalt` natVal p
 
-instance Show (BVTExtract w ow) where
-  show (BVTExtract p :: BVTExtract o ow) =
-    "BVTExtract" ++ show (natVal p) ++ ":"
+instance Show (BVTSelect w ow) where
+  show (BVTSelect p :: BVTSelect o ow) =
+    "BVTSelect" ++ show (natVal p) ++ ":"
       ++ show (natVal p + natVal (Proxy @w))
 
-instance Lift (BVTExtract w ow) where
+instance Lift (BVTSelect w ow) where
   lift = unTypeQ . liftTyped
-  liftTyped (BVTExtract (_ :: Proxy ix)) = [||(BVTExtract (Proxy @ix) :: BVTExtract w ow)||]
+  liftTyped (BVTSelect (_ :: Proxy ix)) = [||(BVTSelect (Proxy @ix) :: BVTSelect w ow)||]
 
-instance NFData (BVTExtract n m) where
-  rnf (BVTExtract Proxy) = ()
+instance NFData (BVTSelect n m) where
+  rnf (BVTSelect Proxy) = ()
 
-bvtextract ::
+bvtselect ::
   forall ix w ow s proxy1 proxy2.
   ( KnownNat ix,
     KnownNat w,
@@ -113,15 +113,15 @@ bvtextract ::
   proxy2 w ->
   Term (s ow) ->
   Term (s w)
-bvtextract _ _ = partialEvalUnary (BVTExtract @ix @w @ow (Proxy @ix))
+bvtselect _ _ = partialEvalUnary (BVTSelect @ix @w @ow (Proxy @ix))
 
 instance
   (KnownNat w, KnownNat ow, 1 <= ow, 1 <= w, UnderlyingBV s, SupportedPrim (s w)) =>
-  UnaryPartialStrategy (BVTExtract w ow) (s ow) (s w)
+  UnaryPartialStrategy (BVTSelect w ow) (s ow) (s w)
   where
   extractor _ (ConcTerm _ v) = Just v
   extractor _ _ = Nothing
-  constantHandler (BVTExtract (_ :: Proxy ix)) v = Just $ concTerm $ wrap (select (knownNat @ix) (knownNat @w) (unwrap v))
+  constantHandler (BVTSelect (_ :: Proxy ix)) v = Just $ concTerm $ wrap (select (knownNat @ix) (knownNat @w) (unwrap v))
   nonConstantHandler _ _ = Nothing
 
 instance
@@ -133,15 +133,15 @@ instance
     SupportedPrim (s w),
     SupportedPrim (s ow)
   ) =>
-  UnaryOp (BVTExtract w ow) (s ow) (s w)
+  UnaryOp (BVTSelect w ow) (s ow) (s w)
   where
-  partialEvalUnary tag@(BVTExtract (_ :: Proxy ix)) v =
-    unaryUnfoldOnce (unaryPartial @(BVTExtract w ow) tag) (constructUnary tag) v
-  pformatUnary (BVTExtract (_ :: Proxy ix)) v =
-    "(bvextract " ++ show (natVal (Proxy @ix)) ++ " " ++ show (natVal (Proxy @w)) ++ " " ++ pformat v ++ ")"
+  partialEvalUnary tag@(BVTSelect (_ :: Proxy ix)) v =
+    unaryUnfoldOnce (unaryPartial @(BVTSelect w ow) tag) (constructUnary tag) v
+  pformatUnary (BVTSelect (_ :: Proxy ix)) v =
+    "(bvselect " ++ show (natVal (Proxy @ix)) ++ " " ++ show (natVal (Proxy @w)) ++ " " ++ pformat v ++ ")"
 
-data ExtractMatchResult s w ow where
-  ExtractMatchResult ::
+data SelectMatchResult s w ow where
+  SelectMatchResult ::
     ( KnownNat ix,
       KnownNat w,
       KnownNat ow,
@@ -151,21 +151,21 @@ data ExtractMatchResult s w ow where
     ) =>
     proxy ix ->
     Term (s ow) ->
-    ExtractMatchResult s w ow
+    SelectMatchResult s w ow
 
-extractView ::
+selectView ::
   forall s w ow.
   (KnownNat w, KnownNat ow, SupportedPrim (s w), SupportedPrim (s ow)) =>
   Term (s w) ->
-  Maybe (ExtractMatchResult s w ow)
-extractView (UnaryTerm _ (tag :: tag) t1) =
-  case ( cast tag :: Maybe (BVTExtract w ow),
+  Maybe (SelectMatchResult s w ow)
+selectView (UnaryTerm _ (tag :: tag) t1) =
+  case ( cast tag :: Maybe (BVTSelect w ow),
          castTerm t1 :: Maybe (Term (s ow))
        ) of
-    (Just (BVTExtract (p :: Proxy ix)), Just v) ->
-      Just (ExtractMatchResult p v)
+    (Just (BVTSelect (p :: Proxy ix)), Just v) ->
+      Just (SelectMatchResult p v)
     _ -> Nothing
-extractView _ = Nothing
+selectView _ = Nothing
 
 -- ext
 data BVTExt (w :: Nat) (w' :: Nat) where
