@@ -14,7 +14,13 @@ class TransformError from to where
   -- | Transforms an error with type @from@ to an error with type @to@.
   transformError :: from -> to
 
-instance TransformError a () where
+instance {-# OVERLAPPABLE #-} TransformError a a where
+  transformError = id
+
+instance {-# OVERLAPS #-} TransformError a () where
+  transformError _ = ()
+
+instance {-# OVERLAPPING #-} TransformError () () where
   transformError _ = ()
 
 -- | Used within a monadic multi path computation to begin exception processing.

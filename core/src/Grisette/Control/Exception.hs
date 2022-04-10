@@ -78,6 +78,9 @@ instance TransformError VerificationConditions VerificationConditions where
 instance TransformError AssertionError VerificationConditions where
   transformError _ = AssertionViolation
 
+instance TransformError ArithException AssertionError where
+  transformError _ = AssertionError
+
 instance TransformError ArrayException AssertionError where
   transformError _ = AssertionError
 
