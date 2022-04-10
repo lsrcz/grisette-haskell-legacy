@@ -24,16 +24,22 @@ jobs:
           name: Run tests and build doc
           command: |
             stack --no-terminal clean
-            stack --no-terminal build --test --haddock --flag grisette-core:-fast --flag grisette-examples:-fast --flag grisette-lib:-fast --flag grisette:-fast --flag grisette-scratch:-fast --flag grisette-smt:-fast --flag grisette-symprim:-fast --flag grisette-benchmarks:-fast --coverage
+            stack --no-terminal test --flag grisette-core:-fast --flag grisette-examples:-fast --flag grisette-lib:-fast --flag grisette:-fast --flag grisette-scratch:-fast --flag grisette-smt:-fast --flag grisette-symprim:-fast --flag grisette-benchmarks:-fast --coverage
             mkdir /tmp/grisette-doc
             cp -r $(stack path --local-doc-root)/grisette-* /tmp/grisette-doc
       - store_test_results:
           path: /tmp/reports
-      - store_artifacts:
-          path: "/tmp/grisette-doc"
       - run:
           name: Upload shc
           command: wget https://github.com/rubik/stack-hpc-coveralls/releases/download/v0.0.6.1/shc-linux-x64-8.10.4.tar.bz2 && tar -xjf shc-linux-x64-8.10.4.tar.bz2 && ./shc --repo-token=$COVERALLS_REPO_TOKEN combined all
+      - run:
+          name: Build doc
+          command: |
+            stack --no-terminal haddock --flag grisette-core:-fast --flag grisette-examples:-fast --flag grisette-lib:-fast --flag grisette:-fast --flag grisette-scratch:-fast --flag grisette-smt:-fast --flag grisette-symprim:-fast --flag grisette-benchmarks:-fast --coverage
+            mkdir /tmp/grisette-doc
+            cp -r $(stack path --local-doc-root)/grisette-* /tmp/grisette-doc
+      - store_artifacts:
+          path: "/tmp/grisette-doc"
       - run:
           name: Clean up
           command: stack --no-terminal clean
