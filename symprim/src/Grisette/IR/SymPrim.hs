@@ -9,6 +9,8 @@ module Grisette.IR.SymPrim
     SymBool,
     SymInteger,
     type (=~>),
+    SignedBV,
+    UnsignedBV,
     SymSignedBV,
     SymUnsignedBV,
     Model (..),
@@ -27,3 +29,5 @@ import Grisette.Control.Monad.UnionM
 import Grisette.Data.Prim.Model
 import Grisette.Data.SymPrim
 import Grisette.Data.TabularFunc
+import Data.BitVector.Sized.Signed
+import Data.BitVector.Sized.Unsigned
