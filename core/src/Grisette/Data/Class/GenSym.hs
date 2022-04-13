@@ -65,7 +65,13 @@ import Data.List (intercalate)
 -- Every time a new variable is generated, the index will be increased.
 newtype GenSymIndex = GenSymIndex Int
   deriving (Show)
-  deriving (Num) via Int
+  deriving (Eq, Ord, Num) via Int
+
+instance (SymBoolOp bool) => Mergeable bool GenSymIndex where
+  mergeStrategy = SimpleStrategy $ \_ t f -> max t f
+
+instance (SymBoolOp bool) => SimpleMergeable bool GenSymIndex where
+  mrgIte _ t f = max t f
 
 -- | Identifier type used for 'GenSym'
 --
@@ -150,6 +156,34 @@ nameWithLoc s = [| nameWithInfo s (parseFileLocation $__LOCATION__) |]
 --
 -- Each time a fresh symbolic variable is generated, the index should be increased.
 newtype GenSymFreshT m a = GenSymFreshT {runGenSymFreshT' :: GenSymIdent -> GenSymIndex -> m (a, GenSymIndex)}
+
+instance (SymBoolOp bool, Mergeable bool a, Mergeable1 bool m) =>
+  Mergeable bool (GenSymFreshT m a) where
+  mergeStrategy =
+    withMergeable @bool @m @(a, GenSymIndex) $
+      withMergeable @bool @((->) GenSymIndex) @(m (a, GenSymIndex)) $
+        withMergeable @bool @((->) GenSymIdent) @(GenSymIndex -> m (a, GenSymIndex)) $
+          wrapMergeStrategy mergeStrategy GenSymFreshT runGenSymFreshT'
+
+instance (SymBoolOp bool, Mergeable1 bool m) => Mergeable1 bool (GenSymFreshT m)
+
+instance (SymBoolOp bool, UnionSimpleMergeable1 bool m, Mergeable bool a) =>
+  SimpleMergeable bool (GenSymFreshT m a) where
+    mrgIte cond (GenSymFreshT t) (GenSymFreshT f) =
+      withUnionSimpleMergeable @bool @m @(a, GenSymIndex) $ GenSymFreshT $ mrgIte cond t f
+
+instance (SymBoolOp bool, UnionSimpleMergeable1 bool m) =>
+  SimpleMergeable1 bool (GenSymFreshT m) 
+
+instance (SymBoolOp bool, UnionSimpleMergeable1 bool m) =>
+  UnionSimpleMergeable1 bool (GenSymFreshT m)
+
+instance (SymBoolOp bool, MonadUnion bool m) => 
+  MonadUnion bool (GenSymFreshT m) where
+  merge (GenSymFreshT f) = GenSymFreshT $ \ident index -> merge $ f ident index
+  mrgReturn v = GenSymFreshT $ \_ index -> mrgReturn (v, index)
+  mrgIf cond (GenSymFreshT t) (GenSymFreshT f) =
+    GenSymFreshT $ \ident index -> mrgIf cond (t ident index) (f ident index)
 
 -- | Run the symbolic generation with the given identifier and 0 as the initial index.
 runGenSymFreshT :: (Monad m) => GenSymFreshT m a -> GenSymIdent -> m a
