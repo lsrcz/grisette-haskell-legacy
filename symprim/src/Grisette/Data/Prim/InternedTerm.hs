@@ -142,7 +142,7 @@ instance Hashable TermSymbol where
   hashWithSalt s (TermSymbol p1 s1) = s `hashWithSalt` s1 `hashWithSalt` typeRep p1
 
 instance Show TermSymbol where
-  show (TermSymbol _ s) = show s
+  show (TermSymbol t s) = show s ++ " :: " ++ show (typeRep t)
 
 data Term t where
   ConcTerm :: (SupportedPrim t) => {-# UNPACK #-} !Id -> !t -> Term t

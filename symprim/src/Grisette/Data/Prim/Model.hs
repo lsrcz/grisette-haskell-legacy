@@ -22,25 +22,25 @@ import Grisette.Data.Prim.ModelValue
 import Data.Hashable
 import GHC.Generics
 
-newtype Model = Model (M.HashMap Symbol ModelValue) deriving (Show, Eq, Generic, Hashable)
+newtype Model = Model (M.HashMap TermSymbol ModelValue) deriving (Show, Eq, Generic, Hashable)
 
 empty :: Model
 empty = Model M.empty
 
-valueOf :: forall t. (Typeable t) => Model -> Symbol -> Maybe t
+valueOf :: forall t. (Typeable t) => Model -> TermSymbol -> Maybe t
 valueOf (Model m) sym =
   (unsafeFromModelValue @t)
     <$> M.lookup sym m
 
 exceptFor :: Model -> S.HashSet TermSymbol -> Model
 exceptFor (Model m) s =
-  Model $ S.foldl' (\acc (TermSymbol _ sym) -> M.delete sym acc) m s
+  Model $ S.foldl' (\acc sym -> M.delete sym acc) m s
 
 restrictTo :: Model -> S.HashSet TermSymbol -> Model
 restrictTo (Model m) s =
   Model $
     S.foldl'
-      ( \acc (TermSymbol _ sym) -> case M.lookup sym m of
+      ( \acc sym -> case M.lookup sym m of
           Just v -> M.insert sym v acc
           Nothing -> acc
       )
@@ -51,7 +51,7 @@ extendTo :: Model -> S.HashSet TermSymbol -> Model
 extendTo (Model m) s =
   Model $
     S.foldl'
-      ( \acc (TermSymbol (_ :: Proxy t) sym) -> case M.lookup sym acc of
+      ( \acc sym@(TermSymbol (_ :: Proxy t) _) -> case M.lookup sym acc of
           Just _ -> acc
           Nothing -> M.insert sym (defaultValueDynamic @t) acc
       )
@@ -62,7 +62,7 @@ exact :: Model -> S.HashSet TermSymbol -> Model
 exact m s = restrictTo (extendTo m s) s
 
 insert :: (Eq a, Show a, Hashable a, Typeable a) => Model -> TermSymbol -> a -> Model
-insert (Model m) (TermSymbol p sym) v =
+insert (Model m) sym@(TermSymbol p _) v =
   if typeRep p == typeOf v
     then Model $ M.insert sym (toModelValue v) m
     else error "Bad value type"
@@ -72,7 +72,7 @@ evaluateSomeTermMemo fillDefault (Model ma) = go
   where
     go :: SomeTerm -> MemoState (MemoHashMap SomeTerm SomeTerm) SomeTerm SomeTerm SomeTerm
     go c@(SomeTerm ConcTerm {}) = return c
-    go c@(SomeTerm ((SymbTerm _ (TermSymbol (_ :: Proxy t) sym)) :: Term a)) = return $ case M.lookup sym ma of
+    go c@(SomeTerm ((SymbTerm _ sym@(TermSymbol (_ :: Proxy t) _)) :: Term a)) = return $ case M.lookup sym ma of
       Nothing -> if fillDefault then SomeTerm $ concTerm (defaultValue @t) else c
       Just dy -> SomeTerm $ concTerm (unsafeFromModelValue @a dy)
     go (SomeTerm (UnaryTerm _ tag (arg :: Term a))) = do

@@ -15,69 +15,75 @@ import Grisette.Data.Prim.Bool
 spec :: Spec
 spec = do
   describe "empty model" $ do
+    let asymbol = TermSymbol (Proxy @Integer) (SimpleSymbol "a") 
+    let bsymbol = TermSymbol (Proxy @Bool) (SimpleSymbol "b") 
+    let csymbol = TermSymbol (Proxy @Integer) (SimpleSymbol "c")
+    let dsymbol = TermSymbol (Proxy @Bool) $ SimpleSymbol "d"
+    let esymbol = TermSymbol (Proxy @(BVU.UnsignedBV 4)) $ SimpleSymbol "e"
+    let fsymbol = TermSymbol (Proxy @(BVS.SignedBV 4)) $ SimpleSymbol "f"
     let m1 = Model.empty
-    let m2 = Model.insert m1 (TermSymbol (Proxy @Integer) (SimpleSymbol "a")) (1 :: Integer)
-    let m3 = Model.insert m2 (TermSymbol (Proxy @Bool) (SimpleSymbol "b")) True
+    let m2 = Model.insert m1 asymbol (1 :: Integer)
+    let m3 = Model.insert m2 bsymbol True
     it "empty model is really empty" $ do
       Model.empty `shouldBe` Model M.empty
     it "inserting to model" $ do
       m3
         `shouldBe` Model
           ( M.fromList
-              [ (SimpleSymbol "a", toModelValue (1 :: Integer)),
-                (SimpleSymbol "b", toModelValue True)
+              [ (asymbol, toModelValue (1 :: Integer)),
+                (bsymbol, toModelValue True)
               ]
           )
     it "valueOf" $ do
-      valueOf m3 (SimpleSymbol "a") `shouldBe` Just (1 :: Integer)
-      valueOf m3 (SimpleSymbol "b") `shouldBe` Just True
-      valueOf m3 (SimpleSymbol "c") `shouldBe` (Nothing :: Maybe Integer)
+      valueOf m3 asymbol `shouldBe` Just (1 :: Integer)
+      valueOf m3 bsymbol `shouldBe` Just True
+      valueOf m3 csymbol `shouldBe` (Nothing :: Maybe Integer)
     it "exceptFor" $ do
-      exceptFor m3 (S.fromList [TermSymbol (Proxy @Integer) $ SimpleSymbol "a"])
+      exceptFor m3 (S.fromList [asymbol])
         `shouldBe` Model
           ( M.fromList
-              [ (SimpleSymbol "b", toModelValue True)
+              [ (bsymbol, toModelValue True)
               ]
           )
     it "restrictTo" $ do
-      restrictTo m3 (S.fromList [TermSymbol (Proxy @Integer) $ SimpleSymbol "a"])
+      restrictTo m3 (S.fromList [asymbol])
         `shouldBe` Model
           ( M.fromList
-              [ (SimpleSymbol "a", toModelValue (1 :: Integer))
+              [ (asymbol, toModelValue (1 :: Integer))
               ]
           )
     it "extendTo" $ do
       extendTo
         m3
         ( S.fromList
-            [ TermSymbol (Proxy @Integer) $ SimpleSymbol "c",
-              TermSymbol (Proxy @Bool) $ SimpleSymbol "d",
-              TermSymbol (Proxy @(BVU.UnsignedBV 4)) $ SimpleSymbol "e",
-              TermSymbol (Proxy @(BVS.SignedBV 4)) $ SimpleSymbol "f"
+            [ csymbol,
+              dsymbol,
+              esymbol,
+              fsymbol
             ]
         )
         `shouldBe` Model
           ( M.fromList
-              [ (SimpleSymbol "a", toModelValue (1 :: Integer)),
-                (SimpleSymbol "b", toModelValue True),
-                (SimpleSymbol "c", toModelValue (0 :: Integer)),
-                (SimpleSymbol "d", toModelValue False),
-                (SimpleSymbol "e", toModelValue (0 :: BVU.UnsignedBV 4)),
-                (SimpleSymbol "f", toModelValue (0 :: BVS.SignedBV 4))
+              [ (asymbol, toModelValue (1 :: Integer)),
+                (bsymbol, toModelValue True),
+                (csymbol, toModelValue (0 :: Integer)),
+                (dsymbol, toModelValue False),
+                (esymbol, toModelValue (0 :: BVU.UnsignedBV 4)),
+                (fsymbol, toModelValue (0 :: BVS.SignedBV 4))
               ]
           )
     it "exact" $ do
       exact
         m3
         ( S.fromList
-            [ TermSymbol (Proxy @Integer) $ SimpleSymbol "a",
-              TermSymbol (Proxy @Integer) $ SimpleSymbol "c"
+            [ asymbol,
+              csymbol
             ]
         )
         `shouldBe` Model
           ( M.fromList
-              [ (SimpleSymbol "a", toModelValue (1 :: Integer)),
-                (SimpleSymbol "c", toModelValue (0 :: Integer))
+              [ (asymbol, toModelValue (1 :: Integer)),
+                (csymbol, toModelValue (0 :: Integer))
               ]
           )
     it "evaluateTerm" $ do
