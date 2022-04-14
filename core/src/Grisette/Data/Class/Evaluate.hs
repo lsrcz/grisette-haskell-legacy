@@ -7,11 +7,8 @@ module Grisette.Data.Class.Evaluate
 where
 
 import Control.Monad.Except
-import Control.Monad.Reader
 import qualified Control.Monad.Writer.Lazy as WriterLazy
 import qualified Control.Monad.Writer.Strict as WriterStrict
-import qualified Control.Monad.State.Lazy as StateLazy
-import qualified Control.Monad.State.Strict as StateStrict
 import Control.Monad.Trans.Maybe
 import qualified Data.ByteString as B
 import Data.Functor.Sum
