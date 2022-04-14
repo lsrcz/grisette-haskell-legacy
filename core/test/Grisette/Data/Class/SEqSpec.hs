@@ -3,6 +3,8 @@
 
 module Grisette.Data.Class.SEqSpec where
 
+import qualified Control.Monad.Writer.Lazy as WriterLazy
+import qualified Control.Monad.Writer.Strict as WriterStrict
 import Control.Monad.Except
 import Control.Monad.Trans.Maybe
 import Data.Bifunctor
@@ -234,6 +236,33 @@ spec = do
         (InR $ Just $ SSBool "a" :: Sum Maybe Maybe SBool) ==~ InR (Just $ SSBool "b") `shouldBe`
           Equal (SSBool "a") (SSBool "b")
         (InR $ Just $ SSBool "a" :: Sum Maybe Maybe SBool) ==~ InL (Just $ SSBool "b") `shouldBe` CBool False
+    describe "SEq for Writer" $ do
+      prop "SEq for concrete Lazy WriterT should work"
+        (\(v1 :: Either Integer (Integer, Integer), v2 :: Either Integer (Integer, Integer)) ->
+          concreteSEqOkSpec (WriterLazy.WriterT v1, WriterLazy.WriterT v2))
+      prop "SEq for concrete Strict WriterT should work"
+        (\(v1 :: Either Integer (Integer, Integer), v2 :: Either Integer (Integer, Integer)) ->
+          concreteSEqOkSpec (WriterStrict.WriterT v1, WriterStrict.WriterT v2))
+      it "SEq for general Lazy WriterT should work" $ do
+        (WriterLazy.WriterT (Left $ SSBool "a") :: WriterLazy.WriterT SBool (Either SBool) SBool) ==~ 
+          WriterLazy.WriterT (Left $ SSBool "b") `shouldBe` Equal (SSBool "a") (SSBool "b")
+        (WriterLazy.WriterT (Left $ SSBool "a") :: WriterLazy.WriterT SBool (Either SBool) SBool) ==~ 
+          WriterLazy.WriterT (Right (SSBool "b", SSBool "c")) `shouldBe` CBool False
+        (WriterLazy.WriterT (Right (SSBool "b", SSBool "c")) :: WriterLazy.WriterT SBool (Either SBool) SBool) ==~ 
+          WriterLazy.WriterT (Left $ SSBool "a") `shouldBe` CBool False
+        (WriterLazy.WriterT (Right (SSBool "a", SSBool "b")) :: WriterLazy.WriterT SBool (Either SBool) SBool) ==~ 
+          WriterLazy.WriterT (Right (SSBool "c", SSBool "d")) `shouldBe`
+            And (Equal (SSBool "a") (SSBool "c")) (Equal (SSBool "b") (SSBool "d"))
+      it "SEq for general Strict WriterT should work" $ do
+        (WriterStrict.WriterT (Left $ SSBool "a") :: WriterStrict.WriterT SBool (Either SBool) SBool) ==~ 
+          WriterStrict.WriterT (Left $ SSBool "b") `shouldBe` Equal (SSBool "a") (SSBool "b")
+        (WriterStrict.WriterT (Left $ SSBool "a") :: WriterStrict.WriterT SBool (Either SBool) SBool) ==~ 
+          WriterStrict.WriterT (Right (SSBool "b", SSBool "c")) `shouldBe` CBool False
+        (WriterStrict.WriterT (Right (SSBool "b", SSBool "c")) :: WriterStrict.WriterT SBool (Either SBool) SBool) ==~ 
+          WriterStrict.WriterT (Left $ SSBool "a") `shouldBe` CBool False
+        (WriterStrict.WriterT (Right (SSBool "a", SSBool "b")) :: WriterStrict.WriterT SBool (Either SBool) SBool) ==~ 
+          WriterStrict.WriterT (Right (SSBool "c", SSBool "d")) `shouldBe`
+            And (Equal (SSBool "a") (SSBool "c")) (Equal (SSBool "b") (SSBool "d"))
   describe "deriving SEq for ADT" $ do
     it "derived SEq for simple ADT" $ do
       A1 ==~ A1 `shouldBe` CBool True

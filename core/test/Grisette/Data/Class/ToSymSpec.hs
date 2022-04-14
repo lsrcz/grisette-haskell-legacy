@@ -9,8 +9,11 @@ import Grisette.Data.Class.ToSym
 import Test.Hspec
 import Test.Hspec.QuickCheck
 import Utils.SBool
-import Control.Monad.State.Lazy as StateLazy
-import Control.Monad.State.Strict as StateStrict
+import Control.Monad.Reader
+import qualified Control.Monad.State.Lazy as StateLazy
+import qualified Control.Monad.State.Strict as StateStrict
+import qualified Control.Monad.Writer.Lazy as WriterLazy
+import qualified Control.Monad.Writer.Strict as WriterStrict
 
 toSymForConcreteProp :: (HasCallStack, ToSym v v, Show v, Eq v) => v -> Expectation
 toSymForConcreteProp v = toSym v `shouldBe` v
@@ -152,4 +155,23 @@ spec = do
           st :: StateStrict.StateT Bool (Either Bool) Bool = StateStrict.StateT (func f)
          in
         (StateStrict.runStateT (toSym st) x :: Either SBool (SBool, Bool)) == toSym (func f) x
-
+    describe "ToSym for Lazy WriterT" $ do
+      prop "ToSym for general Lazy WriterT should work" $ \(f :: Either Bool (Bool, Integer)) ->
+        let
+          w :: WriterLazy.WriterT Integer (Either Bool) Bool = WriterLazy.WriterT f
+         in
+        (WriterLazy.runWriterT (toSym w) :: Either SBool (SBool, Integer)) == toSym f 
+      prop "ToSym for general Strict WriterT should work" $ \(f :: Either Bool (Bool, Integer)) ->
+        let
+          w :: WriterStrict.WriterT Integer (Either Bool) Bool = WriterStrict.WriterT f
+         in
+        (WriterStrict.runWriterT (toSym w) :: Either SBool (SBool, Integer)) == toSym f 
+    describe "ToSym for ReaderT" $ do
+      prop "ToSym for general ReaderT should work" $ \(f :: [(Bool, Either Bool Bool)], x :: Bool) ->
+        let
+          func [] _ = Left False
+          func ((fk,fv):_) xv | fk == xv = fv
+          func (_:fs) xv = func fs xv
+          st :: ReaderT Bool (Either Bool) Bool = ReaderT (func f)
+         in
+        (runReaderT (toSym st) x :: Either SBool SBool) == toSym (func f) x

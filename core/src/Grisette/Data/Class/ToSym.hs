@@ -5,8 +5,11 @@ module Grisette.Data.Class.ToSym
   )
 where
 
-import Control.Monad.State.Lazy as StateLazy
-import Control.Monad.State.Strict as StateStrict
+import Control.Monad.Reader
+import qualified Control.Monad.State.Lazy as StateLazy
+import qualified Control.Monad.State.Strict as StateStrict
+import qualified Control.Monad.Writer.Lazy as WriterLazy
+import qualified Control.Monad.Writer.Strict as WriterStrict
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Maybe
 import qualified Data.ByteString as B
@@ -140,6 +143,17 @@ instance (ToSym (s1 -> m1 (a1, s1)) (s2 -> m2 (a2, s2))) => ToSym (StateLazy.Sta
 
 instance (ToSym (s1 -> m1 (a1, s1)) (s2 -> m2 (a2, s2))) => ToSym (StateStrict.StateT s1 m1 a1) (StateStrict.StateT s2 m2 a2) where
   toSym (StateStrict.StateT f1) = StateStrict.StateT $ toSym f1
+
+-- WriterT
+instance (ToSym (m1 (a1, s1)) (m2 (a2, s2))) => ToSym (WriterLazy.WriterT s1 m1 a1) (WriterLazy.WriterT s2 m2 a2) where
+  toSym (WriterLazy.WriterT f1) = WriterLazy.WriterT $ toSym f1
+
+instance (ToSym (m1 (a1, s1)) (m2 (a2, s2))) => ToSym (WriterStrict.WriterT s1 m1 a1) (WriterStrict.WriterT s2 m2 a2) where
+  toSym (WriterStrict.WriterT f1) = WriterStrict.WriterT $ toSym f1
+
+-- ReaderT
+instance (ToSym (s1 -> m1 a1) (s2 -> m2 a2)) => ToSym (ReaderT s1 m1 a1) (ReaderT s2 m2 a2) where
+  toSym (ReaderT f1) = ReaderT $ toSym f1
 
 -- Sum
 deriving via

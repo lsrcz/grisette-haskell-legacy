@@ -24,8 +24,11 @@ where
 import Control.Monad.Coroutine hiding (merge)
 import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Monad.Except
+import Control.Monad.Reader
 import qualified Control.Monad.State.Lazy as StateLazy
 import qualified Control.Monad.State.Strict as StateStrict
+import qualified Control.Monad.Writer.Lazy as WriterLazy
+import qualified Control.Monad.Writer.Strict as WriterStrict
 import Control.Monad.Trans.Maybe
 import qualified Data.ByteString as B
 import Data.Functor.Classes
@@ -520,6 +523,38 @@ instance
         wrapMergeStrategy mergeStrategy StateStrict.StateT StateStrict.runStateT
 
 instance (SymBoolOp bool, Mergeable bool s, Mergeable1 bool m) => Mergeable1 bool (StateStrict.StateT s m)
+
+-- writer
+instance
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool a, Mergeable1 bool m) =>
+  Mergeable bool (WriterLazy.WriterT s m a)
+  where
+  mergeStrategy =
+    withMergeable @bool @m @(a, s) $
+      wrapMergeStrategy mergeStrategy WriterLazy.WriterT WriterLazy.runWriterT
+
+instance (SymBoolOp bool, Mergeable bool s, Mergeable1 bool m) => Mergeable1 bool (WriterLazy.WriterT s m)
+
+instance
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool a, Mergeable1 bool m) =>
+  Mergeable bool (WriterStrict.WriterT s m a)
+  where
+  mergeStrategy =
+    withMergeable @bool @m @(a, s) $
+      wrapMergeStrategy mergeStrategy WriterStrict.WriterT WriterStrict.runWriterT
+
+instance (SymBoolOp bool, Mergeable bool s, Mergeable1 bool m) => Mergeable1 bool (WriterStrict.WriterT s m)
+
+-- reader
+instance
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool a, Mergeable1 bool m) =>
+  Mergeable bool (ReaderT s m a)
+  where
+  mergeStrategy =
+    withMergeable @bool @m @a $
+      wrapMergeStrategy mergeStrategy ReaderT runReaderT
+
+instance (SymBoolOp bool, Mergeable bool s, Mergeable1 bool m) => Mergeable1 bool (ReaderT s m)
 
 -- Sum
 instance

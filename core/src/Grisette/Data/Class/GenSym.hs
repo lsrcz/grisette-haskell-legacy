@@ -50,7 +50,7 @@ import Control.Monad.Trans.Maybe
 import Data.Bifunctor
 import Data.String
 import Data.Typeable
-import Generics.Deriving
+import Generics.Deriving hiding (index)
 import Grisette.Control.Monad
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable

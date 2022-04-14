@@ -7,6 +7,8 @@ where
 
 import Control.Monad.Coroutine
 import Control.Monad.Except
+import qualified Control.Monad.Writer.Lazy as WriterLazy
+import qualified Control.Monad.Writer.Strict as WriterStrict
 import Control.Monad.Trans.Maybe
 import qualified Data.ByteString as B
 import Data.Functor.Sum
@@ -129,3 +131,14 @@ deriving via
   instance
     (Monoid symbolSet, ExtractSymbolics symbolSet (f a), ExtractSymbolics symbolSet (g a)) =>
     ExtractSymbolics symbolSet (Sum f g a)
+
+-- WriterT
+instance
+  (Monoid symbolSet, ExtractSymbolics symbolSet (m (a, s))) =>
+    ExtractSymbolics symbolSet (WriterLazy.WriterT s m a) where
+  extractSymbolics (WriterLazy.WriterT f) = extractSymbolics f
+
+instance
+  (Monoid symbolSet, ExtractSymbolics symbolSet (m (a, s))) =>
+    ExtractSymbolics symbolSet (WriterStrict.WriterT s m a) where
+  extractSymbolics (WriterStrict.WriterT f) = extractSymbolics f

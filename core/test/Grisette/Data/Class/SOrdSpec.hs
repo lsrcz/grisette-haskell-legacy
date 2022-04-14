@@ -2,6 +2,8 @@
 
 module Grisette.Data.Class.SOrdSpec where
 
+import qualified Control.Monad.Writer.Lazy as WriterLazy
+import qualified Control.Monad.Writer.Strict as WriterStrict
 import Control.Monad.Except
 import Control.Monad.Trans.Maybe
 import Data.Bifunctor
@@ -491,6 +493,104 @@ spec = do
         (InR $ Just $ SSBool "a" :: Sum Maybe Maybe SBool) <~ InL (Just $ SSBool "b") `shouldBe` CBool False
         (InR $ Just $ SSBool "a" :: Sum Maybe Maybe SBool) >=~ InL (Just $ SSBool "b") `shouldBe` CBool True
         (InR $ Just $ SSBool "a" :: Sum Maybe Maybe SBool) >~ InL (Just $ SSBool "b") `shouldBe` CBool True
+    describe "SOrd for WriterT" $ do
+      prop "SOrd for concrete Lazy WriterT should work"
+        (\(v1 :: Either Integer (Integer, Integer), v2 :: Either Integer (Integer, Integer)) ->
+          concreteOrdOkProp (WriterLazy.WriterT v1, WriterLazy.WriterT v2))
+      prop "SOrd for concrete Strict WriterT should work"
+        (\(v1 :: Either Integer (Integer, Integer), v2 :: Either Integer (Integer, Integer)) ->
+          concreteOrdOkProp (WriterStrict.WriterT v1, WriterStrict.WriterT v2))
+      it "SOrd for general Lazy WriterT should work" $ do
+        (WriterLazy.WriterT $ Left $ SSBool "a" :: WriterLazy.WriterT SBool (Either SBool) SBool) <=~
+          WriterLazy.WriterT (Left $ SSBool "b") `shouldBe` (SSBool "a" <=~ SSBool "b" :: SBool)
+        (WriterLazy.WriterT $ Left $ SSBool "a" :: WriterLazy.WriterT SBool (Either SBool) SBool) <~
+          WriterLazy.WriterT (Left $ SSBool "b") `shouldBe` (SSBool "a" <~ SSBool "b" :: SBool)
+        (WriterLazy.WriterT $ Left $ SSBool "a" :: WriterLazy.WriterT SBool (Either SBool) SBool) >=~
+          WriterLazy.WriterT (Left $ SSBool "b") `shouldBe` (SSBool "a" >=~ SSBool "b" :: SBool)
+        (WriterLazy.WriterT $ Left $ SSBool "a" :: WriterLazy.WriterT SBool (Either SBool) SBool) >~
+          WriterLazy.WriterT (Left $ SSBool "b") `shouldBe` (SSBool "a" >~ SSBool "b" :: SBool)
+        (WriterLazy.WriterT $ Left $ SSBool "a" :: WriterLazy.WriterT SBool (Either SBool) SBool) `symCompare`
+          WriterLazy.WriterT (Left $ SSBool "b") `shouldBe` (SSBool "a" `symCompare` SSBool "b" :: UnionMBase SBool Ordering)
+
+        (WriterLazy.WriterT $ Left $ SSBool "a" :: WriterLazy.WriterT SBool (Either SBool) SBool) <=~
+          WriterLazy.WriterT (Right (SSBool "b", SSBool "d")) `shouldBe` CBool True
+        (WriterLazy.WriterT $ Left $ SSBool "a" :: WriterLazy.WriterT SBool (Either SBool) SBool) <~
+          WriterLazy.WriterT (Right (SSBool "b", SSBool "d")) `shouldBe` CBool True
+        (WriterLazy.WriterT $ Left $ SSBool "a" :: WriterLazy.WriterT SBool (Either SBool) SBool) >=~
+          WriterLazy.WriterT (Right (SSBool "b", SSBool "d")) `shouldBe` CBool False
+        (WriterLazy.WriterT $ Left $ SSBool "a" :: WriterLazy.WriterT SBool (Either SBool) SBool) >~
+          WriterLazy.WriterT (Right (SSBool "b", SSBool "d")) `shouldBe` CBool False
+        (WriterLazy.WriterT $ Left $ SSBool "a" :: WriterLazy.WriterT SBool (Either SBool) SBool) `symCompare`
+          WriterLazy.WriterT (Right (SSBool "b", SSBool "d")) `shouldBe` (mrgReturn LT :: UnionMBase SBool Ordering)
+
+        (WriterLazy.WriterT $ Right (SSBool "a", SSBool "c") :: WriterLazy.WriterT SBool (Either SBool) SBool) <=~
+          WriterLazy.WriterT (Left $ SSBool "b") `shouldBe` CBool False
+        (WriterLazy.WriterT $ Right (SSBool "a", SSBool "c") :: WriterLazy.WriterT SBool (Either SBool) SBool) <~
+          WriterLazy.WriterT (Left $ SSBool "b") `shouldBe` CBool False
+        (WriterLazy.WriterT $ Right (SSBool "a", SSBool "c") :: WriterLazy.WriterT SBool (Either SBool) SBool) >=~
+          WriterLazy.WriterT (Left $ SSBool "b") `shouldBe` CBool True
+        (WriterLazy.WriterT $ Right (SSBool "a", SSBool "c") :: WriterLazy.WriterT SBool (Either SBool) SBool) >~
+          WriterLazy.WriterT (Left $ SSBool "b") `shouldBe` CBool True
+        (WriterLazy.WriterT $ Right (SSBool "a", SSBool "c") :: WriterLazy.WriterT SBool (Either SBool) SBool) `symCompare`
+          WriterLazy.WriterT (Left $ SSBool "b") `shouldBe` (mrgReturn GT :: UnionMBase SBool Ordering)
+
+        (WriterLazy.WriterT $ Right (SSBool "a", SSBool "c") :: WriterLazy.WriterT SBool (Either SBool) SBool) <=~
+          WriterLazy.WriterT (Right (SSBool "b", SSBool "d")) `shouldBe` ((SSBool "a", SSBool "c") <=~ (SSBool "b", SSBool "d") :: SBool)
+        (WriterLazy.WriterT $ Right (SSBool "a", SSBool "c") :: WriterLazy.WriterT SBool (Either SBool) SBool) <~
+          WriterLazy.WriterT (Right (SSBool "b", SSBool "d")) `shouldBe` ((SSBool "a", SSBool "c") <~ (SSBool "b", SSBool "d") :: SBool)
+        (WriterLazy.WriterT $ Right (SSBool "a", SSBool "c") :: WriterLazy.WriterT SBool (Either SBool) SBool) >=~
+          WriterLazy.WriterT (Right (SSBool "b", SSBool "d")) `shouldBe` ((SSBool "a", SSBool "c") >=~ (SSBool "b", SSBool "d") :: SBool)
+        (WriterLazy.WriterT $ Right (SSBool "a", SSBool "c") :: WriterLazy.WriterT SBool (Either SBool) SBool) >~
+          WriterLazy.WriterT (Right (SSBool "b", SSBool "d")) `shouldBe` ((SSBool "a", SSBool "c") >~ (SSBool "b", SSBool "d") :: SBool)
+        (WriterLazy.WriterT $ Right (SSBool "a", SSBool "c") :: WriterLazy.WriterT SBool (Either SBool) SBool) `symCompare`
+          WriterLazy.WriterT (Right (SSBool "b", SSBool "d")) `shouldBe`
+            ((SSBool "a", SSBool "c") `symCompare` (SSBool "b", SSBool "d") :: UnionMBase SBool Ordering)
+      
+      it "SOrd for general Strict WriterT should work" $ do
+        (WriterStrict.WriterT $ Left $ SSBool "a" :: WriterStrict.WriterT SBool (Either SBool) SBool) <=~
+          WriterStrict.WriterT (Left $ SSBool "b") `shouldBe` (SSBool "a" <=~ SSBool "b" :: SBool)
+        (WriterStrict.WriterT $ Left $ SSBool "a" :: WriterStrict.WriterT SBool (Either SBool) SBool) <~
+          WriterStrict.WriterT (Left $ SSBool "b") `shouldBe` (SSBool "a" <~ SSBool "b" :: SBool)
+        (WriterStrict.WriterT $ Left $ SSBool "a" :: WriterStrict.WriterT SBool (Either SBool) SBool) >=~
+          WriterStrict.WriterT (Left $ SSBool "b") `shouldBe` (SSBool "a" >=~ SSBool "b" :: SBool)
+        (WriterStrict.WriterT $ Left $ SSBool "a" :: WriterStrict.WriterT SBool (Either SBool) SBool) >~
+          WriterStrict.WriterT (Left $ SSBool "b") `shouldBe` (SSBool "a" >~ SSBool "b" :: SBool)
+        (WriterStrict.WriterT $ Left $ SSBool "a" :: WriterStrict.WriterT SBool (Either SBool) SBool) `symCompare`
+          WriterStrict.WriterT (Left $ SSBool "b") `shouldBe` (SSBool "a" `symCompare` SSBool "b" :: UnionMBase SBool Ordering)
+
+        (WriterStrict.WriterT $ Left $ SSBool "a" :: WriterStrict.WriterT SBool (Either SBool) SBool) <=~
+          WriterStrict.WriterT (Right (SSBool "b", SSBool "d")) `shouldBe` CBool True
+        (WriterStrict.WriterT $ Left $ SSBool "a" :: WriterStrict.WriterT SBool (Either SBool) SBool) <~
+          WriterStrict.WriterT (Right (SSBool "b", SSBool "d")) `shouldBe` CBool True
+        (WriterStrict.WriterT $ Left $ SSBool "a" :: WriterStrict.WriterT SBool (Either SBool) SBool) >=~
+          WriterStrict.WriterT (Right (SSBool "b", SSBool "d")) `shouldBe` CBool False
+        (WriterStrict.WriterT $ Left $ SSBool "a" :: WriterStrict.WriterT SBool (Either SBool) SBool) >~
+          WriterStrict.WriterT (Right (SSBool "b", SSBool "d")) `shouldBe` CBool False
+        (WriterStrict.WriterT $ Left $ SSBool "a" :: WriterStrict.WriterT SBool (Either SBool) SBool) `symCompare`
+          WriterStrict.WriterT (Right (SSBool "b", SSBool "d")) `shouldBe` (mrgReturn LT :: UnionMBase SBool Ordering)
+
+        (WriterStrict.WriterT $ Right (SSBool "a", SSBool "c") :: WriterStrict.WriterT SBool (Either SBool) SBool) <=~
+          WriterStrict.WriterT (Left $ SSBool "b") `shouldBe` CBool False
+        (WriterStrict.WriterT $ Right (SSBool "a", SSBool "c") :: WriterStrict.WriterT SBool (Either SBool) SBool) <~
+          WriterStrict.WriterT (Left $ SSBool "b") `shouldBe` CBool False
+        (WriterStrict.WriterT $ Right (SSBool "a", SSBool "c") :: WriterStrict.WriterT SBool (Either SBool) SBool) >=~
+          WriterStrict.WriterT (Left $ SSBool "b") `shouldBe` CBool True
+        (WriterStrict.WriterT $ Right (SSBool "a", SSBool "c") :: WriterStrict.WriterT SBool (Either SBool) SBool) >~
+          WriterStrict.WriterT (Left $ SSBool "b") `shouldBe` CBool True
+        (WriterStrict.WriterT $ Right (SSBool "a", SSBool "c") :: WriterStrict.WriterT SBool (Either SBool) SBool) `symCompare`
+          WriterStrict.WriterT (Left $ SSBool "b") `shouldBe` (mrgReturn GT :: UnionMBase SBool Ordering)
+
+        (WriterStrict.WriterT $ Right (SSBool "a", SSBool "c") :: WriterStrict.WriterT SBool (Either SBool) SBool) <=~
+          WriterStrict.WriterT (Right (SSBool "b", SSBool "d")) `shouldBe` ((SSBool "a", SSBool "c") <=~ (SSBool "b", SSBool "d") :: SBool)
+        (WriterStrict.WriterT $ Right (SSBool "a", SSBool "c") :: WriterStrict.WriterT SBool (Either SBool) SBool) <~
+          WriterStrict.WriterT (Right (SSBool "b", SSBool "d")) `shouldBe` ((SSBool "a", SSBool "c") <~ (SSBool "b", SSBool "d") :: SBool)
+        (WriterStrict.WriterT $ Right (SSBool "a", SSBool "c") :: WriterStrict.WriterT SBool (Either SBool) SBool) >=~
+          WriterStrict.WriterT (Right (SSBool "b", SSBool "d")) `shouldBe` ((SSBool "a", SSBool "c") >=~ (SSBool "b", SSBool "d") :: SBool)
+        (WriterStrict.WriterT $ Right (SSBool "a", SSBool "c") :: WriterStrict.WriterT SBool (Either SBool) SBool) >~
+          WriterStrict.WriterT (Right (SSBool "b", SSBool "d")) `shouldBe` ((SSBool "a", SSBool "c") >~ (SSBool "b", SSBool "d") :: SBool)
+        (WriterStrict.WriterT $ Right (SSBool "a", SSBool "c") :: WriterStrict.WriterT SBool (Either SBool) SBool) `symCompare`
+          WriterStrict.WriterT (Right (SSBool "b", SSBool "d")) `shouldBe`
+            ((SSBool "a", SSBool "c") `symCompare` (SSBool "b", SSBool "d") :: UnionMBase SBool Ordering)
     describe "SOrd for ByteString" $ do
       it "SOrd for ByteString should work" $ do
         let bytestrings :: [B.ByteString] = ["", "a", "b", "ab", "ba", "aa", "bb"]

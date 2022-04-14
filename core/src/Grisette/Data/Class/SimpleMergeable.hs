@@ -16,8 +16,11 @@ where
 
 import Control.Monad.Coroutine hiding (merge)
 import Control.Monad.Except
+import Control.Monad.Reader
 import qualified Control.Monad.State.Lazy as StateLazy
 import qualified Control.Monad.State.Strict as StateStrict
+import qualified Control.Monad.Writer.Lazy as WriterLazy
+import qualified Control.Monad.Writer.Strict as WriterStrict
 import Control.Monad.Trans.Maybe
 import GHC.Generics
 import Grisette.Data.Class.Bool
@@ -300,3 +303,51 @@ instance
 instance
   (SymBoolOp bool, Mergeable bool s, UnionSimpleMergeable1 bool m) =>
   UnionSimpleMergeable1 bool (StateStrict.StateT s m)
+
+instance
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool a, UnionSimpleMergeable1 bool m) =>
+  SimpleMergeable bool (WriterLazy.WriterT s m a)
+  where
+  mrgIte cond (WriterLazy.WriterT t) (WriterLazy.WriterT f) =
+    withUnionSimpleMergeable @bool @m @(a, s) $
+      WriterLazy.WriterT $ mrgIte cond t f
+
+instance
+  (SymBoolOp bool, Mergeable bool s, UnionSimpleMergeable1 bool m) =>
+  SimpleMergeable1 bool (WriterLazy.WriterT s m)
+
+instance
+  (SymBoolOp bool, Mergeable bool s, UnionSimpleMergeable1 bool m) =>
+  UnionSimpleMergeable1 bool (WriterLazy.WriterT s m)
+
+instance
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool a, UnionSimpleMergeable1 bool m) =>
+  SimpleMergeable bool (WriterStrict.WriterT s m a)
+  where
+  mrgIte cond (WriterStrict.WriterT t) (WriterStrict.WriterT f) =
+    withUnionSimpleMergeable @bool @m @(a, s) $
+      WriterStrict.WriterT $ mrgIte cond t f
+
+instance
+  (SymBoolOp bool, Mergeable bool s, UnionSimpleMergeable1 bool m) =>
+  SimpleMergeable1 bool (WriterStrict.WriterT s m)
+
+instance
+  (SymBoolOp bool, Mergeable bool s, UnionSimpleMergeable1 bool m) =>
+  UnionSimpleMergeable1 bool (WriterStrict.WriterT s m)
+
+instance
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool a, UnionSimpleMergeable1 bool m) =>
+  SimpleMergeable bool (ReaderT s m a)
+  where
+  mrgIte cond (ReaderT t) (ReaderT f) =
+    withUnionSimpleMergeable @bool @m @a $
+      ReaderT $ mrgIte cond t f
+
+instance
+  (SymBoolOp bool, Mergeable bool s, UnionSimpleMergeable1 bool m) =>
+  SimpleMergeable1 bool (ReaderT s m)
+
+instance
+  (SymBoolOp bool, Mergeable bool s, UnionSimpleMergeable1 bool m) =>
+  UnionSimpleMergeable1 bool (ReaderT s m)

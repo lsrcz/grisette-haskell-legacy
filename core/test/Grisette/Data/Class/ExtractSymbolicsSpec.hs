@@ -8,6 +8,8 @@ import Utils.SBool
 import Grisette.Data.Class.ExtractSymbolics
 import Control.Monad.Trans.Maybe
 import Control.Monad.Except
+import qualified Control.Monad.Writer.Lazy as WriterLazy
+import qualified Control.Monad.Writer.Strict as WriterStrict
 import GHC.Generics
 import Test.Hspec.QuickCheck
 import Generics.Deriving
@@ -57,6 +59,14 @@ spec = do
         S.singleton (SSymbol "a")
       extractSymbolics (ExceptT (Just (Right (SSBool "a"))) :: ExceptT SBool Maybe SBool) `shouldBe`
         S.singleton (SSymbol "a")
+    it "ExtractSymbolics for Lazy WriterT" $ do
+      extractSymbolics (WriterLazy.WriterT Nothing :: WriterLazy.WriterT SBool Maybe SBool) `shouldBe` (S.empty :: S.HashSet Symbol)
+      extractSymbolics (WriterLazy.WriterT (Just (SSBool "a", SSBool "b")) :: WriterLazy.WriterT SBool Maybe SBool) `shouldBe`
+        S.fromList [SSymbol "a", SSymbol "b"]
+    it "ExtractSymbolics for Strict WriterT" $ do
+      extractSymbolics (WriterStrict.WriterT Nothing :: WriterStrict.WriterT SBool Maybe SBool) `shouldBe` (S.empty :: S.HashSet Symbol)
+      extractSymbolics (WriterStrict.WriterT (Just (SSBool "a", SSBool "b")) :: WriterStrict.WriterT SBool Maybe SBool) `shouldBe`
+        S.fromList [SSymbol "a", SSymbol "b"]
     prop "ExtractSymbolics for ()" (concreteExtractSymbolicsOkSpec @())
     it "ExtractSymbolics for (,)" $ do
       extractSymbolics (SSBool "a", SSBool "b") `shouldBe` S.fromList [SSymbol "a", SSymbol "b"]

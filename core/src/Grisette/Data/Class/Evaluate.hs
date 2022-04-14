@@ -7,6 +7,11 @@ module Grisette.Data.Class.Evaluate
 where
 
 import Control.Monad.Except
+import Control.Monad.Reader
+import qualified Control.Monad.Writer.Lazy as WriterLazy
+import qualified Control.Monad.Writer.Strict as WriterStrict
+import qualified Control.Monad.State.Lazy as StateLazy
+import qualified Control.Monad.State.Strict as StateStrict
 import Control.Monad.Trans.Maybe
 import qualified Data.ByteString as B
 import Data.Functor.Sum
@@ -158,3 +163,10 @@ deriving via
   (Default (Sum f g a))
   instance
     (Evaluate model (f a), Evaluate model (g a)) => Evaluate model (Sum f g a)
+
+-- WriterT
+instance Evaluate model (m (a, s)) => Evaluate model (WriterLazy.WriterT s m a) where
+  evaluate fillDefault model (WriterLazy.WriterT v) = WriterLazy.WriterT $ evaluate fillDefault model v
+
+instance Evaluate model (m (a, s)) => Evaluate model (WriterStrict.WriterT s m a) where
+  evaluate fillDefault model (WriterStrict.WriterT v) = WriterStrict.WriterT $ evaluate fillDefault model v

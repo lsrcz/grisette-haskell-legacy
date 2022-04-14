@@ -11,6 +11,8 @@ module Grisette.Data.Class.Bool
 where
 
 import Control.Monad.Except
+import qualified Control.Monad.Writer.Lazy as WriterLazy
+import qualified Control.Monad.Writer.Strict as WriterStrict
 import Control.Monad.Trans.Maybe
 import qualified Data.ByteString as B
 import Data.Functor.Sum
@@ -170,3 +172,10 @@ deriving via
   (Default (Sum f g a))
   instance
     (SymBoolOp bool, SEq bool (f a), SEq bool (g a)) => SEq bool (Sum f g a)
+
+-- Writer
+instance (SymBoolOp bool, SEq bool (m (a, s))) => SEq bool (WriterLazy.WriterT s m a) where
+  (WriterLazy.WriterT l) ==~ (WriterLazy.WriterT r) = l ==~ r
+
+instance (SymBoolOp bool, SEq bool (m (a, s))) => SEq bool (WriterStrict.WriterT s m a) where
+  (WriterStrict.WriterT l) ==~ (WriterStrict.WriterT r) = l ==~ r

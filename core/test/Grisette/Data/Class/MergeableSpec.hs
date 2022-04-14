@@ -5,8 +5,11 @@ module Grisette.Data.Class.MergeableSpec where
 import Control.Monad.Coroutine
 import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Monad.Except
+import Control.Monad.Reader
 import qualified Control.Monad.State.Lazy as StateLazy
 import qualified Control.Monad.State.Strict as StateStrict
+import qualified Control.Monad.Writer.Lazy as WriterLazy
+import qualified Control.Monad.Writer.Strict as WriterStrict
 import Control.Monad.Trans.Maybe
 import qualified Data.ByteString.Char8 as C
 import Data.Functor.Sum
@@ -412,6 +415,41 @@ spec = do
         let st3 = s (SSBool "c") st1 st2
         StateStrict.runStateT st3 2 `shouldBe` mrgReturn (ITE (SSBool "c") (SSBool "a") (SSBool "b"), 4)
         StateStrict.runStateT st3 3 `shouldBe` mrgIf (SSBool "c") (mrgReturn (SSBool "a", 5)) (mrgReturn (SSBool "b", 6))
+    describe "Mergeable for WriterT" $ do
+      it "Mergeable for lazy WriterT should work" $ do
+        let SimpleStrategy s = mergeStrategy :: MergeStrategy SBool (WriterLazy.WriterT Integer (UnionMBase SBool) SBool)
+        let w1 :: WriterLazy.WriterT Integer (UnionMBase SBool) SBool =
+              WriterLazy.WriterT $ mrgReturn (SSBool "a", 1)
+        let w2 :: WriterLazy.WriterT Integer (UnionMBase SBool) SBool =
+              WriterLazy.WriterT $ mrgReturn (SSBool "b", 2)
+        let w3 :: WriterLazy.WriterT Integer (UnionMBase SBool) SBool =
+              WriterLazy.WriterT $ mrgReturn (SSBool "c", 1)
+        let w4 = s (SSBool "d") w1 w2
+        let w5 = s (SSBool "d") w1 w3
+        WriterLazy.runWriterT w4 `shouldBe` mrgIf (SSBool "d") (mrgReturn (SSBool "a", 1)) (mrgReturn (SSBool "b", 2))
+        WriterLazy.runWriterT w5 `shouldBe` mrgReturn (ITE (SSBool "d") (SSBool "a") (SSBool "c"), 1)
+      it "Mergeable for strict WriterT should work" $ do
+        let SimpleStrategy s = mergeStrategy :: MergeStrategy SBool (WriterStrict.WriterT Integer (UnionMBase SBool) SBool)
+        let w1 :: WriterStrict.WriterT Integer (UnionMBase SBool) SBool =
+              WriterStrict.WriterT $ mrgReturn (SSBool "a", 1)
+        let w2 :: WriterStrict.WriterT Integer (UnionMBase SBool) SBool =
+              WriterStrict.WriterT $ mrgReturn (SSBool "b", 2)
+        let w3 :: WriterStrict.WriterT Integer (UnionMBase SBool) SBool =
+              WriterStrict.WriterT $ mrgReturn (SSBool "c", 1)
+        let w4 = s (SSBool "d") w1 w2
+        let w5 = s (SSBool "d") w1 w3
+        WriterStrict.runWriterT w4 `shouldBe` mrgIf (SSBool "d") (mrgReturn (SSBool "a", 1)) (mrgReturn (SSBool "b", 2))
+        WriterStrict.runWriterT w5 `shouldBe` mrgReturn (ITE (SSBool "d") (SSBool "a") (SSBool "c"), 1)
+    describe "Mergeable for ReaderT" $ do
+      it "Mergeable for ReaderT should work" $ do
+        let SimpleStrategy s = mergeStrategy :: MergeStrategy SBool (ReaderT Integer (UnionMBase SBool) Integer)
+        let r1 :: ReaderT Integer (UnionMBase SBool) Integer =
+              ReaderT $ \(x :: Integer) -> mrgReturn $ x + 2
+        let r2 :: ReaderT Integer (UnionMBase SBool) Integer =
+              ReaderT $ \(x :: Integer) -> mrgReturn $ x * 2
+        let r3 = s (SSBool "c") r1 r2
+        runReaderT r3 2 `shouldBe` mrgReturn 4
+        runReaderT r3 3 `shouldBe` mrgIf (SSBool "c") (mrgReturn 5) (mrgReturn 6)
     describe "Mergeable for Sum" $ do
       prop "Mergeable for Sum Maybe Maybe Integer should work" $ \x -> do
         testMergeableSimpleEquivClass

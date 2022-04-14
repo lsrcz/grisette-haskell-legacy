@@ -9,6 +9,8 @@ module Grisette.Data.Class.SOrd
 where
 
 import Control.Monad.Except
+import qualified Control.Monad.Writer.Lazy as WriterLazy
+import qualified Control.Monad.Writer.Strict as WriterStrict
 import Control.Monad.Trans.Maybe
 import qualified Data.ByteString as B
 import Data.Functor.Sum
@@ -259,3 +261,18 @@ instance (SymBoolOp bool, SOrd bool (m (Either e a))) => SOrd bool (ExceptT e m 
   (ExceptT l) >=~ (ExceptT r) = l >=~ r
   (ExceptT l) >~ (ExceptT r) = l >~ r
   symCompare (ExceptT l) (ExceptT r) = symCompare l r
+
+instance (SymBoolOp bool, SOrd bool (m (a, s))) => SOrd bool (WriterLazy.WriterT s m a) where
+  (WriterLazy.WriterT l) <=~ (WriterLazy.WriterT r) = l <=~ r
+  (WriterLazy.WriterT l) <~ (WriterLazy.WriterT r) = l <~ r
+  (WriterLazy.WriterT l) >=~ (WriterLazy.WriterT r) = l >=~ r
+  (WriterLazy.WriterT l) >~ (WriterLazy.WriterT r) = l >~ r
+  symCompare (WriterLazy.WriterT l) (WriterLazy.WriterT r) = symCompare l r
+
+instance (SymBoolOp bool, SOrd bool (m (a, s))) => SOrd bool (WriterStrict.WriterT s m a) where
+  (WriterStrict.WriterT l) <=~ (WriterStrict.WriterT r) = l <=~ r
+  (WriterStrict.WriterT l) <~ (WriterStrict.WriterT r) = l <~ r
+  (WriterStrict.WriterT l) >=~ (WriterStrict.WriterT r) = l >=~ r
+  (WriterStrict.WriterT l) >~ (WriterStrict.WriterT r) = l >~ r
+  symCompare (WriterStrict.WriterT l) (WriterStrict.WriterT r) = symCompare l r
+

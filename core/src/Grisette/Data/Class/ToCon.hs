@@ -6,6 +6,8 @@ module Grisette.Data.Class.ToCon
 where
 
 import Control.Monad.Except
+import qualified Control.Monad.Writer.Lazy as WriterLazy
+import qualified Control.Monad.Writer.Strict as WriterStrict
 import Control.Monad.Trans.Maybe
 import qualified Data.ByteString as B
 import Data.Functor.Sum
@@ -152,3 +154,16 @@ deriving via
   (Default (Sum f1 g1 a1))
   instance
     (ToCon (f a) (f1 a1), ToCon (g a) (g1 a1)) => ToCon (Sum f g a) (Sum f1 g1 a1)
+
+-- WriterT
+instance
+  ToCon (m1 (a, s1)) (m2 (b, s2)) =>
+  ToCon (WriterLazy.WriterT s1 m1 a) (WriterLazy.WriterT s2 m2 b)
+  where
+  toCon (WriterLazy.WriterT v) = WriterLazy.WriterT <$> toCon v
+
+instance
+  ToCon (m1 (a, s1)) (m2 (b, s2)) =>
+  ToCon (WriterStrict.WriterT s1 m1 a) (WriterStrict.WriterT s2 m2 b)
+  where
+  toCon (WriterStrict.WriterT v) = WriterStrict.WriterT <$> toCon v

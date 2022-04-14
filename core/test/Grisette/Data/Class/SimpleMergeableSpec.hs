@@ -10,8 +10,12 @@ import Utils.SBool
 import Control.Monad.Coroutine
 import Control.Monad.Coroutine.SuspensionFunctors
 import Grisette.Data.Class.UnionOp
+import Grisette.Data.Class.Bool
+import Control.Monad.Reader
 import qualified Control.Monad.State.Lazy as StateLazy
 import qualified Control.Monad.State.Strict as StateStrict
+import qualified Control.Monad.Writer.Lazy as WriterLazy
+import qualified Control.Monad.Writer.Strict as WriterStrict
 
 spec :: Spec
 spec = do
@@ -171,7 +175,7 @@ spec = do
         StateLazy.runStateT st31 3 `shouldBe` mrgIf (SSBool "c") (mrgReturn (SSBool "a", 5)) (mrgReturn (SSBool "b", 6))
         StateLazy.runStateT st3u1 2 `shouldBe` mrgReturn (ITE (SSBool "c") (SSBool "a") (SSBool "b"), 4)
         StateLazy.runStateT st3u1 3 `shouldBe` mrgIf (SSBool "c") (mrgReturn (SSBool "a", 5)) (mrgReturn (SSBool "b", 6))
-      it "Mergeable for strict StateT should work" $ do
+      it "SimpleMergeable for strict StateT should work" $ do
         let st1 :: StateStrict.StateT Integer (UnionMBase SBool) SBool =
               StateStrict.StateT $ \(x :: Integer) -> mrgReturn (SSBool "a", x + 2)
         let st2 :: StateStrict.StateT Integer (UnionMBase SBool) SBool =
@@ -185,3 +189,64 @@ spec = do
         StateStrict.runStateT st31 3 `shouldBe` mrgIf (SSBool "c") (mrgReturn (SSBool "a", 5)) (mrgReturn (SSBool "b", 6))
         StateStrict.runStateT st3u1 2 `shouldBe` mrgReturn (ITE (SSBool "c") (SSBool "a") (SSBool "b"), 4)
         StateStrict.runStateT st3u1 3 `shouldBe` mrgIf (SSBool "c") (mrgReturn (SSBool "a", 5)) (mrgReturn (SSBool "b", 6))
+    describe "SimpleMergeable for WriterT" $ do
+      it "SimpleMergeable for lazy WriterT should work" $ do
+        let st1 :: WriterLazy.WriterT Integer (UnionMBase SBool) SBool =
+              WriterLazy.WriterT $ mrgReturn (SSBool "a", 1)
+        let st2 :: WriterLazy.WriterT Integer (UnionMBase SBool) SBool =
+              WriterLazy.WriterT $ mrgReturn (SSBool "b", 2)
+        let st3 :: WriterLazy.WriterT Integer (UnionMBase SBool) SBool =
+              WriterLazy.WriterT $ mrgReturn (SSBool "c", 1)
+        let st4 = mrgIte (SSBool "d") st1 st2
+        let st41 = mrgIte1 (SSBool "d") st1 st2
+        let st4u1 = mrgIteu1 (SSBool "d") st1 st2
+        let st5 = mrgIte (SSBool "d") st1 st3
+        let st51 = mrgIte1 (SSBool "d") st1 st3
+        let st5u1 = mrgIteu1 (SSBool "d") st1 st3
+        WriterLazy.runWriterT st4 `shouldBe` mrgIf (SSBool "d") (mrgReturn (SSBool "a", 1)) (mrgReturn (SSBool "b", 2))
+        WriterLazy.runWriterT st41 `shouldBe` mrgIf (SSBool "d") (mrgReturn (SSBool "a", 1)) (mrgReturn (SSBool "b", 2))
+        WriterLazy.runWriterT st4u1 `shouldBe` mrgIf (SSBool "d") (mrgReturn (SSBool "a", 1)) (mrgReturn (SSBool "b", 2))
+        WriterLazy.runWriterT st5 `shouldBe` mrgReturn (ITE (SSBool "d") (SSBool "a") (SSBool "c"), 1)
+        WriterLazy.runWriterT st51 `shouldBe` mrgReturn (ITE (SSBool "d") (SSBool "a") (SSBool "c"), 1)
+        WriterLazy.runWriterT st5u1 `shouldBe` mrgReturn (ITE (SSBool "d") (SSBool "a") (SSBool "c"), 1)
+      it "SimpleMergeable for strict WriterT should work" $ do
+        let st1 :: WriterStrict.WriterT Integer (UnionMBase SBool) SBool =
+              WriterStrict.WriterT $ mrgReturn (SSBool "a", 1)
+        let st2 :: WriterStrict.WriterT Integer (UnionMBase SBool) SBool =
+              WriterStrict.WriterT $ mrgReturn (SSBool "b", 2)
+        let st3 :: WriterStrict.WriterT Integer (UnionMBase SBool) SBool =
+              WriterStrict.WriterT $ mrgReturn (SSBool "c", 1)
+        let st4 = mrgIte (SSBool "d") st1 st2
+        let st41 = mrgIte1 (SSBool "d") st1 st2
+        let st4u1 = mrgIteu1 (SSBool "d") st1 st2
+        let st5 = mrgIte (SSBool "d") st1 st3
+        let st51 = mrgIte1 (SSBool "d") st1 st3
+        let st5u1 = mrgIteu1 (SSBool "d") st1 st3
+        WriterStrict.runWriterT st4 `shouldBe` mrgIf (SSBool "d") (mrgReturn (SSBool "a", 1)) (mrgReturn (SSBool "b", 2))
+        WriterStrict.runWriterT st41 `shouldBe` mrgIf (SSBool "d") (mrgReturn (SSBool "a", 1)) (mrgReturn (SSBool "b", 2))
+        WriterStrict.runWriterT st4u1 `shouldBe` mrgIf (SSBool "d") (mrgReturn (SSBool "a", 1)) (mrgReturn (SSBool "b", 2))
+        WriterStrict.runWriterT st5 `shouldBe` mrgReturn (ITE (SSBool "d") (SSBool "a") (SSBool "c"), 1)
+        WriterStrict.runWriterT st51 `shouldBe` mrgReturn (ITE (SSBool "d") (SSBool "a") (SSBool "c"), 1)
+        WriterStrict.runWriterT st5u1 `shouldBe` mrgReturn (ITE (SSBool "d") (SSBool "a") (SSBool "c"), 1)
+    describe "SimpleMergeable for ReaderT" $ do
+      it "SimpleMergeable for ReaderT should work" $ do
+        let r1 :: ReaderT Integer (UnionMBase SBool) Integer =
+              ReaderT $ \(x :: Integer) -> mrgReturn $ x + 2
+        let r2 :: ReaderT Integer (UnionMBase SBool) Integer =
+              ReaderT $ \(x :: Integer) -> mrgReturn $ x * 2
+        let r3 = mrgIte (SSBool "c") r1 r2
+        -- let r31 = mrgIte1 (SSBool "c") r1 r2
+        let r3u1 = mrgIteu1 (SSBool "c") r1 r2
+        runReaderT r3 2 `shouldBe` mrgReturn 4
+        runReaderT r3 3 `shouldBe` mrgIf (SSBool "c") (mrgReturn 5) (mrgReturn 6)
+        -- runReaderT r31 2 `shouldBe` mrgReturn 4
+        -- runReaderT r31 3 `shouldBe` mrgIf (SSBool "c") (mrgReturn 5) (mrgReturn 6)
+        runReaderT r3u1 2 `shouldBe` mrgReturn 4
+        runReaderT r3u1 3 `shouldBe` mrgIf (SSBool "c") (mrgReturn 5) (mrgReturn 6)
+
+        let r4 :: ReaderT SBool (UnionMBase SBool) SBool =
+              ReaderT $ \x -> mrgReturn $ x &&~ (SSBool "x")
+        let r5 :: ReaderT SBool (UnionMBase SBool) SBool =
+              ReaderT $ \x -> mrgReturn $ x ||~ (SSBool "y")
+        let r61 = mrgIte1 (SSBool "c") r4 r5
+        runReaderT r61 (SSBool "a") `shouldBe` mrgReturn (ites (SSBool "c") (SSBool "a" &&~ SSBool "x") (SSBool "a" ||~ SSBool "y"))
