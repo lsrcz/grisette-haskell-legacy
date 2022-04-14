@@ -13,6 +13,7 @@ import Grisette.Data.Class.Evaluate
 import Test.Hspec
 import Test.Hspec.QuickCheck
 import Utils.SBool
+import Control.Monad.Identity
 
 concreteEvaluateOkSpec :: (HasCallStack, Evaluate (M.HashMap Symbol Bool) a, Show a, Eq a) => a -> Expectation
 concreteEvaluateOkSpec x = evaluate True (M.empty :: M.HashMap Symbol Bool) x `shouldBe` x
@@ -279,5 +280,33 @@ spec = do
           `shouldBe` WriterStrict.WriterT (Right (CBool True, SSBool "b"))
         evaluate True model (WriterStrict.WriterT $ Right (SSBool "a", SSBool "b")  :: WriterStrict.WriterT SBool (Either SBool) SBool)
           `shouldBe` WriterStrict.WriterT (Right (CBool True, CBool False))
-
-
+    describe "Evaluate for Identity" $ do
+      prop "Evaluate for concrete Identity should work" $
+        (\(x :: Integer) -> concreteEvaluateOkSpec $ Identity x)
+      it "Evaluate for general Identity should work" $ do
+        let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
+        evaluate False model (Identity $ SSBool "a") `shouldBe` Identity (CBool True)
+        evaluate True model (Identity $ SSBool "a") `shouldBe` Identity (CBool True)
+        evaluate False model (Identity $ SSBool "b") `shouldBe` Identity (SSBool "b")
+        evaluate True model (Identity $ SSBool "b") `shouldBe` Identity (CBool False)
+    describe "Evaluate for IdentityT" $ do
+      prop "Evaluate for concrete IdentityT should work"
+        (\(x :: Either Integer Integer) -> concreteEvaluateOkSpec $ IdentityT x)
+      it "Evaluate for general IdentityT should work" $ do
+        let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
+        evaluate False model (IdentityT $ Left $ SSBool "a" :: IdentityT (Either SBool) SBool)
+          `shouldBe` IdentityT (Left $ CBool True)
+        evaluate True model (IdentityT $ Left $ SSBool "a" :: IdentityT (Either SBool) SBool)
+          `shouldBe` IdentityT (Left $ CBool True)
+        evaluate False model (IdentityT $ Left $ SSBool "b" :: IdentityT (Either SBool) SBool)
+          `shouldBe` IdentityT (Left $ SSBool "b")
+        evaluate True model (IdentityT $ Left $ SSBool "b" :: IdentityT (Either SBool) SBool)
+          `shouldBe` IdentityT (Left $ CBool False)
+        evaluate False model (IdentityT $ Right $ SSBool "a" :: IdentityT (Either SBool) SBool)
+          `shouldBe` IdentityT (Right $ CBool True)
+        evaluate True model (IdentityT $ Right $ SSBool "a" :: IdentityT (Either SBool) SBool)
+          `shouldBe` IdentityT (Right $ CBool True)
+        evaluate False model (IdentityT $ Right $ SSBool "b" :: IdentityT (Either SBool) SBool)
+          `shouldBe` IdentityT (Right $ SSBool "b")
+        evaluate True model (IdentityT $ Right $ SSBool "b" :: IdentityT (Either SBool) SBool)
+          `shouldBe` IdentityT (Right $ CBool False)

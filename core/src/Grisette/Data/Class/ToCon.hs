@@ -14,6 +14,7 @@ import Data.Functor.Sum
 import GHC.Generics
 import Generics.Deriving
 import Generics.Deriving.Instances ()
+import Control.Monad.Identity
 
 -- | Convert a symbolic value to concrete value if possible.
 class ToCon a b where
@@ -167,3 +168,11 @@ instance
   ToCon (WriterStrict.WriterT s1 m1 a) (WriterStrict.WriterT s2 m2 b)
   where
   toCon (WriterStrict.WriterT v) = WriterStrict.WriterT <$> toCon v
+
+-- Identity
+instance ToCon a b => ToCon (Identity a) (Identity b) where
+  toCon (Identity a) = Identity <$> toCon a
+
+-- IdentityT
+instance ToCon (m a) (m1 b) => ToCon (IdentityT m a) (IdentityT m1 b) where
+  toCon (IdentityT a) = IdentityT <$> toCon a

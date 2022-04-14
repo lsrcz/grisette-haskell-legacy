@@ -24,12 +24,13 @@ where
 import Control.Monad.Coroutine hiding (merge)
 import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Monad.Except
+import Control.Monad.Identity
 import Control.Monad.Reader
 import qualified Control.Monad.State.Lazy as StateLazy
 import qualified Control.Monad.State.Strict as StateStrict
+import Control.Monad.Trans.Maybe
 import qualified Control.Monad.Writer.Lazy as WriterLazy
 import qualified Control.Monad.Writer.Strict as WriterStrict
-import Control.Monad.Trans.Maybe
 import qualified Data.ByteString as B
 import Data.Functor.Classes
 import Data.Functor.Sum
@@ -86,13 +87,13 @@ resolveStrategy' x = go
 -- For example,
 --
 --    (1) the symbolic boolean values can be directly merged with 'ites'.
--- 
+--
 --    (2) the set @{1}@, which is a subset of the values of the type @Integer@,
 --        can be simply merged as the set contains only a single value.
 --
 --    (3) all the 'Just' values of the type @Maybe SymBool@ can be simply merged
 --        by merging the wrapped symbolic boolean with ites.
--- 
+--
 -- The 'OrderedStrategy' merges values by first grouping the values with an indexing
 -- function. Each group with be merged in a subtree with a sub-strategy for the index.
 -- Grisette will use these information to generate efficient SMT formula.
@@ -105,7 +106,7 @@ resolveStrategy' x = go
 --        indexing with 'Data.Maybe.isJust'.
 --
 -- The 'NoStrategy' does not perform any merging.
--- For example, we cannot merge functions that returns concrete lists. 
+-- For example, we cannot merge functions that returns concrete lists.
 --
 -- Usually the user does not have to implement 'MergeStrategy' manually,
 -- and the derived 'Mergeable' type class for ADTs is sufficient.
@@ -144,7 +145,7 @@ data MergeStrategy bool a where
 
 -- | Useful utility function for building merge strategies manually.
 --
--- For example, to build the merge strategy for the just branch of 'Maybe a', 
+-- For example, to build the merge strategy for the just branch of 'Maybe a',
 -- one could write
 --
 -- > wrapMergeStrategy Just fromMaybe mergeStrategy :: MergeStrategy (Maybe a)
@@ -632,3 +633,17 @@ deriving via
   (Default ((a :*: b) x))
   instance
     (SymBoolOp bool, Mergeable bool (a x), Mergeable bool (b x)) => Mergeable bool ((a :*: b) x)
+
+-- Identity
+instance (SymBoolOp bool, Mergeable bool a) => Mergeable bool (Identity a) where
+  mergeStrategy = wrapMergeStrategy mergeStrategy Identity runIdentity
+
+-- IdentityT
+instance (SymBoolOp bool, Mergeable1 bool m, Mergeable bool a) => Mergeable bool (IdentityT m a) where
+  mergeStrategy =
+    withMergeable @bool @m @a $
+      wrapMergeStrategy mergeStrategy IdentityT runIdentityT
+
+instance SymBoolOp bool => Mergeable1 bool Identity
+
+instance (SymBoolOp bool, Mergeable1 bool m) => Mergeable1 bool (IdentityT m)

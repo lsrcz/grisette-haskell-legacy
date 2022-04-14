@@ -14,6 +14,7 @@ import qualified Control.Monad.State.Lazy as StateLazy
 import qualified Control.Monad.State.Strict as StateStrict
 import qualified Control.Monad.Writer.Lazy as WriterLazy
 import qualified Control.Monad.Writer.Strict as WriterStrict
+import Control.Monad.Identity
 
 toSymForConcreteProp :: (HasCallStack, ToSym v v, Show v, Eq v) => v -> Expectation
 toSymForConcreteProp v = toSym v `shouldBe` v
@@ -122,7 +123,11 @@ spec = do
         toSym (True, False, True, False, True, False, True, False)
           `shouldBe` (CBool True, CBool False, CBool True, CBool False, CBool True, CBool False, CBool True, CBool False)
     describe "ToSym for Sum" $ do
-      prop "ToSym for generic Sum should work" $ do
+      prop "ToSym for concrete Sum to concrete Sum should be id" $ \(x :: Either (Maybe Integer) (Either Integer Integer)) ->
+        case x of
+          Left v -> toSymForConcreteProp @(Sum Maybe (Either Integer) Integer) (InL v)
+          Right v -> toSymForConcreteProp @(Sum Maybe (Either Integer) Integer) (InR v)
+      it "ToSym for generic Sum should work" $ do
         toSym (InL $ Just True :: Sum Maybe (Either Bool) Bool)
           `shouldBe` (InL $ Just $ CBool True :: Sum Maybe (Either SBool) SBool)
         toSym (InR $ Left True :: Sum Maybe (Either Bool) Bool)
@@ -175,3 +180,17 @@ spec = do
           st :: ReaderT Bool (Either Bool) Bool = ReaderT (func f)
          in
         (runReaderT (toSym st) x :: Either SBool SBool) == toSym (func f) x
+    describe "ToSym for Identity" $ do
+      prop "ToSym for concrete Identity to concrete Identity should be id" $
+        toSymForConcreteProp @(Identity Integer)
+      it "ToSym for general Identity should work" $ do
+        toSym (Identity True :: Identity Bool)
+          `shouldBe` (Identity $ CBool True :: Identity SBool)
+    describe "ToSym for IdentityT" $ do
+      prop "ToSym for concrete IdentityT to concrete IdentityT should be id" $ \x ->
+        toSymForConcreteProp @(IdentityT Maybe Integer) (IdentityT x)
+      it "ToSym for general IdentityT should work" $ do
+        toSym (IdentityT (Just True) :: IdentityT Maybe Bool)
+          `shouldBe` (IdentityT $ Just $ CBool True :: IdentityT Maybe SBool)
+        toSym (IdentityT Nothing :: IdentityT Maybe Bool)
+          `shouldBe` (IdentityT Nothing :: IdentityT Maybe SBool)

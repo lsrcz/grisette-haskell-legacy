@@ -16,6 +16,7 @@ import Data.Maybe
 import Generics.Deriving
 import Generics.Deriving.Instances ()
 import Grisette.Data.Class.ToCon
+import Control.Monad.Identity
 
 -- | Evaluating symbolic variables with some model.
 --
@@ -167,3 +168,11 @@ instance Evaluate model (m (a, s)) => Evaluate model (WriterLazy.WriterT s m a) 
 
 instance Evaluate model (m (a, s)) => Evaluate model (WriterStrict.WriterT s m a) where
   evaluate fillDefault model (WriterStrict.WriterT v) = WriterStrict.WriterT $ evaluate fillDefault model v
+
+-- Identity
+instance Evaluate model a => Evaluate model (Identity a) where
+  evaluate fillDefault model (Identity a) = Identity $ evaluate fillDefault model a
+
+-- IdentityT
+instance Evaluate model (m a) => Evaluate model (IdentityT m a) where
+  evaluate fillDefault model (IdentityT a) = IdentityT $ evaluate fillDefault model a

@@ -16,17 +16,18 @@ where
 
 import Control.Monad.Coroutine hiding (merge)
 import Control.Monad.Except
+import Control.Monad.Identity
 import Control.Monad.Reader
 import qualified Control.Monad.State.Lazy as StateLazy
 import qualified Control.Monad.State.Strict as StateStrict
+import Control.Monad.Trans.Maybe
 import qualified Control.Monad.Writer.Lazy as WriterLazy
 import qualified Control.Monad.Writer.Strict as WriterStrict
-import Control.Monad.Trans.Maybe
 import GHC.Generics
+import Generics.Deriving
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.Utils.CConst
-import Generics.Deriving
 
 -- | Auxiliary class for the generic derivation for the 'SimpleMergeable' class.
 class SimpleMergeable' bool f where
@@ -69,6 +70,7 @@ class (Mergeable1 bool u) => SimpleMergeable1 bool u where
     (SimpleMergeable bool (u a) => t a) ->
     t a
   withSimpleMergeableT v = v
+
   -- | Perform 'mrgIte' through the type constructor.
   --
   -- Usually you will not need to write this function manually.
@@ -99,6 +101,7 @@ class (SimpleMergeable1 bool u) => UnionSimpleMergeable1 bool u where
     (SimpleMergeable bool (u a) => t a) ->
     t a
   withUnionSimpleMergeableT v = v
+
   -- | Perform 'mrgIte' through the type constructor.
   --
   -- Usually you will not need to write this function manually.
@@ -351,3 +354,18 @@ instance
 instance
   (SymBoolOp bool, Mergeable bool s, UnionSimpleMergeable1 bool m) =>
   UnionSimpleMergeable1 bool (ReaderT s m)
+
+instance (SymBoolOp bool, SimpleMergeable bool a) => SimpleMergeable bool (Identity a) where
+  mrgIte cond (Identity l) (Identity r) = Identity $ mrgIte cond l r
+
+instance (SymBoolOp bool, UnionSimpleMergeable1 bool m, Mergeable bool a) => SimpleMergeable bool (IdentityT m a) where
+  mrgIte cond (IdentityT l) (IdentityT r) = IdentityT $ mrgIteu1 cond l r
+
+instance (SymBoolOp bool) => SimpleMergeable1 bool Identity where
+  mrgIte1 cond (Identity l) (Identity r) = Identity $ mrgIte cond l r
+
+instance (SymBoolOp bool, UnionSimpleMergeable1 bool m) => SimpleMergeable1 bool (IdentityT m) where
+  mrgIte1 cond (IdentityT l) (IdentityT r) = IdentityT $ mrgIteu1 cond l r
+
+instance (SymBoolOp bool, UnionSimpleMergeable1 bool m) => UnionSimpleMergeable1 bool (IdentityT m) where
+  mrgIteu1 cond (IdentityT l) (IdentityT r) = IdentityT $ mrgIteu1 cond l r

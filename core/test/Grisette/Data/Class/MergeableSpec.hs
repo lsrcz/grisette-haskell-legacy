@@ -5,12 +5,13 @@ module Grisette.Data.Class.MergeableSpec where
 import Control.Monad.Coroutine
 import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Monad.Except
+import Control.Monad.Identity
 import Control.Monad.Reader
 import qualified Control.Monad.State.Lazy as StateLazy
 import qualified Control.Monad.State.Strict as StateStrict
+import Control.Monad.Trans.Maybe
 import qualified Control.Monad.Writer.Lazy as WriterLazy
 import qualified Control.Monad.Writer.Strict as WriterStrict
-import Control.Monad.Trans.Maybe
 import qualified Data.ByteString.Char8 as C
 import Data.Functor.Sum
 import qualified Data.Vector as V
@@ -450,6 +451,46 @@ spec = do
         let r3 = s (SSBool "c") r1 r2
         runReaderT r3 2 `shouldBe` mrgReturn 4
         runReaderT r3 3 `shouldBe` mrgIf (SSBool "c") (mrgReturn 5) (mrgReturn 6)
+    describe "Mergeable for Identity" $ do
+      prop "Mergeable for Identity Integer should work" $ \x -> do
+        testMergeableSimpleEquivClass
+          (Identity x :: Identity Integer)
+          [DynamicOrderedIdx x]
+          [(SSBool "a", Identity x, Identity x, Identity x)]
+      it "Mergeable for Identity SBool should work" $ do
+        testMergeableSimpleEquivClass
+          (Identity $ SSBool "a")
+          []
+          [ ( SSBool "a",
+              Identity $ SSBool "b",
+              Identity $ SSBool "c",
+              Identity $ ITE (SSBool "a") (SSBool "b") (SSBool "c")
+            )
+          ]
+    describe "Mergeable for IdentityT" $ do
+      prop "Mergeable for IdentityT Maybe Integer should work" $ \x -> do
+        testMergeableSimpleEquivClass
+          (IdentityT Nothing :: IdentityT Maybe Integer)
+          [DynamicOrderedIdx False]
+          [(SSBool "a", IdentityT Nothing, IdentityT Nothing, IdentityT Nothing)]
+        testMergeableSimpleEquivClass
+          (IdentityT $ Just x :: IdentityT Maybe Integer)
+          [DynamicOrderedIdx True, DynamicOrderedIdx x]
+          [(SSBool "a", IdentityT $ Just x, IdentityT $ Just x, IdentityT $ Just x)]
+      it "Mergeable for IdentityT Maybe SBool should work" $ do
+        testMergeableSimpleEquivClass
+          (IdentityT Nothing :: IdentityT Maybe SBool)
+          [DynamicOrderedIdx False]
+          [(SSBool "a", IdentityT Nothing, IdentityT Nothing, IdentityT Nothing)]
+        testMergeableSimpleEquivClass
+          (IdentityT $ Just $ SSBool "a" :: IdentityT Maybe SBool)
+          [DynamicOrderedIdx True]
+          [ ( SSBool "a",
+              IdentityT $ Just $ SSBool "b",
+              IdentityT $ Just $ SSBool "c",
+              IdentityT $ Just $ ITE (SSBool "a") (SSBool "b") (SSBool "c")
+            )
+          ]
     describe "Mergeable for Sum" $ do
       prop "Mergeable for Sum Maybe Maybe Integer should work" $ \x -> do
         testMergeableSimpleEquivClass
@@ -615,4 +656,3 @@ spec = do
                 (VSized.singleton (Just $ ITE (SSBool "e") (SSBool "b") (SSBool "d")))
             )
           ]
-

@@ -18,6 +18,7 @@ import Generics.Deriving
 import Grisette.Control.Monad
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.PrimWrapper
+import Control.Monad.Identity
 
 -- | Auxiliary class for 'SOrd' instance derivation
 class (SEq' bool f) => SOrd' bool f where
@@ -276,3 +277,16 @@ instance (SymBoolOp bool, SOrd bool (m (a, s))) => SOrd bool (WriterStrict.Write
   (WriterStrict.WriterT l) >~ (WriterStrict.WriterT r) = l >~ r
   symCompare (WriterStrict.WriterT l) (WriterStrict.WriterT r) = symCompare l r
 
+instance (SymBoolOp bool, SOrd bool a) => SOrd bool (Identity a) where
+  (Identity l) <=~ (Identity r) = l <=~ r
+  (Identity l) <~ (Identity r) = l <~ r
+  (Identity l) >=~ (Identity r) = l >=~ r
+  (Identity l) >~ (Identity r) = l >~ r
+  (Identity l) `symCompare` (Identity r) = l `symCompare` r
+
+instance (SymBoolOp bool, SOrd bool (m a)) => SOrd bool (IdentityT m a) where
+  (IdentityT l) <=~ (IdentityT r) = l <=~ r
+  (IdentityT l) <~ (IdentityT r) = l <~ r
+  (IdentityT l) >=~ (IdentityT r) = l >=~ r
+  (IdentityT l) >~ (IdentityT r) = l >~ r
+  (IdentityT l) `symCompare` (IdentityT r) = l `symCompare` r

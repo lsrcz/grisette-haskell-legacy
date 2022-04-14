@@ -13,6 +13,7 @@ import Control.Monad.Trans.Maybe
 import qualified Data.ByteString as B
 import Data.Functor.Sum
 import Generics.Deriving
+import Control.Monad.Identity
 
 -- | Extracts all the symbolic variables that are transitively contained in the given value.
 --  
@@ -142,3 +143,11 @@ instance
   (Monoid symbolSet, ExtractSymbolics symbolSet (m (a, s))) =>
     ExtractSymbolics symbolSet (WriterStrict.WriterT s m a) where
   extractSymbolics (WriterStrict.WriterT f) = extractSymbolics f
+
+-- Identity
+instance (Monoid symbolSet, ExtractSymbolics symbolSet a) => ExtractSymbolics symbolSet (Identity a) where
+  extractSymbolics (Identity a) = extractSymbolics a
+
+-- IdentityT
+instance (Monoid symbolSet, ExtractSymbolics symbolSet (m a)) => ExtractSymbolics symbolSet (IdentityT m a) where
+  extractSymbolics (IdentityT a) = extractSymbolics a

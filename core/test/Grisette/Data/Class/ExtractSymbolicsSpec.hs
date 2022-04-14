@@ -14,6 +14,7 @@ import GHC.Generics
 import Test.Hspec.QuickCheck
 import Generics.Deriving
 import qualified Data.ByteString as B
+import Control.Monad.Identity
 
 data A = A1 | A2 SBool | A3 SBool SBool deriving (Generic, Show, Eq) deriving (ExtractSymbolics (S.HashSet Symbol)) via (Default A)
 
@@ -73,6 +74,11 @@ spec = do
     it "ExtractSymbolics for ByteString" $ do
       extractSymbolics ("" :: B.ByteString) `shouldBe` (S.empty :: S.HashSet Symbol)
       extractSymbolics ("a" :: B.ByteString) `shouldBe` (S.empty :: S.HashSet Symbol)
+    it "ExtractSymbolic for Identity" $ do
+      extractSymbolics (Identity $ SSBool "a") `shouldBe` S.singleton (SSymbol "a")
+    it "ExtractSymbolic for IdentityT" $ do
+      extractSymbolics (IdentityT $ Left $ SSBool "a" :: IdentityT (Either SBool) SBool) `shouldBe` S.singleton (SSymbol "a")
+      extractSymbolics (IdentityT $ Right $ SSBool "a" :: IdentityT (Either SBool) SBool) `shouldBe` S.singleton (SSymbol "a")
   describe "deriving ExtractSymbolics for ADT" $ do
     it "derived ExtractSymbolics for simple ADT" $ do
       extractSymbolics A1 `shouldBe` (S.empty :: S.HashSet Symbol)

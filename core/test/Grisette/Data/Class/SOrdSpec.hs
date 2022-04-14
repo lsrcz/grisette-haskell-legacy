@@ -17,6 +17,7 @@ import Grisette.Data.Class.SOrd
 import Test.Hspec
 import Test.Hspec.QuickCheck
 import Utils.SBool
+import Control.Monad.Identity
 
 concreteOrdOkProp :: (HasCallStack, SOrd SBool a, Ord a) => (a, a) -> Expectation
 concreteOrdOkProp (i, j) = do
@@ -255,7 +256,7 @@ spec = do
         MaybeT (Just (Just (SSBool "a"))) <~ (MaybeT Nothing :: MaybeT Maybe SBool) `shouldBe` CBool False
         MaybeT (Just (Just (SSBool "a"))) <~ (MaybeT (Just (Just (SSBool "b"))) :: MaybeT Maybe SBool)
           `shouldBe` (SSBool "a" <~ SSBool "b" :: SBool)
-        
+
         (MaybeT Nothing :: MaybeT Maybe SBool) >=~ MaybeT Nothing `shouldBe` CBool True
         (MaybeT Nothing :: MaybeT Maybe SBool) >=~ MaybeT (Just (Just (SSBool "a"))) `shouldBe` CBool False
         MaybeT (Just (Just (SSBool "a"))) >=~ (MaybeT Nothing :: MaybeT Maybe SBool) `shouldBe` CBool True
@@ -545,7 +546,7 @@ spec = do
         (WriterLazy.WriterT $ Right (SSBool "a", SSBool "c") :: WriterLazy.WriterT SBool (Either SBool) SBool) `symCompare`
           WriterLazy.WriterT (Right (SSBool "b", SSBool "d")) `shouldBe`
             ((SSBool "a", SSBool "c") `symCompare` (SSBool "b", SSBool "d") :: UnionMBase SBool Ordering)
-      
+
       it "SOrd for general Strict WriterT should work" $ do
         (WriterStrict.WriterT $ Left $ SSBool "a" :: WriterStrict.WriterT SBool (Either SBool) SBool) <=~
           WriterStrict.WriterT (Left $ SSBool "b") `shouldBe` (SSBool "a" <=~ SSBool "b" :: SBool)
@@ -591,6 +592,69 @@ spec = do
         (WriterStrict.WriterT $ Right (SSBool "a", SSBool "c") :: WriterStrict.WriterT SBool (Either SBool) SBool) `symCompare`
           WriterStrict.WriterT (Right (SSBool "b", SSBool "d")) `shouldBe`
             ((SSBool "a", SSBool "c") `symCompare` (SSBool "b", SSBool "d") :: UnionMBase SBool Ordering)
+    describe "SOrd for Identity" $ do
+      prop "SOrd for concrete Identity should work"
+        (\(v1 :: Integer, v2) ->
+          concreteOrdOkProp (Identity v1, Identity v2))
+      it "SOrd for general Identity should work" $ do
+        (Identity $ SSBool "a" :: Identity SBool) <=~ Identity (SSBool "b") `shouldBe`
+          (SSBool "a" <=~ SSBool "b" :: SBool)
+        (Identity $ SSBool "a" :: Identity SBool) <~ Identity (SSBool "b") `shouldBe`
+          (SSBool "a" <~ SSBool "b" :: SBool)
+        (Identity $ SSBool "a" :: Identity SBool) >=~ Identity (SSBool "b") `shouldBe`
+          (SSBool "a" >=~ SSBool "b" :: SBool)
+        (Identity $ SSBool "a" :: Identity SBool) >~ Identity (SSBool "b") `shouldBe`
+          (SSBool "a" >~ SSBool "b" :: SBool)
+    describe "SOrd for IdentityT" $ do
+      prop "SOrd for concrete IdentityT should work"
+        (\(v1 :: Either Integer Integer, v2) ->
+          concreteOrdOkProp (IdentityT v1, IdentityT v2))
+      it "SOrd for general IdentityT should work" $ do
+        (IdentityT $ Left $ SSBool "a" :: IdentityT (Either SBool) SBool) <=~ IdentityT (Left $ SSBool "b")
+          `shouldBe` (SSBool "a" <=~ SSBool "b" :: SBool)
+        (IdentityT $ Left $ SSBool "a" :: IdentityT (Either SBool) SBool) <~ IdentityT (Left $ SSBool "b")
+          `shouldBe` (SSBool "a" <~ SSBool "b" :: SBool)
+        (IdentityT $ Left $ SSBool "a" :: IdentityT (Either SBool) SBool) >=~ IdentityT (Left $ SSBool "b")
+          `shouldBe` (SSBool "a" >=~ SSBool "b" :: SBool)
+        (IdentityT $ Left $ SSBool "a" :: IdentityT (Either SBool) SBool) >~ IdentityT (Left $ SSBool "b")
+          `shouldBe` (SSBool "a" >~ SSBool "b" :: SBool)
+        (IdentityT $ Left $ SSBool "a" :: IdentityT (Either SBool) SBool) `symCompare` IdentityT (Left $ SSBool "b")
+          `shouldBe` (SSBool "a" `symCompare` SSBool "b" :: UnionMBase SBool Ordering)
+
+
+        (IdentityT $ Left $ SSBool "a" :: IdentityT (Either SBool) SBool) <=~ IdentityT (Right $ SSBool "b")
+          `shouldBe` CBool True
+        (IdentityT $ Left $ SSBool "a" :: IdentityT (Either SBool) SBool) <~ IdentityT (Right $ SSBool "b")
+          `shouldBe` CBool True
+        (IdentityT $ Left $ SSBool "a" :: IdentityT (Either SBool) SBool) >=~ IdentityT (Right $ SSBool "b")
+          `shouldBe` CBool False
+        (IdentityT $ Left $ SSBool "a" :: IdentityT (Either SBool) SBool) >~ IdentityT (Right $ SSBool "b")
+          `shouldBe` CBool False
+        (IdentityT $ Left $ SSBool "a" :: IdentityT (Either SBool) SBool) `symCompare` IdentityT (Right $ SSBool "b")
+          `shouldBe` (mrgReturn LT :: UnionMBase SBool Ordering)
+
+        (IdentityT $ Right $ SSBool "a" :: IdentityT (Either SBool) SBool) <=~ IdentityT (Left $ SSBool "b")
+          `shouldBe` CBool False
+        (IdentityT $ Right $ SSBool "a" :: IdentityT (Either SBool) SBool) <~ IdentityT (Left $ SSBool "b")
+          `shouldBe` CBool False
+        (IdentityT $ Right $ SSBool "a" :: IdentityT (Either SBool) SBool) >=~ IdentityT (Left $ SSBool "b")
+          `shouldBe` CBool True
+        (IdentityT $ Right $ SSBool "a" :: IdentityT (Either SBool) SBool) >~ IdentityT (Left $ SSBool "b")
+          `shouldBe` CBool True
+        (IdentityT $ Right $ SSBool "a" :: IdentityT (Either SBool) SBool) `symCompare` IdentityT (Left $ SSBool "b")
+          `shouldBe` (mrgReturn GT :: UnionMBase SBool Ordering)
+
+        (IdentityT $ Right $ SSBool "a" :: IdentityT (Either SBool) SBool) <=~ IdentityT (Right $ SSBool "b")
+          `shouldBe` (SSBool "a" <=~ SSBool "b" :: SBool)
+        (IdentityT $ Right $ SSBool "a" :: IdentityT (Either SBool) SBool) <~ IdentityT (Right $ SSBool "b")
+          `shouldBe` (SSBool "a" <~ SSBool "b" :: SBool)
+        (IdentityT $ Right $ SSBool "a" :: IdentityT (Either SBool) SBool) >=~ IdentityT (Right $ SSBool "b")
+          `shouldBe` (SSBool "a" >=~ SSBool "b" :: SBool)
+        (IdentityT $ Right $ SSBool "a" :: IdentityT (Either SBool) SBool) >~ IdentityT (Right $ SSBool "b")
+          `shouldBe` (SSBool "a" >~ SSBool "b" :: SBool)
+        (IdentityT $ Right $ SSBool "a" :: IdentityT (Either SBool) SBool) `symCompare` IdentityT (Right $ SSBool "b")
+          `shouldBe` (SSBool "a" `symCompare` SSBool "b" :: UnionMBase SBool Ordering)
+
     describe "SOrd for ByteString" $ do
       it "SOrd for ByteString should work" $ do
         let bytestrings :: [B.ByteString] = ["", "a", "b", "ab", "ba", "aa", "bb"]

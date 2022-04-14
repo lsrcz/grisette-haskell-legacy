@@ -16,6 +16,7 @@ import qualified Data.ByteString as B
 import Data.Functor.Sum
 import Generics.Deriving
 import Grisette.Data.Class.OrphanGeneric ()
+import Control.Monad.Identity
 
 -- | Convert a concrete value to symbolic value.
 class ToSym a b where
@@ -159,3 +160,11 @@ instance (ToSym (s1 -> m1 a1) (s2 -> m2 a2)) => ToSym (ReaderT s1 m1 a1) (Reader
 deriving via
   (Default (Sum f1 g1 a1))
   instance (ToSym (f a) (f1 a1), ToSym (g a) (g1 a1)) => ToSym (Sum f g a) (Sum f1 g1 a1)
+
+-- Identity
+instance ToSym a b => ToSym (Identity a) (Identity b) where
+  toSym (Identity a) = Identity $ toSym a
+
+-- IdentityT
+instance ToSym (m a) (m1 b) => ToSym (IdentityT m a) (IdentityT m1 b) where
+  toSym (IdentityT v) = IdentityT $ toSym v

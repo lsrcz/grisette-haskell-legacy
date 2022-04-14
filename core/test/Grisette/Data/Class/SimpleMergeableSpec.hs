@@ -16,6 +16,7 @@ import qualified Control.Monad.State.Lazy as StateLazy
 import qualified Control.Monad.State.Strict as StateStrict
 import qualified Control.Monad.Writer.Lazy as WriterLazy
 import qualified Control.Monad.Writer.Strict as WriterStrict
+import Control.Monad.Identity
 
 spec :: Spec
 spec = do
@@ -250,3 +251,21 @@ spec = do
               ReaderT $ \x -> mrgReturn $ x ||~ (SSBool "y")
         let r61 = mrgIte1 (SSBool "c") r4 r5
         runReaderT r61 (SSBool "a") `shouldBe` mrgReturn (ites (SSBool "c") (SSBool "a" &&~ SSBool "x") (SSBool "a" ||~ SSBool "y"))
+    describe "SimpleMergeable for Identity" $ do
+      it "SimpleMergeable for Identity should work" $ do
+        let i1 :: Identity SBool = Identity $ SSBool "a"
+        let i2 :: Identity SBool = Identity $ SSBool "b"
+        let i3 = mrgIte (SSBool "c") i1 i2
+        let i31 = mrgIte1 (SSBool "c") i1 i2
+        runIdentity i3 `shouldBe` ITE (SSBool "c") (SSBool "a") (SSBool "b")
+        runIdentity i31 `shouldBe` ITE (SSBool "c") (SSBool "a") (SSBool "b")
+    describe "SimpleMergeable for IdentityT" $ do
+      it "SimpleMergeable for IdentityT UnionM should work" $ do
+        let i1 :: IdentityT (UnionMBase SBool) SBool = IdentityT $ mrgReturn $ SSBool "a"
+        let i2 :: IdentityT (UnionMBase SBool) SBool = IdentityT $ mrgReturn $ SSBool "b"
+        let i3 = mrgIte (SSBool "c") i1 i2
+        let i31 = mrgIte1 (SSBool "c") i1 i2
+        let i3u1 = mrgIteu1 (SSBool "c") i1 i2
+        runIdentityT i3 `shouldBe` mrgReturn (ITE (SSBool "c") (SSBool "a") (SSBool "b"))
+        runIdentityT i31 `shouldBe` mrgReturn (ITE (SSBool "c") (SSBool "a") (SSBool "b"))
+        runIdentityT i3u1 `shouldBe` mrgReturn (ITE (SSBool "c") (SSBool "a") (SSBool "b"))

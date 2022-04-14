@@ -11,6 +11,7 @@ import Grisette.Data.Class.ToCon
 import Test.Hspec
 import Test.Hspec.QuickCheck
 import Utils.SBool
+import Control.Monad.Identity
 
 toConForConcreteProp :: (HasCallStack, ToCon v v, Show v, Eq v) => v -> Expectation
 toConForConcreteProp v = toCon v `shouldBe` Just v
@@ -201,3 +202,21 @@ spec = do
           (Nothing :: Maybe (WriterStrict.WriterT Bool (Either Bool) Bool))
         toCon (WriterStrict.WriterT $ Right $ (SSBool "a", SSBool "b") :: WriterStrict.WriterT SBool (Either SBool) SBool) `shouldBe`
           (Nothing :: Maybe (WriterStrict.WriterT Bool (Either Bool) Bool))
+    describe "ToCon for Identity" $ do
+      prop "ToCon for concrete Identity should always be identical to Just" $
+        \(v :: Integer) -> toConForConcreteProp $ Identity v
+      it "ToCon for general Identity should work" $ do
+        toCon (Identity $ CBool True) `shouldBe` Just (Identity True)
+        toCon (Identity $ SSBool "a") `shouldBe` (Nothing :: Maybe (Identity Bool))
+    describe "ToCon for IdentityT" $ do
+      prop "ToCon for concrete IdentityT should always be identical to Just" $
+        \(v :: Either Integer Integer) -> toConForConcreteProp $ IdentityT v
+      it "ToCon for general IdentityT should work" $ do
+        toCon (IdentityT $ Left $ CBool True :: IdentityT (Either SBool) SBool)
+          `shouldBe` Just (IdentityT $ Left True :: IdentityT (Either Bool) Bool)
+        toCon (IdentityT $ Left $ SSBool "a" :: IdentityT (Either SBool) SBool)
+          `shouldBe` (Nothing :: Maybe (IdentityT (Either Bool) Bool))
+        toCon (IdentityT $ Right $ CBool True :: IdentityT (Either SBool) SBool)
+          `shouldBe` Just (IdentityT $ Right True :: IdentityT (Either Bool) Bool)
+        toCon (IdentityT $ Right $ SSBool "a" :: IdentityT (Either SBool) SBool)
+          `shouldBe` (Nothing :: Maybe (IdentityT (Either Bool) Bool))

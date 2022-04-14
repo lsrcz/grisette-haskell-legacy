@@ -19,6 +19,7 @@ import Data.Functor.Sum
 import Generics.Deriving
 import Grisette.Data.Class.PrimWrapper
 import {-# SOURCE #-} Grisette.Data.Class.SimpleMergeable
+import Control.Monad.Identity
 
 -- | Auxiliary class for 'SEq' instance derivation
 class (SymBoolOp bool) => SEq' bool f where
@@ -179,3 +180,11 @@ instance (SymBoolOp bool, SEq bool (m (a, s))) => SEq bool (WriterLazy.WriterT s
 
 instance (SymBoolOp bool, SEq bool (m (a, s))) => SEq bool (WriterStrict.WriterT s m a) where
   (WriterStrict.WriterT l) ==~ (WriterStrict.WriterT r) = l ==~ r
+
+-- Identity
+instance (SymBoolOp bool, SEq bool a) => SEq bool (Identity a) where
+  (Identity l) ==~ (Identity r) = l ==~ r
+
+-- IdentityT
+instance (SymBoolOp bool, SEq bool (m a)) => SEq bool (IdentityT m a) where
+  (IdentityT l) ==~ (IdentityT r) = l ==~ r
