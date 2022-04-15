@@ -54,6 +54,9 @@ executables:
   cegis:
     source-dirs: cegis
     main: Main.hs
+  angelic:
+    source-dirs: angelic
+    main: Main.hs
   
 library:
   source-dirs: src
