@@ -12,6 +12,7 @@
 {-# LANGUAGE UndecidableSuperClasses #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TupleSections #-}
 
 module Grisette.Data.Class.GenSym
   ( GenSymIndex (..),
@@ -58,6 +59,7 @@ import Grisette.Data.Class.SimpleMergeable
 import Language.Haskell.TH
 import Debug.Trace.LocationTH (__LOCATION__)
 import Data.List (intercalate)
+import Control.Monad.Signatures
 
 -- | Index type used for 'GenSym'.
 --
@@ -204,6 +206,17 @@ instance (Monad m) => Monad (GenSymFreshT m) where
   (GenSymFreshT s) >>= f = GenSymFreshT $ \ident idx -> do
     (a, idx') <- s ident idx
     runGenSymFreshT' (f a) ident idx'
+
+instance MonadTrans GenSymFreshT where
+  lift x = GenSymFreshT $ \_ index -> (,index) <$> x
+
+liftGenSymFreshTCache :: (Functor m) => Catch e m (a, GenSymIndex) -> Catch e (GenSymFreshT m) a
+liftGenSymFreshTCache catchE (GenSymFreshT m) h =
+  GenSymFreshT $ \ident index -> m ident index `catchE` \e -> runGenSymFreshT' (h e) ident index
+
+instance (MonadError e m) => MonadError e (GenSymFreshT m) where
+  throwError = lift . throwError
+  catchError = liftGenSymFreshTCache catchError
 
 -- | 'GenSymFreshT' specialized with Identity.
 type GenSymFresh = GenSymFreshT Identity
