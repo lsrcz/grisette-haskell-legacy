@@ -1,6 +1,8 @@
 module Grisette.Data.List
   ( (!!~),
     symFilter,
+    symTake,
+    symDrop,
   )
 where
 
@@ -11,6 +13,7 @@ import Grisette.Data.Class.Error
 import Grisette.Data.Class.Integer
 import Grisette.Data.Class.Mergeable
 import Grisette.Control.Monad
+import Grisette.Data.Class.SOrd
 
 (!!~) ::
   ( SymBoolOp bool,
@@ -35,3 +38,11 @@ symFilter f = go
     go (x : xs) = do
       r <- go xs
       mrgIf (f x) (mrgReturn (x : r)) (mrgReturn r)
+
+symTake :: (SymBoolOp bool, MonadUnion bool u, Mergeable bool a, SymIntegerOp bool integer) => integer -> [a] -> u [a]
+symTake _ [] = mrgReturn []
+symTake x (v:vs) = mrgIf (x <=~ 0) (mrgReturn []) (mrgFmap (v:) $ symTake (x - 1) vs)
+
+symDrop :: (SymBoolOp bool, MonadUnion bool u, Mergeable bool a, SymIntegerOp bool integer) => integer -> [a] -> u [a]
+symDrop _ [] = mrgReturn []
+symDrop x r@(_:vs) = mrgIf (x <=~ 0) (mrgReturn r) (symDrop (x - 1) vs)

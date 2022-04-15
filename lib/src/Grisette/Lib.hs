@@ -2,6 +2,8 @@ module Grisette.Lib
   ( StringError (..),
     (!!~),
     symFilter,
+    symTake,
+    symDrop,
     mrgSuspend,
     mrgYield,
     mrgMapSuspension,
