@@ -34,6 +34,10 @@ spec = do
                 (bsymbol, toModelValue True)
               ]
           )
+    it "equation" $ do
+      equation m3 asymbol `shouldBe` Just (eqterm (ssymbTerm "a") (concTerm 1 :: Term Integer))
+      equation m3 bsymbol `shouldBe` Just (eqterm (ssymbTerm "b") (concTerm True))
+      equation m3 csymbol `shouldBe` Nothing
     it "valueOf" $ do
       valueOf m3 asymbol `shouldBe` Just (1 :: Integer)
       valueOf m3 bsymbol `shouldBe` Just True

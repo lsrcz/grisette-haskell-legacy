@@ -3,6 +3,8 @@ module Grisette.Backend.SBV
     sbvConfig,
     solveWith,
     solveWithTranslation,
+    solveMultiWith,
+    solveMultiWithTranslation,
     CegisTranslation (..),
     cegisWithTranslation,
     cegisWith,

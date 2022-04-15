@@ -1,5 +1,6 @@
 module Grisette.Data.Prim.Model
   ( Model (..),
+    equation,
     empty,
     valueOf,
     exceptFor,
@@ -21,8 +22,15 @@ import Unsafe.Coerce
 import Grisette.Data.Prim.ModelValue
 import Data.Hashable
 import GHC.Generics
+import Grisette.Data.Prim.Bool
 
 newtype Model = Model (M.HashMap TermSymbol ModelValue) deriving (Show, Eq, Generic, Hashable)
+
+equation :: Model -> TermSymbol -> Maybe (Term Bool)
+equation m tsym@(TermSymbol (_ :: Proxy a) sym) = 
+  case valueOf m tsym of
+    Just (v :: a) -> Just $ eqterm (symbTerm sym) (concTerm v)
+    Nothing -> Nothing
 
 empty :: Model
 empty = Model M.empty
