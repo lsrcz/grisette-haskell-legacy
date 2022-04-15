@@ -548,14 +548,14 @@ instance (SymBoolOp bool, Mergeable bool s, Mergeable1 bool m) => Mergeable1 boo
 
 -- reader
 instance
-  (SymBoolOp bool, Mergeable bool s, Mergeable bool a, Mergeable1 bool m) =>
+  (SymBoolOp bool, Mergeable bool a, Mergeable1 bool m) =>
   Mergeable bool (ReaderT s m a)
   where
   mergeStrategy =
     withMergeable @bool @m @a $
       wrapMergeStrategy mergeStrategy ReaderT runReaderT
 
-instance (SymBoolOp bool, Mergeable bool s, Mergeable1 bool m) => Mergeable1 bool (ReaderT s m)
+instance (SymBoolOp bool, Mergeable1 bool m) => Mergeable1 bool (ReaderT s m)
 
 -- Sum
 instance

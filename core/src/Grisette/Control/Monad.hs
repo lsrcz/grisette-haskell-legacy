@@ -16,13 +16,17 @@ where
 import Control.Monad
 import Control.Monad.Coroutine hiding (merge)
 import Control.Monad.Except
+import Control.Monad.Reader
 import qualified Control.Monad.State.Lazy as StateLazy
 import qualified Control.Monad.State.Strict as StateStrict
+import qualified Control.Monad.Writer.Lazy as WriterLazy
+import qualified Control.Monad.Writer.Strict as WriterStrict
 import Control.Monad.Trans.Maybe
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.UnionOp
+import Control.Monad.Identity
 
 -- | Class for monads that support union-like operations and 'Mergeable' knowledge propagation.
 -- All the functions should propagate the 'Mergeable' knowledge.
@@ -98,6 +102,38 @@ instance
   mrgReturn v = StateStrict.StateT $ \s -> mrgReturn (v, s)
   mrgIf cond (StateStrict.StateT t) (StateStrict.StateT f) =
     StateStrict.StateT $ \s -> mrgIf cond (t s) (f s)
+
+instance
+  (Monoid s, SymBoolOp bool, Mergeable bool s, MonadUnion bool m) =>
+  MonadUnion bool (WriterLazy.WriterT s m)
+  where
+  merge (WriterLazy.WriterT f) = WriterLazy.WriterT $ merge f
+  mrgReturn v = WriterLazy.WriterT $ mrgReturn (v, mempty)
+  mrgIf cond (WriterLazy.WriterT t) (WriterLazy.WriterT f) =
+    WriterLazy.WriterT $ mrgIf cond t f
+
+instance
+  (Monoid s, SymBoolOp bool, Mergeable bool s, MonadUnion bool m) =>
+  MonadUnion bool (WriterStrict.WriterT s m)
+  where
+  merge (WriterStrict.WriterT f) = WriterStrict.WriterT $ merge f
+  mrgReturn v = WriterStrict.WriterT $ mrgReturn (v, mempty)
+  mrgIf cond (WriterStrict.WriterT t) (WriterStrict.WriterT f) =
+    WriterStrict.WriterT $ mrgIf cond t f
+
+instance
+  (SymBoolOp bool, MonadUnion bool m) =>
+  MonadUnion bool (ReaderT s m)
+  where
+  merge (ReaderT f) = ReaderT $ \v -> merge $ f v
+  mrgReturn v = ReaderT $ \_ -> mrgReturn v
+  mrgIf cond (ReaderT t) (ReaderT f) =
+    ReaderT $ \s -> mrgIf cond (t s) (f s)
+
+instance (SymBoolOp bool, MonadUnion bool m) => MonadUnion bool (IdentityT m) where
+  merge (IdentityT f) = IdentityT (merge f)
+  mrgReturn v = IdentityT $ mrgReturn v
+  mrgIf cond (IdentityT t) (IdentityT f) = IdentityT $ mrgIf cond t f
 
 -- | 'foldM' with 'Mergeable' knowledge propagation.
 mrgFoldM :: (MonadUnion bool m, Mergeable bool b, Foldable t) => (b -> a -> m b) -> b -> t a -> m b

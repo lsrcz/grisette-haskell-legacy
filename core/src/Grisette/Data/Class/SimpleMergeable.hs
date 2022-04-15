@@ -340,7 +340,7 @@ instance
   UnionSimpleMergeable1 bool (WriterStrict.WriterT s m)
 
 instance
-  (SymBoolOp bool, Mergeable bool s, Mergeable bool a, UnionSimpleMergeable1 bool m) =>
+  (SymBoolOp bool, Mergeable bool a, UnionSimpleMergeable1 bool m) =>
   SimpleMergeable bool (ReaderT s m a)
   where
   mrgIte cond (ReaderT t) (ReaderT f) =
@@ -348,11 +348,11 @@ instance
       ReaderT $ mrgIte cond t f
 
 instance
-  (SymBoolOp bool, Mergeable bool s, UnionSimpleMergeable1 bool m) =>
+  (SymBoolOp bool, UnionSimpleMergeable1 bool m) =>
   SimpleMergeable1 bool (ReaderT s m)
 
 instance
-  (SymBoolOp bool, Mergeable bool s, UnionSimpleMergeable1 bool m) =>
+  (SymBoolOp bool, UnionSimpleMergeable1 bool m) =>
   UnionSimpleMergeable1 bool (ReaderT s m)
 
 instance (SymBoolOp bool, SimpleMergeable bool a) => SimpleMergeable bool (Identity a) where
