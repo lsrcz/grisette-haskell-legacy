@@ -1,7 +1,7 @@
-name: grisette-smt
+name: grisette-lib
 version: 0.1.0.0
-synopsis: Lowering symbolic primitives to SMT
-description: Lowering symbolic primitives to SMT
+synopsis: Extra Grisette library
+description: Extra Grisette library, data structures and lifted functions
 category: Formal Methods, Theorem Provers, Symbolic Computation, SMT
 author: "Sirui Lu"
 maintainer: siruilu@uw.edu
@@ -12,17 +12,11 @@ copyright: "2021 Sirui Lu"
 dependencies:
 - base > 4.7 && < 5
 - grisette-core
-- grisette-symprim
-- intern
-- hashable
+- grisette-symir
+- transformers
 - mtl
-- unordered-containers
-- monad-memo
-- sbv
-- mmorph
-- bv-sized
-- parameterized-utils
-- constraints
+- MemoTrie
+- monad-coroutine
 
 default-extensions:
 - BangPatterns
@@ -65,11 +59,3 @@ ghc-options: -Wall -ferror-spans
 library:
   source-dirs: src
 
-tests:
-  spec:
-    defaults: hspec/hspec@master
-    main: Main.hs
-    dependencies:
-      - grisette-smt
-      - hspec-junit-formatter
-      - QuickCheck

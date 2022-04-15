@@ -61,7 +61,7 @@ library
       MemoTrie
     , base >4.7 && <5
     , grisette-core
-    , grisette-symprim
+    , grisette-symir
     , monad-coroutine
     , mtl
     , transformers

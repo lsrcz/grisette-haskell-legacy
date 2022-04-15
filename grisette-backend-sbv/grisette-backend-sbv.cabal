@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 
-name:           grisette-symprim
+name:           grisette-backend-sbv
 version:        0.1.0.0
-synopsis:       Symbolic primitives
-description:    Default symbolic primitives implementation for grisette
+synopsis:       Lowering symbolic primitives to SMT
+description:    Lowering symbolic primitives to SMT
 category:       Formal Methods, Theorem Provers, Symbolic Computation, SMT
 homepage:       https://github.com/lsrcz/grisette-haskell#readme
 bug-reports:    https://github.com/lsrcz/grisette-haskell/issues
@@ -28,27 +28,13 @@ flag fast
 
 library
   exposed-modules:
-      Grisette.Control.Monad.UnionM
-      Grisette.Data.Prim.Bits
-      Grisette.Data.Prim.Bool
-      Grisette.Data.Prim.BV
-      Grisette.Data.Prim.Caches
-      Grisette.Data.Prim.Helpers
-      Grisette.Data.Prim.Integer
-      Grisette.Data.Prim.InternedTerm
-      Grisette.Data.Prim.Model
-      Grisette.Data.Prim.ModelValue
-      Grisette.Data.Prim.Num
-      Grisette.Data.Prim.Orphan
-      Grisette.Data.Prim.TabularFunc
-      Grisette.Data.Prim.Utils
-      Grisette.Data.SymPrim
-      Grisette.Data.TabularFunc
-      Grisette.Data.Union
-      Grisette.Internal.IR.SymPrim
-      Grisette.IR.SymPrim
+      Grisette.Backend.SBV
+      Grisette.Data.SMT.Config
+      Grisette.Data.SMT.Lowering
+      Grisette.Data.SMT.Solving
+      Grisette.Internal.Backend.SBV
   other-modules:
-      Paths_grisette_symprim
+      Paths_grisette_backend_sbv
   hs-source-dirs:
       src
   default-extensions:
@@ -73,22 +59,19 @@ library
       DeriveAnyClass
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie
-    , array
-    , base >4.7 && <5
+      base >4.7 && <5
     , bv-sized
     , constraints
-    , deepseq
     , grisette-core
+    , grisette-symir
     , hashable
     , intern
+    , mmorph
     , monad-memo
     , mtl
     , parameterized-utils
-    , template-haskell
-    , typerep-map
+    , sbv
     , unordered-containers
-    , vector
   if flag(fast)
     ghc-options: -O2
   else
@@ -99,17 +82,12 @@ test-suite spec
   type: exitcode-stdio-1.0
   main-is: Main.hs
   other-modules:
-      Grisette.Data.Prim.BitsSpec
-      Grisette.Data.Prim.BoolSpec
-      Grisette.Data.Prim.BVSpec
-      Grisette.Data.Prim.IntegerSpec
-      Grisette.Data.Prim.ModelSpec
-      Grisette.Data.Prim.NumSpec
-      Grisette.Data.Prim.TabularFuncSpec
-      Grisette.Data.SymPrimSpec
-      Grisette.Data.TabularFuncSpec
+      Grisette.Data.SMT.CEGISSpec
+      Grisette.Data.SMT.LoweringSpec
+      Grisette.Data.SMT.TermRewritingGen
+      Grisette.Data.SMT.TermRewritingSpec
       Spec
-      Paths_grisette_symprim
+      Paths_grisette_backend_sbv
   hs-source-dirs:
       test
   default-extensions:
@@ -134,25 +112,23 @@ test-suite spec
       DeriveAnyClass
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie
-    , array
+      QuickCheck
     , base >4.7 && <5
     , bv-sized
     , constraints
-    , deepseq
+    , grisette-backend-sbv
     , grisette-core
-    , grisette-symprim
+    , grisette-symir
     , hashable
     , hspec ==2.*
     , hspec-junit-formatter
     , intern
+    , mmorph
     , monad-memo
     , mtl
     , parameterized-utils
-    , template-haskell
-    , typerep-map
+    , sbv
     , unordered-containers
-    , vector
   if flag(fast)
     ghc-options: -O2
   else

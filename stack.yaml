@@ -30,15 +30,15 @@ resolver:
 #   - auto-update
 #   - wai
 packages:
-  - symprim
-  - core
-  - lib
-  - examples
-  - benchmarks
-  - smt
-  - scratch
+  - grisette-symir
+  - grisette-core
+  - grisette-lib
+  - grisette-examples
+  - grisette-benchmarks
+  - grisette-backend-sbv
+  - grisette-scratch
   - grisette
-  - tutorial
+  - grisette-tutorial
 # Dependency packages to be pulled from upstream that are not in the resolver.
 # These entries can reference officially published versions as well as
 # forks / in-progress versions pinned to a git hash. For example:
