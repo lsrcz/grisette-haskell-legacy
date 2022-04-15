@@ -9,7 +9,7 @@ jobs:
       - restore_cache:
           name: Restore Cached Dependencies
           keys:
-            - dep-{{ checksum "stack.yaml" }}-{{ checksum ".circleci/config.yml" }}-{{ checksum "grisette-core/package.yaml" }}-{{ checksum "grisette-symir/package.yaml" }}-{{ checksum "grisette-backend-sbv/package.yaml" }}-{{ checksum "grisette-lib/package.yaml" }}-{{ checksum "grisette/package.yaml" }}-{{ checksum "grisette-scratch/package.yaml" }}-{{ checksum "grisette-examples/package.yaml" }}-{{ checksum "grisette-benchmarks/package.yaml" }}
+            - dep-{{ checksum "stack.yaml" }}-{{ checksum ".circleci/config.yml" }}-{{ checksum "grisette-core/package.yaml" }}-{{ checksum "grisette-symir/package.yaml" }}-{{ checksum "grisette-backend-sbv/package.yaml" }}-{{ checksum "grisette-lib/package.yaml" }}-{{ checksum "grisette/package.yaml" }}-{{ checksum "grisette-scratch/package.yaml" }}-{{ checksum "grisette-examples/package.yaml" }}-{{ checksum "grisette-benchmarks/package.yaml" }}-{{ checksum "grisette-backend-direct/package.yaml" }}
             - dep-{{ checksum "stack.yaml" }}
       - run:
           name: Resolve/Update Dependencies
@@ -24,7 +24,7 @@ jobs:
           name: Run tests
           command: |
             stack --no-terminal clean
-            stack --no-terminal test --flag grisette-core:-fast --flag grisette-examples:-fast --flag grisette-lib:-fast --flag grisette:-fast --flag grisette-scratch:-fast --flag grisette-backend-sbv:-fast --flag grisette-symir:-fast --flag grisette-benchmarks:-fast --flag grisette-tutorial:-fast --coverage
+            stack --no-terminal test --flag grisette-core:-fast --flag grisette-examples:-fast --flag grisette-lib:-fast --flag grisette:-fast --flag grisette-scratch:-fast --flag grisette-backend-sbv:-fast --flag grisette-symir:-fast --flag grisette-benchmarks:-fast --flag grisette-tutorial:-fast --flag grisette-backend-direct:-fast --coverage
       - store_test_results:
           path: /tmp/reports
       - run:
@@ -33,7 +33,7 @@ jobs:
       - run:
           name: Build doc
           command: |
-            stack --no-terminal haddock --flag grisette-core:-fast --flag grisette-examples:-fast --flag grisette-lib:-fast --flag grisette:-fast --flag grisette-scratch:-fast --flag grisette-backend-sbv:-fast --flag grisette-symir:-fast --flag grisette-benchmarks:-fast --flag grisette-tutorial:-fast
+            stack --no-terminal haddock --flag grisette-core:-fast --flag grisette-examples:-fast --flag grisette-lib:-fast --flag grisette:-fast --flag grisette-scratch:-fast --flag grisette-backend-sbv:-fast --flag grisette-symir:-fast --flag grisette-benchmarks:-fast --flag grisette-tutorial:-fast --flag grisette-backend-direct:-fast
             rm -rf /tmp/grisette-doc
             mkdir -p /tmp/grisette-doc
             cp -r $(stack path --local-doc-root)/grisette-* /tmp/grisette-doc
@@ -44,13 +44,14 @@ jobs:
           command: stack --no-terminal clean
       - save_cache:
           name: Cache Dependencies
-          key: dep-{{ checksum "stack.yaml" }}-{{ checksum ".circleci/config.yml" }}-{{ checksum "grisette-core/package.yaml" }}-{{ checksum "grisette-symir/package.yaml" }}-{{ checksum "grisette-backend-sbv/package.yaml" }}-{{ checksum "grisette-lib/package.yaml" }}-{{ checksum "grisette/package.yaml" }}-{{ checksum "grisette-scratch/package.yaml" }}-{{ checksum "grisette-examples/package.yaml" }}-{{ checksum "grisette-benchmarks/package.yaml" }}
+          key: dep-{{ checksum "stack.yaml" }}-{{ checksum ".circleci/config.yml" }}-{{ checksum "grisette-core/package.yaml" }}-{{ checksum "grisette-symir/package.yaml" }}-{{ checksum "grisette-backend-sbv/package.yaml" }}-{{ checksum "grisette-lib/package.yaml" }}-{{ checksum "grisette/package.yaml" }}-{{ checksum "grisette-scratch/package.yaml" }}-{{ checksum "grisette-examples/package.yaml" }}-{{ checksum "grisette-benchmarks/package.yaml" }}-{{ checksum "grisette-backend-direct/package.yaml" }}
           paths:
             - "/root/.stack"
             - ".stack-work"
             - "grisette-core/.stack-work"
             - "grisette-symir/.stack-work"
             - "grisette-backend-sbv/.stack-work"
+            - "grisette-backend-direct/.stack-work"
             - "grisette-lib/.stack-work"
             - "grisette/.stack-work"
             - "grisette-examples/.stack-work"

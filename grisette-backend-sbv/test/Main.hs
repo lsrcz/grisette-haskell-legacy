@@ -11,7 +11,7 @@ main = do
   junitOutputDirectory <- lookupEnv "JUNIT_OUTPUT_DIRECTORY"
   case (junitEnabled, junitOutputDirectory) of
     (Just "1", Just path) -> do
-      summary@(Summary e f) <- runJUnitSpec Spec.spec (path, "smt") defaultConfig
+      summary@(Summary e f) <- runJUnitSpec Spec.spec (path, "backend-sbv") defaultConfig
       _ <- putStrLn $ "Total " ++ show e ++ " examples, failed " ++ show f ++ " examples."
       evaluateSummary summary
     _ -> hspec Spec.spec

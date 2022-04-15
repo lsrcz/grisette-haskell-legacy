@@ -36,6 +36,7 @@ packages:
   - grisette-examples
   - grisette-benchmarks
   - grisette-backend-sbv
+  - grisette-backend-direct
   - grisette-scratch
   - grisette
   - grisette-tutorial
