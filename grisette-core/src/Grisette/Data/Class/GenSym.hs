@@ -127,7 +127,7 @@ nameWithInfo = GenSymIdentWithInfo
 
 -- File location type.
 data FileLocation = FileLocation {locPath :: String, locLineno :: Int, locSpan :: (Int, Int)}
-  deriving (Eq, Ord, Generic, Lift, NFData)
+  deriving (Eq, Ord, Generic, Lift, NFData, Hashable)
 
 instance Show FileLocation where
   show (FileLocation p l (s1, s2)) = p ++ ":" ++ show l ++ ":" ++ show s1 ++ "-" ++ show s2
