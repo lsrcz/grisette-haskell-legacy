@@ -91,6 +91,8 @@ instance (SupportedPrim a) => PrimWrapper (Sym a) a where
   conc = Sym . concTerm
   ssymb = Sym . ssymbTerm
   isymb i str = Sym $ isymbTerm i str
+  sinfosymb str info = Sym $ sinfosymbTerm str info
+  iinfosymb i str info = Sym $ iinfosymbTerm i str info
   concView (Sym (ConcTerm _ t)) = Just t
   concView _ = Nothing
 
@@ -120,10 +122,12 @@ instance (SymBoolOp (Sym Bool), SupportedPrim a) => GenSym (Sym Bool) () (Sym a)
 
 instance (SymBoolOp (Sym Bool), SupportedPrim a) => GenSymSimple (Sym Bool) () (Sym a) where
   genSymSimpleFresh _ = do
-    GenSymIdent s <- ask
+    ident <- ask
     idx@(GenSymIndex i) <- get
     put $ idx + 1
-    return $ isymb i s
+    case ident of
+      GenSymIdent s -> return $ isymb i s
+      GenSymIdentWithInfo s info -> return $ iinfosymb i s info
 
 instance (SymBoolOp (Sym Bool), SupportedPrim a) => GenSym (Sym Bool) (Sym a) (Sym a)
 

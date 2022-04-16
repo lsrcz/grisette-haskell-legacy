@@ -7,6 +7,11 @@ module Grisette.Data.Class.PrimWrapper
   )
 where
 
+import Data.Typeable
+import Language.Haskell.TH.Syntax
+import Control.DeepSeq
+import Data.Hashable
+
 -- | The class establish the link between concrete primitive types
 -- and symbolic primitive types.
 class PrimWrapper t c | t -> c where
@@ -33,6 +38,8 @@ class PrimWrapper t c | t -> c where
   -- >>> isymb 1 "a" :: SymBool
   -- a@1
   isymb :: Int -> String -> t
+  sinfosymb :: (Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) => String -> a -> t
+  iinfosymb :: (Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) => Int -> String -> a -> t
 
 -- | Extract the concrete value from a symbolic value with 'concView'.
 --

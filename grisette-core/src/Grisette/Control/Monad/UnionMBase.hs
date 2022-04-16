@@ -294,6 +294,8 @@ instance (SymBoolOp bool, PrimWrapper t c, Mergeable bool t) => PrimWrapper (Uni
   conc = mrgReturn . conc
   ssymb = mrgReturn . ssymb
   isymb i s = mrgReturn $ isymb i s
+  sinfosymb s info = mrgReturn $ sinfosymb s info
+  iinfosymb i s info = mrgReturn $ iinfosymb i s info
   concView (SingleU (Conc b)) = Just b
   concView _ = Nothing
 

@@ -4,7 +4,6 @@ import Grisette.Data.Class.Bool
 import Grisette.Data.Class.PrimWrapper
 import qualified Data.HashSet as S
 import Grisette.Data.Class.ExtractSymbolics
-import GHC.Generics
 import Data.Hashable
 import Grisette.Data.Class.SOrd
 import Grisette.Data.Class.SimpleMergeable
@@ -17,18 +16,49 @@ import Grisette.Data.Class.ToSym
 import Grisette.Data.Class.GenSym
 import Control.Monad.State
 import Control.Monad.Reader
+import Data.Typeable
 
-data SBool
-  = CBool Bool
-  | SSBool String 
-  | ISBool Int String 
-  | Or SBool SBool
-  | And SBool SBool
-  | Not SBool
-  | Equal SBool SBool
-  | ITE SBool SBool SBool
-  deriving (Show, Eq)
+data SBool where
+  CBool :: Bool -> SBool
+  SSBool :: String -> SBool
+  ISSBool :: (Typeable a, Show a, Eq a, Hashable a) => String -> a -> SBool
+  ISBool :: Int -> String -> SBool
+  IISBool :: (Typeable a, Show a, Eq a, Hashable a) => Int -> String -> a -> SBool
+  Or :: SBool -> SBool -> SBool
+  And :: SBool -> SBool -> SBool
+  Not :: SBool -> SBool
+  Equal :: SBool -> SBool -> SBool
+  ITE :: SBool -> SBool -> SBool -> SBool
 
+instance Show SBool where
+  show (CBool v) = "CBool " ++ show v
+  show (SSBool s) = "SSBool " ++ s
+  show (ISSBool s info) = "ISSBool " ++ s ++ " " ++ show info
+  show (ISBool i s) = "ISBool " ++ show i ++ " " ++ s
+  show (IISBool i s info) = "IISBool " ++ show i ++ " " ++ show s ++ " " ++ show info
+  show (Or l r) = "Or (" ++ show l ++ ") (" ++ show r ++ ")"
+  show (And l r) = "And (" ++ show l ++ ") (" ++ show r ++ ")"
+  show (Not v) = "Not (" ++ show v ++ ")"
+  show (Equal l r) = "Equal (" ++ show l ++ ") (" ++ show r ++ ")"
+  show (ITE c l r) = "ITE (" ++ show c ++ ") (" ++ show l ++ ") (" ++ show r ++ ")"
+
+instance Eq SBool where
+  CBool l == CBool r = l == r
+  SSBool l == SSBool r = l == r
+  ISSBool s1 (info1 :: a) == ISSBool s2 (info2 :: b) = case eqT @a @b of
+    Just Refl -> s1 == s2 && info1 == info2
+    Nothing -> False
+  ISBool i1 s1 == ISBool i2 s2 = i1 == i2 && s1 == s2
+  IISBool i1 s1 (info1 :: a) == IISBool i2 s2 (info2 :: b) = case eqT @a @b of
+    Just Refl -> i1 == i2 && s1 == s2 && info1 == info2
+    Nothing -> False
+  Or l1 r1 == Or l2 r2 = l1 == l2 && r1 == r2
+  And l1 r1 == And l2 r2 = l1 == l2 && r1 == r2
+  Not v1 == Not v2 = v1 == v2
+  Equal l1 r1 == Equal l2 r2 = l1 == l2 && r1 == r2
+  ITE c1 l1 r1 == ITE c2 l2 r2 = c1 == c2 && l1 == l2 && r1 == r2
+  _ == _ = False
+  
 instance Mergeable SBool SBool where
   mergeStrategy = SimpleStrategy ites
 
@@ -40,7 +70,13 @@ instance Evaluate (M.HashMap Symbol Bool) SBool where
   evaluate fillDefault model s@(SSBool sym) = case M.lookup (SSymbol sym) model of
     Just v -> CBool v
     Nothing -> if fillDefault then (CBool False) else s
+  evaluate fillDefault model s@(ISSBool sym info) = case M.lookup (ISSymbol sym info) model of
+    Just v -> CBool v
+    Nothing -> if fillDefault then (CBool False) else s
   evaluate fillDefault model s@(ISBool i sym) = case M.lookup (ISymbol i sym) model of
+    Just v -> CBool v
+    Nothing -> if fillDefault then (CBool False) else s
+  evaluate fillDefault model s@(IISBool i sym info) = case M.lookup (IISymbol i sym info) model of
     Just v -> CBool v
     Nothing -> if fillDefault then (CBool False) else s
   evaluate fillDefault model (Or l r) = evaluate fillDefault model l ||~ evaluate fillDefault model r
@@ -75,7 +111,9 @@ instance PrimWrapper SBool Bool where
   concView (CBool x) = Just x
   concView _ = Nothing
   ssymb = SSBool
+  sinfosymb = ISSBool
   isymb = ISBool
+  iinfosymb = IISBool
 
 instance ITEOp SBool SBool where
   ites (CBool True) l _ = l
@@ -98,14 +136,46 @@ instance LogicalOp SBool where
   
 instance SymBoolOp SBool
 
-data Symbol = SSymbol String | ISymbol Int String deriving (Generic, Show, Eq, Hashable)
+data Symbol where
+  SSymbol :: String -> Symbol
+  ISSymbol :: (Typeable a, Show a, Eq a, Hashable a) => String -> a -> Symbol
+  ISymbol :: Int -> String -> Symbol
+  IISymbol :: (Typeable a, Show a, Eq a, Hashable a) => Int -> String -> a -> Symbol
+  -- deriving (Generic, Show, Eq, Hashable)
+
+instance Show Symbol where
+  show (SSymbol s) = "SSymbol " ++ s
+  show (ISSymbol s info) = "ISSymbol " ++ s ++ " " ++ show info
+  show (ISymbol i s) = "ISymbol " ++ show i ++ " " ++ s
+  show (IISymbol i s info) = "IISymbol " ++ show i ++ " " ++ s ++ " " ++ show info
+
+instance Eq Symbol where
+  SSymbol s1 == SSymbol s2 = s1 == s2
+  ISSymbol s1 (info1 :: info1) == ISSymbol s2 (info2 :: info2) = 
+    case eqT @info1 @info2 of
+      Just Refl -> s1 == s2 && info1 == info2
+      _ -> False
+  ISymbol i1 s1 == ISymbol i2 s2 = i1 == i2 && s1 == s2
+  IISymbol i1 s1 (info1 :: info1) == IISymbol i2 s2 (info2 :: info2) =
+    case eqT @info1 @info2 of
+      Just Refl -> i1 == i2 && s1 == s2 && info1 == info2
+      _ -> False
+  _ == _ = False
+
+instance Hashable Symbol where
+  s `hashWithSalt` SSymbol s1 = s `hashWithSalt` s1
+  s `hashWithSalt` ISSymbol s1 info = s `hashWithSalt` s1 `hashWithSalt` info
+  s `hashWithSalt` ISymbol i1 s1 = s `hashWithSalt` i1 `hashWithSalt` s1
+  s `hashWithSalt` IISymbol i1 s1 info1 = s `hashWithSalt` i1 `hashWithSalt` s1 `hashWithSalt` info1
 
 instance ExtractSymbolics (S.HashSet Symbol) SBool where
   extractSymbolics = go S.empty
     where
       go s (CBool _) = s
       go s (SSBool sym) = S.insert (SSymbol sym) s
+      go s (ISSBool sym info) = S.insert (ISSymbol sym info) s
       go s (ISBool i sym) = S.insert (ISymbol i sym) s
+      go s (IISBool i sym info) = S.insert (IISymbol i sym info) s
       go s (Or l r) = go (go s l) r
       go s (And l r) = go (go s l) r
       go s (Not v) = go s v
@@ -129,10 +199,12 @@ instance GenSym SBool () SBool where
 
 instance GenSymSimple SBool () SBool where
   genSymSimpleFresh _ = do
-    GenSymIdent s <- ask
+    ident <- ask
     idx@(GenSymIndex i) <- get
     put $ idx + 1
-    return $ ISBool i s
+    case ident of
+      GenSymIdent s -> return $ ISBool i s
+      GenSymIdentWithInfo s info -> return $ IISBool i s info
 
 instance GenSym SBool SBool SBool where
 

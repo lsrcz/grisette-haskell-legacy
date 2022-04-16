@@ -13,11 +13,13 @@
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE DeriveAnyClass #-}
 
 module Grisette.Data.Class.GenSym
   ( GenSymIndex (..),
     GenSymIdent,
     pattern GenSymIdent,
+    pattern GenSymIdentWithInfo,
     name,
     nameWithInfo,
     FileLocation (..),
@@ -58,8 +60,10 @@ import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.SimpleMergeable
 import Language.Haskell.TH
 import Debug.Trace.LocationTH (__LOCATION__)
-import Data.List (intercalate)
 import Control.Monad.Signatures
+import Language.Haskell.TH.Syntax hiding (lift)
+import Control.DeepSeq
+import Data.Hashable
 
 -- | Index type used for 'GenSym'.
 --
@@ -95,10 +99,13 @@ instance (SymBoolOp bool) => SimpleMergeable bool GenSymIndex where
 -- >>> nameWithInfo "a" (1 :: Int)
 -- withInfo/a/Int/b1460030427ac0fa458cbf347f168b53/1
 --
-newtype GenSymIdent = GenSymIdent String
+data GenSymIdent where
+  GenSymIdent :: String -> GenSymIdent
+  GenSymIdentWithInfo :: (Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) => String -> a -> GenSymIdent
 
 instance Show GenSymIdent where
   show (GenSymIdent i) = i
+  show (GenSymIdentWithInfo s i) = s ++ "@" ++ show i
 
 instance IsString GenSymIdent where
   fromString = name
@@ -108,30 +115,19 @@ instance IsString GenSymIdent where
 --
 -- The user need to ensure uniqueness by themselves if they need to.
 name :: String -> GenSymIdent
-name = GenSymIdent . ("s_"++)
+name = GenSymIdent
 
 -- | Identifier with extra information.
 -- The same name with the same information
 -- refers to the same symbolic variable in the whole program.
 --
 -- The user need to ensure uniqueness by themselves if they need to.
-nameWithInfo :: forall a. (Typeable a, Show a) => String -> a -> GenSymIdent
-nameWithInfo s v =
-      GenSymIdent $
-        intercalate "/"
-          [ "withInfo",
-            replace s,
-            show $ typeRep (Proxy @a),
-            show $ typeRepFingerprint $ typeRep (Proxy @a),
-            show v
-          ]
-  where
-    replace [] = []
-    replace ('/':xs) = '/' : '/' : replace xs
-    replace (c:xs) = c : replace xs
+nameWithInfo :: forall a. (Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) => String -> a -> GenSymIdent
+nameWithInfo = GenSymIdentWithInfo
 
 -- File location type.
 data FileLocation = FileLocation {locPath :: String, locLineno :: Int, locSpan :: (Int, Int)}
+  deriving (Eq, Ord, Generic, Lift, NFData)
 
 instance Show FileLocation where
   show (FileLocation p l (s1, s2)) = p ++ ":" ++ show l ++ ":" ++ show s1 ++ "-" ++ show s2

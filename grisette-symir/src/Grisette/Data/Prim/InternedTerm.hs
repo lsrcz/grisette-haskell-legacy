@@ -25,14 +25,16 @@ module Grisette.Data.Prim.InternedTerm
     symbTerm,
     ssymbTerm,
     isymbTerm,
+    sinfosymbTerm,
+    iinfosymbTerm,
     extractSymbolicsTerm,
     TermSymbol (..),
     -- termSymbolTypeRep,
-    Id'(..),
+    Id' (..),
     packId',
     unpackId',
-    Word8List'(..),
-    Word8'(..),
+    Word8List' (..),
+    Word8' (..),
   )
 where
 
@@ -42,28 +44,27 @@ import Data.Array
 import Data.BitVector.Sized
 import Data.BitVector.Sized.Signed as BVS
 import Data.BitVector.Sized.Unsigned as BVU
+import Data.Bits
 import Data.Constraint
 import Data.Dynamic
 import Data.Function (on)
 import qualified Data.HashMap.Strict as M
 import Data.HashSet as S
-import Data.Hashable (Hashable (hashWithSalt, hash))
+import Data.Hashable (Hashable (hash, hashWithSalt))
 import Data.IORef (atomicModifyIORef')
 import Data.Interned
 import Data.Interned.Internal
 import Data.Maybe
 import Data.MemoTrie
 import Data.Typeable
-import GHC.Generics
+import qualified Data.Vector as V
+import Data.Word
 import GHC.IO (unsafeDupablePerformIO)
 import GHC.TypeNats
+import Grisette.Data.Prim.Caches
+import Grisette.Data.Prim.ModelValue
 import Grisette.Data.Prim.Orphan ()
 import Language.Haskell.TH.Syntax
-import Grisette.Data.Prim.Caches
-import Data.Word
-import qualified Data.Vector as V
-import Data.Bits
-import Grisette.Data.Prim.ModelValue
 
 class (Lift t, Typeable t, Hashable t, Eq t, Show t, NFData t) => SupportedPrim t where
   type PrimConstraint t :: Constraint
@@ -118,16 +119,47 @@ class
   partialEvalTernary :: (Typeable tag, Typeable t) => tag -> Term arg1 -> Term arg2 -> Term arg3 -> Term t
   pformatTernary :: tag -> Term arg1 -> Term arg2 -> Term arg3 -> String
 
-data Symbol
-  = SimpleSymbol String
-  | IndexedSymbol Int String
-  deriving (Eq, Ord, Generic, Lift, NFData)
+data Symbol where
+  SimpleSymbol :: String -> Symbol
+  IndexedSymbol :: Int -> String -> Symbol
+  WithInfo :: forall a. (Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) => Symbol -> a -> Symbol
+  -- deriving (Eq, Ord, Generic, Lift, NFData)
+
+instance Eq Symbol where
+  SimpleSymbol x == SimpleSymbol y = x == y
+  IndexedSymbol i x == IndexedSymbol j y = i == j && x == y
+  WithInfo s1 (i1 :: a) == WithInfo s2 (i2 :: b) = case eqT @a @b of
+    Just Refl -> i1 == i2 && s1 == s2
+    _ -> False
+  _ == _ = False
+
+instance Ord Symbol where
+  SimpleSymbol x <= SimpleSymbol y = x <= y
+  IndexedSymbol i x <= IndexedSymbol j y = i < j || (i == j && x <= y)
+  WithInfo s1 (i1 :: a) <= WithInfo s2 (i2 :: b) = case eqT @a @b of
+    Just Refl -> s1 < s2 || (s1 == s2 && i1 <= i2)
+    _ -> False
+  _ <= _ = False
+
+instance Lift Symbol where
+  liftTyped (SimpleSymbol x) = [|| SimpleSymbol x ||]
+  liftTyped (IndexedSymbol i x) = [|| IndexedSymbol i x ||]
+  liftTyped (WithInfo s1 i1) = [|| WithInfo s1 i1 ||]
 
 instance Show Symbol where
   show (SimpleSymbol str) = str
   show (IndexedSymbol i str) = str ++ "@" ++ show i
+  show (WithInfo s info) = show s ++ "@" ++ show info
 
-instance Hashable Symbol
+instance Hashable Symbol where
+  s `hashWithSalt` SimpleSymbol x = s `hashWithSalt` x
+  s `hashWithSalt` IndexedSymbol i x = s `hashWithSalt` i `hashWithSalt` x
+  s `hashWithSalt` WithInfo sym info = s `hashWithSalt` sym `hashWithSalt` info
+
+instance NFData Symbol where
+  rnf (SimpleSymbol str) = rnf str
+  rnf (IndexedSymbol i str) = rnf i `seq` rnf str
+  rnf (WithInfo s info) = rnf s `seq` rnf info
 
 data TermSymbol where
   TermSymbol :: forall t. (SupportedPrim t) => Proxy t -> Symbol -> TermSymbol
@@ -317,15 +349,17 @@ findTermInReverseCache i = unsafeDupablePerformIO $ findInReverseCache i (termRe
 
 word8BitWidth :: (Num a, Bits a) => a
 word8BitWidth = 3
+
 word8LevelNum :: (Num a, Bits a) => a
 word8LevelNum = 1 `shiftL` word8BitWidth
 
 newtype Word8' = Word8' Word8 deriving (Show)
+
 instance HasTrie Word8' where
   newtype Word8' :->: x = Word8Trie' (V.Vector x)
   trie f = Word8Trie' $ V.generate word8LevelNum (f . Word8' . fromIntegral)
   untrie (Word8Trie' t) = \(Word8' w) -> V.unsafeIndex t $ fromIntegral w
-  enumerate (Word8Trie' t) = [(Word8' $ fromIntegral i, V.unsafeIndex t i) | i <- [0..word8LevelNum-1]]
+  enumerate (Word8Trie' t) = [(Word8' $ fromIntegral i, V.unsafeIndex t i) | i <- [0 .. word8LevelNum -1]]
 
 data Word8List' = W8Nil | W8Cons Word8' Word8List' deriving (Show)
 
@@ -335,8 +369,9 @@ instance HasTrie Word8List' where
   untrie (BLTrie x t) = \case
     W8Nil -> x
     W8Cons w8 tl -> untrie (untrie t w8) tl
-  enumerate (BLTrie x t) = (W8Nil, x) :
-    [(W8Cons w8 bl, v) | (w8, tt) <- enumerate t, (bl, v) <- enumerate tt]
+  enumerate (BLTrie x t) =
+    (W8Nil, x) :
+      [(W8Cons w8 bl, v) | (w8, tt) <- enumerate t, (bl, v) <- enumerate tt]
 
 newtype Id' = Id' Id deriving (Show)
 
@@ -353,12 +388,14 @@ packId' (Id' i) = go $ fromIntegral i
     go :: Word -> Word8List'
     go 0 = W8Nil
     go x = W8Cons (Word8' $ fromIntegral $ x .&. mask) $ go (x `shiftR` word8BitWidth)
+
 unpackId' :: Word8List' -> Id'
 unpackId' l = Id' $ fromIntegral $ go l 0 0
   where
     go :: Word8List' -> Int -> Word -> Word
     go W8Nil _ acc = acc
     go (W8Cons (Word8' x) tl) n acc = go tl (n + word8BitWidth) $ (fromIntegral x `shiftL` n) .|. acc
+
 {-
 packId' :: Id' -> Word8List'
 packId' (Id' i) = go (fromIntegral i) W8Nil
@@ -415,14 +452,14 @@ internTerm !bt = unsafeDupablePerformIO $ do
       -}
   return t
   where
-  slot = getCache cache ! r
-  !dt = describe bt
-  !hdt = hash dt
-  !wid = cacheWidth dt
-  r = hdt `mod` wid
-  go (CacheState i m) = case M.lookup dt m of
-    Nothing -> let t = identify (wid * i + r) bt in (CacheState (i + 1) (M.insert dt t m), (True, t))
-    Just t -> (CacheState i m, (False, t))
+    slot = getCache cache ! r
+    !dt = describe bt
+    !hdt = hash dt
+    !wid = cacheWidth dt
+    r = hdt `mod` wid
+    go (CacheState i m) = case M.lookup dt m of
+      Nothing -> let t = identify (wid * i + r) bt in (CacheState (i + 1) (M.insert dt t m), (True, t))
+      Just t -> (CacheState i m, (False, t))
 
 constructUnary ::
   forall tag arg t.
@@ -462,6 +499,12 @@ ssymbTerm = symbTerm . SimpleSymbol
 
 isymbTerm :: (SupportedPrim t, Typeable t) => Int -> String -> Term t
 isymbTerm idx str = symbTerm $ IndexedSymbol idx str
+
+sinfosymbTerm :: (SupportedPrim t, Typeable t, Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) => String -> a -> Term t
+sinfosymbTerm s info = symbTerm $ WithInfo (SimpleSymbol s) info
+
+iinfosymbTerm :: (SupportedPrim t, Typeable t, Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) => Int -> String -> a -> Term t
+iinfosymbTerm idx str info = symbTerm $ WithInfo (IndexedSymbol idx str) info
 
 extractSymbolicsSomeTerm :: SomeTerm -> S.HashSet TermSymbol
 extractSymbolicsSomeTerm t1 = evalState (gocached t1) M.empty
