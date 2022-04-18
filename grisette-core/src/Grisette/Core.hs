@@ -8,6 +8,7 @@ module Grisette.Core
     -- They rely on the implementation in @grisette-symprim@ package.
 
     -- * Symbolic Operators
+    -- | #symop#
     SEq (..),
     SOrd (..),
     LogicalOp (..),

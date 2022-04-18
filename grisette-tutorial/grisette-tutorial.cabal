@@ -30,6 +30,7 @@ library
   exposed-modules:
       Grisette.Tutorial.ArithExprSynth.ArithExprSynth
       Grisette.Tutorial.ComplexExprSynth.ComplexExprSynth
+      Grisette.Tutorial.Essentials.Essentials
       Grisette.Tutorial.Sudoku.Sudoku
       Grisette.Tutorial.Tutorial
   other-modules:
@@ -83,6 +84,7 @@ library
     , parser-combinators
     , regex-base
     , regex-pcre
+    , sbv
     , template-haskell
     , th-lift-instances
     , timeit
