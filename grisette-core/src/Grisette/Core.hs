@@ -27,6 +27,8 @@ module Grisette.Core
     -- * Symbolic Primitives
     PrimWrapper (..),
     pattern Conc,
+    slocsymb,
+    ilocsymb,
     ExtractSymbolics (..),
 
     -- * UnionM Monad
@@ -168,6 +170,7 @@ import Grisette.Data.Class.GenSym
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
 import Grisette.Data.Class.UnionOp
+import Grisette.Data.FileLocation
 import Grisette.Data.MemoUtils
 import Grisette.TH
 import Grisette.BuiltinUnionMWrappers

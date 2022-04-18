@@ -184,7 +184,7 @@ instance SolverTranslation VerifyTyper Error SymValue where
 
 verifyTyper :: GrisetteSMTConfig n -> Typer -> Interpreter -> IO (Maybe Expr)
 verifyTyper config typerImpl interpreterImpl = do
-  let sk :: UnionM SymExpr = genSym (3 :: Integer) $(nameWithLoc "a")
+  let sk :: UnionM SymExpr = genSym (3 :: Integer) $$(nameWithLoc "a")
   let r = (typerImpl #~ sk) >>~ (interpreterImpl #~ sk)
   m <- solveWithTranslation VerifyTyper config r
   case m of
@@ -210,7 +210,7 @@ main = do
   let config = UnboundedReasoning z3
   verifyTyper config typer interpreter >>= print
   verifyTyper config typerBad interpreter >>= print
-  synthExpr config (genSym (3 :: Integer) $(nameWithLoc "a")) (BoolValue True) >>= print
+  synthExpr config (genSym (3 :: Integer) $$(nameWithLoc "a")) (BoolValue True) >>= print
   synthExpr
     config
     (uSymAdd (uSymIntegerConst (ssymb "a")) (uSymIntegerConst (ssymb "b")))

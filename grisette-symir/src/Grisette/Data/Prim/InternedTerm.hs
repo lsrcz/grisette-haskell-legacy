@@ -150,7 +150,7 @@ instance Lift Symbol where
 instance Show Symbol where
   show (SimpleSymbol str) = str
   show (IndexedSymbol i str) = str ++ "@" ++ show i
-  show (WithInfo s info) = show s ++ "@" ++ show info
+  show (WithInfo s info) = show s ++ ":" ++ show info
 
 instance Hashable Symbol where
   s `hashWithSalt` SimpleSymbol x = s `hashWithSalt` x

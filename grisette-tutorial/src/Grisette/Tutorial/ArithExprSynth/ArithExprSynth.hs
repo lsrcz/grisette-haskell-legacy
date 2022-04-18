@@ -193,7 +193,7 @@ sketch =
         op2 :: Op <- genSymSimpleFresh @SymBool ()
         return $ op1 v1 (op2 v2 v3)
     )
-    $(nameWithLoc "a")
+    $$(nameWithLoc "a")
 
 main :: IO ()
 main = do

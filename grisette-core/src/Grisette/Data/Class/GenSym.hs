@@ -22,8 +22,6 @@ module Grisette.Data.Class.GenSym
     pattern GenSymIdentWithInfo,
     name,
     nameWithInfo,
-    FileLocation (..),
-    nameWithLoc,
     GenSymFreshT,
     GenSymFresh,
     runGenSymFreshT,
@@ -58,8 +56,6 @@ import Grisette.Control.Monad
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.SimpleMergeable
-import Language.Haskell.TH
-import Debug.Trace.LocationTH (__LOCATION__)
 import Control.Monad.Signatures
 import Language.Haskell.TH.Syntax hiding (lift)
 import Control.DeepSeq
@@ -91,13 +87,13 @@ instance (SymBoolOp bool) => SimpleMergeable bool GenSymIndex where
 --
 --   * bundle the calling file location with the name to ensure global uniqueness
 --
--- >>> $(nameWithLoc "a")
--- withInfo/a/FileLocation/80432a51e5b129f60172b1172804ec01/<interactive>:42:4-18
+-- >>> $$(nameWithLoc "a")
+-- a:<interactive>:4:4-18
 --
 --   * bundle the calling file location with some user provided information
 --
 -- >>> nameWithInfo "a" (1 :: Int)
--- withInfo/a/Int/b1460030427ac0fa458cbf347f168b53/1
+-- a:1
 --
 data GenSymIdent where
   GenSymIdent :: String -> GenSymIdent
@@ -105,7 +101,7 @@ data GenSymIdent where
 
 instance Show GenSymIdent where
   show (GenSymIdent i) = i
-  show (GenSymIdentWithInfo s i) = s ++ "@" ++ show i
+  show (GenSymIdentWithInfo s i) = s ++ ":" ++ show i
 
 instance IsString GenSymIdent where
   fromString = name
@@ -124,29 +120,6 @@ name = GenSymIdent
 -- The user need to ensure uniqueness by themselves if they need to.
 nameWithInfo :: forall a. (Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) => String -> a -> GenSymIdent
 nameWithInfo = GenSymIdentWithInfo
-
--- File location type.
-data FileLocation = FileLocation {locPath :: String, locLineno :: Int, locSpan :: (Int, Int)}
-  deriving (Eq, Ord, Generic, Lift, NFData, Hashable)
-
-instance Show FileLocation where
-  show (FileLocation p l (s1, s2)) = p ++ ":" ++ show l ++ ":" ++ show s1 ++ "-" ++ show s2
-
-parseFileLocation :: String -> FileLocation
-parseFileLocation str =
-  let
-    r = reverse str
-    (s2, r1) = break (=='-') r
-    (s1, r2) = break (==':') $ tail r1
-    (l, p) = break (==':') $ tail r2
-  in
-    FileLocation (reverse $ tail p) (read $ reverse l) (read $ reverse s1, read $ reverse s2)
-
--- | Identifier with the current location as extra information.
---
--- The uniqueness is ensured for the call to 'nameWithLoc' at different location.
-nameWithLoc :: String -> Q Exp
-nameWithLoc s = [| nameWithInfo s (parseFileLocation $__LOCATION__) |]
 
 -- | A symbolic generation monad transformer.
 -- It is a reader monad transformer for identifiers and

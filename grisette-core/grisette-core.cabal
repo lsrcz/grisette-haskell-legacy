@@ -51,6 +51,7 @@ library
       Grisette.Data.Class.ToSym
       Grisette.Data.Class.UnionOp
       Grisette.Data.Class.Utils.CConst
+      Grisette.Data.FileLocation
       Grisette.Data.MemoUtils
       Grisette.Data.UnionBase
       Grisette.Internal.Core
