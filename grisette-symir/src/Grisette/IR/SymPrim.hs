@@ -3,12 +3,14 @@
 module Grisette.IR.SymPrim
   ( UnionM,
     type (=->) (..),
+    type (-->),
     Sym (..),
     --SymConcView (..),
     --pattern SymConc,
     SymBool,
     SymInteger,
     type (=~>),
+    type (-~>),
     SignedBV,
     UnsignedBV,
     SymSignedBV,
@@ -31,3 +33,4 @@ import Grisette.Data.SymPrim
 import Grisette.Data.TabularFunc
 import Data.BitVector.Sized.Signed
 import Data.BitVector.Sized.Unsigned
+import Grisette.Data.GeneralFunc

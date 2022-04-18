@@ -13,6 +13,7 @@ import Data.BitVector.Sized.Unsigned
 import qualified Data.SBV as SBV
 import GHC.TypeNats
 import Grisette.Data.TabularFunc
+import Grisette.Data.GeneralFunc
 
 type Aux :: Bool -> Nat -> *
 type family Aux o n where
@@ -31,6 +32,7 @@ type family TermTy bitWidth b where
   TermTy n (SignedBV x) = SBV.SBV (SBV.IntN x)
   TermTy n (UnsignedBV x) = SBV.SBV (SBV.WordN x)
   TermTy n (a =-> b) = TermTy n a -> TermTy n b
+  TermTy n (a --> b) = TermTy n a -> TermTy n b
   TermTy _ v = v
 
 data GrisetteSMTConfig (integerBitWidth :: Nat) where

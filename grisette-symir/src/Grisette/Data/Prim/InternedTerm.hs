@@ -123,7 +123,8 @@ data Symbol where
   SimpleSymbol :: String -> Symbol
   IndexedSymbol :: Int -> String -> Symbol
   WithInfo :: forall a. (Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) => Symbol -> a -> Symbol
-  -- deriving (Eq, Ord, Generic, Lift, NFData)
+
+-- deriving (Eq, Ord, Generic, Lift, NFData)
 
 instance Eq Symbol where
   SimpleSymbol x == SimpleSymbol y = x == y
@@ -142,9 +143,9 @@ instance Ord Symbol where
   _ <= _ = False
 
 instance Lift Symbol where
-  liftTyped (SimpleSymbol x) = [|| SimpleSymbol x ||]
-  liftTyped (IndexedSymbol i x) = [|| IndexedSymbol i x ||]
-  liftTyped (WithInfo s1 i1) = [|| WithInfo s1 i1 ||]
+  liftTyped (SimpleSymbol x) = [||SimpleSymbol x||]
+  liftTyped (IndexedSymbol i x) = [||IndexedSymbol i x||]
+  liftTyped (WithInfo s1 i1) = [||WithInfo s1 i1||]
 
 instance Show Symbol where
   show (SimpleSymbol str) = str

@@ -29,10 +29,12 @@ flag fast
 library
   exposed-modules:
       Grisette.Control.Monad.UnionM
+      Grisette.Data.GeneralFunc
       Grisette.Data.Prim.Bits
       Grisette.Data.Prim.Bool
       Grisette.Data.Prim.BV
       Grisette.Data.Prim.Caches
+      Grisette.Data.Prim.GeneralFunc
       Grisette.Data.Prim.Helpers
       Grisette.Data.Prim.Integer
       Grisette.Data.Prim.InternedTerm

@@ -8,6 +8,7 @@ module Grisette.Data.SymPrim
     SymBool,
     SymInteger,
     type (=~>),
+    type (-~>),
     SymSignedBV,
     SymUnsignedBV,
   )
@@ -55,6 +56,8 @@ import Grisette.Data.Prim.Num
 import Grisette.Data.Prim.TabularFunc
 import Grisette.Data.TabularFunc
 import Language.Haskell.TH.Syntax
+import Grisette.Data.GeneralFunc
+import Grisette.Data.Prim.GeneralFunc
 
 newtype Sym a = Sym {underlyingTerm :: Term a} deriving (Lift, Generic)
 
@@ -362,10 +365,22 @@ instance (SupportedPrim (UnsignedBV n)) => Bits (Sym (UnsignedBV n)) where
 -- tabular func
 type a =~> b = Sym (a =-> b)
 
+infixr 0 =~>
+
 instance (SupportedPrim a, SupportedPrim b) => Function (a =~> b) where
   type Arg (a =~> b) = Sym a
   type Ret (a =~> b) = Sym b
-  (Sym f) # t = Sym $ applyf f (underlyingTerm t)
+  (Sym f) # (Sym t) = Sym $ applyf f t
+
+-- general func
+type a -~> b = Sym (a --> b)
+
+infixr 0 -~>
+
+instance (SupportedPrim a, SupportedPrim b) => Function (a -~> b) where
+  type Arg (a -~> b) = Sym a
+  type Ret (a -~> b) = Sym b
+  (Sym f) # (Sym t) = Sym $ applyg f t 
 
 {-
 instance (SupportedPrim a, SupportedPrim b) => SymConcView (a =-> b) where
