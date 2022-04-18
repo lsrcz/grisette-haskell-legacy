@@ -112,6 +112,7 @@ instance SolverTranslation DutchFlag AssertionError ([UnionM Marble], Trace) whe
       isColor :: Marble -> [UnionM Marble] -> SymBool
       isColor m = foldl (\acc n -> acc &&~ mrgReturn m ==~ n) (conc True)
 
+-- This one is lazy. But it does not perform incremental reasoning and can be slow.
 runDutchFlag :: GrisetteSMTConfig n -> Algo -> Integer -> [Marble] -> IO [ConTrace]
 runDutchFlag config algo len initMarbles = do
   initialResult <- solveProb final
