@@ -31,27 +31,6 @@ dependencies:
 - Unique
 - loch-th
 
-default-extensions:
-- BangPatterns
-- ConstraintKinds
-- DefaultSignatures
-- DeriveGeneric
-- DeriveLift
-- DerivingVia
-- FlexibleContexts
-- FlexibleInstances
-- FunctionalDependencies
-- GADTs
-- KindSignatures
-- LambdaCase
-- MultiParamTypeClasses
-- RankNTypes
-- ScopedTypeVariables
-- StandaloneDeriving
-- TypeApplications
-- TypeFamilies
-- TypeOperators
-
 flags: {
   fast: {
     description: "Compile with O2 optimization",

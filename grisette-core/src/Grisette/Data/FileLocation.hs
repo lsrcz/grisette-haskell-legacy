@@ -1,5 +1,8 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE DeriveAnyClass #-}
+
 module Grisette.Data.FileLocation (
     FileLocation (..),
     nameWithLoc,
@@ -35,8 +38,8 @@ parseFileLocation str =
 
 -- | Identifier with the current location as extra information.
 --
--- >>> $$(nameWithLoc "a")
--- a:<interactive>:4:4-18
+-- >>> $$(nameWithLoc "a") -- a sample result could be "a:<interactive>:18:4-18"
+-- a:<interactive>:...:4-18
 --
 -- The uniqueness is ensured for the call to 'nameWithLoc' at different location.
 nameWithLoc :: String -> Q (TExp GenSymIdent)

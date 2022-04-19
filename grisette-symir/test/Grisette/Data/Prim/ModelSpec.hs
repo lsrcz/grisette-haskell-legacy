@@ -1,3 +1,6 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeApplications #-}
+
 module Grisette.Data.Prim.ModelSpec where
 
 import qualified Data.BitVector.Sized.Signed as BVS

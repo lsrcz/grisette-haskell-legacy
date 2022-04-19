@@ -1,3 +1,8 @@
+{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Grisette.Data.Class.Evaluate
@@ -17,6 +22,11 @@ import Generics.Deriving
 import Generics.Deriving.Instances ()
 import Grisette.Data.Class.ToCon
 import Control.Monad.Identity
+
+-- $setup
+-- >>> import Grisette.Core
+-- >>> import Grisette.IR.SymPrim
+-- >>> import Data.Proxy
 
 -- | Evaluating symbolic variables with some model.
 --

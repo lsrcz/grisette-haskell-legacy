@@ -1,8 +1,20 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Grisette.Data.Prim.InternedTerm
@@ -170,6 +182,9 @@ instance NFData TermSymbol where
 
 instance Eq TermSymbol where
   (TermSymbol p1 s1) == (TermSymbol p2 s2) = s1 == s2 && typeRep p1 == typeRep p2
+
+instance Ord TermSymbol where
+  (TermSymbol p1 s1) <= (TermSymbol p2 s2) = typeRep p1 < typeRep p2 || (typeRep p1 == typeRep p2 && s1 <= s2)
 
 instance Hashable TermSymbol where
   hashWithSalt s (TermSymbol p1 s1) = s `hashWithSalt` s1 `hashWithSalt` typeRep p1

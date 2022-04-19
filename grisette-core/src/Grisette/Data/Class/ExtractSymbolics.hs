@@ -1,3 +1,8 @@
+{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Grisette.Data.Class.ExtractSymbolics
@@ -15,13 +20,23 @@ import Data.Functor.Sum
 import Generics.Deriving
 import Control.Monad.Identity
 
+-- $setup
+-- >>> import Grisette.Core
+-- >>> import Grisette.IR.SymPrim
+-- >>> import Data.HashSet as HashSet
+-- >>> import Data.List (sort)
+
 -- | Extracts all the symbolic variables that are transitively contained in the given value.
 --  
 -- >>> extractSymbolics ("a" :: SymBool) :: HashSet TermSymbol
--- fromList [a]
+-- fromList [a :: Bool]
 -- 
--- >>> extractSymbolics (mrgIf "a" (mrgReturn ["b"]) (mrgReturn ["c", "d"]) :: UnionM [SymBool]) :: HashSet TermSymbol
--- fromList [a,b,c,d]
+-- >>> :{
+--   sort $ 
+--     HashSet.toList $
+--       extractSymbolics (mrgIf "a" (mrgReturn ["b"]) (mrgReturn ["c", "d"]) :: UnionM [SymBool]) :: [TermSymbol]
+-- :}
+-- [a :: Bool,b :: Bool,c :: Bool,d :: Bool]
 class (Monoid symbolSet) => ExtractSymbolics symbolSet a where
   extractSymbolics :: a -> symbolSet
 

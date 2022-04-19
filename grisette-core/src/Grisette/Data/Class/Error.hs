@@ -1,3 +1,6 @@
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+
 module Grisette.Data.Class.Error
   ( TransformError (..),
     gthrowError,

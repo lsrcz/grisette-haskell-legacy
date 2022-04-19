@@ -1,5 +1,9 @@
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE StandaloneDeriving #-}
 
 module Grisette.Control.Exception
@@ -26,6 +30,10 @@ import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.Evaluate
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
+
+-- $setup
+-- >>> import Grisette.Core
+-- >>> import Grisette.IR.SymPrim
 
 -- | Assertion error.
 data AssertionError = AssertionError

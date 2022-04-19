@@ -53,26 +53,6 @@ library
       Paths_grisette_symir
   hs-source-dirs:
       src
-  default-extensions:
-      BangPatterns
-      ConstraintKinds
-      DataKinds
-      DefaultSignatures
-      DeriveGeneric
-      DeriveLift
-      FlexibleContexts
-      FlexibleInstances
-      FunctionalDependencies
-      GADTs
-      KindSignatures
-      LambdaCase
-      MultiParamTypeClasses
-      RankNTypes
-      ScopedTypeVariables
-      TypeApplications
-      TypeFamilies
-      TypeOperators
-      DeriveAnyClass
   ghc-options: -Wall -ferror-spans
   build-depends:
       MemoTrie
@@ -114,26 +94,6 @@ test-suite spec
       Paths_grisette_symir
   hs-source-dirs:
       test
-  default-extensions:
-      BangPatterns
-      ConstraintKinds
-      DataKinds
-      DefaultSignatures
-      DeriveGeneric
-      DeriveLift
-      FlexibleContexts
-      FlexibleInstances
-      FunctionalDependencies
-      GADTs
-      KindSignatures
-      LambdaCase
-      MultiParamTypeClasses
-      RankNTypes
-      ScopedTypeVariables
-      TypeApplications
-      TypeFamilies
-      TypeOperators
-      DeriveAnyClass
   ghc-options: -Wall -ferror-spans
   build-depends:
       MemoTrie

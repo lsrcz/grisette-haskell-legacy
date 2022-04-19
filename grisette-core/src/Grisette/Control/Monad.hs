@@ -1,4 +1,9 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Grisette.Control.Monad
@@ -13,10 +18,10 @@ module Grisette.Control.Monad
   )
 where
 
-import Control.Monad
+import Control.Monad hiding (guard)
 import Control.Monad.Coroutine hiding (merge)
-import Control.Monad.Except
-import Control.Monad.Reader
+import Control.Monad.Except hiding (guard)
+import Control.Monad.Reader hiding (guard)
 import qualified Control.Monad.State.Lazy as StateLazy
 import qualified Control.Monad.State.Strict as StateStrict
 import qualified Control.Monad.Writer.Lazy as WriterLazy
@@ -26,7 +31,11 @@ import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.UnionOp
-import Control.Monad.Identity
+import Control.Monad.Identity hiding (guard)
+
+-- $setup
+-- >>> import Grisette.Core
+-- >>> import Grisette.IR.SymPrim
 
 -- | Class for monads that support union-like operations and 'Mergeable' knowledge propagation.
 -- All the functions should propagate the 'Mergeable' knowledge.
@@ -51,7 +60,7 @@ class (UnionSimpleMergeable1 bool u, Monad u) => MonadUnion bool u | u -> bool w
 --
 -- >>> guard (ssymb "a") (return $ ssymb "b") (return $ ssymb "c") :: UnionM SymBool
 -- UAny (Guard a (Single b) (Single c))
--- >>> getSingle it
+-- >>> getSingle $ (guard (ssymb "a") (return $ ssymb "b") (return $ ssymb "c") :: UnionM SymBool)
 -- (ite a b c)
 getSingle :: forall bool u a. (SimpleMergeable bool a, MonadUnion bool u, UnionOp bool u) => u a -> a
 getSingle u = case merge u of

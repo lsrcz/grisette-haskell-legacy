@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeOperators #-}
 module Grisette.Data.TabularFuncSpec where
 
 import Test.Hspec

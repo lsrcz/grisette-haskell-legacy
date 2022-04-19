@@ -1,4 +1,6 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
 
 module Grisette.Data.Class.Integer
@@ -17,6 +19,10 @@ import Grisette.Data.Class.Error
 import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.SOrd
 import Grisette.Control.Monad
+
+-- $setup
+-- >>> import Grisette.Core
+-- >>> import Grisette.IR.SymPrim
 
 -- | Safe signed 'div' and 'mod' with monadic error handling in multi-path execution.
 class SignedDivMod bool a where

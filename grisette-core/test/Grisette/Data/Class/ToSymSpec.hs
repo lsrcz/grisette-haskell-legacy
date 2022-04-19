@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 module Grisette.Data.Class.ToSymSpec where
 
 import Control.Monad.Except

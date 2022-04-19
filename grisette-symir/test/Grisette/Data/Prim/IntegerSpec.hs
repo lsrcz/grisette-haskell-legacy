@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 module Grisette.Data.Prim.IntegerSpec where
 
 import Grisette.Data.Prim.Integer

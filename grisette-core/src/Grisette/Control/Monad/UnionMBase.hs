@@ -1,4 +1,14 @@
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-cse #-}
 
@@ -39,6 +49,12 @@ import Grisette.Data.Class.UnionOp
 import Grisette.Data.MemoUtils
 import Grisette.Data.UnionBase
 import Language.Haskell.TH.Syntax
+
+
+-- $setup
+-- >>> import Grisette.Core
+-- >>> import Grisette.IR.SymPrim
+-- >>> :set -XScopedTypeVariables
 
 -- | 'UnionBase' enhanced with 'Mergeable' knowledge propagation.
 --

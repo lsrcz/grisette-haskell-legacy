@@ -1,0 +1,62 @@
+name: grisette-doctest
+version: 0.1.0.0
+synopsis: Doctest for Grisette
+description: Doctest for Grisette
+category: Formal Methods, Theorem Provers, Symbolic Computation, SMT
+author: "Sirui Lu"
+maintainer: siruilu@uw.edu
+license: BSD3
+github: lsrcz/grisette-haskell
+copyright: "2021 Sirui Lu"
+
+dependencies:
+- base > 4.7 && < 5
+- intern
+- hashable
+- mtl
+- transformers
+- generic-deriving
+- monad-coroutine
+- constraints
+- bytestring
+- unordered-containers
+- monad-memo
+- template-haskell
+- deepseq
+- MemoTrie
+- vector-sized
+- vector
+- parameterized-utils
+- hashtables
+- Unique
+- loch-th
+- typerep-map
+- bv-sized
+- array
+
+flags: {
+  fast: {
+    description: "Compile with O2 optimization",
+    manual: False,
+    default: True,
+  }
+}
+
+when:
+  - condition: flag(fast)
+    then:
+      ghc-options: -O2
+    else:
+      ghc-options: -O0
+
+ghc-options: -Wall -ferror-spans
+
+tests:
+  spec:
+    source-dirs: test
+    main: Main.hs
+    dependencies:
+      - grisette-core
+      - grisette-symir
+      - doctest >= 0.19.0
+      - Glob

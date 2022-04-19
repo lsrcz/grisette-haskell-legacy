@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeOperators #-}
 module Grisette.Data.Prim.TabularFuncSpec where
 
 import Grisette.Data.Prim.Bool

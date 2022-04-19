@@ -1,0 +1,69 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.34.4.
+--
+-- see: https://github.com/sol/hpack
+
+name:           grisette-doctest
+version:        0.1.0.0
+synopsis:       Doctest for Grisette
+description:    Doctest for Grisette
+category:       Formal Methods, Theorem Provers, Symbolic Computation, SMT
+homepage:       https://github.com/lsrcz/grisette-haskell#readme
+bug-reports:    https://github.com/lsrcz/grisette-haskell/issues
+author:         Sirui Lu
+maintainer:     siruilu@uw.edu
+copyright:      2021 Sirui Lu
+license:        BSD3
+build-type:     Simple
+
+source-repository head
+  type: git
+  location: https://github.com/lsrcz/grisette-haskell
+
+flag fast
+  description: Compile with O2 optimization
+  manual: False
+  default: True
+
+test-suite spec
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      Paths_grisette_doctest
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -ferror-spans
+  build-depends:
+      Glob
+    , MemoTrie
+    , Unique
+    , array
+    , base >4.7 && <5
+    , bv-sized
+    , bytestring
+    , constraints
+    , deepseq
+    , doctest >=0.19.0
+    , generic-deriving
+    , grisette-core
+    , grisette-symir
+    , hashable
+    , hashtables
+    , intern
+    , loch-th
+    , monad-coroutine
+    , monad-memo
+    , mtl
+    , parameterized-utils
+    , template-haskell
+    , transformers
+    , typerep-map
+    , unordered-containers
+    , vector
+    , vector-sized
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
+  default-language: Haskell2010

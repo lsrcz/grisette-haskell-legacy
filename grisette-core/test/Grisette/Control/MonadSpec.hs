@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 module Grisette.Control.MonadSpec where
 
 import Control.Monad.Coroutine hiding (merge)

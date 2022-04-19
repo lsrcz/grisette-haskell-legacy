@@ -1,3 +1,5 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Grisette.Data.Prim.BoolSpec where
 
 import Data.BitVector.Sized.Signed as BVS

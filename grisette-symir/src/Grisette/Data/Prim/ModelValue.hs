@@ -1,3 +1,8 @@
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
+
 module Grisette.Data.Prim.ModelValue where
 
 import Type.Reflection

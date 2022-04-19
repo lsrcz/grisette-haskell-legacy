@@ -1,3 +1,8 @@
+{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Grisette.Data.Class.ToCon
@@ -15,6 +20,10 @@ import GHC.Generics
 import Generics.Deriving
 import Generics.Deriving.Instances ()
 import Control.Monad.Identity
+
+-- $setup
+-- >>> import Grisette.Core
+-- >>> import Grisette.IR.SymPrim
 
 -- | Convert a symbolic value to concrete value if possible.
 class ToCon a b where

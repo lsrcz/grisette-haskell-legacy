@@ -1,4 +1,12 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
 
 module Grisette.Data.Class.BitVector
@@ -11,6 +19,15 @@ where
 
 import Data.Proxy
 import GHC.TypeNats
+
+-- $setup
+-- >>> import Grisette.Core
+-- >>> import Grisette.IR.SymPrim
+-- >>> :set -XDataKinds
+-- >>> :set -XBinaryLiterals
+-- >>> :set -XFlexibleContexts
+-- >>> :set -XFlexibleInstances
+-- >>> :set -XFunctionalDependencies
 
 -- | Bitwise concatenation ('bvconcat') of the given bitvector values.
 class BVConcat bv1 bv2 bv3 | bv1 bv2 -> bv3 where

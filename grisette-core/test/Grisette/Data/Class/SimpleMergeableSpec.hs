@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Grisette.Data.Class.SimpleMergeableSpec where
 
 import Control.Monad.Except

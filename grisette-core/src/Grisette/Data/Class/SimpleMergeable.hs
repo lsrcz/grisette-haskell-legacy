@@ -1,5 +1,12 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE QuantifiedConstraints #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
 
@@ -53,7 +60,7 @@ class Mergeable bool a => SimpleMergeable bool a where
   -- | Performs if-then-else with the simple root merge strategy.
   mrgIte :: bool -> a -> a -> a
 
-instance (Generic a, Mergeable bool (Default a), SimpleMergeable' bool (Rep a)) => SimpleMergeable bool (Default a) where
+instance (Generic a, Mergeable' bool (Rep a), SimpleMergeable' bool (Rep a)) => SimpleMergeable bool (Default a) where
   mrgIte cond (Default a) (Default b) = Default $ to $ mrgIte' cond (from a) (from b)
 
 -- | Lifting of the 'SimpleMergeable' class to unary type constructors.

@@ -1,3 +1,5 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
+
 module Grisette.Data.Class.SimpleMergeable (SimpleMergeable) where
 
 import {-# SOURCE #-} Grisette.Data.Class.Mergeable

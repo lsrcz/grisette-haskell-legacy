@@ -1,4 +1,9 @@
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Utils.SBool where
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.PrimWrapper

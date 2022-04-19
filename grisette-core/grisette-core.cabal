@@ -60,26 +60,6 @@ library
       Paths_grisette_core
   hs-source-dirs:
       src
-  default-extensions:
-      BangPatterns
-      ConstraintKinds
-      DefaultSignatures
-      DeriveGeneric
-      DeriveLift
-      DerivingVia
-      FlexibleContexts
-      FlexibleInstances
-      FunctionalDependencies
-      GADTs
-      KindSignatures
-      LambdaCase
-      MultiParamTypeClasses
-      RankNTypes
-      ScopedTypeVariables
-      StandaloneDeriving
-      TypeApplications
-      TypeFamilies
-      TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
       MemoTrie
@@ -132,26 +112,6 @@ test-suite spec
       Paths_grisette_core
   hs-source-dirs:
       test
-  default-extensions:
-      BangPatterns
-      ConstraintKinds
-      DefaultSignatures
-      DeriveGeneric
-      DeriveLift
-      DerivingVia
-      FlexibleContexts
-      FlexibleInstances
-      FunctionalDependencies
-      GADTs
-      KindSignatures
-      LambdaCase
-      MultiParamTypeClasses
-      RankNTypes
-      ScopedTypeVariables
-      StandaloneDeriving
-      TypeApplications
-      TypeFamilies
-      TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
       MemoTrie

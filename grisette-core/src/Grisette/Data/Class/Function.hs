@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeFamilies #-}
+
 module Grisette.Data.Class.Function
   ( Function (..),
   )

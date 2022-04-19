@@ -1,4 +1,4 @@
-{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE ExplicitNamespaces #-}
 
 module Grisette.IR.SymPrim
   ( UnionM,
@@ -16,6 +16,8 @@ module Grisette.IR.SymPrim
     SymSignedBV,
     SymUnsignedBV,
     Model (..),
+    Symbol (..),
+    TermSymbol (..),
     empty,
     valueOf,
     exceptFor,
@@ -34,3 +36,4 @@ import Grisette.Data.TabularFunc
 import Data.BitVector.Sized.Signed
 import Data.BitVector.Sized.Unsigned
 import Grisette.Data.GeneralFunc
+import Grisette.Data.Prim.InternedTerm

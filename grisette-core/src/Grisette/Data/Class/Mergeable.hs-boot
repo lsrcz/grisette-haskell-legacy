@@ -1,3 +1,6 @@
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+
 module Grisette.Data.Class.Mergeable where
 import Data.Typeable
 

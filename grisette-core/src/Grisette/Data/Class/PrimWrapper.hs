@@ -1,3 +1,4 @@
+{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ViewPatterns #-}
 
@@ -11,6 +12,10 @@ import Data.Typeable
 import Language.Haskell.TH.Syntax
 import Control.DeepSeq
 import Data.Hashable
+
+-- $setup
+-- >>> import Grisette.Core
+-- >>> import Grisette.IR.SymPrim
 
 -- | The class establish the link between concrete primitive types
 -- and symbolic primitive types.

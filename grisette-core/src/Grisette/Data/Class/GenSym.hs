@@ -1,19 +1,20 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
 {-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TupleSections #-}
-{-# LANGUAGE DeriveAnyClass #-}
 
 module Grisette.Data.Class.GenSym
   ( GenSymIndex (..),
@@ -61,6 +62,11 @@ import Language.Haskell.TH.Syntax hiding (lift)
 import Control.DeepSeq
 import Data.Hashable
 
+-- $setup
+-- >>> import Grisette.Core
+-- >>> import Grisette.IR.SymPrim
+-- >>> :set -XOverloadedStrings
+
 -- | Index type used for 'GenSym'.
 --
 -- To generate fresh variables, a monadic stateful context will be maintained.
@@ -83,12 +89,12 @@ instance (SymBoolOp bool) => SimpleMergeable bool GenSymIndex where
 --   * a raw name
 --
 --     >>> name "a"
---     s_a
+--     a
 --
 --   * bundle the calling file location with the name to ensure global uniqueness
 --
--- >>> $$(nameWithLoc "a")
--- a:<interactive>:4:4-18
+-- >>> $$(nameWithLoc "a") -- a sample result could be "a:<interactive>:18:4-18"
+-- a:<interactive>:...:4-18
 --
 --   * bundle the calling file location with some user provided information
 --
@@ -216,30 +222,30 @@ class (SymBoolOp bool, Mergeable bool a) => GenSym bool spec a where
   -- The following example generates a symbolic boolean. No specification is needed.
   --
   -- >>> runGenSymFresh (genSymFresh ()) "a" :: UnionM SymBool
-  -- UMrg (Single s_a@0)
+  -- UMrg (Single a@0)
   --
   -- The following example generates booleans, which cannot be merged into a single value with type 'Bool'.
   -- No specification is needed.
   --
   -- >>> runGenSymFresh (genSymFresh ()) "a" :: UnionM Bool
-  -- UMrg (Guard s_a@0 (Single False) (Single True))
+  -- UMrg (Guard a@0 (Single False) (Single True))
   --
   -- The following example generates @Maybe Bool@s.
   -- There are more than one symbolic primitives introduced, and their uniqueness is ensured.
   -- No specification is needed.
   --
   -- >>> runGenSymFresh (genSymFresh ()) "a" :: UnionM (Maybe Bool)
-  -- UMrg (Guard s_a@0 (Single Nothing) (Guard s_a@1 (Single (Just False)) (Single (Just True))))
+  -- UMrg (Guard a@0 (Single Nothing) (Guard a@1 (Single (Just False)) (Single (Just True))))
   --
   -- The following example generates lists of symbolic booleans with length 1 to 2.
   --
   -- >>> runGenSymFresh (genSymFresh (ListSpec 1 2 ())) "a" :: UnionM [SymBool]
-  -- UMrg (Guard s_a@2 (Single [s_a@1]) (Single [s_a@0,s_a@1]))
+  -- UMrg (Guard a@2 (Single [a@1]) (Single [a@0,a@1]))
   --
   -- When multiple symbolic variables are generated, the uniqueness can be ensured.
   --
   -- >>> runGenSymFresh (do; a <- genSymFresh (); b <- genSymFresh (); return (a, b)) "a" :: (UnionM SymBool, UnionM SymBool)
-  -- (UMrg (Single s_a@0),UMrg (Single s_a@1))
+  -- (UMrg (Single a@0),UMrg (Single a@1))
   --
   -- N.B.: the examples are not executable solely with @grisette-core@ package, and need support from @grisette-symprim@ package.
   genSymFresh ::
@@ -279,7 +285,7 @@ class GenSym bool spec a => GenSymSimple bool spec a where
   --
   -- >>> :set -XTypeApplications
   -- >>> runGenSymFresh (genSymSimpleFresh @SymBool ()) "a" :: SymBool
-  -- s_a@0
+  -- a@0
   --
   -- The example shows that why the system cannot infer the symbolic boolean type.
   --
@@ -290,6 +296,7 @@ class GenSym bool spec a => GenSymSimple bool spec a where
   -- As the length is fixed, we don't have to wrap the result in unions.
   --
   -- >>> runGenSymFresh (genSymSimpleFresh @SymBool (SimpleListSpec 2 ())) "a" :: [SymBool]
+  -- [a@0,a@1]
   --
   -- N.B.: the examples are not executable solely with @grisette-core@ package, and need support from @grisette-symprim@ package.
   genSymSimpleFresh ::
@@ -481,7 +488,7 @@ derivedSameShapeGenSymSimpleFresh a = to <$> genSymSameShapeFresh @bool @(Rep a)
 -- The result will be wrapped in a union-like monad, and also a monad maintaining the 'GenSym' context.
 --
 -- >>> runGenSymFresh (choose [1,2,3]) "a" :: UnionM Integer
--- UMrg (Guard s_a@0 (Single 1) (Guard s_a@1 (Single 2) (Single 3)))
+-- UMrg (Guard a@0 (Single 1) (Guard a@1 (Single 2) (Single 3)))
 choose ::
   forall bool a m u.
   ( SymBoolOp bool,
@@ -508,7 +515,7 @@ choose [] = error "choose expects at least one value"
 -- Similar to 'genSymSimpleFresh', you need to tell the system what symbolic boolean type to use.
 --
 -- >>> runGenSymFresh (simpleChoose @SymBool [ssymb "b", ssymb "c", ssymb "d"]) "a" :: SymInteger
--- (ite s_a@0 b (ite s_a@1 c d))
+-- (ite a@0 b (ite a@1 c d))
 simpleChoose ::
   forall bool a m.
   ( SymBoolOp bool,
@@ -535,7 +542,7 @@ simpleChoose [] = error "simpleChoose expects at least one value"
 -- >>> let a = runGenSymFresh (choose [1, 2]) "a" :: UnionM Integer
 -- >>> let b = runGenSymFresh (choose [2, 3]) "b" :: UnionM Integer
 -- >>> runGenSymFresh (chooseU [a, b]) "c" :: UnionM Integer
--- UMrg (Guard (&& s_c@0 s_a@0) (Single 1) (Guard (|| s_c@0 s_b@0) (Single 2) (Single 3)))
+-- UMrg (Guard (&& c@0 a@0) (Single 1) (Guard (|| c@0 b@0) (Single 2) (Single 3)))
 chooseU ::
   forall bool a m u.
   ( SymBoolOp bool,
@@ -574,13 +581,13 @@ instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSymSimple bool Intege
 -- | Specification for numbers with upper bound (inclusive). The result would chosen from [0 .. upperbound].
 --
 -- >>> runGenSymFresh (genSymFresh (NumGenUpperBound @Integer 3)) "c" :: UnionM Integer
--- UMrg (Guard s_c@0 (Single 0) (Guard s_c@1 (Single 1) (Guard s_c@2 (Single 2) (Single 3))))
+-- UMrg (Guard c@0 (Single 0) (Guard c@1 (Single 1) (Guard c@2 (Single 2) (Single 3))))
 newtype NumGenUpperBound a = NumGenUpperBound a
 
 -- | Specification for numbers with lower bound and upper bound (inclusive)
 --
 -- >>> runGenSymFresh (genSymFresh (NumGenBound @Integer 0 3)) "c" :: UnionM Integer
--- UMrg (Guard s_c@0 (Single 0) (Guard s_c@1 (Single 1) (Guard s_c@2 (Single 2) (Single 3))))
+-- UMrg (Guard c@0 (Single 0) (Guard c@1 (Single 1) (Guard c@2 (Single 2) (Single 3))))
 data NumGenBound a = NumGenBound a a
 
 instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSym bool (NumGenUpperBound Integer) Integer where
@@ -672,7 +679,7 @@ instance
 -- | Specification for list generation.
 --
 -- >>> runGenSymFresh (genSymFresh (ListSpec 0 2 ())) "c" :: UnionM [SymBool]
--- UMrg (Guard s_c@2 (Single []) (Guard s_c@3 (Single [s_c@1]) (Single [s_c@0,s_c@1])))
+-- UMrg (Guard c@2 (Single []) (Guard c@3 (Single [c@1]) (Single [c@0,c@1])))
 data ListSpec spec = ListSpec
   { genListMinLength :: Integer, -- ^ The minimum length of the generated lists
     genListMaxLength :: Integer, -- ^ The maximum length of the generated lists
@@ -713,7 +720,7 @@ instance
 -- | Specification for list generation of a specific length.
 --
 -- >>> runGenSymFresh (genSymSimpleFresh @SymBool (SimpleListSpec 2 ())) "c" :: [SymBool]
--- [s_c@0,s_c@1]
+-- [c@0,c@1]
 data SimpleListSpec spec = SimpleListSpec
   { genSimpleListLength :: Integer, -- ^ The length of the generated list
     genSimpleListSubSpec :: spec    -- ^ Each element in the list will be generated with the sub-specification

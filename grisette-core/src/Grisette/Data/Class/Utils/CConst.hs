@@ -1,3 +1,7 @@
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE KindSignatures #-}
+
 module Grisette.Data.Class.Utils.CConst (CConst (..)) where
 
 import Data.Constraint
