@@ -18,27 +18,6 @@ dependencies:
 - MemoTrie
 - monad-coroutine
 
-default-extensions:
-- BangPatterns
-- ConstraintKinds
-- DataKinds
-- DefaultSignatures
-- DeriveGeneric
-- DeriveLift
-- FlexibleContexts
-- FlexibleInstances
-- FunctionalDependencies
-- GADTs
-- KindSignatures
-- LambdaCase
-- MultiParamTypeClasses
-- RankNTypes
-- ScopedTypeVariables
-- TypeApplications
-- TypeFamilies
-- TypeOperators
-- DeriveAnyClass
-
 flags: {
   fast: {
     description: "Compile with O2 optimization",

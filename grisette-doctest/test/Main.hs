@@ -5,6 +5,14 @@ import Test.DocTest (doctest)
 
 main :: IO ()
 main = do
-  fp1 <- glob "../grisette-core/src/**/*.hs"
-  fp2 <- glob "../grisette-symir/src/**/*.hs"
-  doctest $ ["-i../grisette-core/src/", "-i../grisette-symir/src/"] ++ fp1 ++ fp2
+  core <- glob "../grisette-core/src/**/*.hs"
+  symir <- glob "../grisette-symir/src/**/*.hs"
+  lib <- glob "../grisette-lib/src/**/*.hs"
+  sbv <- glob "../grisette-backend-sbv/src/**/*.hs"
+  grisette <- glob "../grisette/src/**/*.hs"
+  tutorial <- glob "../grisette-tutorial/src/**/*.hs"
+  doctest $ core ++ symir
+  doctest lib
+  doctest sbv
+  doctest grisette
+  doctest tutorial

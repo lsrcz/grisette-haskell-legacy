@@ -33,6 +33,7 @@ dependencies:
 - typerep-map
 - bv-sized
 - array
+- sbv
 
 flags: {
   fast: {
@@ -61,5 +62,9 @@ tests:
     dependencies:
       - grisette-core
       - grisette-symir
+      - grisette-lib
+      - grisette-backend-sbv
+      - grisette
+      - grisette-tutorial
       - doctest >= 0.19.0
       - Glob

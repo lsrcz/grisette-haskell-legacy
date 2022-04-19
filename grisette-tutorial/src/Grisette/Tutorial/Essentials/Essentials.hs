@@ -30,26 +30,30 @@ module Grisette.Tutorial.Essentials.Essentials (
   -- ** Creation
   -- | In Grisette, we have two kinds of the primitive types: concrete and symbolic.
   -- Concrete primitive types are plain Haskell primitive types, e.g. 'Integer' or 'Bool'.
-  -- These types do not have the ability to represent values with symbolic holes to be filled in by the solver.
-  -- For example, in the following (pseudo-)code, @a@ represents a symbolic hole, and @ite a 0 1@ is a symbolic
-  -- integer value with a symbolic hole.
+  -- These types can onl represent concrete values, and
+  -- do not have the ability to represent symbolic formulas.
+  -- For example, in the following (pseudo-)code, @a@ represents a __symbolic constant__,
+  -- and @ite a 0 1@ is a symbolic
+  -- integer value with a symbolic constant.
   --
   -- > 0         -- representable by Integer type
   -- > 1         -- representable by Integer type
   -- > ite a 0 1 -- not representable by Integer type
   --
-  -- Here the symbolic hole is a placeholder for concrete values,
-  -- and the constraint solver is able to fill in the symbolic holes with concrete values.
-  -- For example, we can ask the solver what the value @a@ should be to make @ite a 0 1@ equals to 1, and the solver
-  -- will be able to figure out that @a@ should be 'False'. 
+  -- Here the term __symbolic constant__ comes from SMT language.
+  -- They are placeholders for concrete values,
+  -- and the constraint solver is able to figure out which concrete value a given symbolic
+  -- constant represents.
+  -- For example, we can ask the solver what the value @a@ should be to make @ite a 0 1@ equals to 1,
+  -- and the solver will be able to figure out that @a@ should be 'False'. 
   --
-  -- To represent the symbolic values, a symbolic type is needed.
+  -- To represent the symbolic values, we need to introduce symbolic primitive types.
   -- Grisette allows the users to define their own symbolic
   -- primitive types, but for most cases, the user can rely on the default implementation shipped with Grisette.
-  --
   -- In the default implementation, the symbolic primitive types are represented with 'Sym'.
-  -- For example, the symbolic boolean type is 'Sym Bool', and the symbolic integer type is 'Sym Integer'.
-  -- The 'Sym' type is capable to represent concrete values, symbolic holes, and symbolic formulas constructed with them.
+  -- For example, the symbolic boolean type is @Sym Bool@, and the symbolic integer type is @Sym Integer@.
+  -- The 'Sym' type is capable to represent concrete values, symbolic constants,
+  -- and symbolic formulas constructed with them.
   --
   -- For concrete values, the user can easily wrap them into 'Sym':
   --
@@ -63,50 +67,60 @@ module Grisette.Tutorial.Essentials.Essentials (
   -- >>> 1 :: Sym Integer
   -- 1I
   --
-  -- The symbolic holes are named in Grisette.
+  -- The symbolic constants are named in Grisette.
   -- They can be constructed with functions defined in the 'PrimWrapper' class.
   --
-  -- Simply-named and indexed symbolic holes:
+  -- The simplest way to construct a symbolic constant is to use the 'ssymb',
+  -- which means \"Simple symbol\".
   --
-  -- >>> ssymb "a" :: Sym Integer -- Simple-named symbolic holes
+  -- >>> ssymb "a" :: Sym Integer -- Simply-named symbolic constants
   -- a
-  -- >>> isymb 1 "a" :: Sym Integer -- Indexed symbolic holes
-  -- a@1
-  -- 
-  -- Additional information can be attached to further distinguish the holes:
-  --
-  -- >>> sinfosymb "a" True :: Sym Integer
-  -- a:True
-  -- >>> isinfosymb 1 "a" (2 :: Integer) :: Sym Integer
-  -- a@1:2
   --
   -- Note that the holes are global in the whole program, that is,
-  -- two holes with the same type, name, index, extra information are always the same.
-  -- (The '==' in the following code won't do symbolic equality check, it only checks if the two symbolic values
-  -- are identical).
+  -- two holes with the same name are always the same,
+  -- and will always be assigned with the same constants by the constraint solver.
+  -- (The '==' in the following code won't do symbolic equality check,
+  -- it only checks if the two symbolic formulas are identical).
   --
   -- >>> (ssymb "a" :: SymInteger) == (ssymb "a" :: SymInteger)
   -- True
-  --
+  -- 
   -- To reduce the burden on the programmers to choose unique names, we provided the following Template Haskell
   -- construct to bundle the current file location as the extra information.
-  -- 'slocsymb' and 'ilocsymb' are similar to 'ssymb' and 'isymb', respectively.
+  -- 'slocsymb' means \"Simple symbol with location\".
   -- 
-  -- >>> $$(slocsymb "a") :: SymInteger
-  -- a:<interactive>:13:4-15
-  -- >>> $$(ilocsymb 1 "a") :: SymInteger
-  -- a@1:<interactive>:14:4-17
+  -- >>> $$(slocsymb "a") :: SymInteger -- sample output: a:<interactive>:13:4-15
+  -- a:<interactive>:...:4-15
   -- 
   -- Grisette also supports generating \"fresh\" symbolic variables within a monadic environment.
   -- We will discuss this in the section [Generating symbolic values](#gensym).
   
   -- *** Note for Rosette users
-  -- | The 'slocsymb' and 'ilocsymb' is similar to the @define-symbolic@ (without *) form in Rosette.
+  -- | The 'slocsymb' is similar to the @define-symbolic@ (without *) form in Rosette.
+  -- In Rosette, you can define symbolic variables as follows.
+  -- It ensures that each @define-symbolic@ call defines a unique symbolic constant,
+  -- but each call to the same @define-symbolic@ returns the same symbolic constant.
   --
-  -- >>> $$(slocsymb "a") == $$(slocsymb "a")
+  -- >(define (static1)
+  -- >  (define-symbolic a boolean?)
+  -- >  a)
+  -- >(define (static2)
+  -- >  (define-symbolic a boolean?)
+  -- >  a)
+  -- >> (term=? (static1) (static1))
+  -- >#t
+  -- >> (term=? (static1) (static2))
+  -- >#f
+  --
+  -- In Grisette,
+  --
+  -- >>> ($$(slocsymb "a") :: SymBool) == $$(slocsymb "a")
   -- False
-  -- >>> let static = $$(slocsymb "a")
-  -- >>> static == static
+  -- >>> let static1 = \_ -> $$(slocsymb "a") :: SymBool
+  -- >>> let static2 = \_ -> $$(slocsymb "a") :: SymBool
+  -- >>> static1 () == static2 ()
+  -- False
+  -- >>> static1 () == static1 ()
   -- True
   --
   -- There's no @define-symbolic*@ equivalent in Grisette as it is not pure.
@@ -186,7 +200,7 @@ module Grisette.Tutorial.Essentials.Essentials (
   --
   -- To allow the solver to choose from different branches, 'mrgIf' is handy.
   -- 
-  -- >>> mrgIf (ssymb "a") (mrgReturn Nothing) (mrgReturn $ Just $ ssymb "b")
+  -- >>> mrgIf (ssymb "a") (mrgReturn Nothing) (mrgReturn $ Just $ ssymb "b") :: UnionM (Maybe (Sym Bool))
   -- UMrg (Guard a (Single Nothing) (Single (Just b)))
 
   -- ** Multi-path execution

@@ -1,3 +1,6 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE RankNTypes #-}
 module Grisette.Control.Monad.Coroutine
   ( mrgSuspend,
     mrgYield,

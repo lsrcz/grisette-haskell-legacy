@@ -33,26 +33,6 @@ library
       Paths_grisette
   hs-source-dirs:
       src
-  default-extensions:
-      BangPatterns
-      ConstraintKinds
-      DataKinds
-      DefaultSignatures
-      DeriveGeneric
-      DeriveLift
-      FlexibleContexts
-      FlexibleInstances
-      FunctionalDependencies
-      GADTs
-      KindSignatures
-      LambdaCase
-      MultiParamTypeClasses
-      RankNTypes
-      ScopedTypeVariables
-      TypeApplications
-      TypeFamilies
-      TypeOperators
-      DeriveAnyClass
   ghc-options: -Wall -ferror-spans
   build-depends:
       base >4.7 && <5

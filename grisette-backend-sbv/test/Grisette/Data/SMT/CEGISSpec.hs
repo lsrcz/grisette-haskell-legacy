@@ -1,4 +1,7 @@
 {-# LANGUAGE BinaryLiterals #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Grisette.Data.SMT.CEGISSpec where
 

@@ -18,26 +18,26 @@ dependencies:
 - sbv
 - generic-deriving
 
-default-extensions:
-- BangPatterns
-- ConstraintKinds
-- DataKinds
-- DefaultSignatures
-- DeriveGeneric
-- DeriveLift
-- FlexibleContexts
-- FlexibleInstances
-- FunctionalDependencies
-- GADTs
-- KindSignatures
-- LambdaCase
-- MultiParamTypeClasses
-- RankNTypes
-- ScopedTypeVariables
-- TypeApplications
-- TypeFamilies
-- TypeOperators
-- DeriveAnyClass
+# default-extensions:
+# - BangPatterns
+# - ConstraintKinds
+# - DataKinds
+# - DefaultSignatures
+# - DeriveGeneric
+# - DeriveLift
+# - FlexibleContexts
+# - FlexibleInstances
+# - FunctionalDependencies
+# - GADTs
+# - KindSignatures
+# - LambdaCase
+# - MultiParamTypeClasses
+# - RankNTypes
+# - ScopedTypeVariables
+# - TypeApplications
+# - TypeFamilies
+# - TypeOperators
+# - DeriveAnyClass
 
 flags: {
   fast: {

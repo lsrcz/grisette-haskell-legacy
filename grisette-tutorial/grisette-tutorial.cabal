@@ -37,29 +37,6 @@ library
       Paths_grisette_tutorial
   hs-source-dirs:
       src
-  default-extensions:
-      BangPatterns
-      ConstraintKinds
-      DataKinds
-      DefaultSignatures
-      DeriveAnyClass
-      DeriveGeneric
-      DeriveLift
-      DerivingVia
-      FlexibleContexts
-      FlexibleInstances
-      FunctionalDependencies
-      GADTs
-      KindSignatures
-      LambdaCase
-      MultiParamTypeClasses
-      RankNTypes
-      ScopedTypeVariables
-      StandaloneDeriving
-      TupleSections
-      TypeApplications
-      TypeFamilies
-      TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
       MemoTrie

@@ -52,6 +52,7 @@ library
     , monad-memo
     , mtl
     , parameterized-utils
+    , sbv
     , template-haskell
     , transformers
     , typerep-map
@@ -84,8 +85,12 @@ test-suite spec
     , deepseq
     , doctest >=0.19.0
     , generic-deriving
+    , grisette
+    , grisette-backend-sbv
     , grisette-core
+    , grisette-lib
     , grisette-symir
+    , grisette-tutorial
     , hashable
     , hashtables
     , intern
@@ -94,6 +99,7 @@ test-suite spec
     , monad-memo
     , mtl
     , parameterized-utils
+    , sbv
     , template-haskell
     , transformers
     , typerep-map

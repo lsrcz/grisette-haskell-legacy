@@ -41,30 +41,6 @@ dependencies:
 - generic-deriving
 - sbv
 
-default-extensions:
-- BangPatterns
-- ConstraintKinds
-- DataKinds
-- DefaultSignatures
-- DeriveAnyClass
-- DeriveGeneric
-- DeriveLift
-- DerivingVia
-- FlexibleContexts
-- FlexibleInstances
-- FunctionalDependencies
-- GADTs
-- KindSignatures
-- LambdaCase
-- MultiParamTypeClasses
-- RankNTypes
-- ScopedTypeVariables
-- StandaloneDeriving
-- TupleSections
-- TypeApplications
-- TypeFamilies
-- TypeOperators
-
 flags: {
   fast: {
     description: "Compile with O2 optimization",

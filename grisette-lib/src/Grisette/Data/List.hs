@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 module Grisette.Data.List
   ( (!!~),
     symFilter,

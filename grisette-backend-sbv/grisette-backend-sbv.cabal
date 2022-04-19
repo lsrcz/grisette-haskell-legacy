@@ -37,26 +37,6 @@ library
       Paths_grisette_backend_sbv
   hs-source-dirs:
       src
-  default-extensions:
-      BangPatterns
-      ConstraintKinds
-      DataKinds
-      DefaultSignatures
-      DeriveGeneric
-      DeriveLift
-      FlexibleContexts
-      FlexibleInstances
-      FunctionalDependencies
-      GADTs
-      KindSignatures
-      LambdaCase
-      MultiParamTypeClasses
-      RankNTypes
-      ScopedTypeVariables
-      TypeApplications
-      TypeFamilies
-      TypeOperators
-      DeriveAnyClass
   ghc-options: -Wall -ferror-spans
   build-depends:
       base >4.7 && <5
@@ -90,26 +70,6 @@ test-suite spec
       Paths_grisette_backend_sbv
   hs-source-dirs:
       test
-  default-extensions:
-      BangPatterns
-      ConstraintKinds
-      DataKinds
-      DefaultSignatures
-      DeriveGeneric
-      DeriveLift
-      FlexibleContexts
-      FlexibleInstances
-      FunctionalDependencies
-      GADTs
-      KindSignatures
-      LambdaCase
-      MultiParamTypeClasses
-      RankNTypes
-      ScopedTypeVariables
-      TypeApplications
-      TypeFamilies
-      TypeOperators
-      DeriveAnyClass
   ghc-options: -Wall -ferror-spans
   build-depends:
       QuickCheck
