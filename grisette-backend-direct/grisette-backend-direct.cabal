@@ -27,30 +27,12 @@ flag fast
   default: True
 
 library
+  exposed-modules:
+      Grisette.Data.SMT.SExpr
   other-modules:
       Paths_grisette_backend_direct
   hs-source-dirs:
       src
-  default-extensions:
-      BangPatterns
-      ConstraintKinds
-      DataKinds
-      DefaultSignatures
-      DeriveGeneric
-      DeriveLift
-      FlexibleContexts
-      FlexibleInstances
-      FunctionalDependencies
-      GADTs
-      KindSignatures
-      LambdaCase
-      MultiParamTypeClasses
-      RankNTypes
-      ScopedTypeVariables
-      TypeApplications
-      TypeFamilies
-      TypeOperators
-      DeriveAnyClass
   ghc-options: -Wall -ferror-spans
   build-depends:
       base >4.7 && <5
@@ -68,30 +50,11 @@ test-suite spec
   type: exitcode-stdio-1.0
   main-is: Main.hs
   other-modules:
+      Grisette.Data.SMT.SExprSpec
       Spec
       Paths_grisette_backend_direct
   hs-source-dirs:
       test
-  default-extensions:
-      BangPatterns
-      ConstraintKinds
-      DataKinds
-      DefaultSignatures
-      DeriveGeneric
-      DeriveLift
-      FlexibleContexts
-      FlexibleInstances
-      FunctionalDependencies
-      GADTs
-      KindSignatures
-      LambdaCase
-      MultiParamTypeClasses
-      RankNTypes
-      ScopedTypeVariables
-      TypeApplications
-      TypeFamilies
-      TypeOperators
-      DeriveAnyClass
   ghc-options: -Wall -ferror-spans
   build-depends:
       QuickCheck
