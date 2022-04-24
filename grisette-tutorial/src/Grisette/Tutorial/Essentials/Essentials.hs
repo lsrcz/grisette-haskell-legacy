@@ -460,6 +460,7 @@ module Grisette.Tutorial.Essentials.Essentials (
   --   m = do mrgIf "a" add1 $ return ()
   --          mrgIf "b" add1 $ return ()
   -- :}
+  --
   -- >>> runStateT m 0
   -- UMrg (Guard (! (|| a b)) (Single ((),0)) (Guard (! (&& a b)) (Single ((),1)) (Single ((),2))))
   --
