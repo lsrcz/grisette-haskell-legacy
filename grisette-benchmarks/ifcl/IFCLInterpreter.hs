@@ -44,7 +44,7 @@ storeInst m = do
   PCValue _ lmx <- read x m
   PCValue y ly <- peekPC 1 m
   p <- popN 2 m
-  gassertWithError EvalError (lx `implies` lmx)
+  symFailIfNot EvalError (lx `implies` lmx)
   res <- write x (PCValue y (lx ||~ ly)) p
   mrgReturn $ next res
 
@@ -55,7 +55,7 @@ storeCRInst m = do
   PCValue _ lmx <- read x m
   PCValue y ly <- peekPC 1 m
   p <- popN 2 m
-  gassertWithError EvalError ((lx ||~ lpc) `implies` lmx)
+  symFailIfNot EvalError ((lx ||~ lpc) `implies` lmx)
   res <- write x (PCValue y $ lx ||~ ly ||~ lpc) p
   mrgReturn $ next res
 
@@ -114,9 +114,9 @@ callInst pos hasRet m = do
   let PCValue vn ln = hasRet
   let PCValue vpc lpc = pc m
   PCValue x lx <- peekPC 0 m
-  gassertWithError EvalError $ nots lk
-  gassertWithError EvalError $ nots ln
-  gassertWithError EvalError $ vn ==~ 0 ||~ vn ==~ 1
+  symFailIfNot EvalError $ nots lk
+  symFailIfNot EvalError $ nots ln
+  symFailIfNot EvalError $ vn ==~ 0 ||~ vn ==~ 1
   let ret = ReturnAddr (PCValue (vpc + 1) lpc) hasRet
   p <- pop m
   p1 <- pushAt k ret p
@@ -127,7 +127,7 @@ call1bInst pos m = do
   let PCValue k lk = pos
   let PCValue vpc lpc = pc m
   PCValue x lx <- peekPC 0 m
-  gassertWithError EvalError $ nots lk
+  symFailIfNot EvalError $ nots lk
   let ret = ReturnAddr (PCValue (vpc + 1) lpc) zeroLow
   p <- pop m
   p1 <- pushAt k ret p
@@ -155,8 +155,8 @@ ret1abInst r m = do
     MPCValue _ -> throwError EvalError
     ReturnAddr rpc _ -> do
       p <- pop m1
-      gassertWithError EvalError $ nots ln
-      gassertWithError EvalError $ vn ==~ 0 ||~ vn ==~ 1
+      symFailIfNot EvalError $ nots ln
+      symFailIfNot EvalError $ vn ==~ 0 ||~ vn ==~ 1
       mrgReturn $ goto rpc $ mrgIte @SymBool (vn ==~ 0) p (push v p)
 
 ret1bInst :: PCValue -> Machine -> ExceptT Errors UnionM Machine
@@ -170,8 +170,8 @@ ret1bInst r m = do
     MPCValue _ -> throwError EvalError
     ReturnAddr rpc _ -> do
       p <- pop m1
-      gassertWithError EvalError $ nots ln
-      gassertWithError EvalError $ vn ==~ 0 ||~ vn ==~ 1
+      symFailIfNot EvalError $ nots ln
+      symFailIfNot EvalError $ vn ==~ 0 ||~ vn ==~ 1
       mrgReturn $ goto rpc $ mrgIte @SymBool (vn ==~ 0) p (push (MPCValue $ PCValue v lpc) p)
 
 execInst :: Instruction -> Machine -> Program -> ExceptT Errors UnionM Machine

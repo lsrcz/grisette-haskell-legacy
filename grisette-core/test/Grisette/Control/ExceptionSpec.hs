@@ -100,8 +100,8 @@ spec = do
     it "Transform VerificationConditions to VerificationConditions" $ do
       transformError AssertionViolation `shouldBe` AssertionViolation
       transformError AssumptionViolation `shouldBe` AssumptionViolation
-  describe "gassert" $ do
-    it "gassert should work" $ do
-      (gassert (SSBool "a") :: ExceptT VerificationConditions (UnionMBase SBool) ())
+  describe "symAssert" $ do
+    it "symAssert should work" $ do
+      (symAssert (SSBool "a") :: ExceptT VerificationConditions (UnionMBase SBool) ())
         `shouldBe` ExceptT (mrgIf (Not $ SSBool "a") (mrgReturn $ Left AssertionViolation) (mrgReturn $ Right ()))
     

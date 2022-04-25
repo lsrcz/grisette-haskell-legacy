@@ -44,7 +44,7 @@ synth config (Litmus fsBound make setupProc prog allowCond) =
       cost = syncCost progWithSyncs
       go sol currCost =
         let costConstraint = conc (currCost == fromIntegral (length progWithSyncs)) ||~ cost <~ currCost
-            synthCond = gassertWithError AssertionError ((validOrdering fs prog1 order `implies` allowed) &&~ costConstraint)
+            synthCond = symFailIfNot AssertionError ((validOrdering fs prog1 order `implies` allowed) &&~ costConstraint)
          in do
               m <- cegisWithTranslation Synth config (crashes, order) synthCond
               case m of

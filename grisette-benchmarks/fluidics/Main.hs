@@ -83,7 +83,7 @@ move p d = do
   gridSet newpoint droplet
 
 assert :: (MonadError () m, MonadUnion SymBool m) => SymBool -> m ()
-assert = gassertWithError ()
+assert = symFailIfNot ()
 
 mix :: Point -> StateT Grid (ExceptT () UnionM) ()
 mix p = do

@@ -44,12 +44,12 @@ swap ::
 swap l x y =
   mrgIf (x <=~ y) (go l x y) (go l y x)
   where
-    go [] _ _ = gthrowError AssertionError
+    go [] _ _ = mrgThrowError AssertionError
     go r@(v : vs) x1 y1 = mrgIf (x1 ==~ 0) (mrgIf (y1 ==~ 0) (mrgReturn r) (go1 v vs y1)) (mrgFmap (v :) $ go vs (x1 - 1) (y1 - 1))
     go1 v l1 y1 = do
       (v', r) <- go2 v l1 (y1 - 1)
       mrgReturn $ v' : r
-    go2 _ [] _ = gthrowError AssertionError
+    go2 _ [] _ = mrgThrowError AssertionError
     go2 v (v1 : v1s) y1 =
       mrgIf
         (y1 ==~ 0)
@@ -63,7 +63,7 @@ type Algo = forall x. (Mergeable SymBool x) => Integer -> [x] -> M [x]
 
 algo0 :: Algo
 algo0 fuel l
-  | fuel < 0 = gthrowError AssertionError
+  | fuel < 0 = mrgThrowError AssertionError
   | otherwise = do
     c <- genSymSimpleFresh @SymBool ()
     mrgIf
@@ -135,7 +135,7 @@ runDutchFlag config algo len initMarbles = do
     go result lastResult = do
       let newresult = do
             (m, r) <- result
-            gassert $ r /=~ toSym lastResult
+            symAssert $ r /=~ toSym lastResult
             return (m, r)
       next <- solveProb newresult
       case next of

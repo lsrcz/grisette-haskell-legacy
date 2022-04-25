@@ -9,8 +9,8 @@
 module Grisette.Control.Exception
   ( AssertionError (..),
     VerificationConditions (..),
-    gassert,
-    gassume,
+    symAssert,
+    symAssume,
   )
 where
 
@@ -22,12 +22,12 @@ import Generics.Deriving
 import Grisette.Control.Monad
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Error
+import Grisette.Data.Class.Evaluate
 import Grisette.Data.Class.ExtractSymbolics
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.SOrd
 import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.Class.Evaluate
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
 
@@ -111,31 +111,34 @@ instance TransformError AssertionError AssertionError where
 -- This may affect the efficiency in theory, but in practice this should not be a problem
 -- because Grisette will not try to further execute the terminated paths.
 --
--- >>> gassert (conc False) :: ExceptT AssertionError UnionM ()
+-- >>> symAssert (conc False) :: ExceptT AssertionError UnionM ()
 -- ExceptT (UMrg (Single (Left AssertionError)))
--- >>> do; gassert (conc False); mrgReturn 1 :: ExceptT AssertionError UnionM Integer
+-- >>> do; symAssert (conc False); mrgReturn 1 :: ExceptT AssertionError UnionM Integer
 -- ExceptT (UAny (Single (Left AssertionError)))
 --
 -- No effect if the condition is true:
 --
--- >>> gassert (conc True) :: ExceptT AssertionError UnionM ()
+-- >>> symAssert (conc True) :: ExceptT AssertionError UnionM ()
 -- ExceptT (UMrg (Single (Right ())))
--- >>> do; gassert (conc True); mrgReturn 1 :: ExceptT AssertionError UnionM Integer
+-- >>> do; symAssert (conc True); mrgReturn 1 :: ExceptT AssertionError UnionM Integer
 -- ExceptT (UMrg (Single (Right 1)))
 --
 -- Splitting the path and terminate one of them.
 --
--- >>> gassert (ssymb "a") :: ExceptT AssertionError UnionM ()
+-- >>> symAssert (ssymb "a") :: ExceptT AssertionError UnionM ()
 -- ExceptT (UMrg (Guard (! a) (Single (Left AssertionError)) (Single (Right ()))))
--- >>> do; gassert (ssymb "a"); mrgReturn 1 :: ExceptT AssertionError UnionM Integer
+-- >>> do; symAssert (ssymb "a"); mrgReturn 1 :: ExceptT AssertionError UnionM Integer
 -- ExceptT (UMrg (Guard (! a) (Single (Left AssertionError)) (Single (Right 1))))
 --
 -- 'AssertionError' is compatible with 'VerificationConditions':
 --
--- >>> gassert (ssymb "a") :: ExceptT VerificationConditions UnionM ()
+-- >>> symAssert (ssymb "a") :: ExceptT VerificationConditions UnionM ()
 -- ExceptT (UMrg (Guard (! a) (Single (Left AssertionViolation)) (Single (Right ()))))
-gassert :: (TransformError AssertionError to, MonadError to erm, SymBoolOp bool, MonadUnion bool erm) => bool -> erm ()
-gassert = gassertWithError AssertionError
+symAssert ::
+  (TransformError AssertionError to, Mergeable bool to, MonadError to erm, SymBoolOp bool, MonadUnion bool erm) =>
+  bool ->
+  erm ()
+symAssert = symFailIfNot AssertionError
 
 -- | Used within a monadic multi path computation to begin exception processing.
 --
@@ -143,7 +146,10 @@ gassert = gassertWithError AssertionError
 --
 -- /Examples/:
 --
--- >>> gassume (ssymb "a") :: ExceptT VerificationConditions UnionM ()
+-- >>> symAssume (ssymb "a") :: ExceptT VerificationConditions UnionM ()
 -- ExceptT (UMrg (Guard (! a) (Single (Left AssumptionViolation)) (Single (Right ()))))
-gassume :: (TransformError VerificationConditions to, MonadError to erm, SymBoolOp bool, MonadUnion bool erm) => bool -> erm ()
-gassume = gassertWithError AssumptionViolation
+symAssume ::
+  (TransformError VerificationConditions to, Mergeable bool to, MonadError to erm, SymBoolOp bool, MonadUnion bool erm) =>
+  bool ->
+  erm ()
+symAssume = symFailIfNot AssumptionViolation

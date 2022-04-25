@@ -134,55 +134,55 @@ typer (SymBoolConst _) = uBoolType
 typer (SymIntegerConst _) = uIntegerType
 typer (SymAdd l r) = binary typer l r $ \case
   (IntegerType, IntegerType) -> uIntegerType
-  _ -> gthrowError TyperError
+  _ -> mrgThrowError TyperError
 typer (SymAnd l r) = binary typer l r $ \case
   (BoolType, BoolType) -> uBoolType
-  _ -> gthrowError TyperError
+  _ -> mrgThrowError TyperError
 typer (SymEqv l r) = binary typer l r $ \case
   (BoolType, BoolType) -> uBoolType
   (IntegerType, IntegerType) -> uBoolType
-  _ -> gthrowError TyperError
+  _ -> mrgThrowError TyperError
 typer (SymITE c l r) = ternary typer c l r $ \case
   (BoolType, BoolType, BoolType) -> uBoolType
   (BoolType, IntegerType, IntegerType) -> uIntegerType
-  _ -> gthrowError TyperError
+  _ -> mrgThrowError TyperError
 
 typerBad :: Typer
 typerBad (SymBoolConst _) = uBoolType
 typerBad (SymIntegerConst _) = uIntegerType
 typerBad (SymAdd l r) = binary typerBad l r $ \case
   (IntegerType, IntegerType) -> uIntegerType
-  _ -> gthrowError TyperError
+  _ -> mrgThrowError TyperError
 typerBad (SymAnd l r) = binary typerBad l r $ \case
   (BoolType, BoolType) -> uBoolType
-  _ -> gthrowError TyperError
+  _ -> mrgThrowError TyperError
 typerBad (SymEqv l r) = binary typerBad l r $ \case
   (BoolType, BoolType) -> uBoolType
   -- Bug here
   (IntegerType, IntegerType) -> uIntegerType
-  _ -> gthrowError TyperError
+  _ -> mrgThrowError TyperError
 typerBad (SymITE c l r) = ternary typerBad c l r $ \case
   (BoolType, BoolType, BoolType) -> uBoolType
   (BoolType, IntegerType, IntegerType) -> uIntegerType
-  _ -> gthrowError TyperError
+  _ -> mrgThrowError TyperError
 
 interpreter :: Interpreter
 interpreter (SymBoolConst v) = uSymBoolValue v
 interpreter (SymIntegerConst v) = uSymIntegerValue v
 interpreter (SymAdd l r) = binary interpreter l r $ \case
   (SymIntegerValue li, SymIntegerValue ri) -> uSymIntegerValue $ li + ri
-  _ -> gthrowError ExecutionError
+  _ -> mrgThrowError ExecutionError
 interpreter (SymAnd l r) = binary interpreter l r $ \case
   (SymBoolValue lb, SymBoolValue rb) -> uSymBoolValue $ lb &&~ rb
-  _ -> gthrowError ExecutionError
+  _ -> mrgThrowError ExecutionError
 interpreter (SymEqv l r) = binary interpreter l r $ \case
   (SymBoolValue lb, SymBoolValue rb) -> uSymBoolValue $ lb ==~ rb
   (SymIntegerValue li, SymIntegerValue ri) -> uSymBoolValue $ li ==~ ri
-  _ -> gthrowError ExecutionError
+  _ -> mrgThrowError ExecutionError
 interpreter (SymITE c l r) = ternary interpreter c l r $ \case
   (SymBoolValue cb, SymBoolValue lb, SymBoolValue rb) -> uSymBoolValue $ ites cb lb rb
   (SymBoolValue cb, SymIntegerValue li, SymIntegerValue ri) -> uSymIntegerValue $ ites cb li ri
-  _ -> gthrowError ExecutionError
+  _ -> mrgThrowError ExecutionError
 
 data VerifyTyper = VerifyTyper
 

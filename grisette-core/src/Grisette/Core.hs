@@ -75,10 +75,10 @@ module Grisette.Core
     VerificationConditions (..),
     ArithException (..),
     TransformError (..),
-    gthrowError,
-    gassertWithError,
-    gassert,
-    gassume,
+    symAssert,
+    symAssume,
+    symFailIfNot,
+    symThrowTransformableError,
 
     -- * Symbolic Generation
     -- ** Symbolic Generation Context

@@ -35,12 +35,12 @@ verifyEENI config end indistinguishable steps progSpec =
       r0 = merge $ withExceptT (const AssumptionViolation) $ step steps m0 p0
       r1 = merge $ withExceptT (const AssumptionViolation) $ step steps m1 p1
       res = do
-        gassertWithError AssumptionViolation (indistinguishable m0 p0 m1 p1)
+        symFailIfNot AssumptionViolation (indistinguishable m0 p0 m1 p1)
         m0k <- r0
         m1k <- r1
-        gassertWithError AssumptionViolation (end m0k p0)
-        gassertWithError AssumptionViolation (end m1k p1)
-        gassertWithError AssertionViolation (indistinguishable m0k p0 m1k p1)
+        symFailIfNot AssumptionViolation (end m0k p0)
+        symFailIfNot AssumptionViolation (end m1k p1)
+        symFailIfNot AssertionViolation (indistinguishable m0k p0 m1k p1)
    in do
         _ <- timeItAll "evaluate1" $ runExceptT r0 `deepseq` return ()
         _ <- timeItAll "evaluate2" $ runExceptT r1 `deepseq` return ()

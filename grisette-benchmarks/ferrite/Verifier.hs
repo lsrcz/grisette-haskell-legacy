@@ -35,7 +35,7 @@ verify config (Litmus _ make setupProc prog allowCond) =
       (verifFs, _) = runGenSymFresh (runStateT (interpretOrderOps prog1 order (mrgReturn $ (toSym newfs :: fs))) []) "crash"
       allowed = allowCond (toSym newfs) #~ verifFs
 
-      verifCond = gassertWithError AssertionError (validOrdering fs prog1 order `implies` allowed)
+      verifCond = symFailIfNot AssertionError (validOrdering fs prog1 order `implies` allowed)
    in do
         r <- solveWithTranslation Verify config verifCond
         case r of

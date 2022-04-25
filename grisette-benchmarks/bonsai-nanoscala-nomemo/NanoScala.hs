@@ -218,14 +218,14 @@ type' tree env =
           it <- reduceType 0 env True #~ intype
           it' <- type' #~ value # env
           subi <- subType 0 it' it
-          gassertWithError BonsaiTypeError subi
+          symFailIfNot BonsaiTypeError subi
 
           newenv <- envAddTree BonsaiTypeError env nm it
 
           ot <- reduceType 0 newenv True #~ outtype
           ot' <- type' #~ expr # newenv
           subo <- subType 0 ot' ot
-          gassertWithError BonsaiTypeError subo
+          symFailIfNot BonsaiTypeError subo
 
           newenv' <- envAddTree BonsaiTypeError env nm it'
           reduceType 0 newenv' True #~ outtype,
@@ -245,12 +245,12 @@ type' tree env =
       dotLiteral "die" *= placeHolder ==> \expr -> do
         t <- type' #~ expr # env
         subt <- subType 0 t uDotNothing
-        gassertWithError BonsaiTypeError subt
+        symFailIfNot BonsaiTypeError subt
         return t,
       dotLiteral "make-null" *= placeHolder ==> \t -> do
         t' <- reduceType 0 env False #~ t
         subt <- subType 0 t' uDotNothing
-        gassertWithError BonsaiTypeError (nots subt)
+        symFailIfNot BonsaiTypeError (nots subt)
         return t',
       dotLiteral "null" ==> return uDotAny
     ]
@@ -267,6 +267,6 @@ matchDotRule = matchRule dotSyntax matchDotSyntax matchDotRule
 
 execDot :: DotTree -> ExceptT BonsaiError UnionM (UnionM DotResult)
 execDot tree = do
-  gassertWithError BonsaiTypeError (matchDotSyntax tree "term")
+  symFailIfNot BonsaiTypeError (matchDotSyntax tree "term")
   mrgFmap (const ()) $ typer tree
   eval tree

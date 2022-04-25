@@ -16,8 +16,8 @@ data Y = Y
 instance CegisTranslation Y VerificationConditions Integer where
   cegisErrorTranslation _ = id
   cegisValueTranslation _ i = do
-    gassertWithError AssumptionViolation (conc $ i >= 2)
-    gassertWithError AssertionViolation (conc $ odd i)
+    symFailIfNot AssumptionViolation (conc $ i >= 2)
+    symFailIfNot AssertionViolation (conc $ odd i)
   
 input :: SymUnsignedBV 4
 input = ssymb "x"
@@ -38,13 +38,13 @@ m = mrgIf (ssymb "a") (mrgIf (ssymb "b") (mrgReturn 5) (mrgReturn 6))
 m1 :: ExceptT VerificationConditions UnionM ()
 m1 = do
   i <- lift m
-  gassertWithError AssumptionViolation (conc $ i >= 2)
-  gassertWithError AssertionViolation (conc $ odd i)
+  symFailIfNot AssumptionViolation (conc $ i >= 2)
+  symFailIfNot AssertionViolation (conc $ odd i)
 
 v :: ExceptT VerificationConditions UnionM ()
 v = do
-  gassertWithError AssumptionViolation (eveni input) 
-  gassertWithError AssertionViolation (oddi $ input + input2) 
+  symFailIfNot AssumptionViolation (eveni input) 
+  symFailIfNot AssertionViolation (oddi $ input + input2) 
 
 main :: IO()
 main = do

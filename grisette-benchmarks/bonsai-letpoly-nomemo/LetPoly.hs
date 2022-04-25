@@ -108,7 +108,7 @@ arrowTyU :: UnionM LetPolyTree -> UnionM LetPolyTree -> LetPolyTree
 arrowTyU = BonsaiNode
 
 tyassert :: SymBool -> ExceptT BonsaiError UnionM ()
-tyassert = gassertWithError BonsaiTypeError
+tyassert = symFailIfNot BonsaiTypeError
 
 tyMatch ::
   (Mergeable SymBool t, Show t) =>
@@ -142,7 +142,7 @@ typeCompatible current expect =
 
 isValidName :: BonsaiError -> SymUnsignedBV LetPolyWidth -> ExceptT BonsaiError UnionM ()
 isValidName err sym =
-  gassertWithError err $
+  symFailIfNot err $
     foldl
       ( \acc v ->
           acc
@@ -389,7 +389,7 @@ matchLetPolyRule = matchRule letPolySyntax matchLetPolySyntax matchLetPolyRule
 
 execLetPoly :: LetPolyTree -> ExceptT BonsaiError UnionM (UnionM LetPolyValue)
 execLetPoly tree = do
-  gassertWithError BonsaiTypeError (matchLetPolySyntax tree "term")
+  symFailIfNot BonsaiTypeError (matchLetPolySyntax tree "term")
   mrgFmap (const ()) $ typer tree
   -- return $ uLetPolyInt 1
   eval tree

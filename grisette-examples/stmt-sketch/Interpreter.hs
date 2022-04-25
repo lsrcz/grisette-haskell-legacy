@@ -91,7 +91,7 @@ interpretStmt (SAssignStmt i e) = StateT $
 interpretStmt (SAssertStmt v) = do
   cond <- StateT $ \st -> mrgFmap (,st) $ interpretExprU st v
   case cond of
-    SBool sym -> gassertWithError AssertionError sym
+    SBool sym -> symFailIfNot AssertionError sym
     _ -> throwError BadType
 interpretStmt (SIfStmt v l r) = do
   cond <- StateT $ \st -> mrgFmap (,st) $ interpretExprU st v

@@ -130,7 +130,7 @@ typer' = htmemo2 $ \tree env {-trace (show tree) $ trace (show env) $-} ->
       ((stlcLiteral "lambda" *= (placeHolder *= placeHolder)) *= placeHolder)
         ==> ( \nm ty expr -> do
                 n <- lift nm
-                _ <- gassertWithError BonsaiTypeError (isAvailableNameNode n)
+                _ <- symFailIfNot BonsaiTypeError (isAvailableNameNode n)
                 let BonsaiLeaf sym = n -- will never call fail because we have partial evaluation
                 res <- typer' #~ expr # envAdd env sym ty
                 mrgReturn $ mrgReturn $ arrowTyU ty res
@@ -145,7 +145,7 @@ typer' = htmemo2 $ \tree env {-trace (show tree) $ trace (show env) $-} ->
                     case bres of
                       BonsaiNode funcArgTy funcResTy -> do
                         argTy <- typer' #~ arg # env
-                        _ <- gassertWithError BonsaiTypeError (argTy ==~ funcArgTy)
+                        _ <- symFailIfNot BonsaiTypeError (argTy ==~ funcArgTy)
                         mrgReturn funcResTy
                       _ -> throwError BonsaiTypeError
                   _ -> throwError BonsaiTypeError
@@ -243,7 +243,7 @@ interpreter' = htmemo3 $ \tree env reccount {-trace (show tree) $ trace (show en
           ((stlcLiteral "lambda" *= (placeHolder *= placeHolder)) *= placeHolder)
             ==> ( \nm _ expr -> do
                     l <- lift nm
-                    gassertWithError BonsaiExecError (isAvailableNameNode l)
+                    symFailIfNot BonsaiExecError (isAvailableNameNode l)
                     let BonsaiLeaf sym = l
                     mrgReturn (uSTLCLambda sym expr env)
                 ),
@@ -279,6 +279,6 @@ matchStlcRule = matchRule stlcSyntax matchStlcSyntax matchStlcRule
 
 execStlc :: STLCTree -> ExceptT BonsaiError UnionM (UnionM STLCValue)
 execStlc tree = do
-  gassertWithError BonsaiTypeError (matchStlcSyntax tree "term")
+  symFailIfNot BonsaiTypeError (matchStlcSyntax tree "term")
   mrgFmap (const ()) $ typer tree
   interpreter tree
