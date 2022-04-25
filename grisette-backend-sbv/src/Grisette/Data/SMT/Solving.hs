@@ -1,44 +1,60 @@
-{-# LANGUAGE UndecidableSuperClasses #-}
-{-# OPTIONS_GHC -Wno-orphans #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveLift #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE UndecidableSuperClasses #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Grisette.Data.SMT.Solving
   ( solveWith,
+    solveArgWith,
     solveMultiWith,
     solveWithTranslation,
+    solveArgWithTranslation,
     solveMultiWithTranslation,
     SolverTranslation (..),
     CegisTranslation (..),
     DefaultVerificationCondition (..),
     cegisWithTranslation,
     cegisWith,
+    cegisWithTranslation',
+    cegisWith',
   )
 where
 
+import Control.DeepSeq
 import Control.Monad.Except
 import qualified Data.HashSet as S
+import Data.Hashable
 import Data.Maybe
 import qualified Data.SBV as SBV
 import Data.SBV.Control (Query)
 import qualified Data.SBV.Control as SBVC
+import GHC.Generics
 import Grisette.Control.Exception
 import Grisette.Control.Monad
 import Grisette.Control.Monad.UnionM
+import Grisette.Control.Monad.UnionMBase
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Evaluate
 import Grisette.Data.Class.ExtractSymbolics
+import Grisette.Data.Class.GenSym
+import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.PrimWrapper
+import Grisette.Data.Class.UnionOp
 import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.InternedTerm
 import Grisette.Data.Prim.Model as PM
 import Grisette.Data.SMT.Config
 import Grisette.Data.SMT.Lowering
 import Grisette.Data.SymPrim
+import Language.Haskell.TH.Syntax hiding (lift)
 
 solveTermWith ::
   forall integerBitWidth.
@@ -62,6 +78,29 @@ solveWith ::
   Sym Bool ->
   IO (Either SBVC.CheckSatResult PM.Model)
 solveWith config (Sym t) = snd <$> solveTermWith config t
+
+solveArgWith ::
+  forall integerBitWidth spec a.
+  (GenSym SymBool spec a, Evaluate Model a, ExtractSymbolics (S.HashSet TermSymbol) a) =>
+  GrisetteSMTConfig integerBitWidth ->
+  spec ->
+  (a -> Sym Bool) ->
+  IO (Either SBVC.CheckSatResult (a, PM.Model))
+solveArgWith config argSpec func =
+  let args = genSym argSpec (nameWithInfo "arg" CegisInternal) :: UnionM a
+   in do
+        r <- solveWith config (func #~ args)
+        case r of
+          Left csr -> return $ Left csr
+          Right mo -> do
+            let rmo = extendTo mo (extractSymbolics args)
+            return $
+              Right
+                ( case evaluate False rmo args of
+                    SingleU v -> v
+                    _ -> error "Should not happen",
+                  rmo
+                )
 
 solveMultiWith ::
   forall integerBitWidth.
@@ -119,6 +158,16 @@ translateExceptT p (ExceptT u) =
         Right v -> valueTranslation p v
     )
       <$> u
+
+solveArgWithTranslation ::
+  forall integerBitWidth err v method spec a.
+  (SolverTranslation method err v, GenSym SymBool spec a, Evaluate Model a, ExtractSymbolics (S.HashSet TermSymbol) a) =>
+  method ->
+  GrisetteSMTConfig integerBitWidth ->
+  spec ->
+  (a -> ExceptT err UnionM v) ->
+  IO (Either SBVC.CheckSatResult (a, PM.Model))
+solveArgWithTranslation p config argSpec f = solveArgWith config argSpec (translateExceptT p . f)
 
 solveWithTranslation ::
   forall integerBitWidth err v method.
@@ -237,3 +286,34 @@ cegisWith config foralls assumption assertion = SBV.runSMTWith (sbvConfig config
           (newm, res) <- guess cex origm
           loop res newm
     loop l@(Left _) origm = return (origm, l)
+
+data CegisInternal = CegisInternal deriving (Eq, Show, Ord, Generic, Hashable, Lift, NFData)
+
+cegisWithTranslation' ::
+  forall integerBitWidth err method spec a v.
+  ( CegisTranslation method err v,
+    ExtractSymbolics (S.HashSet TermSymbol) a,
+    GenSym SymBool spec a,
+    Mergeable SymBool err,
+    Mergeable SymBool v
+  ) =>
+  method ->
+  GrisetteSMTConfig integerBitWidth ->
+  spec ->
+  (a -> ExceptT err UnionM v) ->
+  IO (Either SBVC.CheckSatResult PM.Model)
+cegisWithTranslation' p config inputSpec f =
+  let args = genSym inputSpec (nameWithInfo "arg" CegisInternal) :: UnionM a
+   in cegisWithTranslation p config args (f #~ args)
+
+cegisWith' ::
+  forall integerBitWidth spec a.
+  (ExtractSymbolics (S.HashSet TermSymbol) a, GenSym SymBool spec a) =>
+  GrisetteSMTConfig integerBitWidth ->
+  spec ->
+  (a -> Sym Bool) ->
+  (a -> Sym Bool) ->
+  IO (Either SBVC.CheckSatResult PM.Model)
+cegisWith' config inputSpec assumption assertion =
+  let args = genSym inputSpec (nameWithInfo "arg" CegisInternal) :: UnionM a
+   in cegisWith config args (assumption #~ args) (assertion #~ args)

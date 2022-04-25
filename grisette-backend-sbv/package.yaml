@@ -23,6 +23,8 @@ dependencies:
 - bv-sized
 - parameterized-utils
 - constraints
+- template-haskell
+- deepseq
 
 flags: {
   fast: {

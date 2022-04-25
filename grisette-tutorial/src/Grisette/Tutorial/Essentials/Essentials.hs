@@ -544,6 +544,78 @@ module Grisette.Tutorial.Essentials.Essentials (
   -- You can always define your own errors in a similar way.
   -- Grisette also has some error types built in, please check them out at "Grisette.Core#errors".
 
+  -- ** Solver queries
+  -- | After symbolic compilation, the result can be sent to the solver for reasoning.
+  --
+  -- In Grisette, we can call a solver to solve not only the satisfiability of a symbolic boolean formula,
+  -- but also the correctness condition constructed from @ExceptT error UnionM value@ types.
+  --
+  -- The simplest case is to solve a single symbolic boolean formula.
+  -- This can be done by 'solveWith' call, which solves a formula with some configuration.
+  -- In the following example, the configuration is @UnboundedReasoning z3@.
+  -- We will explain what does it mean later.
+  --
+  -- >>> solveWith (UnboundedReasoning z3) (("a" + 1 :: SymInteger) ==~ 4)
+  -- Right (Model (fromList [(a :: Integer,3 :: Integer)]))
+  --
+  -- To construct correctness conditions from symbolic compilation results with the type @ExceptT error UnionM value@,
+  -- Grisette provided 'SolverTranslation' type class, which is defined as following
+  --
+  -- > class SolverTranslation method e v | method -> e v where
+  -- >   errorTranslation :: method -> e -> Bool
+  -- >   valueTranslation :: method -> v -> Sym Bool
+  --
+  -- The 'errorTranslation' function decides how to translate the errors.
+  -- Given a translation method, it is a /concrete/ predicate on the error types.
+  -- If the program is allowed to terminate with some error, then the predicate should return true.
+  -- The 'valueTranslation' function is the correctness condition for the program executions without failures.
+  -- Given a translation method, it is a /symbolic/ predicate on the error types,
+  -- which should be evaluated to true if the program is correct under some model.
+  -- 
+  -- The translation method could be viewed as a specification for the expected program behavior.
+  -- To build our example, we first copy the error definitions from the last section.
+  --
+  -- >>> :{
+  --   data Error = Assert | Assume
+  --     deriving (Show, Eq, Generic)
+  --     deriving (Mergeable SymBool) via Default Error
+  --   assert cond = mrgIf cond (return ()) (throwError Assert)
+  --   assume cond = mrgIf cond (return ()) (throwError Assume)
+  -- :}
+  --
+  -- Then we can define the correctness condition.
+  -- For example, if we want to find a input that violates any assertions, but should not violate any assumption,
+  -- we can define the solver translation as follows:
+  --
+  -- >>> data ViolatesAssertions = ViolatesAssertions
+  -- >>> :{
+  --   instance SolverTranslation ViolatesAssertions Error () where
+  --     errorTranslation _ Assume = False
+  --     errorTranslation _ Assert = True
+  --     valueTranslation _ _ = conc False
+  -- :}
+  --
+  -- And we can write the sample program as follows. The @program1@ is a correct program, in which no assertion violation
+  -- exception can be thrown. The @program2@ is incorrect, and will throw assertion violation exception when @a@ is 2.
+  --
+  -- >>> :{
+  --   program1 = do
+  --     assume $ ("a" :: SymInteger) >~ 2
+  --     assert $ ("a" :: SymInteger) >=~ 2
+  --   program2 = do
+  --     assume $ ("a" :: SymInteger) >=~ 2
+  --     assert $ ("a" :: SymInteger) >~ 2
+  -- :}
+  --
+  -- We can verify our claim with the solvers:
+  --
+  -- >>> solveWithTranslation ViolatesAssertions (UnboundedReasoning z3) program1
+  -- Left Unsat
+  -- >>> solveWithTranslation ViolatesAssertions (UnboundedReasoning z3) program2
+  -- Right (Model (fromList [(a :: Integer,2 :: Integer)]))
+  --
+  --
+
   -- 
   -- 
   -- There are some correctness condition The function will work only when called with correct arguments and meet some precondition.
@@ -599,3 +671,4 @@ import Control.Monad.Except
 -- >>> :set -XDerivingStrategies
 -- >>> :set -XFlexibleContexts
 -- >>> :set -XOverloadedStrings
+-- >>> :set -XMultiParamTypeClasses
