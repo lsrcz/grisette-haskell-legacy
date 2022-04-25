@@ -31,6 +31,7 @@ library
       Grisette.BuiltinUnionMWrappers
       Grisette.Control.Exception
       Grisette.Control.Monad
+      Grisette.Control.Monad.Except
       Grisette.Control.Monad.Trans
       Grisette.Control.Monad.UnionMBase
       Grisette.Core

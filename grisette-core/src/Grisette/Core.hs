@@ -66,8 +66,11 @@ module Grisette.Core
     mrgMzero,
     mrgMplus,
     mrgMsum,
+    mrgThrowError,
+    mrgCatchError,
     
     -- * Standard Errors
+    -- | #errors#
     AssertionError (..),
     VerificationConditions (..),
     ArithException (..),
@@ -154,6 +157,7 @@ where
 import Generics.Deriving (Default(..))
 import Grisette.Control.Exception
 import Grisette.Control.Monad
+import Grisette.Control.Monad.Except
 import Grisette.Control.Monad.Trans
 import Grisette.Control.Monad.UnionMBase
 import Grisette.Data.Class.Bool

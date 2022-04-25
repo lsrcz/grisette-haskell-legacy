@@ -467,11 +467,91 @@ module Grisette.Tutorial.Essentials.Essentials (
   -- The program works as expected. If @a@ and @b@ are both false, then the final state would be 0.
   -- If they are both true, then the final state would be 2. Or the final state would be 1.
   
-  -- * Error handling and solver queries
+  -- * Exception handling and solver queries
   
-  -- ** Error handling
-  -- | Error handling is very essential in solver-aided tools.
-  -- For example, in verification tasks, we may want to track assumptions and assertions.
+  -- ** Why exception handling in Grisette
+  -- | Exception handling is very essential in solver-aided tools
+  -- to describe the desired behavior of a program in an expressive way.
+  -- Suppose that you have a function with some preconditions and you are going to verify its correctness.
+  -- Without any exception handling mechanism, you have to manually construct the constraints.
+  -- For such a small problem, it is not that hard,
+  -- and you can easily figure out that we should use the logical connective /implies/ to connect the pre-conditions and post-conditions.
+  -- However, when you are verifying a real-world system, with a lot of interleaving pre- and post-conditions,
+  -- manually figuring out the dependencies could be hard and error-prone.
+  --
+  -- Grisette supports the exception handling mechanism to help reduce
+  -- manual constraint building.
+  -- The exception handling mechanism in Grisette is very similar to the ones in other languages,
+  -- in which the exceptions can be handled, or will terminate the program execution.
+  -- The only difference is that Grisette can handle exceptions symbolically.
+  --
+  -- For the same verification scenario, we can abstract the condition violations as different kind of exceptions.
+  -- The pre-condition violations can be abstracted as assumption violation exceptions,
+  -- and the post-conditions violations can be abstracted as assertion violation exceptions.
+  -- Then the correctness condition could be expressed as /no assumption violation implies no assertion violation/,
+  -- and we can use the solver to prove this by proving that /the program terminates with assertion violation/ is not satisfiable.
+  --
+  -- This works no matter how the exceptions interleaves during the execution, because a program can only terminate once.
+  -- Generally, in Grisette, to specify the correctness conditions, the user only need to write the program
+  -- with exception handling enabled, and specify
+  --
+  --   1. whether the program can terminate with each exception, and
+  --   2. a predicate for the execution result if the program terminate without any exception.
+  --
+  -- We believe that this is an appropriate and flexible abstraction for program correctness.
+
+  -- ** Monadic symbolic handling in Grisette 
+  -- | As shown before, it's no surprise that exception handling can be easily supported in Grisette with 'ExceptT' transformer.
+  -- @ExceptT error UnionM value@ represents a multi-path computation that each path can terminate with exceptions of the type @error@,
+  -- or terminate with some value of the type @value@ returned. 
+  -- 
+  -- The following code defines an error type that can be used in Grisette.
+  --
+  -- >>> :{
+  --   data Error = Assert | Assume
+  --     deriving (Show, Eq, Generic)
+  --     deriving (Mergeable SymBool) via Default Error
+  -- :}
+  --
+  -- A normal execution with a symbolic boolean returned:
+  --
+  -- >>> mrgReturn "a" :: ExceptT Error UnionM SymBool
+  -- ExceptT (UMrg (Single (Right a)))
+  --
+  -- An abnormal execution terminates with some error:
+  --
+  -- >>> mrgThrowError Assert :: ExceptT Error UnionM ()
+  -- ExceptT (UMrg (Single (Left Assert)))
+  --
+  -- Then we can define the assert and assume functions,
+  -- the function would terminate the execution when the condition is false.
+  --
+  -- >>> assert cond = mrgIf cond (return ()) (throwError Assert)
+  -- >>> assume cond = mrgIf cond (return ()) (throwError Assume)
+  -- >>> assert "a" :: ExceptT Error UnionM ()
+  -- ExceptT (UMrg (Guard (! a) (Single (Left Assert)) (Single (Right ()))))
+  --
+  -- Then a function with verification builtin can be implemented as follows:
+  --
+  -- > f :: Arg -> Except Error UnionM Res
+  -- > f arg = do
+  -- >   assume $ precondition arg
+  -- >   ...
+  -- >   res <- ...
+  -- >   assert $ postcondition res
+  -- >   mrgReturn res
+  --
+  -- You can always define your own errors in a similar way.
+  -- Grisette also has some error types built in, please check them out at "Grisette.Core#errors".
+
+  -- 
+  -- 
+  -- There are some correctness condition The function will work only when called with correct arguments and meet some precondition.
+  -- 
+  --
+  -- For example, in some verification tasks,
+  -- the correctness condition for a program can be formulated to "no assumption violation implies no assertion violation".
+  -- 
   -- In some synthesis task for some DSL,
   -- we may want to synthesis a program that is free from some kind of errors.
   -- These all requires Grisette to provide a flexible way to handle errors.
@@ -511,8 +591,11 @@ import GHC.Generics
 import Grisette
 import Data.SBV hiding (Mergeable)
 import Control.Monad.State.Lazy
+import Control.Monad.Except
 
 -- $setup
--- >>> :set -XDerivingVia
 -- >>> :set -XDeriveGeneric
+-- >>> :set -XDerivingVia
+-- >>> :set -XDerivingStrategies
+-- >>> :set -XFlexibleContexts
 -- >>> :set -XOverloadedStrings
