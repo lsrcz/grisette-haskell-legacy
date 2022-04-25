@@ -547,9 +547,6 @@ module Grisette.Tutorial.Essentials.Essentials (
   -- ** Solver queries
   -- | After symbolic compilation, the result can be sent to the solver for reasoning.
   --
-  -- In Grisette, we can call a solver to solve not only the satisfiability of a symbolic boolean formula,
-  -- but also the correctness condition constructed from @ExceptT error UnionM value@ types.
-  --
   -- The simplest case is to solve a single symbolic boolean formula.
   -- This can be done by 'solveWith' call, which solves a formula with some configuration.
   -- In the following example, the configuration is @UnboundedReasoning z3@.
@@ -558,8 +555,10 @@ module Grisette.Tutorial.Essentials.Essentials (
   -- >>> solveWith (UnboundedReasoning z3) (("a" + 1 :: SymInteger) ==~ 4)
   -- Right (Model (fromList [(a :: Integer,3 :: Integer)]))
   --
-  -- To construct correctness conditions from symbolic compilation results with the type @ExceptT error UnionM value@,
-  -- Grisette provided 'SolverTranslation' type class, which is defined as following
+  -- Grisette also supports a more high level way to express program correctness condition.
+  -- The symbolic compilation result with exception handling enabled usually has the type
+  -- @ExceptT error UnionM value@, which can be easily converted to a correctness condition
+  -- with the 'SolverTranslation' type class, which is defined as follows:
   --
   -- > class SolverTranslation method e v | method -> e v where
   -- >   errorTranslation :: method -> e -> Bool
@@ -573,25 +572,18 @@ module Grisette.Tutorial.Essentials.Essentials (
   -- which should be evaluated to true if the program is correct under some model.
   -- 
   -- The translation method could be viewed as a specification for the expected program behavior.
-  -- To build our example, we first copy the error definitions from the last section.
+  -- For the scenario of verification of pre-conditions and post-conditions discussed before,
+  -- the specification would be the program cannot terminate with assertion violation.
+  -- Grisette has builtin support for assert / assume violation errors with 'VerificationConditions',
+  -- 'symAssume' and 'symAssert', so we will not use our own error types.
   --
-  -- >>> :{
-  --   data Error = Assert | Assume
-  --     deriving (Show, Eq, Generic)
-  --     deriving (Mergeable SymBool) via Default Error
-  --   assert cond = mrgIf cond (return ()) (throwError Assert)
-  --   assume cond = mrgIf cond (return ()) (throwError Assume)
-  -- :}
-  --
-  -- Then we can define the correctness condition.
-  -- For example, if we want to find a input that violates any assertions, but should not violate any assumption,
-  -- we can define the solver translation as follows:
+  -- The correctness condition can be defined as follows:
   --
   -- >>> data ViolatesAssertions = ViolatesAssertions
   -- >>> :{
-  --   instance SolverTranslation ViolatesAssertions Error () where
-  --     errorTranslation _ Assume = False
-  --     errorTranslation _ Assert = True
+  --   instance SolverTranslation ViolatesAssertions VerificationConditions () where
+  --     errorTranslation _ AssumptionViolation = False
+  --     errorTranslation _ AssertionViolation = True
   --     valueTranslation _ _ = conc False
   -- :}
   --
@@ -600,11 +592,11 @@ module Grisette.Tutorial.Essentials.Essentials (
   --
   -- >>> :{
   --   program1 = do
-  --     assume $ ("a" :: SymInteger) >~ 2
-  --     assert $ ("a" :: SymInteger) >=~ 2
+  --     symAssume $ ("a" :: SymInteger) >~ 2
+  --     symAssert $ ("a" :: SymInteger) >=~ 2
   --   program2 = do
-  --     assume $ ("a" :: SymInteger) >=~ 2
-  --     assert $ ("a" :: SymInteger) >~ 2
+  --     symAssume $ ("a" :: SymInteger) >=~ 2
+  --     symAssert $ ("a" :: SymInteger) >~ 2
   -- :}
   --
   -- We can verify our claim with the solvers:
@@ -614,33 +606,24 @@ module Grisette.Tutorial.Essentials.Essentials (
   -- >>> solveWithTranslation ViolatesAssertions (UnboundedReasoning z3) program2
   -- Right (Model (fromList [(a :: Integer,2 :: Integer)]))
   --
-  --
+  -- Grisette has more flexible ways for expressing solver queries,
+  -- we will discuss them later in the [Revisit solver queries](#queries) section.
 
-  -- 
-  -- 
-  -- There are some correctness condition The function will work only when called with correct arguments and meet some precondition.
-  -- 
+  -- ** CEGIS loop
+  -- | A program synthesis problem can usually be formulated as
+  -- \(\exists P. \forall I. \mathrm{assumptions}(P, I)\implies \mathrm{assertions}(P, I)\).
+  -- The formula states that we are going to find a program \(P\), such that for any input \(I\) meeting the assumptions,
+  -- executing the \(P\) on \(I\) will yield a result meeting the assertions.
+  -- Although some solvers support reasoning about interleaved quantifiers,
+  -- they are not widely used in synthesis community because they tend not to be very efficient in synthesis problems.
+  -- CEGIS is an algorithm to tackle the problem of interleaving quantifiers in program synthesis tasks by
+  -- reducing the program synthesis query, i.e. \(\exists\forall\) query to a sequence of
+  -- solver calls with quantifier free formulas.
   --
-  -- For example, in some verification tasks,
-  -- the correctness condition for a program can be formulated to "no assumption violation implies no assertion violation".
-  -- 
-  -- In some synthesis task for some DSL,
-  -- we may want to synthesis a program that is free from some kind of errors.
-  -- These all requires Grisette to provide a flexible way to handle errors.
-  --
-  -- In the last section, we discussed how to use monad transformers with 'UnionM'
-  -- and showed how to use 'StateT' for stateful programming.
-  -- Similar to that, error handling in Grisette is also done with the standard error handling
-  -- monad transformer 'ExceptT'.
-  --
-  -- 
-
-  -- 
-
-  --
-  -- The ability to handle errors is very essential to building verification, synthesis,
-  -- or other solver-aided tools.
-  --  
+  -- Grisette has support for Counter-example guided inductive synthesis (CEGIS) loops.
+  -- Grisette can solve formulas with the form:
+  -- \(\exists P. (\exists I. \mathrm{assumptions}(P, I)) \wedge (\forall I. \mathrm{assumptions}(P, I)\implies \mathrm{assertions}(P, I))\)
+  -- The left hand side of the conjunction states that we only want non-trivial programs that has at least one valid input.
 
   -- * Supportive type classes
 
@@ -653,6 +636,9 @@ module Grisette.Tutorial.Essentials.Essentials (
 
   -- ** Generating symbolic values
   -- | #gensym#
+
+  -- *** Revisit solver queries
+  -- | #queries#
 
   -- ** Symbolic hole extraction and evaluation
   
