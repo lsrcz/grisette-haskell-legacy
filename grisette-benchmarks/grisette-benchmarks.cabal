@@ -89,6 +89,7 @@ library
     , regex-base
     , regex-pcre
     , template-haskell
+    , text
     , th-lift-instances
     , timeit
     , transformers
@@ -157,6 +158,7 @@ executable bonsai-letpoly
     , regex-base
     , regex-pcre
     , template-haskell
+    , text
     , th-lift-instances
     , timeit
     , transformers
@@ -225,6 +227,7 @@ executable bonsai-letpoly-nomemo
     , regex-base
     , regex-pcre
     , template-haskell
+    , text
     , th-lift-instances
     , timeit
     , transformers
@@ -293,6 +296,7 @@ executable bonsai-nanoscala
     , regex-base
     , regex-pcre
     , template-haskell
+    , text
     , th-lift-instances
     , timeit
     , transformers
@@ -361,6 +365,7 @@ executable bonsai-nanoscala-nomemo
     , regex-base
     , regex-pcre
     , template-haskell
+    , text
     , th-lift-instances
     , timeit
     , transformers
@@ -429,6 +434,7 @@ executable bonsai-stlc
     , regex-base
     , regex-pcre
     , template-haskell
+    , text
     , th-lift-instances
     , timeit
     , transformers
@@ -497,6 +503,7 @@ executable bonsai-stlc-nomemo
     , regex-base
     , regex-pcre
     , template-haskell
+    , text
     , th-lift-instances
     , timeit
     , transformers
@@ -572,6 +579,7 @@ executable cosette
     , regex-base
     , regex-pcre
     , template-haskell
+    , text
     , th-lift-instances
     , timeit
     , transformers
@@ -647,6 +655,7 @@ executable cosette-optimized-merge
     , regex-base
     , regex-pcre
     , template-haskell
+    , text
     , th-lift-instances
     , timeit
     , transformers
@@ -721,6 +730,7 @@ executable ferrite
     , regex-base
     , regex-pcre
     , template-haskell
+    , text
     , th-lift-instances
     , timeit
     , transformers
@@ -788,6 +798,7 @@ executable fluidics
     , regex-base
     , regex-pcre
     , template-haskell
+    , text
     , th-lift-instances
     , timeit
     , transformers
@@ -860,6 +871,7 @@ executable ifcl
     , regex-base
     , regex-pcre
     , template-haskell
+    , text
     , th-lift-instances
     , timeit
     , transformers
@@ -927,6 +939,7 @@ executable regex
     , regex-base
     , regex-pcre
     , template-haskell
+    , text
     , th-lift-instances
     , timeit
     , transformers
@@ -994,6 +1007,7 @@ executable regex-nomemo
     , regex-base
     , regex-pcre
     , template-haskell
+    , text
     , th-lift-instances
     , timeit
     , transformers

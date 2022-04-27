@@ -39,6 +39,7 @@ dependencies:
 - either
 - hashtables
 - generic-deriving
+- text
 
 default-extensions:
 - BangPatterns
