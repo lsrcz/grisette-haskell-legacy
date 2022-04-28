@@ -14,6 +14,7 @@ jobs:
       - run:
           name: Resolve/Update Dependencies
           command: |
+            rm -rf /etc/apt/sources.list.d/*
             apt update
             apt install -y pkg-config git curl libpcre2-dev libpcre3-dev
             wget https://github.com/Z3Prover/z3/releases/download/z3-4.8.10/z3-4.8.10-x64-ubuntu-18.04.zip
