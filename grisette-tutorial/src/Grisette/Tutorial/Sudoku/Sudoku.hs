@@ -149,7 +149,7 @@ sudoku config board = do
   -- generate the symbolic board sketch
   let symboard = genSymSimple @SymBool board "a"
   -- call the solver with the given configuration
-  m <- solveWith config $ valid symboard
+  m <- solveFormula config $ valid symboard
   case m of
     Left _ -> return Nothing
     Right mo -> return $ Just $ evaluateToCon mo symboard

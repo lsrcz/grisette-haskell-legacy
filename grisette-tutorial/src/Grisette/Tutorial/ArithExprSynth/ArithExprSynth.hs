@@ -172,7 +172,7 @@ interpret (SymSub l r) = interpret #~ l - interpret #~ r
 -- | Similar to the synthesizer in "Grisette.Tutorial.Sudoku.Sudoku".
 synthExpr :: GrisetteSMTConfig n -> UnionM SymExpr -> Integer -> IO (Maybe Expr)
 synthExpr config expr res = do
-  r <- solveWith config $ interpret #~ expr ==~ conc res
+  r <- solveFormula config $ interpret #~ expr ==~ conc res
   case r of
     Left _ -> return Nothing
     Right mo -> return $ Just $ evaluateToCon mo expr

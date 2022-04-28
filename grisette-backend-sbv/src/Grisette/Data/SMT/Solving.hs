@@ -1,60 +1,34 @@
-{-# LANGUAGE DefaultSignatures #-}
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Grisette.Data.SMT.Solving
-  ( solveWith,
-    solveArgWith,
-    solveMultiWith,
-    solveWithTranslation,
-    solveArgWithTranslation,
-    solveMultiWithTranslation,
-    SolverTranslation (..),
-    CegisTranslation (..),
-    DefaultVerificationCondition (..),
-    cegisWithTranslation,
-    cegisWith,
-    cegisWithTranslation',
-    cegisWith',
+  ( DefaultVerificationCondition (..),
   )
 where
 
-import Control.DeepSeq
 import Control.Monad.Except
 import qualified Data.HashSet as S
-import Data.Hashable
 import Data.Maybe
 import qualified Data.SBV as SBV
 import Data.SBV.Control (Query)
 import qualified Data.SBV.Control as SBVC
-import GHC.Generics
-import Grisette.Control.Exception
-import Grisette.Control.Monad
-import Grisette.Control.Monad.UnionM
-import Grisette.Control.Monad.UnionMBase
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Evaluate
 import Grisette.Data.Class.ExtractSymbolics
-import Grisette.Data.Class.GenSym
-import Grisette.Data.Class.Mergeable
-import Grisette.Data.Class.PrimWrapper
-import Grisette.Data.Class.UnionOp
+import Grisette.Data.Class.Solver
 import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.InternedTerm
 import Grisette.Data.Prim.Model as PM
 import Grisette.Data.SMT.Config
 import Grisette.Data.SMT.Lowering
 import Grisette.Data.SymPrim
-import Language.Haskell.TH.Syntax hiding (lift)
+import Grisette.Control.Exception
 
 solveTermWith ::
   forall integerBitWidth.
@@ -72,6 +46,105 @@ solveTermWith config term = SBV.runSMTWith (sbvConfig config) $ do
         return $ (m, Right $ parseModel config md m)
       _ -> return $ (m, Left r)
 
+instance Solver (GrisetteSMTConfig n) SymBool (S.HashSet TermSymbol) SBVC.CheckSatResult PM.Model where
+  solveFormula config (Sym t) = snd <$> solveTermWith config t
+  solveFormulaMulti config n s@(Sym t)
+    | n > 0 = SBV.runSMTWith (sbvConfig config) $ do
+      (newm, a) <- lowerSinglePrim config t
+      SBVC.query $ do
+        SBV.constrain a
+        r <- SBVC.checkSat
+        case r of
+          SBVC.Sat -> do
+            md <- SBVC.getModel
+            let model = parseModel config md newm
+            remainingModels n model newm
+          _ -> return []
+    | otherwise = return []
+    where
+      allSymbols = extractSymbolics s :: S.HashSet TermSymbol
+      next :: PM.Model -> SymBiMap -> Query (SymBiMap, Either SBVC.CheckSatResult PM.Model)
+      next md origm = do
+        let newtm = S.foldl' (\acc v -> orb acc (notb (fromJust $ equation md v))) (concTerm False) allSymbols
+        let (lowered, newm) = lowerSinglePrim' config newtm origm
+        SBV.constrain lowered
+        r <- SBVC.checkSat
+        case r of
+          SBVC.Sat -> do
+            md1 <- SBVC.getModel
+            let model = parseModel config md1 newm
+            return (newm, Right model)
+          _ -> return (newm, Left r)
+      remainingModels :: Int -> PM.Model -> SymBiMap -> Query [PM.Model]
+      remainingModels n1 md origm
+        | n1 > 1 = do
+          (newm, r) <- next md origm
+          case r of
+            Left _ -> return [md]
+            Right mo -> do
+              rmmd <- remainingModels (n1 - 1) mo newm
+              return $ md : rmmd
+        | otherwise = return [md]
+  solveFormulaAll = undefined
+  cegisFormulas config foralls assumption assertion = SBV.runSMTWith (sbvConfig config) $ do
+    let Sym t = phi
+    (newm, a) <- lowerSinglePrim config t
+    SBVC.query $
+      snd <$> do
+        SBV.constrain a
+        r <- SBVC.checkSat
+        mr <- case r of
+          SBVC.Sat -> do
+            md <- SBVC.getModel
+            return $ Right $ parseModel config md newm
+          _ -> return $ Left r
+        loop ((`exceptFor` forallSymbols) <$> mr) newm
+    where
+      forallSymbols :: S.HashSet TermSymbol
+      forallSymbols = extractSymbolics foralls
+      phi = nots assertion &&~ nots assumption
+      negphi = assertion &&~ nots assumption
+      check :: Model -> IO (Either SBVC.CheckSatResult PM.Model)
+      check candidate = do
+        let evaluated = evaluate False candidate negphi
+        r <- solveFormula config evaluated
+        return $ do
+          m <- r
+          return $ exact m forallSymbols
+      guess :: Model -> SymBiMap -> Query (SymBiMap, Either SBVC.CheckSatResult PM.Model)
+      guess candidate origm = do
+        let Sym evaluated = evaluate False candidate phi
+        let (lowered, newm) = lowerSinglePrim' config evaluated origm
+        SBV.constrain lowered
+        r <- SBVC.checkSat
+        case r of
+          SBVC.Sat -> do
+            md <- SBVC.getModel
+            let model = parseModel config md newm
+            return (newm, Right $ exceptFor model forallSymbols)
+          _ -> return (newm, Left r)
+      loop ::
+        Either SBVC.CheckSatResult PM.Model ->
+        SymBiMap ->
+        Query (SymBiMap, Either SBVC.CheckSatResult PM.Model)
+      loop (Right mo) origm = do
+        r <- liftIO $ check mo
+        case r of
+          Left SBVC.Unsat -> return (origm, Right mo)
+          Left _ -> return (origm, r)
+          Right cex -> do
+            (newm, res) <- guess cex origm
+            loop res newm
+      loop l@(Left _) origm = return (origm, l)
+
+data DefaultVerificationCondition = DefaultVerificationCondition
+
+instance CegisErrorTranslation DefaultVerificationCondition VerificationConditions where
+  cegisErrorTranslation _ = id
+
+instance SymBoolOp bool => CegisTranslation DefaultVerificationCondition bool VerificationConditions () where
+  
+{-
 solveWith ::
   forall integerBitWidth.
   GrisetteSMTConfig integerBitWidth ->
@@ -188,16 +261,18 @@ solveMultiWithTranslation ::
   IO [PM.Model]
 solveMultiWithTranslation p config n e = solveMultiWith config n (translateExceptT p e)
 
-class CegisTranslation method e v | method -> e v where
+{-class CegisTranslation method e v | method -> e v where
   cegisErrorTranslation :: method -> e -> VerificationConditions
   cegisValueTranslation :: method -> v -> ExceptT VerificationConditions UnionM ()
   default cegisValueTranslation :: (v ~ ()) => method -> v -> ExceptT VerificationConditions UnionM ()
   cegisValueTranslation _ = mrgReturn
+  -}
 
 data DefaultVerificationCondition = DefaultVerificationCondition
 
-instance CegisTranslation DefaultVerificationCondition VerificationConditions () where
+{-instance CegisTranslation DefaultVerificationCondition VerificationConditions () where
   cegisErrorTranslation _ = id
+  -}
 
 translateCegis :: (CegisTranslation method e v) => method -> ExceptT e UnionM v -> (Sym Bool, Sym Bool)
 translateCegis p (ExceptT u) =
@@ -317,3 +392,5 @@ cegisWith' ::
 cegisWith' config inputSpec assumption assertion =
   let args = genSym inputSpec (nameWithInfo "arg" CegisInternal) :: UnionM a
    in cegisWith config args (assumption #~ args) (assertion #~ args)
+
+-}

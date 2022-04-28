@@ -552,7 +552,7 @@ module Grisette.Tutorial.Essentials.Essentials (
   -- In the following example, the configuration is @UnboundedReasoning z3@.
   -- We will explain what does it mean later.
   --
-  -- >>> solveWith (UnboundedReasoning z3) (("a" + 1 :: SymInteger) ==~ 4)
+  -- >>> solveFormula (UnboundedReasoning z3) (("a" + 1 :: SymInteger) ==~ 4)
   -- Right (Model (fromList [(a :: Integer,3 :: Integer)]))
   --
   -- Grisette also supports a more high level way to express program correctness condition.
@@ -581,9 +581,10 @@ module Grisette.Tutorial.Essentials.Essentials (
   --
   -- >>> data ViolatesAssertions = ViolatesAssertions
   -- >>> :{
-  --   instance SolverTranslation ViolatesAssertions VerificationConditions () where
+  --   instance SolverErrorTranslation ViolatesAssertions VerificationConditions where
   --     errorTranslation _ AssumptionViolation = False
   --     errorTranslation _ AssertionViolation = True
+  --   instance SolverTranslation ViolatesAssertions (Sym Bool) VerificationConditions () where
   --     valueTranslation _ _ = conc False
   -- :}
   --
@@ -601,9 +602,9 @@ module Grisette.Tutorial.Essentials.Essentials (
   --
   -- We can verify our claim with the solvers:
   --
-  -- >>> solveWithTranslation ViolatesAssertions (UnboundedReasoning z3) program1
+  -- >>> solveWithExcept ViolatesAssertions (UnboundedReasoning z3) program1
   -- Left Unsat
-  -- >>> solveWithTranslation ViolatesAssertions (UnboundedReasoning z3) program2
+  -- >>> solveWithExcept ViolatesAssertions (UnboundedReasoning z3) program2
   -- Right (Model (fromList [(a :: Integer,2 :: Integer)]))
   --
   -- Grisette has more flexible ways for expressing solver queries,
@@ -656,5 +657,6 @@ import Control.Monad.Except
 -- >>> :set -XDerivingVia
 -- >>> :set -XDerivingStrategies
 -- >>> :set -XFlexibleContexts
+-- >>> :set -XFlexibleInstances
 -- >>> :set -XOverloadedStrings
 -- >>> :set -XMultiParamTypeClasses

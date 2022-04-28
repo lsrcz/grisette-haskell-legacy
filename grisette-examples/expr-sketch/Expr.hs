@@ -30,7 +30,7 @@ interpret (SMulExpr a b) = interpret #~ a * interpret #~ b
 
 synthesis :: GrisetteSMTConfig i -> UnionM SymbExpr -> Integer -> IO (Maybe ConcExpr)
 synthesis config s i = do
-  m <- solveWith config (interpret #~ s ==~ toSym i)
+  m <- solveFormula config (interpret #~ s ==~ toSym i)
   case m of
     Left _ -> return Nothing
     Right mo -> return $ toCon $ evaluate True mo s

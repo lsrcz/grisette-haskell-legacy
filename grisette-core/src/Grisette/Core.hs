@@ -123,6 +123,35 @@ module Grisette.Core
     evaluateToCon,
     ToCon (..),
     ToSym (..),
+
+    -- * Solver interface
+    SolverErrorTranslation (..),
+    SolverTranslation (..),
+    CegisErrorTranslation (..),
+    CegisTranslation (..),
+    Solver (..),
+    SolveProblem
+      ( Formula,
+        WithExcept,
+        ArgFormula,
+        ArgWithExcept
+      ),
+    solve,
+    CegisProblem
+      ( CFormulaPair,
+        CArgFormulaPair,
+        CForallFormulaPair,
+        CArgForallFormulaPair,
+        CWithExcept,
+        CArgWithExcept,
+        CForallWithExcept,
+        CArgForallWithExcept
+      ),
+    cegis,
+    forallIn,
+    argBy,
+    forallBy,
+    translateBy,
   
     -- * Memoization
     MemoHashMap (..),
@@ -180,3 +209,4 @@ import Grisette.Data.MemoUtils
 import Grisette.TH
 import Grisette.BuiltinUnionMWrappers
 import Grisette.Data.Class.BitVector
+import Grisette.Data.Class.Solver

@@ -186,30 +186,34 @@ interpreter (SymITE c l r) = ternary interpreter c l r $ \case
 
 data VerifyTyper = VerifyTyper
 
-instance SolverTranslation VerifyTyper Error SymValue where
+
+instance SolverErrorTranslation VerifyTyper Error where
   errorTranslation _ ExecutionError = True
-  errorTranslation _ _ = False
+
+instance SolverTranslation VerifyTyper SymBool Error SymValue where
   valueTranslation _ _ = conc False
 
 verifyTyper :: GrisetteSMTConfig n -> Typer -> Interpreter -> IO (Maybe Expr)
 verifyTyper config typerImpl interpreterImpl = do
   let sk :: UnionM SymExpr = genSym (3 :: Integer) $$(nameWithLoc "a")
   let r = (typerImpl #~ sk) >>~ (interpreterImpl #~ sk)
-  m <- solveWithTranslation VerifyTyper config r
+  m <- solveWithExcept VerifyTyper config r
   case m of
     Left _ -> return Nothing
     Right mo -> return $ Just $ evaluateToCon mo sk
 
 newtype SynthExpr = SynthExpr Value
 
-instance SolverTranslation SynthExpr Error SymValue where
+instance SolverErrorTranslation SynthExpr Error where
   errorTranslation _ _ = False
+
+instance SolverTranslation SynthExpr SymBool Error SymValue where
   valueTranslation (SynthExpr expect) actual = toSym expect ==~ actual
 
 synthExpr :: GrisetteSMTConfig n -> UnionM SymExpr -> Value -> IO (Maybe Expr)
 synthExpr config sketch expect = do
   let r = interpreter #~ sketch
-  m <- solveWithTranslation (SynthExpr expect) config r
+  m <- solveWithExcept (SynthExpr expect) config r
   case m of
     Left _ -> return Nothing
     Right mo -> return $ Just $ evaluateToCon mo sketch

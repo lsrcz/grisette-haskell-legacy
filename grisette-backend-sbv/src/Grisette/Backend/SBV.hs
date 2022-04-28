@@ -1,14 +1,6 @@
 module Grisette.Backend.SBV
   ( GrisetteSMTConfig (..),
     sbvConfig,
-    solveWith,
-    solveWithTranslation,
-    solveMultiWith,
-    solveMultiWithTranslation,
-    CegisTranslation (..),
-    cegisWithTranslation,
-    cegisWith,
-    SolverTranslation (..),
     SBV.SMTConfig (..),
     SBV.boolector,
     SBV.cvc4,
@@ -18,6 +10,7 @@ module Grisette.Backend.SBV
     SBV.mathSAT,
     SBV.abc,
     SBV.Timing (..),
+    DefaultVerificationCondition (..),
   )
 where
 

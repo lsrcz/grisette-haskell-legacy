@@ -30,15 +30,16 @@ sketch = genSym (ListSpec 0 2 (ExprSpec 2 1)) "a"
 
 data FindRuntimeTypeMismatch = FindRuntimeTypeMismatch
 
-instance SolverTranslation FindRuntimeTypeMismatch Error LitExpr where
+instance SolverErrorTranslation FindRuntimeTypeMismatch Error where
   errorTranslation _ (Runtime RuntimeTypeMismatch) = True
   errorTranslation _ _ = False
-  valueTranslation _ _ = conc False
 
+instance SolverTranslation FindRuntimeTypeMismatch SymBool Error LitExpr where
+  valueTranslation _ _ = conc False
 
 main :: IO ()
 main = do
-  m <- solveWithTranslation FindRuntimeTypeMismatch (UnboundedReasoning z3 {verbose = True}) $ checkAndInterpretStmtUListU sketch
+  m <- solveWithExcept FindRuntimeTypeMismatch (UnboundedReasoning z3 {verbose = True}) $ checkAndInterpretStmtUListU sketch
   case m of
     Right mm -> do
       putStrLn "Not verified, counter example: "

@@ -101,8 +101,10 @@ data Marble = Red | White | Blue
 
 data DutchFlag = DutchFlag {nred :: Int, nwhite :: Int}
 
-instance SolverTranslation DutchFlag AssertionError ([UnionM Marble], Trace) where
+instance SolverErrorTranslation DutchFlag AssertionError where
   errorTranslation _ _ = False
+
+instance SolverTranslation DutchFlag SymBool AssertionError ([UnionM Marble], Trace) where
   valueTranslation (DutchFlag r w) (v, _) =
     isColor Red rmarbles &&~ isColor White wmarbles &&~ isColor Blue bmarbles
     where
@@ -123,7 +125,7 @@ runDutchFlag config algo len initMarbles = do
       return $ ct : r
   where
     solveProb result = do
-      ms <- solveWithTranslation (DutchFlag (length $ filter (== Red) initMarbles) (length $ filter (== White) initMarbles)) config result
+      ms <- solveWithExcept (DutchFlag (length $ filter (== Red) initMarbles) (length $ filter (== White) initMarbles)) config result
       case ms of
         Left _ -> return Nothing
         Right mo -> do
@@ -144,11 +146,11 @@ runDutchFlag config algo len initMarbles = do
           remaining <- unsafeInterleaveIO $ go newresult ct
           return $ ct : remaining
 
--- It's a pity that solveMultiWithTranslation is not lazy.
+-- It's a pity that solveMultiWithExcept is not lazy.
 -- We currently cannot do this lazily due to the restriction of SBV APIs.
 runDutchFlag' :: GrisetteSMTConfig n -> Algo -> Integer -> Int -> [Marble] -> IO [ConTrace]
 runDutchFlag' config algo len maxModelCnt initMarbles = do
-  ms <- solveMultiWithTranslation (DutchFlag (length $ filter (== Red) initMarbles) (length $ filter (== White) initMarbles)) config maxModelCnt final
+  ms <- solveWithExceptMulti (DutchFlag (length $ filter (== Red) initMarbles) (length $ filter (== White) initMarbles)) config maxModelCnt final
   return $
     ( \mo ->
         let res :: Either AssertionError ConTrace = evaluateToCon mo (runExceptT (snd <$> final) :: UnionM (Either AssertionError Trace))

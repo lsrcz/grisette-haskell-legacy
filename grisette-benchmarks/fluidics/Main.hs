@@ -122,8 +122,10 @@ interpretInstruction (Mix p) = mix p
 
 data Synth = Synth
 
-instance SolverTranslation Synth () SymBool where
+instance SolverErrorTranslation Synth () where
   errorTranslation _ _ = False
+
+instance SolverTranslation Synth SymBool () SymBool where
   valueTranslation _ v = v
 
 synthesizeProgram ::
@@ -146,7 +148,7 @@ synthesizeProgram config i initst f = go 0 (mrgReturn initst)
          in do
               print num
               _ <- timeItAll "evaluate" $ runExceptT cond `deepseq` return cond
-              r <- timeItAll "lower/solve" $ solveWithTranslation Synth config cond
+              r <- timeItAll "lower/solve" $ solveWithExcept Synth config cond
               case r of
                 Left _ -> go (num + 1) newst
                 Right m -> return $ toCon $ evaluate True m $ take (num + 1) lst

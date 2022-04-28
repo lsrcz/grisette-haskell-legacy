@@ -17,7 +17,7 @@ main = timeItAll "Overall" $ do
   let r1r = $$(denoteSql q4r)
   let cond = $$(verifCondition q4 q4r)
   _ <- timeItAll "all" $ cond `deepseq` return ()
-  r <- timeItAll "solve" $ solveWith (UnboundedReasoning z3 {verbose = False, timing = PrintTiming}) cond
+  r <- timeItAll "solve" $ solveFormula (UnboundedReasoning z3 {verbose = False, timing = PrintTiming}) cond
   case r of
     Left _ -> putStrLn "Verified"
     Right m -> do

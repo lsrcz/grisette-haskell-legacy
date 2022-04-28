@@ -16,8 +16,10 @@ syncCost [] = 0
 
 data Synth = Synth
 
-instance CegisTranslation Synth AssertionError () where
+instance CegisErrorTranslation Synth AssertionError where
   cegisErrorTranslation _ _ = AssertionViolation
+
+instance CegisTranslation Synth SymBool AssertionError () where
 
 synth ::
   forall b conc fs.
@@ -46,7 +48,7 @@ synth config (Litmus fsBound make setupProc prog allowCond) =
         let costConstraint = conc (currCost == fromIntegral (length progWithSyncs)) ||~ cost <~ currCost
             synthCond = symFailIfNot AssertionError ((validOrdering fs prog1 order `implies` allowed) &&~ costConstraint)
          in do
-              m <- cegisWithTranslation Synth config (crashes, order) synthCond
+              m <- cegisWithExcept Synth config (crashes, order) synthCond
               case m of
                 Left _ -> return sol
                 Right mo -> go (Just $ evaluate True mo progWithSyncs) $ evaluate True mo cost

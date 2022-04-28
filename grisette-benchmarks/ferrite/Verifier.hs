@@ -10,8 +10,10 @@ import Litmus
 
 data Verify = Verify
 
-instance SolverTranslation Verify AssertionError () where
+instance SolverErrorTranslation Verify AssertionError where
   errorTranslation _ _ = True
+
+instance SolverTranslation Verify SymBool AssertionError () where
   valueTranslation _ _ = conc False
 
 verify ::
@@ -37,7 +39,7 @@ verify config (Litmus _ make setupProc prog allowCond) =
 
       verifCond = symFailIfNot AssertionError (validOrdering fs prog1 order `implies` allowed)
    in do
-        r <- solveWithTranslation Verify config verifCond
+        r <- solveWithExcept Verify config verifCond
         case r of
           Left _ -> return Nothing
           Right mo -> return $ (case evaluate True mo verifFs of; SingleU v -> Just v; _ -> Nothing) >>= toCon

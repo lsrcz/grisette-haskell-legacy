@@ -1,4 +1,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE DataKinds #-}
 module Main where
 
@@ -8,13 +10,17 @@ import Data.Bits
 
 data X = X
 
-instance CegisTranslation X VerificationConditions () where
+instance CegisErrorTranslation X VerificationConditions where
   cegisErrorTranslation _ = id
+
+instance CegisTranslation X SymBool VerificationConditions () where
 
 data Y = Y
 
-instance CegisTranslation Y VerificationConditions Integer where
+instance CegisErrorTranslation Y VerificationConditions where
   cegisErrorTranslation _ = id
+
+instance CegisTranslation Y SymBool VerificationConditions Integer where
   cegisValueTranslation _ i = do
     symFailIfNot AssumptionViolation (conc $ i >= 2)
     symFailIfNot AssertionViolation (conc $ odd i)
@@ -48,9 +54,9 @@ v = do
 
 main :: IO()
 main = do
-  Right mo <- cegisWithTranslation X (UnboundedReasoning z3) input v
+  Right mo <- cegisWithExcept X (UnboundedReasoning z3) input v
   print (evaluate False mo input2)
-  Right mo1 <- cegisWithTranslation X (UnboundedReasoning z3) (ssymb "a" :: Sym Bool) m1
+  Right mo1 <- cegisWithExcept X (UnboundedReasoning z3) (ssymb "a" :: Sym Bool) m1
   print (evaluate False mo1 m)
-  Right mo2 <- cegisWithTranslation Y (UnboundedReasoning z3) (ssymb "a" :: Sym Bool) (lift m)
+  Right mo2 <- cegisWithExcept Y (UnboundedReasoning z3) (ssymb "a" :: Sym Bool) (lift m)
   print (evaluate False mo2 m)
