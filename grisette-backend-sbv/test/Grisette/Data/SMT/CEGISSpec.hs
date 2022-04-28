@@ -19,6 +19,7 @@ import Grisette.Data.Class.ExtractSymbolics
 import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.SOrd
 import Grisette.Data.Class.Evaluate
+import Grisette.Data.Class.Solver
 import Grisette.Data.Prim.InternedTerm
 import Grisette.Data.SMT.Config
 import Grisette.Data.SMT.Solving
@@ -27,7 +28,7 @@ import Test.Hspec
 
 testCegis :: (HasCallStack, ExtractSymbolics (S.HashSet TermSymbol) a) => GrisetteSMTConfig i -> Bool -> a -> [SymBool] -> Expectation
 testCegis config shouldSuccess a bs = do
-  x <- cegisWithTranslation DefaultVerificationCondition config (a, ssymb "internal" :: SymInteger) (buildFormula bs)
+  x <- cegisWithExcept DefaultVerificationCondition config (a, ssymb "internal" :: SymInteger) (buildFormula bs)
   case x of
     Left _ -> shouldSuccess `shouldBe` False
     Right m -> do
@@ -36,7 +37,7 @@ testCegis config shouldSuccess a bs = do
       where
         verify [] = return ()
         verify (v : vs) = do
-          y <- solveWith config (evaluate False m $ nots v)
+          y <- solveFormula config (evaluate False m $ nots v)
           case y of
             Left _ -> do
               verify vs

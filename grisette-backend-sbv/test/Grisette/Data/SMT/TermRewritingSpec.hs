@@ -9,9 +9,10 @@ module Grisette.Data.SMT.TermRewritingSpec where
 import qualified Data.BitVector.Sized.Signed as BVS
 import Data.Foldable
 import qualified Data.SBV as SBV
+import Grisette.Data.SMT.Solving ()
+import Grisette.Data.Class.Solver
 import Grisette.Data.Prim.InternedTerm
 import Grisette.Data.SMT.Config
-import Grisette.Data.SMT.Solving
 import Grisette.Data.SymPrim
 import Test.Hspec
 import Test.Hspec.QuickCheck
@@ -19,8 +20,8 @@ import Grisette.Data.SMT.TermRewritingGen
 
 validateSpec :: (TermRewritingSpec a av, Show a, SupportedPrim av) => GrisetteSMTConfig n -> a -> Expectation
 validateSpec config a = do
-  r <- solveWith config (Sym $ counterExample a)
-  rs <- solveWith config (Sym $ same a)
+  r <- solveFormula config (Sym $ counterExample a)
+  rs <- solveFormula config (Sym $ same a)
   case (r, rs) of
     (Left _, Right _) -> do
       return ()
