@@ -7,10 +7,10 @@ import Bonsai.BonsaiTree
 import Control.DeepSeq
 import Control.Monad.Except
 import Grisette
-import Bonsai.Match
-import Bonsai.Pattern
+-- import Bonsai.Match
+-- import Bonsai.Pattern
 import STLC
-import Bonsai.SyntaxSpec
+-- import Bonsai.SyntaxSpec
 import Utils.Timing
 
 x1 :: STLCTree
@@ -35,6 +35,7 @@ f8 = genSym (8 :: Int) "h"
 
 main :: IO ()
 main = timeItAll "Overall" $ do
+  {-
   print $ terminals stlcSyntax
   print $ matchStlcSyntax x1 "term"
   print f1
@@ -191,10 +192,11 @@ main = timeItAll "Overall" $ do
           )
           (plusNode oneNode oneNode)
       )
+      -}
 
   let result = lift f8 >>= execStlc
   _ <- timeItAll "evaluate" $ runExceptT result `deepseq` return ()
-  r <- timeItAll "lower/solve" $ solveWithExcept VerifyTyper (BoundedReasoning @6 boolector) result
+  r <- timeItAll "Lowering/Solving" $ solveWithExcept VerifyTyper (BoundedReasoning @6 boolector) result
   case r of
     Left _ -> putStrLn "Verified"
     Right mo -> do

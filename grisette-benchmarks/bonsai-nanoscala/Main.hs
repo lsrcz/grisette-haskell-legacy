@@ -7,10 +7,10 @@ import Control.DeepSeq
 import Control.Monad.Except
 import qualified Data.ByteString as B
 import Grisette
-import Bonsai.Match
+-- import Bonsai.Match
 import NanoScala
-import Bonsai.Pattern
-import Bonsai.SyntaxSpec
+-- import Bonsai.Pattern
+-- import Bonsai.SyntaxSpec
 import Utils.Timing
 
 simpleNode :: B.ByteString -> DotTree
@@ -87,7 +87,7 @@ counterExample =
 
 main :: IO ()
 main = timeItAll "Overall" $ do
-  print $ terminals dotSyntax
+  {-print $ terminals dotSyntax
   print f4
   print $
     bonsaiMatchCustomError
@@ -106,10 +106,11 @@ main = timeItAll "Overall" $ do
   let qnode = letNode "b" nothingNode nothingNode nullNode (dieNode $ varNode "b")
   print $ typer qnode
   print $ eval qnode
+  -}
 
   let result = lift f10 >>= execDot
   _ <- timeItAll "evaluate" $ runExceptT result `deepseq` return ()
-  r <- timeItAll "lower/solve" $ solveWithExcept VerifyTyper (BoundedReasoning @6 boolector) result
+  r <- timeItAll "Lowering/Solving" $ solveWithExcept VerifyTyper (BoundedReasoning @6 boolector) result
   case r of
     Left _ -> putStrLn "Verified"
     Right mo -> do

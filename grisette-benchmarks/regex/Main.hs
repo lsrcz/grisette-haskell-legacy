@@ -100,7 +100,7 @@ synthesisRegexCompiled config patt coro reg strs =
       constraint = foldr (&&~) (conc True) constraints
    in do
         _ <- timeItAll "evaluate" $ constraint `deepseq` return ()
-        solveRes <- timeItAll "lowering/solving" $ solveFormula config constraint
+        solveRes <- timeItAll "Lowering/Solving" $ solveFormula config constraint
         case solveRes of
           Left _ -> return Nothing
           Right mo -> return $ Just $ evaluateToCon mo patt

@@ -46,7 +46,7 @@ verifyEENI config end indistinguishable steps progSpec =
    in do
         _ <- timeItAll "evaluate1" $ runExceptT r0 `deepseq` return ()
         _ <- timeItAll "evaluate2" $ runExceptT r1 `deepseq` return ()
-        m <- timeItAll "lowering/solve" $ solveWithExcept VerifyEENI config res
+        m <- timeItAll "Lowering/Solving" $ solveWithExcept VerifyEENI config res
         case m of
           Left _ -> do return Nothing
           Right mo -> return $ Just $ EENIWitness (evaluate True mo p0) (evaluate True mo p1)

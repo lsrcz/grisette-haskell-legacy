@@ -8,6 +8,9 @@ import Grisette
 import Interpret
 import Lang
 import Litmus
+import Utils.Timing
+import Control.DeepSeq
+import Control.Monad.Except
 
 syncCost :: [SysCall] -> SymInteger
 syncCost (Efsync _ e : xs) = ites @SymBool e 1 0 + syncCost xs
@@ -48,7 +51,8 @@ synth config (Litmus fsBound make setupProc prog allowCond) =
         let costConstraint = conc (currCost == fromIntegral (length progWithSyncs)) ||~ cost <~ currCost
             synthCond = symFailIfNot AssertionError ((validOrdering fs prog1 order `implies` allowed) &&~ costConstraint)
          in do
-              m <- cegisWithExcept Synth config (crashes, order) synthCond
+              _ <- timeItAll "evaluate" $ (runExceptT synthCond) `deepseq` return ()
+              m <- timeItAll "Lowering/Solving" $ cegisWithExcept Synth config (crashes, order) synthCond
               case m of
                 Left _ -> return sol
                 Right mo -> go (Just $ evaluate True mo progWithSyncs) $ evaluate True mo cost

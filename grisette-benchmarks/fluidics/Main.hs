@@ -148,7 +148,7 @@ synthesizeProgram config i initst f = go 0 (mrgReturn initst)
          in do
               print num
               _ <- timeItAll "evaluate" $ runExceptT cond `deepseq` return cond
-              r <- timeItAll "lower/solve" $ solveWithExcept Synth config cond
+              r <- timeItAll "Lowering/Solving" $ solveWithExcept Synth config cond
               case r of
                 Left _ -> go (num + 1) newst
                 Right m -> return $ toCon $ evaluate True m $ take (num + 1) lst
@@ -166,5 +166,5 @@ main :: IO ()
 main = timeItAll "Overall" $ do
   let (x :: UnionM Instruction) = genSym @SymBool () "a"
   print x
-  synthr <- synthesizeProgram (UnboundedReasoning z3 {verbose = False, timing = PrintTiming}) 20 initSt (merge . evalStateT spec)
+  synthr <- synthesizeProgram (UnboundedReasoning z3) 20 initSt (merge . evalStateT spec)
   print synthr

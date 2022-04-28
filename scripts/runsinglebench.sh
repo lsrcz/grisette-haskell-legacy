@@ -1,7 +1,7 @@
 #!/bin/bash
 
 POSITIONAL_ARGS=()
-RUN_N_TIMES=$1
+RUN_N_TIMES=1
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -34,11 +34,17 @@ done
 
 set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 
+parent_path=$(
+    cd "$(dirname "${BASH_SOURCE[0]}")"
+    pwd -P
+)
+cd "$parent_path/.."
+
 if [[ $TERM_COUNT == YES ]]; then
     PROJECT=$1
     echo "COUNTING TERM ON ${PROJECT}"
     TMPFILE=$(mktemp /tmp/${PROJECT}.XXXX) || exit 1
-    GRISETTE_SOLVER_OUTPUT=$TMPFILE PATH=solverwrappers:$PATH stack run $PROJECT >/dev/null 2>/dev/null
+    GRISETTE_SOLVER_OUTPUT=$TMPFILE PATH=scripts/solverwrappers:$PATH stack run $PROJECT >/dev/null 2>/dev/null
     TERM_NUM=$(grep -e "\(declare-fun\|define-fun\)" $TMPFILE | wc -l)
     echo "Term count $TERM_NUM"
 else
@@ -49,7 +55,7 @@ else
     LOWERING_TIME_AVG=0.0
     LOWERING_DETECTED_NUM=0
     for ((i=1;i<=RUN_N_TIMES;i++)); do
-        RESULT=$(PATH=solver:$PATH stack run $PROJECT) || exit 1
+        RESULT=$(PATH=scripts/solver:$PATH stack run $PROJECT) || exit 1
         MONO_TIME=$(echo "${RESULT}" | sed -nE 's/.*Overall -- Mono clock: ([[:digit:]]+\.?[[:digit:]]*) s.*/\1/p')
         CPU_TIME=$(echo "${RESULT}" | sed -nE 's/.*Overall -- CPU clock: ([[:digit:]]+\.?[[:digit:]]*) s.*/\1/p')
         MONO_TIME_AVG=$(echo "$MONO_TIME_AVG + $MONO_TIME" | bc)

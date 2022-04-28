@@ -7,6 +7,9 @@ import Fs
 import Grisette
 import Interpret
 import Litmus
+import Utils.Timing
+import Control.DeepSeq
+import Control.Monad.Except
 
 data Verify = Verify
 
@@ -39,7 +42,8 @@ verify config (Litmus _ make setupProc prog allowCond) =
 
       verifCond = symFailIfNot AssertionError (validOrdering fs prog1 order `implies` allowed)
    in do
-        r <- solveWithExcept Verify config verifCond
+        _ <- timeItAll "evaluate" $ (runExceptT verifCond) `deepseq` return ()
+        r <- timeItAll "Lowering/Solving" $ solveWithExcept Verify config verifCond
         case r of
           Left _ -> return Nothing
           Right mo -> return $ (case evaluate True mo verifFs of; SingleU v -> Just v; _ -> Nothing) >>= toCon
