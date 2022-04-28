@@ -1,0 +1,7 @@
+#!/bin/env bash
+
+parent_path=$(
+    cd "$(dirname "${BASH_SOURCE[0]}")"
+    pwd -P
+)
+tee -a ${GRISETTE_SOLVER_OUTPUT} | "$parent_path/../solvers/z3" $@

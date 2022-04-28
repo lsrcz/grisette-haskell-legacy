@@ -8,19 +8,9 @@ import Formatting.Internal
 import System.Clock
 
 fmt :: Integer -> Builder
-fmt diff
-  | Just i <- scale (10 ^ (9 :: Integer)) = bprint (fixed 2 % " s") i
-  | Just i <- scale (10 ^ (6 :: Integer)) = bprint (fixed 2 % " ms") i
-  | Just i <- scale (10 ^ (3 :: Integer)) = bprint (fixed 2 % " us") i
-  | otherwise = bprint (int % " ns") diff
-  where
-    scale :: Integer -> Maybe Double
-    scale i =
-      if diff >= i
-        then Just (fromIntegral diff / fromIntegral i)
-        else Nothing
+fmt diff = bprint (fixed 6 % " s") (fromIntegral diff /
+  (fromIntegral (10 ^ (9 :: Integer) :: Integer) :: Double))
 
--- | Same as @durationNS@ but works on `TimeSpec` from the clock package.
 timeSpecs :: Format r (TimeSpec -> TimeSpec -> r)
 timeSpecs = Format (\g x y -> g (fmt0 x y))
   where
