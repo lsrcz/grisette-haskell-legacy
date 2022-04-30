@@ -1,21 +1,32 @@
 #!/bin/bash
 
 POSITIONAL_ARGS=()
+SKIP_N_TIMES=0
 RUN_N_TIMES=1
 
 while [[ $# -gt 0 ]]; do
     case $1 in
-    -c | --count)
+    -t | --term)
         TERM_COUNT=YES
         shift
         ;;
-    -a | --avg)
-        RUN_N_TIMES=$2
-        echo $RUN_N_TIMES
-        if [[ $RUN_N_TIMES =~ ^[1-9][0-9]*$ ]]; then
-            echo "Will run $RUN_N_TIMES and take average"
+    -s | --skip)
+        SKIP_N_TIMES=$2
+        if [[ $SKIP_N_TIMES =~ ^(0|[1-9][0-9]*)$ ]]; then
+            echo "Will skip $SKIP_N_TIMES"
         else
-            echo "Bad argument to -a, expect a number, but got $RUN_N_TIMES"
+            echo "Bad argument to -s, expect a number, but got $SKIP_N_TIMES"
+            exit 1
+        fi
+        shift
+        shift
+        ;;
+    -n | --ntimes)
+        RUN_N_TIMES=$2
+        if [[ $RUN_N_TIMES =~ ^[1-9][0-9]*$ ]]; then
+            echo "Will run $RUN_N_TIMES and calculate the average"
+        else
+            echo "Bad argument to -n, expect a number, but got $RUN_N_TIMES"
             exit 1
         fi
         shift
@@ -55,6 +66,9 @@ else
     CPU_TIME_AVG=0.0
     LOWERING_TIME_AVG=0.0
     LOWERING_DETECTED_NUM=0
+    for ((i=1;i<=SKIP_N_TIMES;i++)); do
+        PATH="$BASE_PATH/scripts/solvers:$PATH" stack run $PROJECT >/dev/null 2>/dev/null || exit 1
+    done
     for ((i=1;i<=RUN_N_TIMES;i++)); do
         RESULT=$(PATH="$BASE_PATH/scripts/solvers:$PATH" stack run $PROJECT) || exit 1
         MONO_TIME=$(echo "${RESULT}" | sed -nE 's/.*Overall -- Mono clock: ([[:digit:]]+\.?[[:digit:]]*) s.*/\1/p')
