@@ -189,6 +189,7 @@ data VerifyTyper = VerifyTyper
 
 instance SolverErrorTranslation VerifyTyper Error where
   errorTranslation _ ExecutionError = True
+  errorTranslation _ _ = False
 
 instance SolverTranslation VerifyTyper SymBool Error SymValue where
   valueTranslation _ _ = conc False
