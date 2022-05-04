@@ -38,6 +38,7 @@ library
       MemoTrie
     , base >4.7 && <5
     , bytestring
+    , fused-effects
     , grisette
     , hashable
     , loch-th
@@ -68,6 +69,7 @@ executable angelic
       MemoTrie
     , base >4.7 && <5
     , bytestring
+    , fused-effects
     , grisette
     , hashable
     , loch-th
@@ -98,6 +100,38 @@ executable cegis
       MemoTrie
     , base >4.7 && <5
     , bytestring
+    , fused-effects
+    , grisette
+    , hashable
+    , loch-th
+    , monad-coroutine
+    , monad-memo
+    , mtl
+    , regex-base
+    , regex-pcre
+    , template-haskell
+    , transformers
+    , unordered-containers
+    , utf8-string
+    , vector
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
+  default-language: Haskell2010
+
+executable effects
+  main-is: Main.hs
+  other-modules:
+      Paths_grisette_scratch
+  hs-source-dirs:
+      effects
+  ghc-options: -Wall -ferror-spans
+  build-depends:
+      MemoTrie
+    , base >4.7 && <5
+    , bytestring
+    , fused-effects
     , grisette
     , hashable
     , loch-th
@@ -128,6 +162,7 @@ executable interned-trie
       MemoTrie
     , base >4.7 && <5
     , bytestring
+    , fused-effects
     , grisette
     , hashable
     , loch-th
@@ -158,6 +193,7 @@ executable list-funcs
       MemoTrie
     , base >4.7 && <5
     , bytestring
+    , fused-effects
     , grisette
     , hashable
     , loch-th

@@ -26,6 +26,7 @@ dependencies:
 - utf8-string
 - unordered-containers
 - vector
+- fused-effects
 
 flags: {
   fast: {
@@ -56,6 +57,9 @@ executables:
     main: Main.hs
   angelic:
     source-dirs: angelic
+    main: Main.hs
+  effects:
+    source-dirs: effects
     main: Main.hs
   
 library:
