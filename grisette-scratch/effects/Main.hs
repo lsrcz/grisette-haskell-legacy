@@ -1,27 +1,23 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# OPTIONS_GHC -Wno-orphans #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Main where
-import Grisette
+
 import Control.Algebra
-import Control.Effect.Lift
-import qualified Control.Monad.Except as E
 import Control.Carrier.Error.Either
 import Control.Carrier.State.Strict
+import qualified Control.Monad.Except as E
 import qualified Control.Monad.State.Strict as S
-
-instance (SymBoolOp bool) => Algebra (Lift (UnionMBase bool)) (UnionMBase bool) where
-  alg hdl (LiftWith with) = with hdl
-
-v :: E.ExceptT VerificationConditions UnionM ()
-v = mrgIf (ssymb "a") (throwError AssertionViolation) (return ())
+import Grisette
+import Control.Carrier.Lift
 
 instance
   (SymBoolOp bool, Mergeable1 bool m, Mergeable bool e, Mergeable bool a) =>
@@ -53,20 +49,35 @@ instance
   mrgReturn et = ErrorC $ mrgReturn et
   mrgIf cond (ErrorC t) (ErrorC f) = ErrorC $ mrgIf cond t f
 
+instance (MonadUnion bool m, Mergeable bool a) => Mergeable bool (LiftC m a) where
+  mergeStrategy = withUnionSimpleMergeable @bool @m @a $ wrapMergeStrategy mergeStrategy LiftC (\(LiftC m) -> m)
+instance (MonadUnion bool m) => Mergeable1 bool (LiftC m)
+instance (MonadUnion bool m, Mergeable bool a) => SimpleMergeable bool (LiftC m a) where
+  mrgIte cond (LiftC l) (LiftC r) = LiftC $ mrgIteu1 cond l r
+instance (MonadUnion bool m) => SimpleMergeable1 bool (LiftC m)
+instance (MonadUnion bool m) => UnionSimpleMergeable1 bool (LiftC m)
+instance (MonadUnion bool m) => MonadUnion bool (LiftC m) where
+  merge (LiftC v) = LiftC $ merge v
+  mrgReturn v = LiftC $ mrgReturn v
+  mrgIf cond (LiftC l) (LiftC r) = LiftC $ mrgIf cond l r
 
-v2 :: (SymBoolOp bool, Has (Error VerificationConditions) sig m, MonadUnion bool m) => m ()
-v2 = mrgIf (ssymb "a") (throwError AssertionViolation) (return ())
+v1 :: (SymBoolOp bool, Has (Error VerificationConditions) sig m, MonadUnion bool m) => m ()
+v1 = mrgIf (ssymb "a") (throwError AssertionViolation) (return ())
 
-v3 :: (SymBoolOp bool, Has (Error VerificationConditions) sig m,
-  Has (State SymBool) sig m,
-  MonadUnion bool m) => m ()
-v3 = do
+v2 ::
+  ( SymBoolOp bool,
+    Has (Error VerificationConditions) sig m,
+    Has (State SymBool) sig m,
+    MonadUnion bool m
+  ) =>
+  m ()
+v2 = do
   modify $ \(x :: SymBool) -> nots x
   mrgIf (ssymb "a") (throwError AssertionViolation) (return ())
 
 main :: IO ()
 main = do
-  print $ runError (v2 :: ErrorC VerificationConditions UnionM ())
-  print $ E.runExceptT (v2 :: E.ExceptT VerificationConditions UnionM ())
-  print $ runError $ (\m -> S.runStateT m $ ssymb "x") (v3 :: S.StateT SymBool (ErrorC VerificationConditions UnionM) ())
-  print $ (\m -> S.runStateT m $ ssymb "x") $ runError (v3 :: ErrorC VerificationConditions (S.StateT SymBool UnionM) ())
+  print $ runM $ runError (v1 :: ErrorC VerificationConditions (LiftC UnionM) ())
+  print $ runM $ E.runExceptT (v1 :: E.ExceptT VerificationConditions (LiftC UnionM) ())
+  print $ runM $ runError $ (\m -> S.runStateT m $ ssymb "x") (v2 :: S.StateT SymBool (ErrorC VerificationConditions (LiftC UnionM)) ())
+  print $ runM $ (\m -> S.runStateT m $ ssymb "x") $ runError (v2 :: ErrorC VerificationConditions (S.StateT SymBool (LiftC UnionM)) ())
