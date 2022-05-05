@@ -15,7 +15,6 @@ import Control.Algebra
 import Control.Carrier.Error.Either
 import Control.Carrier.State.Strict
 import qualified Control.Monad.Except as E
-import qualified Control.Monad.State.Strict as S
 import Grisette
 import Control.Carrier.Lift
 
@@ -49,6 +48,40 @@ instance
   mrgReturn et = ErrorC $ mrgReturn et
   mrgIf cond (ErrorC t) (ErrorC f) = ErrorC $ mrgIf cond t f
 
+instance
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool a, Mergeable1 bool m) =>
+  Mergeable bool (StateC s m a) where
+  mergeStrategy =
+    withMergeable @bool @m @(s, a) $
+      withMergeable @bool @((->) s) @(m (s, a)) $
+        wrapMergeStrategy mergeStrategy StateC (\(StateC f) -> f)
+
+instance
+  (SymBoolOp bool, Mergeable bool s, Mergeable1 bool m) =>
+  Mergeable1 bool (StateC s m) where
+
+instance (SymBoolOp bool, Mergeable bool s, Mergeable bool a, UnionSimpleMergeable1 bool m) =>
+  SimpleMergeable bool (StateC s m a) where
+    mrgIte cond (StateC t) (StateC f) =
+      withUnionSimpleMergeable @bool @m @(s, a) $
+        withSimpleMergeable @bool @((->) s) @(m (s, a)) $
+          StateC $ mrgIte cond t f
+
+instance
+  (SymBoolOp bool, Mergeable bool s, UnionSimpleMergeable1 bool m) =>
+  SimpleMergeable1 bool (StateC s m)
+
+instance
+  (SymBoolOp bool, Mergeable bool s, UnionSimpleMergeable1 bool m) =>
+  UnionSimpleMergeable1 bool (StateC s m)
+
+instance
+  (SymBoolOp bool, Mergeable bool s, MonadUnion bool m) =>
+  MonadUnion bool (StateC s m) where
+    merge (StateC f) = StateC $ merge . f
+    mrgReturn v = StateC $ \s -> mrgReturn (s, v)
+    mrgIf cond (StateC t) (StateC f) = StateC $ \s -> mrgIf cond (t s) (f s)
+
 instance (MonadUnion bool m, Mergeable bool a) => Mergeable bool (LiftC m a) where
   mergeStrategy = withUnionSimpleMergeable @bool @m @a $ wrapMergeStrategy mergeStrategy LiftC (\(LiftC m) -> m)
 instance (MonadUnion bool m) => Mergeable1 bool (LiftC m)
@@ -79,5 +112,5 @@ main :: IO ()
 main = do
   print $ runM $ runError (v1 :: ErrorC VerificationConditions (LiftC UnionM) ())
   print $ runM $ E.runExceptT (v1 :: E.ExceptT VerificationConditions (LiftC UnionM) ())
-  print $ runM $ runError $ (\m -> S.runStateT m $ ssymb "x") (v2 :: S.StateT SymBool (ErrorC VerificationConditions (LiftC UnionM)) ())
-  print $ runM $ (\m -> S.runStateT m $ ssymb "x") $ runError (v2 :: ErrorC VerificationConditions (S.StateT SymBool (LiftC UnionM)) ())
+  print $ runM $ runError $ runState (ssymb "x") (v2 :: StateC SymBool (ErrorC VerificationConditions (LiftC UnionM)) ())
+  print $ runM $ runState (ssymb "x") $ runError (v2 :: ErrorC VerificationConditions (StateC SymBool (LiftC UnionM)) ())
