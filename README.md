@@ -4,17 +4,17 @@
 
 ## Components in this repo
 
-- `grisette-core` folder contains the core constructs for Grisette, includes most of the things shown in the paper.
+- [`grisette-core`](grisette-core) folder contains the core constructs for Grisette, includes most of the things shown in the paper.
   The actual implementation is more flexible than the one described in the paper.
   It allows the user to defined his own symbolic intermediate representations (the `SymBool`, `SymInteger` types in the paper),
   when using another representation (e.g. BDDs) could be beneficial.
-- `grisette-symir` folder contains our implementation for `SymBool` and `SymInteger`.
-- `grisette-backend-sbv` folder contains our backend that lowers from the symbolic IR to SMT formula using sbv package.
-- `grisette-backend-direct` (WIP, does not work now) We are working on an alternative backend for performance.
-- `grisette-lib` folder contains some lifted library functions, e.g. symbolic filter, etc.
+- [`grisette-symir`](grisette-symir) folder contains our implementation for `SymBool` and `SymInteger`.
+- [`grisette-backend-sbv`](grisette-backend-sbv) folder contains our backend that lowers from the symbolic IR to SMT formula using sbv package.
+- [`grisette-backend-direct`](grisette-backend-direct) (WIP, does not work now) We are working on an alternative backend for performance.
+- [`grisette-lib`](grisette-lib) folder contains some lifted library functions, e.g. symbolic filter, etc.
   There aren't many functions there as usually the user can define their own version easily.
-- `grisette` folder provides `Grisette` module, and the user can import everything from `grisette-core`, `grisette-symir`, `grisette-backend-sbv` and `grisette-lib` by importing it.
-- `grisette-examples` folder contains some example use cases of Grisette. Many of them are moved to the `grisette-benchmarks` folder.
+- [`grisette`](grisette) folder provides `Grisette` module, and the user can import everything from `grisette-core`, `grisette-symir`, `grisette-backend-sbv` and `grisette-lib` by importing it.
+- [`grisette-examples`](grisette-example) folder contains some example use cases of Grisette. Many of them are moved to the `grisette-benchmarks` folder.
 - `grisette-benchmarks` folder contains the benchmarks used in ICFP'22 submission.
 - `grisette-scratch` folder contains experimental code.
 - `grisette-tutorial` (WIP, not ready for read now) contains tutorials in Haddock format
@@ -33,7 +33,7 @@ You can build them with Haddock, or direct view them in the source files.
 - `grisette-benchmarks/regex*`. The regex synthesizer written with Coroutine shown in Section 3.2.
 
 ## Other directories and source files that may be interesting
-- `grisette-core/src/Grisette/Data/UnionBase.hs` for Reviewer D:
+- [`grisette-core/src/Grisette/Data/UnionBase.hs`](grisette-core/src/Grisette/Data/UnionBase.hs) for Reviewer D:
   > l677: I'd quite like to see these rules - at least in an appendix if not in the body of the paper. You should be careful about using the word "trivial". These rules may be unsurprising, but I doubt they're actually completely trivial.
 
 ## The benchmarks
