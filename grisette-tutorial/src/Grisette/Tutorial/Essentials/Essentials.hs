@@ -5,6 +5,17 @@ module Grisette.Tutorial.Essentials.Essentials (
   -- | Grisette is a monadic symbolic compilation library.
   -- It allows the programmers to conveniently and efficiently
   -- reason about program behaviors with constraint solvers.
+  --
+  -- There are already some existing symbolic reasoning libraries
+  -- in haskell, for example, [sbv](https://hackage.haskell.org/package/sbv),
+  -- [z3](https://hackage.haskell.org/package/z3) or [what4](https://hackage.haskell.org/package/what4).
+  -- Compared to them, Grisette is a higher-level tool.
+  -- In addition to building and representing symbolic values and constraints,
+  -- Grisette has builtin support to track symbolic path conditions and errors for
+  -- symbolic compiling and reasoning about programs.
+  --
+  -- [Rosette](https://emina.github.io/rosette/) is another high-level programming language
+  -- for reasoning about programs.
   -- 
   -- The core of Grisette is a monadic container 'UnionM' that represents __multi-path executions__.
   -- It can easily be composed with the existing monadic programming infrastructures to get
