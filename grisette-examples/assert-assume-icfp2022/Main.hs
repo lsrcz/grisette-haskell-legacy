@@ -10,14 +10,19 @@ import Control.Monad.Except
 data RosetteInterpretation = RosetteInterpretation
 
 instance SolverErrorTranslation RosetteInterpretation VerificationConditions where
+  -- Translating AssertionViolation to True means that we are trying to find a counterexample that
+  -- terminates with an assertion violation
   errorTranslation _ AssertionViolation = True
+  -- Translating AssumptionViolation to False means that we are trying to find a counterexample that
+  -- should not terminate with an assumption violation
   errorTranslation _ AssumptionViolation = False
 
 instance SolverTranslation RosetteInterpretation SymBool VerificationConditions a where
+  -- The counterexample should not terminate normally.
   valueTranslation _ _ = conc False
 
--- For example, if we are going to verify the following program by trying to find a counter example, we will get nothing.
--- 'assume (x >~ 5)' performs a symbolic comparison, and restricts that a valid value for 'x' would be greater than 5.
+-- For example, if we are going to verify the following program by trying to find a counterexample, we will get nothing.
+-- 'assume (x >~ 5)' performs a symbolic comparison, and restricts that a valid value for 'x' should be greater than 5.
 -- Under this assumption, we cannot find a counterexample such that 'x' is less than or equal to 4.
 a1 :: SymInteger -> ExceptT VerificationConditions UnionM ()
 a1 x = do

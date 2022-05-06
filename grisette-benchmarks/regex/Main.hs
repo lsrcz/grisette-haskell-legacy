@@ -19,10 +19,14 @@ import Text.Regex.PCRE
 import Utils.Timing
 import qualified Data.ByteString.Char8 as C
 
--- The type for a pattern coroutine
+-- The type for a pattern coroutine.
+-- The first argument is the string to match.
+-- The second argument is start position to match the current pattern.
+-- The yielded values are the positions after the last matched character.
 type PattCoro = B.ByteString -> Integer -> Coroutine (Yield (UnionM Integer)) UnionM ()
 
--- Compiling the patterns. htmemo* are memoizer implementation bundled with Grisette.
+-- Compiling the patterns.
+-- htmemo* are memoizer implementation bundled with Grisette.
 -- They are implemented with HashTables
 primPatt :: Char -> PattCoro
 primPatt pattc = htmemo2 $ \str idx ->
@@ -50,6 +54,13 @@ plusLazyPatt patt = htmemo2 $ \str idx -> patt str idx |>>=
 plusPatt :: SymBool -> PattCoro -> PattCoro
 plusPatt greedy = mrgIte greedy plusGreedyPatt plusLazyPatt
 
+-- The regex patterns. In the paper it is call Regex.
+-- PrimPatt 'a'        --> a
+-- SeqPatt patt1 patt2 --> (patt1)(patt2)
+-- AltPatt patt1 patt2 --> (patt1) | (patt2)
+-- PlusPatt patt False --> (patt)+?         lazy match
+-- PlusPatt patt True  --> (patt)+         greedy match
+-- EmptyPatt           --> epsilon
 data ConcPatt
   = ConcPrimPatt Char
   | ConcSeqPatt ConcPatt ConcPatt
@@ -59,6 +70,7 @@ data ConcPatt
   deriving (Show, Generic)
   deriving (ToCon Patt) via (Default ConcPatt)
 
+-- In the paper it is called SRegex
 data Patt
   = PrimPatt Char
   | SeqPatt (UnionM Patt) (UnionM Patt)
@@ -68,6 +80,7 @@ data Patt
   deriving (Show, Generic, Eq, Hashable)
   deriving (ToSym ConcPatt, Evaluate Model, Mergeable SymBool) via (Default Patt)
 
+-- Compiling a Patt to pattern coroutine
 toCoroU :: UnionM Patt -> PattCoro
 toCoroU u = getSingle $ mrgFmap toCoro u
 
@@ -264,6 +277,7 @@ main = timeItAll "Overall" $ do
   -}
   res <- synthesisRegex (UnboundedReasoning z3 {transcript = Just "/tmp/a.smt2", timing = PrintTiming}) (mrgReturn sk) "[cd](a?b)+?" $ genWordsUpTo 5 "abcd"
   print res
+  -- The synthesized regex
   -- Just (ConcSeqPatt (ConcAltPatt (ConcPrimPatt 'c') (ConcPrimPatt 'd')) (ConcPlusPatt (ConcSeqPatt (ConcAltPatt ConcEmptyPatt (ConcPrimPatt 'a')) (ConcPrimPatt 'b')) False))
   print $ matchFirstImpl (toCoro r) "cabab"
   print $ listToMaybe (getAllMatches (("cabab" :: B.ByteString) =~ ("[cd](a?b)+?" :: B.ByteString)) :: [(Int, Int)])
