@@ -182,6 +182,12 @@ instance
 instance ToCon a b => ToCon (Identity a) (Identity b) where
   toCon (Identity a) = Identity <$> toCon a
 
+instance ToCon (Identity v) v where
+  toCon = Just . runIdentity
+
+instance ToCon v (Identity v) where
+  toCon = Just . Identity
+
 -- IdentityT
 instance ToCon (m a) (m1 b) => ToCon (IdentityT m a) (IdentityT m1 b) where
   toCon (IdentityT a) = IdentityT <$> toCon a
