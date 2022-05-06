@@ -48,4 +48,6 @@ It executes SQL queries symbolically, and is designed to decide SQL query equiva
 - [`grisette-benchmarks/fluidics`](grisette-benchmarks/fluidics/). Fluidics is a small DSL for synthesizing microfluidics array manipulation.
 - [`grisette-benchmarks/ifcl`](grisette-benchmarks/ifcl/). IFCL is a functional symbolic DSL for specifying and verifying executable semantics of abstract stack-and-pointer machines that track dynamic information flow to enforce security properties.
 
-
+## Changed API
+The artifact version is newer than the paper version, and some APIs are changed.
+We will update the code in the paper to be consistent with the current status of the code.
