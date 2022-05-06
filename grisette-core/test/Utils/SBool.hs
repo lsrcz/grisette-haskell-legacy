@@ -22,6 +22,7 @@ import Grisette.Data.Class.GenSym
 import Control.Monad.State
 import Control.Monad.Reader
 import Data.Typeable
+import Data.String
 
 data SBool where
   CBool :: Bool -> SBool
@@ -110,6 +111,9 @@ instance SOrd SBool SBool where
     mrgIf (nots l &&~ r)
       (mrgReturn LT)
       (mrgIf (l ==~ r) (mrgReturn EQ) (mrgReturn GT))
+
+instance IsString SBool where
+  fromString = ssymb
 
 instance PrimWrapper SBool Bool where
   conc = CBool
