@@ -35,6 +35,8 @@ You can build them with Haddock, or direct view them in the source files.
 ## Other directories and source files that may be interesting
 - [`grisette-core/src/Grisette/Data/UnionBase.hs`](grisette-core/src/Grisette/Data/UnionBase.hs) for Reviewer D:
   > l677: I'd quite like to see these rules - at least in an appendix if not in the body of the paper. You should be careful about using the word "trivial". These rules may be unsurprising, but I doubt they're actually completely trivial.
+- [`grisette-core/src/Grisette/Data/Class`](grisette-core/src/Grisette/Data/Class/) contains the various type classes for everything you need
+  to build a symbolic evaluator.
 
 ## The benchmarks
 - [`grisette-benchmarks/bonsai*`](grisette-benchmarks/bonsai-lib/). Bonsai is a data structure specialized for efficient type system verification with symbolic evaluation.
