@@ -134,6 +134,12 @@ executables:
   tutorial:
     source-dirs: tutorial
     main: Main.hs
+  expr-icfp2022:
+    source-dirs: expr-icfp2022
+    main: Main.hs
+  assert-assume-icfp2022:
+    source-dirs: assert-assume-icfp2022
+    main: Main.hs
   #bonsai:
   #  source-dirs: bonsai
   #  main: Main.hs

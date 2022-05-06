@@ -76,11 +76,11 @@ data BonsaiError
 instance TransformError BonsaiError BonsaiError where
   transformError = id
 
-data VerifyTyper a = VerifyTyper
+data VerifyTyper = VerifyTyper
 
-instance SolverErrorTranslation (VerifyTyper a) BonsaiError where
+instance SolverErrorTranslation VerifyTyper BonsaiError where
   errorTranslation _ BonsaiExecError = True
   errorTranslation _ _ = False
 
-instance SolverTranslation (VerifyTyper a) SymBool BonsaiError a where
+instance SolverTranslation VerifyTyper SymBool BonsaiError a where
   valueTranslation _ _ = conc False

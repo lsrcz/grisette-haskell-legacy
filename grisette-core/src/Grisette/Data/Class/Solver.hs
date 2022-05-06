@@ -66,7 +66,7 @@ import Language.Haskell.TH.Syntax
 class SolverErrorTranslation spec e | spec -> e where
   errorTranslation :: spec -> e -> Bool
 
-class (SymBoolOp bool, SolverErrorTranslation spec e) => SolverTranslation spec bool e v | spec bool -> e v where
+class (SymBoolOp bool, SolverErrorTranslation spec e) => SolverTranslation spec bool e v | spec bool -> e where
   valueTranslation :: spec -> v -> bool
 
 class CegisErrorTranslation spec e | spec -> e where

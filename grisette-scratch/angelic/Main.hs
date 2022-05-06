@@ -133,6 +133,7 @@ runDutchFlag config algo len initMarbles = do
           case res of
             Left _ -> error "Bad"
             Right ct -> return $ Just ct
+    final :: ExceptT AssertionError UnionM ([UnionM Marble], Trace)
     final = runWriterT (runGenSymFreshT (algo len (toSym initMarbles)) "a")
     go result lastResult = do
       let newresult = do
@@ -160,6 +161,7 @@ runDutchFlag' config algo len maxModelCnt initMarbles = do
     )
       <$> ms
   where
+    final :: ExceptT AssertionError UnionM ([UnionM Marble], Trace)
     final = runWriterT (runGenSymFreshT (algo len (toSym initMarbles)) "a")
 
 main :: IO ()
