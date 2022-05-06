@@ -6,8 +6,12 @@ module Main where
 import Control.Monad.Except
 import GHC.Generics
 import Grisette
+import Data.Maybe
 
--- The concrete AST definition
+-- The concrete AST definition.
+-- This is only used for printing purpose as printing the
+-- symbolic type would give us quite a lot 'UMrg' / 'Single',
+-- and the result would be hard to read.
 data Expr = Lit LitExpr | Ops OpsExpr
   deriving (Show, Generic)
   deriving
@@ -37,7 +41,7 @@ data OpsExpr
   | -- Or boolx booly   -->   boolx || booly
     -- Or _ _           -->   TypeError
     OrExpr Expr Expr
-  | -- Not boolx        -->   ! boolx
+  | -- Not boolx        -->   not boolx
     -- Not _            -->   TypeError
     NotExpr Expr
   deriving (Show, Generic)
@@ -81,6 +85,11 @@ $(makeUnionMWrapper "u" ''SLitExpr)
 $(makeUnionMWrapper "u" ''SOpsExpr)
 
 -- For example, the following code are equivalent
+-- Also note that, thanks to the OverloadedStrings,
+-- the user can create simple named symbolic constants with string literals.
+createdFromStrLit :: SymBool
+createdFromStrLit = "a"
+
 v1 :: UnionM SLitExpr
 v1 = mrgReturn $ SBoolLit "a"
 
@@ -88,9 +97,10 @@ v2 :: UnionM SLitExpr
 v2 = uSBoolLit "a"
 
 -- The error type.
--- TypeError means that a type error thrown by the type checker
--- EvalTypeError means that a type error thrown by the interpreter
--- EvalRuntimeError means that some error (other than the type error) thrown by the interpreter
+-- TypeError is a type error thrown by the type checker
+-- EvalTypeError is a type error thrown by the interpreter.
+-- This should not be thrown when interpreting a well-typed program.
+-- EvalRuntimeError is some error (other than the type error) thrown by the interpreter
 data Error = TypeError | EvalTypeError | EvalRuntimeError
   deriving (Show, Generic)
   deriving (Mergeable SymBool) via (Default Error)
@@ -99,6 +109,7 @@ data Type = BoolType | ListType
   deriving (Show, Eq, Generic)
   deriving (Mergeable SymBool) via (Default Type)
 
+-- Helper for typing / interpreting unary operators
 unary ::
   (Mergeable SymBool a) =>
   (SExpr -> ExceptT Error UnionM a) ->
@@ -109,6 +120,7 @@ unary f v comb = do
   vt <- lift v >>= f
   comb vt
 
+-- Helper for typing / interpreting binary operators
 binary ::
   (Mergeable SymBool a) =>
   (SExpr -> ExceptT Error UnionM a) ->
@@ -121,7 +133,8 @@ binary f l r comb = do
   rt <- lift r >>= f
   curry comb lt rt
 
--- The type checker function. This implementation is correct
+-- The type checker function. This implementation is correct.
+-- We will synthesis programs with it, and we will verify its correctness.
 stypeCheck :: SExpr -> ExceptT Error UnionM Type
 stypeCheck (SLit (SBoolLit _)) = mrgReturn BoolType
 stypeCheck (SLit (SListLit _)) = mrgReturn ListType
@@ -143,6 +156,11 @@ stypeCheck (SOps (SOrExpr l r)) = binary stypeCheck l r $ \case
 stypeCheck (SOps (SNotExpr e)) = unary stypeCheck e $ \case
   BoolType -> mrgReturn BoolType
   _ -> throwError TypeError
+
+-- Note that we don't have to implement the concrete type checker,
+-- if you want one, you can do
+typeCheck :: Expr -> Except Error Type
+typeCheck e = fromJust $ toCon $ stypeCheck (toSym e)
 
 interpretHead :: [SymBool] -> ExceptT Error UnionM SymBool
 interpretHead [] = throwError TypeError
@@ -181,9 +199,12 @@ run e = stypeCheck e >> mrgReturn () >> sinterpret e
 
 -- Generating a symbolic SLitExpr. The specification type is Integer, which is the maximum length of the lists.
 -- See the main function for a sample generated value
+--
+-- In the current paper, this class is called SymGen, and genSymFresh is called fresh.
+-- We are still thinking about its naming.
 instance GenSym SymBool Integer SLitExpr where
   genSymFresh listLength = do
-    b :: SymBool <- genSymSimpleFresh @SymBool ()
+    b :: SymBool <- genSymSimpleFresh @SymBool () -- This @SymBool is required. It's the symbolic boolean we are using.
     l :: UnionM [SymBool] <- genSymFresh listLength
     choose [SBoolLit b, SListLit l]
 
@@ -208,6 +229,7 @@ instance GenSym SymBool SExprSpec SExpr where
 -- The LitExpr, which is a literal, is the desired evaluation result
 newtype SynthSpec = SynthSpec LitExpr
 
+-- In the paper, SolverErrorTranslation and SolverTranslation are the same class.
 -- The SolverErrorTranslation type class was decoupled from the solver translation type class now.
 -- The errorTranslation function defines whether abnormal termination paths due to specific exception is desired.
 instance SolverErrorTranslation SynthSpec Error where
@@ -217,7 +239,10 @@ instance SolverErrorTranslation SynthSpec Error where
 -- The valueTranslation function defines if a path terminates normally without an exception,
 -- what is the desired property of the evaluation result
 instance SolverTranslation SynthSpec SymBool Error SLitExpr where
-  -- If the evaluation of the program terminates without an error, we hope that the result is equivalent to the specification
+  -- For synthesis task, we expect that the result is equivalent to the specification
+  -- toSym comes from the ToSym type class, and converts LitExpr to SLitExpr.
+  -- ==~ comes from the SEq type class, and constructs a SymBool (which wraps a formula) to represent
+  -- the equivalence condition
   valueTranslation (SynthSpec lit) res = toSym lit ==~ res
 
 data VerifSpec = VerifSpec
@@ -262,8 +287,8 @@ runBad e = stypeCheckBad e >> mrgReturn () >> sinterpret e
 main :: IO ()
 main = do
   -- We are using z3 solver, with unbounded reasoning.
-  -- Unbounded reasoning means that we won't do approximation on integers, and they are unbounded,
-  -- the result would be sound, but the reasoning could possibly be slower.
+  -- Unbounded reasoning means that we won't do approximation on integers, and we are reasoning using unbounded integers,
+  -- the result would be sound, but the reasoning could possibly be slower in some scenario.
   let solverConfig = UnboundedReasoning z3
   let sketch = runGenSymFresh (genSymFresh $ SExprSpec 3 2) "a" :: UnionM SExpr
   let sketchRunResult = lift sketch >>= run
@@ -272,25 +297,35 @@ main = do
 
   putStrLn "------ sketch ------"
   putStr "Lit sketch: "
+  -- Here prints a sketch for literal expressions generated by GenSym class.
+  -- Usually this is a very large object, representing a large program space in a compact way,
+  -- and is not human-readable.
   -- Lit sketch: UMrg (Guard name@7 (Single (SBoolLit name@0)) (Single (SListLit (UMrg (Guard name@4 (Single []) (Guard name@5 (Single [name@3]) (Guard name@6 (Single [name@2,name@3]) (Single [name@1,name@2,name@3]))))))))
   print (runGenSymFresh (genSymFresh (3 :: Integer)) "name" :: UnionM SLitExpr)
-  -- Caveat: the sketches are not intended to be read by human.
+  -- Caveat: long output if you turn on verbosePrint
   when verbosePrint $ do
     putStr "Full sketch: "
     print sketch
 
   putStrLn "------ execution ------"
-  -- Construct a symbolic program
+  -- Construct a symbolic program. The solver can decide if the program should be an 'and' or a 'cons'
   -- if a (and b c) (cons b [c])
   let symbolicProgram1 :: UnionM SExpr =
         mrgIf
           "a"
           (mrgReturn $ SOps $ SAndExpr (mrgReturn $ SLit $ SBoolLit "b") (mrgReturn $ SLit $ SBoolLit "c"))
           (mrgReturn $ SOps $ SConsExpr (mrgReturn $ SLit $ SBoolLit "b") (mrgReturn $ SLit $ SListLit $ mrgReturn ["c"]))
+  -- Type check it.
+  -- There should not be type errors, and the path conditions will be maintained.
   print $ lift symbolicProgram1 >>= stypeCheck
   -- ExceptT (UMrg (Guard a (Single (Right BoolType)) (Single (Right ListType))))
+
+  -- Evaluate it.
+  -- There should not be errors, and the path conditions will be maintained.
   print $ lift symbolicProgram1 >>= sinterpret
   -- ExceptT (UMrg (Guard a (Single (Right (SBoolLit (&& b c)))) (Single (Right (SListLit (UMrg (Single [b,c])))))))
+
+  -- First type check, then evaluate.
   print $ lift symbolicProgram1 >>= run
   -- ExceptT (UMrg (Guard a (Single (Right (SBoolLit (&& b c)))) (Single (Right (SListLit (UMrg (Single [b,c])))))))
 
@@ -299,24 +334,35 @@ main = do
   let sConsExpr l r = uSOps $ SConsExpr l r
   let sBoolLit = uSLit @SymBool @UnionM . SBoolLit
   let sListLit = uSLit @SymBool @UnionM . SListLit . mrgReturn
+
+  -- Construct a symbolic program. If a is true and c is false, then the program is (and b [d]),
+  -- and is not well-typed.
   -- if a (and b (if c d [d])) (cons b [c])
   let symbolicProgram2 :: UnionM SExpr =
         mrgIf
           "a"
           (sAndExpr (sBoolLit "b") (mrgIf "c" (sBoolLit "d") (sListLit ["d"])))
           (sConsExpr (sBoolLit "b") (sListLit ["c"]))
+
+  -- Type check it.
   print $ lift symbolicProgram2 >>= stypeCheck
   -- ExceptT (UMrg (Guard (&& a (! c)) (Single (Left TypeError)) (Guard a (Single (Right BoolType)) (Single (Right ListType)))))
   -- This result means that if a /\ not c, our symbolic program would be and b [d], which does not type check
+
+  -- Evaluate it.
   print $ lift symbolicProgram2 >>= sinterpret
   -- ExceptT (UMrg (Guard (&& a (! c)) (Single (Left EvalTypeError)) (Guard a (Single (Right (SBoolLit (&& b d)))) (Single (Right (SListLit (UMrg (Single [b,c]))))))))
   -- This result means that if a /\ not c, our symbolic program would be and b [d], which does not type check, and can crash the interpreter
+
+  -- First type check, then evaluate.
   print $ lift symbolicProgram2 >>= run
   -- ExceptT (UMrg (Guard (&& a (! c)) (Single (Left TypeError)) (Guard a (Single (Right (SBoolLit (&& b d)))) (Single (Right (SListLit (UMrg (Single [b,c]))))))))
   -- This result means that if a /\ not c, our symbolic program would be and b [d], which does not type check.
-  -- As the type error is already detected by the typer, that symbolic program won't be further crash the interpreter again
+  -- As the type error is already detected by the typer, that symbolic program won't further crash the interpreter again
 
-  -- Tries to synthesis a program that evaluates to a list with four elements. The sketch is only allowed to contain list literals with length <= 2
+  -- Synthesis a program that evaluates to a list with four elements.
+  -- As our sketch is only allowed to contain list literals with length <= 2,
+  -- the result has to be constructed using ConsExpr
   putStrLn "------ synthesis and verification ------"
   synthRes <- solveWithExcept (SynthSpec $ ListLit [True, False, True, False]) solverConfig sketchRunResult
   case synthRes of
