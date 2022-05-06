@@ -46,7 +46,7 @@ library
     , monad-memo
     , mtl
     , regex-base
-    , regex-pcre
+    , regex-pcre-builtin
     , template-haskell
     , transformers
     , unordered-containers
@@ -77,7 +77,7 @@ executable angelic
     , monad-memo
     , mtl
     , regex-base
-    , regex-pcre
+    , regex-pcre-builtin
     , template-haskell
     , transformers
     , unordered-containers
@@ -108,7 +108,7 @@ executable cegis
     , monad-memo
     , mtl
     , regex-base
-    , regex-pcre
+    , regex-pcre-builtin
     , template-haskell
     , transformers
     , unordered-containers
@@ -139,7 +139,7 @@ executable effects
     , monad-memo
     , mtl
     , regex-base
-    , regex-pcre
+    , regex-pcre-builtin
     , template-haskell
     , transformers
     , unordered-containers
@@ -170,7 +170,7 @@ executable interned-trie
     , monad-memo
     , mtl
     , regex-base
-    , regex-pcre
+    , regex-pcre-builtin
     , template-haskell
     , transformers
     , unordered-containers
@@ -201,7 +201,7 @@ executable list-funcs
     , monad-memo
     , mtl
     , regex-base
-    , regex-pcre
+    , regex-pcre-builtin
     , template-haskell
     , transformers
     , unordered-containers

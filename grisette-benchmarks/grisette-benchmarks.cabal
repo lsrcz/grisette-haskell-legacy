@@ -87,7 +87,7 @@ library
     , parameterized-utils
     , parser-combinators
     , regex-base
-    , regex-pcre
+    , regex-pcre-builtin
     , template-haskell
     , text
     , th-lift-instances
@@ -156,7 +156,7 @@ executable bonsai-letpoly
     , parameterized-utils
     , parser-combinators
     , regex-base
-    , regex-pcre
+    , regex-pcre-builtin
     , template-haskell
     , text
     , th-lift-instances
@@ -225,7 +225,7 @@ executable bonsai-letpoly-nomemo
     , parameterized-utils
     , parser-combinators
     , regex-base
-    , regex-pcre
+    , regex-pcre-builtin
     , template-haskell
     , text
     , th-lift-instances
@@ -294,7 +294,7 @@ executable bonsai-nanoscala
     , parameterized-utils
     , parser-combinators
     , regex-base
-    , regex-pcre
+    , regex-pcre-builtin
     , template-haskell
     , text
     , th-lift-instances
@@ -363,7 +363,7 @@ executable bonsai-nanoscala-nomemo
     , parameterized-utils
     , parser-combinators
     , regex-base
-    , regex-pcre
+    , regex-pcre-builtin
     , template-haskell
     , text
     , th-lift-instances
@@ -432,7 +432,7 @@ executable bonsai-stlc
     , parameterized-utils
     , parser-combinators
     , regex-base
-    , regex-pcre
+    , regex-pcre-builtin
     , template-haskell
     , text
     , th-lift-instances
@@ -501,7 +501,7 @@ executable bonsai-stlc-nomemo
     , parameterized-utils
     , parser-combinators
     , regex-base
-    , regex-pcre
+    , regex-pcre-builtin
     , template-haskell
     , text
     , th-lift-instances
@@ -577,7 +577,7 @@ executable cosette
     , parameterized-utils
     , parser-combinators
     , regex-base
-    , regex-pcre
+    , regex-pcre-builtin
     , template-haskell
     , text
     , th-lift-instances
@@ -653,7 +653,7 @@ executable cosette-optimized-merge
     , parameterized-utils
     , parser-combinators
     , regex-base
-    , regex-pcre
+    , regex-pcre-builtin
     , template-haskell
     , text
     , th-lift-instances
@@ -728,7 +728,7 @@ executable ferrite
     , parameterized-utils
     , parser-combinators
     , regex-base
-    , regex-pcre
+    , regex-pcre-builtin
     , template-haskell
     , text
     , th-lift-instances
@@ -796,7 +796,7 @@ executable fluidics
     , parameterized-utils
     , parser-combinators
     , regex-base
-    , regex-pcre
+    , regex-pcre-builtin
     , template-haskell
     , text
     , th-lift-instances
@@ -869,7 +869,7 @@ executable ifcl
     , parameterized-utils
     , parser-combinators
     , regex-base
-    , regex-pcre
+    , regex-pcre-builtin
     , template-haskell
     , text
     , th-lift-instances
@@ -937,7 +937,7 @@ executable regex
     , parameterized-utils
     , parser-combinators
     , regex-base
-    , regex-pcre
+    , regex-pcre-builtin
     , template-haskell
     , text
     , th-lift-instances
@@ -1005,7 +1005,7 @@ executable regex-nomemo
     , parameterized-utils
     , parser-combinators
     , regex-base
-    , regex-pcre
+    , regex-pcre-builtin
     , template-haskell
     , text
     , th-lift-instances

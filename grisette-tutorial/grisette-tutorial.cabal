@@ -60,7 +60,7 @@ library
     , parameterized-utils
     , parser-combinators
     , regex-base
-    , regex-pcre
+    , regex-pcre-builtin
     , sbv
     , template-haskell
     , th-lift-instances

@@ -17,7 +17,7 @@ dependencies:
 - monad-coroutine
 - bytestring
 - regex-base
-- regex-pcre
+- regex-pcre-builtin
 - hashable
 - MemoTrie
 - monad-memo

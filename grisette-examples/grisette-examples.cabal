@@ -79,7 +79,7 @@ library
     , parameterized-utils
     , parser-combinators
     , regex-base
-    , regex-pcre
+    , regex-pcre-builtin
     , template-haskell
     , th-lift-instances
     , timeit
@@ -145,7 +145,7 @@ executable assert-assume-icfp2022
     , parameterized-utils
     , parser-combinators
     , regex-base
-    , regex-pcre
+    , regex-pcre-builtin
     , template-haskell
     , th-lift-instances
     , timeit
@@ -211,7 +211,7 @@ executable expr-icfp2022
     , parameterized-utils
     , parser-combinators
     , regex-base
-    , regex-pcre
+    , regex-pcre-builtin
     , template-haskell
     , th-lift-instances
     , timeit
@@ -278,7 +278,7 @@ executable expr-interpreter
     , parameterized-utils
     , parser-combinators
     , regex-base
-    , regex-pcre
+    , regex-pcre-builtin
     , template-haskell
     , th-lift-instances
     , timeit
@@ -346,7 +346,7 @@ executable expr-sketch
     , parameterized-utils
     , parser-combinators
     , regex-base
-    , regex-pcre
+    , regex-pcre-builtin
     , template-haskell
     , th-lift-instances
     , timeit
@@ -412,7 +412,7 @@ executable genfunc
     , parameterized-utils
     , parser-combinators
     , regex-base
-    , regex-pcre
+    , regex-pcre-builtin
     , template-haskell
     , th-lift-instances
     , timeit
@@ -480,7 +480,7 @@ executable location
     , parameterized-utils
     , parser-combinators
     , regex-base
-    , regex-pcre
+    , regex-pcre-builtin
     , template-haskell
     , th-lift-instances
     , timeit
@@ -546,7 +546,7 @@ executable order
     , parameterized-utils
     , parser-combinators
     , regex-base
-    , regex-pcre
+    , regex-pcre-builtin
     , template-haskell
     , th-lift-instances
     , timeit
@@ -615,7 +615,7 @@ executable stmt-sketch
     , parameterized-utils
     , parser-combinators
     , regex-base
-    , regex-pcre
+    , regex-pcre-builtin
     , template-haskell
     , th-lift-instances
     , timeit
@@ -681,7 +681,7 @@ executable tutorial
     , parameterized-utils
     , parser-combinators
     , regex-base
-    , regex-pcre
+    , regex-pcre-builtin
     , template-haskell
     , th-lift-instances
     , timeit
