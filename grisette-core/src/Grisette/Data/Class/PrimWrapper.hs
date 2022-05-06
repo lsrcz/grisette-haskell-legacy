@@ -12,6 +12,7 @@ import Data.Typeable
 import Language.Haskell.TH.Syntax
 import Control.DeepSeq
 import Data.Hashable
+import Data.String
 
 -- $setup
 -- >>> import Grisette.Core
@@ -19,7 +20,7 @@ import Data.Hashable
 
 -- | The class establish the link between concrete primitive types
 -- and symbolic primitive types.
-class PrimWrapper t c | t -> c where
+class IsString t => PrimWrapper t c | t -> c where
   -- | Wrap a concrete value in a symbolic value.
   --
   -- >>> conc True :: SymBool
