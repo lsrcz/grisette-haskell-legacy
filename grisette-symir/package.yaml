@@ -26,6 +26,7 @@ dependencies:
 - typerep-map
 - vector
 - parameterized-utils
+- th-compat
 
 flags: {
   fast: {

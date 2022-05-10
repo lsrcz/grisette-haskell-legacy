@@ -77,6 +77,7 @@ import Grisette.Data.Prim.Caches
 import Grisette.Data.Prim.ModelValue
 import Grisette.Data.Prim.Orphan ()
 import Language.Haskell.TH.Syntax
+import Language.Haskell.TH.Syntax.Compat
 
 class (Lift t, Typeable t, Hashable t, Eq t, Show t, NFData t) => SupportedPrim t where
   type PrimConstraint t :: Constraint
@@ -221,12 +222,12 @@ instance NFData (Term a) where
   rnf i = identity i `seq` ()
 
 instance Lift (Term t) where
-  liftTyped x = unsafeTExpCoerce (Language.Haskell.TH.Syntax.lift x)
-  lift (ConcTerm _ i) = [|concTerm i|]
-  lift (SymbTerm _ (TermSymbol _ sym)) = [|symbTerm sym|]
-  lift (UnaryTerm _ tag arg) = [|constructUnary tag arg|]
-  lift (BinaryTerm _ tag arg1 arg2) = [|constructBinary tag arg1 arg2|]
-  lift (TernaryTerm _ tag arg1 arg2 arg3) = [|constructTernary tag arg1 arg2 arg3|]
+  lift = unTypeSplice . liftTyped
+  liftTyped (ConcTerm _ i) = [||concTerm i||]
+  liftTyped (SymbTerm _ (TermSymbol _ sym)) = [||symbTerm sym||]
+  liftTyped (UnaryTerm _ tag arg) = [||constructUnary tag arg||]
+  liftTyped (BinaryTerm _ tag arg1 arg2) = [||constructBinary tag arg1 arg2||]
+  liftTyped (TernaryTerm _ tag arg1 arg2 arg3) = [||constructTernary tag arg1 arg2 arg3||]
 
 introSupportedPrimConstraint :: forall t a. Term t -> ((SupportedPrim t) => a) -> a
 introSupportedPrimConstraint ConcTerm {} x = x

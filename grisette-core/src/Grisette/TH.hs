@@ -1,4 +1,5 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE CPP #-}
 
 module Grisette.TH
   ( makeUnionMWrapper,
@@ -89,18 +90,33 @@ augmentNormalCExpr n f = do
           foldl AppE f (map VarE xs)
       )
 
+#if MIN_VERSION_template_haskell(2,17,0)
+augmentFinalType :: Name -> Name -> Type -> Q (([TyVarBndr Specificity], [Pred]), Type)
+#elif MIN_VERSION_template_haskell(2,16,0)
 augmentFinalType :: Name -> Name -> Type -> Q (([TyVarBndr], [Pred]), Type)
+#endif
 augmentFinalType unionTypeName boolTypeName (AppT a@(AppT ArrowT _) t) = do
   tl <- augmentFinalType unionTypeName boolTypeName t
   return $ second (AppT a) tl
+#if MIN_VERSION_template_haskell(2,17,0)
+augmentFinalType unionTypeName boolTypeName (AppT (AppT (AppT MulArrowT _) var) t) = do
+  tl <- augmentFinalType unionTypeName boolTypeName t
+  return $ second (AppT (AppT ArrowT var)) tl
+#endif
 augmentFinalType unionTypeName boolTypeName t = do
   symBoolOp <- [t|SymBoolOp|]
   monad <- [t|Monad|]
   mergeable <- [t|Mergeable|]
   monadUnion <- [t|MonadUnion|]
   return
-    ( ( [ KindedTV boolTypeName StarT,
+    ( ( [ 
+#if MIN_VERSION_template_haskell(2,17,0)
+          KindedTV boolTypeName SpecifiedSpec StarT,
+          KindedTV unionTypeName SpecifiedSpec (AppT (AppT ArrowT StarT) StarT)
+#elif MIN_VERSION_template_haskell(2,16,0)
+          KindedTV boolTypeName StarT,
           KindedTV unionTypeName (AppT (AppT ArrowT StarT) StarT)
+#endif
         ],
         [ AppT symBoolOp boolType,
           AppT monad unionType,

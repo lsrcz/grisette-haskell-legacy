@@ -38,6 +38,7 @@ import Grisette.Data.Prim.Helpers
 import Grisette.Data.Prim.InternedTerm
 import Language.Haskell.TH.Syntax
 import Data.Hashable
+import Language.Haskell.TH.Syntax.Compat
 
 bitsConcTermView :: (Bits b, Typeable b) => Term a -> Maybe b
 bitsConcTermView (ConcTerm _ b) = cast b
@@ -60,7 +61,7 @@ instance (Show (AndBits x)) where
   show AndBits = "AndBits"
 
 instance Lift (AndBits x) where
-  lift = unTypeQ . liftTyped
+  lift = unTypeSplice . liftTyped
   liftTyped AndBits = [||AndBits||]
 
 instance NFData (AndBits x) where
@@ -104,7 +105,7 @@ instance (Show (OrBits x)) where
   show OrBits = "OrBits"
 
 instance Lift (OrBits x) where
-  lift = unTypeQ . liftTyped
+  lift = unTypeSplice . liftTyped
   liftTyped OrBits = [||OrBits||]
 
 instance NFData (OrBits x) where

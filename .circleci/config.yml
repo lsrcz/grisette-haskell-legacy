@@ -76,4 +76,4 @@ workflows:
       - build:
           matrix:
             parameters:
-              resolver: ["lts-18.28"]
+              resolver: ["lts-18.28", "lts-19.6"]

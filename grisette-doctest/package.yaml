@@ -34,6 +34,7 @@ dependencies:
 - bv-sized
 - array
 - sbv
+- th-compat
 
 flags: {
   fast: {

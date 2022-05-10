@@ -20,6 +20,7 @@ import Grisette.Data.Prim.Bool
 import Data.Data
 import Grisette.Data.Prim.Bits
 import Grisette.Data.Prim.Integer
+import Data.Kind
 
 class (SupportedPrim b) => TermRewritingSpec a b | a -> b where
   norewriteVer :: a -> Term b
@@ -197,7 +198,7 @@ instance (SupportedPrim (bv 4)) => TermRewritingSpec (FixedSizedBVWithBoolSpec b
   wrap = FixedSizedBVWithBoolSpec
   same s = constructBinary Eqv (norewriteVer s) (rewriteVer s)
 
-data BoolWithFixedSizedBVSpec (bv :: Nat -> *) = BoolWithFixedSizedBVSpec (Term Bool) (Term Bool)
+data BoolWithFixedSizedBVSpec (bv :: Nat -> Type) = BoolWithFixedSizedBVSpec (Term Bool) (Term Bool)
 
 instance Show (BoolWithFixedSizedBVSpec bv) where
   show (BoolWithFixedSizedBVSpec n r) =

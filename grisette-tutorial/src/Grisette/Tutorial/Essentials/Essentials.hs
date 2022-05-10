@@ -110,7 +110,7 @@ module Grisette.Tutorial.Essentials.Essentials (
   -- but calling 'slocsymb' multiple time in the same location will return the same symbolic constant.
   -- 
   -- >>> $$(slocsymb "a") :: SymInteger -- sample output: a:<interactive>:13:4-15
-  -- a:<interactive>:...:4-15
+  -- a:<interactive>:...
   -- >>> ($$(slocsymb "a") :: SymBool) == $$(slocsymb "a")
   -- False
   -- >>> let static1 = \_ -> $$(slocsymb "a") :: SymBool
@@ -671,3 +671,8 @@ import Control.Monad.Except
 -- >>> :set -XFlexibleInstances
 -- >>> :set -XOverloadedStrings
 -- >>> :set -XMultiParamTypeClasses
+-- >>> import GHC.Generics
+-- >>> import Grisette
+-- >>> import Data.SBV hiding (Mergeable)
+-- >>> import Control.Monad.State.Lazy
+-- >>> import Control.Monad.Except

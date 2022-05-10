@@ -62,6 +62,7 @@ import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.UnionOp
 import Language.Haskell.TH.Syntax
+import Data.Kind
 
 class SolverErrorTranslation spec e | spec -> e where
   errorTranslation :: spec -> e -> Bool
@@ -298,7 +299,7 @@ data
     model
     (unResolvedArg :: Bool)
     (haveArg :: Bool)
-    (argType :: *)
+    (argType :: Data.Kind.Type)
     (translate :: Bool)
     err
     v
@@ -532,6 +533,7 @@ type family CegisResult failure model arg haveArg where
   CegisResult failure model arg 'True = IO (Either failure (arg, model))
   CegisResult failure model arg 'False = IO (Either failure model)
 
+{-
 type family ArgByResolved unResolvedArg where
   ArgByResolved 'True = "You have unresolved argBy"
   ArgByResolved 'False = ""
@@ -548,7 +550,6 @@ type family TranslateByResolved translate where
   TranslateByResolved 'True = "You have unresolved translateBy clause"
   TranslateByResolved 'False = ""
 
-{-
 cegis ::
   forall config bool symbolSet failure model unResolvedArg haveArg arg unResolvedForallIn forallIn unResolvedForallArg forallArg translate err v.
   ( ArgByResolved unResolvedArg ~ "",

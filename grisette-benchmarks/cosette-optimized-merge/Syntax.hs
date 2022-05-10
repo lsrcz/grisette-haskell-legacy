@@ -1,5 +1,6 @@
 {-# LANGUAGE EmptyDataDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE CPP #-}
 
 module Syntax where
 
@@ -8,6 +9,7 @@ import qualified Data.ByteString.Char8 as C
 import Grisette
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax
+import Language.Haskell.TH.Syntax.Compat
 import Table
 
 data FBinOp = FBinEq | FBinNEq deriving (Show, Lift)
@@ -31,8 +33,13 @@ data Query
   | QuerySub B.ByteString
   deriving (Show)
 
+#if MIN_VERSION_template_haskell(2,17,0)
+apply :: Quote m => Language.Haskell.TH.Name -> [m Exp] -> m Exp
+apply n = foldl appE (conE n)
+#elif MIN_VERSION_template_haskell(2,16,0)
 apply :: Language.Haskell.TH.Name -> [Q Exp] -> Q Exp
 apply n = foldl appE (conE n)
+#endif
 
 instance Lift Query where
   lift (QuerySelect l q f) = [|QuerySelect l q f|]
@@ -46,7 +53,7 @@ instance Lift Query where
   lift (QueryLeftOuterJoin2 q1 q2 q3) = [|QueryLeftOuterJoin2 q1 q2 q3|]
   lift (QueryUnionAll q1 q2) = [|QueryUnionAll q1 q2|]
   lift (QuerySub s) = varE $ mkName $ C.unpack s
-  liftTyped = unsafeTExpCoerce . lift
+  liftTyped = liftTypedFromUntypedSplice
 
 data Filter
   = FilterBinOp FBinOp Val Val

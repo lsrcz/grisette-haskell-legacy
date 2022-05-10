@@ -4,7 +4,7 @@ module Equal where
 
 import Denotation
 import Grisette
-import Language.Haskell.TH
+import Language.Haskell.TH.Syntax.Compat
 import Syntax
 import Table
 
@@ -26,10 +26,10 @@ bagEqual t1 t2 =
       l2 = tableSum t2
    in contain l1 l2 &&~ contain l2 l1
 
-same :: Query -> Query -> Q (TExp SymBool)
+same :: Query -> Query -> SpliceQ SymBool
 same q1 q2 = [||bagEqual #~ tableContent $$(denoteSql q1) #~ tableContent $$(denoteSql q2)||]
 
-tableAllRepOk :: Query -> Q (TExp SymBool)
+tableAllRepOk :: Query -> SpliceQ SymBool
 tableAllRepOk (QueryTable t) = [||tableRepOk t||]
 tableAllRepOk (QueryJoin q1 q2) = [||$$(tableAllRepOk q1) &&~ $$(tableAllRepOk q2)||]
 tableAllRepOk (QueryLeftOuterJoin q1 q2 _ _) =
@@ -39,8 +39,8 @@ tableAllRepOk (QueryLeftOuterJoin2 q1 q2 q12) =
 tableAllRepOk (QueryRename q _) = [||$$(tableAllRepOk q)||]
 tableAllRepOk (QueryRenameFull q _ _) = [||$$(tableAllRepOk q)||]
 tableAllRepOk (QuerySelect _ q _) = [||$$(tableAllRepOk q)||]
-tableAllRepOk (QueryNamed n) = fail $ "There are unresolved tables " ++ show n
-tableAllRepOk q = fail $ "Don't know how to determine rep ok for " ++ show q
+tableAllRepOk (QueryNamed n) = liftSplice $ fail $ "There are unresolved tables " ++ show n
+tableAllRepOk q = liftSplice $ fail $ "Don't know how to determine rep ok for " ++ show q
 
-verifCondition :: Query -> Query -> Q (TExp SymBool)
+verifCondition :: Query -> Query -> SpliceQ SymBool
 verifCondition q1 q2 = [||$$(tableAllRepOk q1) &&~ $$(tableAllRepOk q2) &&~ (nots $$(same q1 q2))||]

@@ -10,12 +10,12 @@ module Grisette.Data.FileLocation (
     ilocsymb,
 ) where
 
-import Language.Haskell.TH
 import Debug.Trace.LocationTH (__LOCATION__)
 import GHC.Generics
 import Control.DeepSeq
 import Grisette.Data.Class.PrimWrapper
 import Language.Haskell.TH.Syntax
+import Language.Haskell.TH.Syntax.Compat
 import Data.Hashable
 import Grisette.Data.Class.GenSym
 
@@ -39,11 +39,11 @@ parseFileLocation str =
 -- | Identifier with the current location as extra information.
 --
 -- >>> $$(nameWithLoc "a") -- a sample result could be "a:<interactive>:18:4-18"
--- a:<interactive>:...:4-18
+-- a:<interactive>:...
 --
 -- The uniqueness is ensured for the call to 'nameWithLoc' at different location.
-nameWithLoc :: String -> Q (TExp GenSymIdent)
-nameWithLoc s = [|| nameWithInfo s (parseFileLocation $$(unsafeTExpCoerce __LOCATION__)) ||]
+nameWithLoc :: String -> SpliceQ GenSymIdent
+nameWithLoc s = [|| nameWithInfo s (parseFileLocation $$(liftSplice $ unsafeTExpCoerce __LOCATION__)) ||]
 
 -- | Generate simply-named symbolic variables. The file location will be attached to identifier.
 --
@@ -51,8 +51,8 @@ nameWithLoc s = [|| nameWithInfo s (parseFileLocation $$(unsafeTExpCoerce __LOCA
 -- a:<interactive>:7:4-15
 --
 -- The uniqueness is ensured for the call to 'slocsymb' at different location.
-slocsymb :: (PrimWrapper s c) => String -> Q (TExp s)
-slocsymb nm = [|| sinfosymb nm (parseFileLocation $$(unsafeTExpCoerce __LOCATION__)) ||]
+slocsymb :: (PrimWrapper s c) => String -> SpliceQ s
+slocsymb nm = [|| sinfosymb nm (parseFileLocation $$(liftSplice $ unsafeTExpCoerce __LOCATION__)) ||]
 
 -- | Generate indexed symbolic variables. The file location will be attached to identifier.
 --
@@ -60,5 +60,5 @@ slocsymb nm = [|| sinfosymb nm (parseFileLocation $$(unsafeTExpCoerce __LOCATION
 -- a@1:<interactive>:10:4-17
 --
 -- The uniqueness is ensured for the call to 'ilocsymb' at different location.
-ilocsymb :: (PrimWrapper s c) => Int -> String -> Q (TExp s)
-ilocsymb idx nm = [|| iinfosymb idx nm (parseFileLocation $$(unsafeTExpCoerce __LOCATION__)) ||]
+ilocsymb :: (PrimWrapper s c) => Int -> String -> SpliceQ s
+ilocsymb idx nm = [|| iinfosymb idx nm (parseFileLocation $$(liftSplice $ unsafeTExpCoerce __LOCATION__)) ||]

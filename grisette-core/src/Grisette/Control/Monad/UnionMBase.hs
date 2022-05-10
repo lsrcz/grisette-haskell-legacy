@@ -49,6 +49,7 @@ import Grisette.Data.Class.UnionOp
 import Grisette.Data.MemoUtils
 import Grisette.Data.UnionBase
 import Language.Haskell.TH.Syntax
+import Language.Haskell.TH.Syntax.Compat (unTypeSplice)
 
 
 -- $setup
@@ -113,9 +114,9 @@ instance NFData2 UnionMBase where
   liftRnf2 _bool _a (UMrg m) = liftRnf2 _bool _a m
 
 instance (Lift bool, Lift a) => Lift (UnionMBase bool a) where
-  lift (UAny _ v) = [|freshUAny v|]
-  lift (UMrg v) = [|UMrg v|]
-  liftTyped = unsafeTExpCoerce . lift
+  liftTyped (UAny _ v) = [||freshUAny v||]
+  liftTyped (UMrg v) = [||UMrg v||]
+  lift = unTypeSplice . liftTyped
 
 freshUAny :: UnionBase bool a -> UnionMBase bool a
 freshUAny v = UAny (unsafeDupablePerformIO $ newIORef $ Left v) v

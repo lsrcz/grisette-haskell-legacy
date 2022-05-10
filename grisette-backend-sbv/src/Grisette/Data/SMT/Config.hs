@@ -19,8 +19,9 @@ import qualified Data.SBV as SBV
 import GHC.TypeNats
 import Grisette.Data.TabularFunc
 import Grisette.Data.GeneralFunc
+import Data.Kind
 
-type Aux :: Bool -> Nat -> *
+type Aux :: Bool -> Nat -> Type
 type family Aux o n where
   Aux 'True n = SBV.SInteger
   Aux 'False n = SBV.SInt n
@@ -30,7 +31,7 @@ type family IsZero n where
   IsZero 0 = 'True
   IsZero _ = 'False
 
-type TermTy :: Nat -> * -> *
+type TermTy :: Nat -> Type -> Type
 type family TermTy bitWidth b where
   TermTy _ Bool = SBV.SBool
   TermTy n Integer = Aux (IsZero n) n

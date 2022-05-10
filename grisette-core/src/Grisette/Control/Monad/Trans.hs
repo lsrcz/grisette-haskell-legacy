@@ -18,4 +18,4 @@ mrgLift ::
   (MonadUnion bool (t m), MonadTrans t, Monad m, Mergeable bool a) =>
   m a ->
   t m a
-mrgLift = withUnionSimpleMergeableU @bool . merge . lift
+mrgLift v = withUnionSimpleMergeableU @bool $ merge $ lift v

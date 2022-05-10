@@ -54,6 +54,7 @@ library
     , parameterized-utils
     , sbv
     , template-haskell
+    , th-compat
     , transformers
     , typerep-map
     , unordered-containers
@@ -101,6 +102,7 @@ test-suite spec
     , parameterized-utils
     , sbv
     , template-haskell
+    , th-compat
     , transformers
     , typerep-map
     , unordered-containers

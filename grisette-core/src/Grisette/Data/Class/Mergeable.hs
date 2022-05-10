@@ -56,6 +56,7 @@ import Grisette.Data.Class.Bool
 import Grisette.Data.Class.OrphanGeneric ()
 import Grisette.Data.Class.Utils.CConst
 import Unsafe.Coerce
+import Data.Kind
 
 -- | Helper type for combining arbitrary number of indices into one.
 -- Useful when trying to write efficient merge strategy for lists / vectors.
@@ -197,7 +198,7 @@ derivedMergeStrategy = wrapMergeStrategy mergeStrategy' to from
 {-# INLINE derivedMergeStrategy #-}
 
 -- | Lifting of the 'Mergeable' class to unary type constructors.
-class Mergeable1 bool (u :: * -> *) where
+class Mergeable1 bool (u :: Type -> Type) where
   -- | Resolves the 'Mergeable' constraint through the type constructor.
   --
   -- Usually you will not need to write this function manually.

@@ -32,6 +32,7 @@ import Data.Bits
 import Data.Dynamic
 import Data.Foldable
 import qualified Data.HashMap.Strict as M
+import Data.Kind
 -- import qualified Data.HashSet as S
 import Data.Maybe (fromMaybe)
 import Data.Parameterized.Axiom (unsafeAxiom)
@@ -1052,7 +1053,7 @@ pattern UnsignedBVType ::
   R.TypeRep t
 pattern UnsignedBVType p <- (unsignedBVTypeView @t -> Just (BVTypeContainer p))
 
-data TFunTypeContainer :: forall k. k -> * where
+data TFunTypeContainer :: forall k. k -> Type where
   TFunTypeContainer :: (SupportedPrim a, SupportedPrim b) => R.TypeRep a -> R.TypeRep b -> TFunTypeContainer (a =-> b)
 
 tFunTypeView :: forall t. (SupportedPrim t) => R.TypeRep t -> Maybe (TFunTypeContainer t)
@@ -1066,7 +1067,7 @@ tFunTypeView t = case t of
 pattern TFunType ::
   forall t.
   (SupportedPrim t) =>
-  forall (a :: *) (b :: *).
+  forall (a :: Type) (b :: Type).
   (t ~~ (a =-> b), SupportedPrim a, SupportedPrim b) =>
   R.TypeRep a ->
   R.TypeRep b ->
@@ -1079,7 +1080,7 @@ pattern TFunType a b <-
 pattern TFun3Type ::
   forall t.
   (SupportedPrim t) =>
-  forall (a :: *) (b :: *) (c :: *).
+  forall (a :: Type) (b :: Type) (c :: Type).
   (t ~~ (a =-> b =-> c), SupportedPrim a, SupportedPrim b, SupportedPrim c) =>
   R.TypeRep a ->
   R.TypeRep b ->
@@ -1087,7 +1088,7 @@ pattern TFun3Type ::
   R.TypeRep t
 pattern TFun3Type a b c = TFunType a (TFunType b c)
 
-data GFunTypeContainer :: forall k. k -> * where
+data GFunTypeContainer :: forall k. k -> Type where
   GFunTypeContainer :: (SupportedPrim a, SupportedPrim b) => R.TypeRep a -> R.TypeRep b -> GFunTypeContainer (a --> b)
 
 gFunTypeView :: forall t. (SupportedPrim t) => R.TypeRep t -> Maybe (GFunTypeContainer t)
@@ -1101,7 +1102,7 @@ gFunTypeView t = case t of
 pattern GFunType ::
   forall t.
   (SupportedPrim t) =>
-  forall (a :: *) (b :: *).
+  forall (a :: Type) (b :: Type).
   (t ~~ (a --> b), SupportedPrim a, SupportedPrim b) =>
   R.TypeRep a ->
   R.TypeRep b ->
@@ -1114,7 +1115,7 @@ pattern GFunType a b <-
 pattern GFun3Type ::
   forall t.
   (SupportedPrim t) =>
-  forall (a :: *) (b :: *) (c :: *).
+  forall (a :: Type) (b :: Type) (c :: Type).
   (t ~~ (a --> b --> c), SupportedPrim a, SupportedPrim b, SupportedPrim c) =>
   R.TypeRep a ->
   R.TypeRep b ->

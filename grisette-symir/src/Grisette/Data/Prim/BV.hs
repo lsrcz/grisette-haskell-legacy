@@ -44,6 +44,7 @@ import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.Helpers
 import Grisette.Data.Prim.InternedTerm
 import Language.Haskell.TH.Syntax
+import Language.Haskell.TH.Syntax.Compat
 
 signedBVConcTermView :: forall w a. (KnownNat w) => Term a -> Maybe (SignedBV w)
 signedBVConcTermView (ConcTerm _ b) = cast b
@@ -99,7 +100,7 @@ instance Show (BVTSelect w ow) where
       ++ show (natVal p + natVal (Proxy @w))
 
 instance Lift (BVTSelect w ow) where
-  lift = unTypeQ . liftTyped
+  lift = unTypeSplice . liftTyped
   liftTyped (BVTSelect (_ :: Proxy ix)) = [||(BVTSelect (Proxy @ix) :: BVTSelect w ow)||]
 
 instance NFData (BVTSelect n m) where
@@ -196,7 +197,7 @@ instance Show (BVTExt w w') where
   show (Sext p) = "Sext" ++ show (natVal p)
 
 instance Lift (BVTExt w w') where
-  lift = unTypeQ . liftTyped
+  lift = unTypeSplice . liftTyped
   liftTyped (Zext (_ :: proxy n)) = [||(Zext (Proxy @n) :: BVTExt w w')||]
   liftTyped (Sext (_ :: proxy n)) = [||(Sext (Proxy @n) :: BVTExt w w')||]
 
@@ -321,7 +322,7 @@ instance Show (BVTConcat w w' w'') where
   show BVTConcat = "BVTConcat"
 
 instance Lift (BVTConcat w w' w'') where
-  lift = unTypeQ . liftTyped
+  lift = unTypeSplice . liftTyped
   liftTyped BVTConcat = [||(BVTConcat :: BVTConcat w w' w'')||]
 
 instance NFData (BVTConcat w w' w'') where

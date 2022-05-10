@@ -30,6 +30,7 @@ dependencies:
 - hashtables
 - Unique
 - loch-th
+- th-compat
 
 flags: {
   fast: {

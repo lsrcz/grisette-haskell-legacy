@@ -12,10 +12,11 @@ module Grisette.Data.Class.UnionOp
 where
 
 import Grisette.Data.Class.Bool
+import Data.Kind
 
 -- | Basic operations for union-like containers.
 -- These operations does not ensure the result to be merged.
-class (SymBoolOp bool) => UnionOp bool (u :: * -> *) | u -> bool where
+class (SymBoolOp bool) => UnionOp bool (u :: Type -> Type) | u -> bool where
   -- | Wrap a single value in the union.
   single :: a -> u a
   -- | If-then-else on two union values.

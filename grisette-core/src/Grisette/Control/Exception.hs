@@ -5,6 +5,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE CPP #-}
 
 module Grisette.Control.Exception
   ( AssertionError (..),
@@ -34,6 +35,7 @@ import Grisette.Data.Class.ToSym
 -- $setup
 -- >>> import Grisette.Core
 -- >>> import Grisette.IR.SymPrim
+-- >>> import Control.Monad.Trans.Except
 
 -- | Assertion error.
 data AssertionError = AssertionError

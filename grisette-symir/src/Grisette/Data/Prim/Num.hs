@@ -48,6 +48,7 @@ import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.Helpers
 import Grisette.Data.Prim.InternedTerm
 import Language.Haskell.TH.Syntax
+import Language.Haskell.TH.Syntax.Compat
 import Data.Hashable
 import Unsafe.Coerce
 import Grisette.Data.Prim.Utils
@@ -80,8 +81,8 @@ instance Show (AddNum x) where
   show AddNum = "AddNum"
 
 instance Lift (AddNum x) where
-  lift AddNum = [|AddNum|]
-  liftTyped = unsafeTExpCoerce . lift
+  liftTyped AddNum = [||AddNum||]
+  lift = unTypeSplice . liftTyped
 
 instance NFData (AddNum x) where
   rnf AddNum = ()

@@ -94,7 +94,7 @@ instance (SymBoolOp bool) => SimpleMergeable bool GenSymIndex where
 --   * bundle the calling file location with the name to ensure global uniqueness
 --
 -- >>> $$(nameWithLoc "a") -- a sample result could be "a:<interactive>:18:4-18"
--- a:<interactive>:...:4-18
+-- a:<interactive>:...
 --
 --   * bundle the calling file location with some user provided information
 --

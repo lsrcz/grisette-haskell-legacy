@@ -2,7 +2,7 @@
 
 module Grisette.Data.SMT.SExprSpec where
 
-import ByteString.StrictBuilder
+-- import ByteString.StrictBuilder
 import Grisette.Data.SMT.SExpr as SExpr
 import Test.Hspec
 

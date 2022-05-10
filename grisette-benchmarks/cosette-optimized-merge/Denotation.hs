@@ -8,16 +8,16 @@ import qualified Data.ByteString as B
 import Data.HashMap.Strict as M
 import Evaluator
 import Grisette
-import Language.Haskell.TH
+import Language.Haskell.TH.Syntax.Compat
 import Syntax
 import Table
 
-moveQuotesOut :: [Q (TExp e)] -> Q (TExp [e])
+moveQuotesOut :: [SpliceQ e] -> SpliceQ [e]
 moveQuotesOut [] = [||[]||]
 moveQuotesOut (x : xs) = [||$$x : $$(moveQuotesOut xs)||]
 
-denoteSql :: Query -> Q (TExp Table)
-denoteSql (QueryNamed n) = fail $ "There are unresolved tables " ++ show n
+denoteSql :: Query -> SpliceQ Table
+denoteSql (QueryNamed n) = liftSplice $ fail $ "There are unresolved tables " ++ show n
 denoteSql (QueryTable t) = [||t||]
 denoteSql (QueryJoin q1 q2) =
   [||xproduct $$(denoteSql q1) $$(denoteSql q2) "dummy"||]
@@ -47,9 +47,9 @@ denoteSql qs@(QuerySelect cols q f) =
           content = first rowFuncWrap <$> postFilter
        in Table newTblName newSchema content
       ||]
-denoteSql q = fail $ "I don't know how to handle the sql query " ++ show q
+denoteSql q = liftSplice $ fail $ "I don't know how to handle the sql query " ++ show q
 
-denoteFilter :: Filter -> M.HashMap Table.Name Int -> Q (TExp ([UnionM (Maybe SymInteger)] -> SymBool))
+denoteFilter :: Filter -> M.HashMap Table.Name Int -> SpliceQ ([UnionM (Maybe SymInteger)] -> SymBool)
 denoteFilter FilterTrue _ = [||const $ conc True||]
 denoteFilter FilterFalse _ = [||const $ conc False||]
 denoteFilter (FilterNot f) indexMap = [||nots . $$(denoteFilter f indexMap)||]
@@ -66,12 +66,12 @@ denoteFilter (FilterBinOp FBinNEq v1 v2) indexMap =
 denoteValue ::
   Val ->
   M.HashMap Table.Name Int ->
-  Q (TExp ([UnionM (Maybe SymInteger)] -> UnionM (Maybe SymInteger)))
+  SpliceQ ([UnionM (Maybe SymInteger)] -> UnionM (Maybe SymInteger))
 denoteValue (ValConst i) _ = [||const $ mrgReturn i||]
 denoteValue (ValColumnRef s) indexMap =
   case M.lookup s indexMap of
     Just i -> [||(!! i)||]
-    Nothing -> fail $ "Unknown column " ++ show s ++ " referenced in the context " ++ show indexMap
+    Nothing -> liftSplice $ fail $ "Unknown column " ++ show s ++ " referenced in the context " ++ show indexMap
 
 extractSchema :: Query -> Schema
 extractSchema (QueryNamed n) = fail $ "There are unresolved tables " ++ show n
