@@ -2,12 +2,10 @@ version: 2.1
 jobs:
   build:
     parameters:
-      resolver:
-        type: string
-      yamlpostfix:
+      yamlver:
         type: string
     docker:
-      - image: fpco/stack-build:<< parameters.resolver >>
+      - image: fpco/stack-build:lts
     resource_class: medium
     steps:
       - checkout
@@ -15,8 +13,8 @@ jobs:
           name: Link stack.yaml
           command: |
             rm -f stack.yaml stack.yaml.lock
-            ln -s stack-<< parameters.resolver >><< parameters.yamlpostfix >>.yaml stack.yaml
-            cp stack-<< parameters.resolver >><< parameters.yamlpostfix >>.yaml.lock stack.yaml.lock
+            ln -s stack-<< parameters.yamlver >>.yaml stack.yaml
+            cp stack-<< parameters.yamlver >>.yaml.lock stack.yaml.lock
       - restore_cache:
           name: Restore Cached Dependencies
           keys:
@@ -78,8 +76,4 @@ workflows:
       - build:
           matrix:
             parameters:
-              resolver: ["lts-18.28", "lts-19.6"]
-              yamlpostfix: ["", "-lowerbound"]
-            exclude:
-              - resolver: "lts-19.6"
-                yamlpostfix: "-lowerbound"
+              yamlver: ["lts-18.28-lowerbound", "lts-18.28", "lts-19.6"]
