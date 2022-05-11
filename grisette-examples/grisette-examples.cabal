@@ -58,35 +58,20 @@ library
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie
-    , Unique
-    , base >4.7 && <5
-    , bv-sized
-    , bytestring
-    , clock
-    , deepseq
-    , either
-    , formatting
-    , generic-deriving
-    , grisette
-    , hashable
-    , hashtables
-    , loch-th
-    , megaparsec
-    , monad-coroutine
-    , monad-memo
-    , mtl
-    , parameterized-utils
-    , parser-combinators
-    , regex-base
-    , regex-pcre-builtin
-    , template-haskell
-    , th-lift-instances
-    , timeit
-    , transformers
-    , unordered-containers
-    , utf8-string
-    , vector-sized
+      base >4.14 && <5
+    , bv-sized >=1.0.3
+    , bytestring >=0.10.12
+    , clock >=0.7.1
+    , formatting >=6.3.1
+    , generic-deriving >=1.14.1
+    , grisette ==0.1.0.0
+    , loch-th >=0.2.2
+    , megaparsec >=8
+    , mtl >=2.2.2
+    , parser-combinators >=1
+    , template-haskell >=2.16
+    , transformers >=0.5.6.2
+    , utf8-string >=1.0.1.1
   if flag(fast)
     ghc-options: -O2
   else
@@ -124,35 +109,20 @@ executable assert-assume-icfp2022
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie
-    , Unique
-    , base >4.7 && <5
-    , bv-sized
-    , bytestring
-    , clock
-    , deepseq
-    , either
-    , formatting
-    , generic-deriving
-    , grisette
-    , hashable
-    , hashtables
-    , loch-th
-    , megaparsec
-    , monad-coroutine
-    , monad-memo
-    , mtl
-    , parameterized-utils
-    , parser-combinators
-    , regex-base
-    , regex-pcre-builtin
-    , template-haskell
-    , th-lift-instances
-    , timeit
-    , transformers
-    , unordered-containers
-    , utf8-string
-    , vector-sized
+      base >4.14 && <5
+    , bv-sized >=1.0.3
+    , bytestring >=0.10.12
+    , clock >=0.7.1
+    , formatting >=6.3.1
+    , generic-deriving >=1.14.1
+    , grisette ==0.1.0.0
+    , loch-th >=0.2.2
+    , megaparsec >=8
+    , mtl >=2.2.2
+    , parser-combinators >=1
+    , template-haskell >=2.16
+    , transformers >=0.5.6.2
+    , utf8-string >=1.0.1.1
   if flag(fast)
     ghc-options: -O2
   else
@@ -190,35 +160,20 @@ executable expr-icfp2022
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie
-    , Unique
-    , base >4.7 && <5
-    , bv-sized
-    , bytestring
-    , clock
-    , deepseq
-    , either
-    , formatting
-    , generic-deriving
-    , grisette
-    , hashable
-    , hashtables
-    , loch-th
-    , megaparsec
-    , monad-coroutine
-    , monad-memo
-    , mtl
-    , parameterized-utils
-    , parser-combinators
-    , regex-base
-    , regex-pcre-builtin
-    , template-haskell
-    , th-lift-instances
-    , timeit
-    , transformers
-    , unordered-containers
-    , utf8-string
-    , vector-sized
+      base >4.14 && <5
+    , bv-sized >=1.0.3
+    , bytestring >=0.10.12
+    , clock >=0.7.1
+    , formatting >=6.3.1
+    , generic-deriving >=1.14.1
+    , grisette ==0.1.0.0
+    , loch-th >=0.2.2
+    , megaparsec >=8
+    , mtl >=2.2.2
+    , parser-combinators >=1
+    , template-haskell >=2.16
+    , transformers >=0.5.6.2
+    , utf8-string >=1.0.1.1
   if flag(fast)
     ghc-options: -O2
   else
@@ -257,35 +212,20 @@ executable expr-interpreter
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie
-    , Unique
-    , base >4.7 && <5
-    , bv-sized
-    , bytestring
-    , clock
-    , deepseq
-    , either
-    , formatting
-    , generic-deriving
-    , grisette
-    , hashable
-    , hashtables
-    , loch-th
-    , megaparsec
-    , monad-coroutine
-    , monad-memo
-    , mtl
-    , parameterized-utils
-    , parser-combinators
-    , regex-base
-    , regex-pcre-builtin
-    , template-haskell
-    , th-lift-instances
-    , timeit
-    , transformers
-    , unordered-containers
-    , utf8-string
-    , vector-sized
+      base >4.14 && <5
+    , bv-sized >=1.0.3
+    , bytestring >=0.10.12
+    , clock >=0.7.1
+    , formatting >=6.3.1
+    , generic-deriving >=1.14.1
+    , grisette ==0.1.0.0
+    , loch-th >=0.2.2
+    , megaparsec >=8
+    , mtl >=2.2.2
+    , parser-combinators >=1
+    , template-haskell >=2.16
+    , transformers >=0.5.6.2
+    , utf8-string >=1.0.1.1
   if flag(fast)
     ghc-options: -O2
   else
@@ -325,35 +265,20 @@ executable expr-sketch
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie
-    , Unique
-    , base >4.7 && <5
-    , bv-sized
-    , bytestring
-    , clock
-    , deepseq
-    , either
-    , formatting
-    , generic-deriving
-    , grisette
-    , hashable
-    , hashtables
-    , loch-th
-    , megaparsec
-    , monad-coroutine
-    , monad-memo
-    , mtl
-    , parameterized-utils
-    , parser-combinators
-    , regex-base
-    , regex-pcre-builtin
-    , template-haskell
-    , th-lift-instances
-    , timeit
-    , transformers
-    , unordered-containers
-    , utf8-string
-    , vector-sized
+      base >4.14 && <5
+    , bv-sized >=1.0.3
+    , bytestring >=0.10.12
+    , clock >=0.7.1
+    , formatting >=6.3.1
+    , generic-deriving >=1.14.1
+    , grisette ==0.1.0.0
+    , loch-th >=0.2.2
+    , megaparsec >=8
+    , mtl >=2.2.2
+    , parser-combinators >=1
+    , template-haskell >=2.16
+    , transformers >=0.5.6.2
+    , utf8-string >=1.0.1.1
   if flag(fast)
     ghc-options: -O2
   else
@@ -391,35 +316,20 @@ executable genfunc
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie
-    , Unique
-    , base >4.7 && <5
-    , bv-sized
-    , bytestring
-    , clock
-    , deepseq
-    , either
-    , formatting
-    , generic-deriving
-    , grisette
-    , hashable
-    , hashtables
-    , loch-th
-    , megaparsec
-    , monad-coroutine
-    , monad-memo
-    , mtl
-    , parameterized-utils
-    , parser-combinators
-    , regex-base
-    , regex-pcre-builtin
-    , template-haskell
-    , th-lift-instances
-    , timeit
-    , transformers
-    , unordered-containers
-    , utf8-string
-    , vector-sized
+      base >4.14 && <5
+    , bv-sized >=1.0.3
+    , bytestring >=0.10.12
+    , clock >=0.7.1
+    , formatting >=6.3.1
+    , generic-deriving >=1.14.1
+    , grisette ==0.1.0.0
+    , loch-th >=0.2.2
+    , megaparsec >=8
+    , mtl >=2.2.2
+    , parser-combinators >=1
+    , template-haskell >=2.16
+    , transformers >=0.5.6.2
+    , utf8-string >=1.0.1.1
   if flag(fast)
     ghc-options: -O2
   else
@@ -459,35 +369,20 @@ executable location
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie
-    , Unique
-    , base >4.7 && <5
-    , bv-sized
-    , bytestring
-    , clock
-    , deepseq
-    , either
-    , formatting
-    , generic-deriving
-    , grisette
-    , hashable
-    , hashtables
-    , loch-th
-    , megaparsec
-    , monad-coroutine
-    , monad-memo
-    , mtl
-    , parameterized-utils
-    , parser-combinators
-    , regex-base
-    , regex-pcre-builtin
-    , template-haskell
-    , th-lift-instances
-    , timeit
-    , transformers
-    , unordered-containers
-    , utf8-string
-    , vector-sized
+      base >4.14 && <5
+    , bv-sized >=1.0.3
+    , bytestring >=0.10.12
+    , clock >=0.7.1
+    , formatting >=6.3.1
+    , generic-deriving >=1.14.1
+    , grisette ==0.1.0.0
+    , loch-th >=0.2.2
+    , megaparsec >=8
+    , mtl >=2.2.2
+    , parser-combinators >=1
+    , template-haskell >=2.16
+    , transformers >=0.5.6.2
+    , utf8-string >=1.0.1.1
   if flag(fast)
     ghc-options: -O2
   else
@@ -525,35 +420,20 @@ executable order
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie
-    , Unique
-    , base >4.7 && <5
-    , bv-sized
-    , bytestring
-    , clock
-    , deepseq
-    , either
-    , formatting
-    , generic-deriving
-    , grisette
-    , hashable
-    , hashtables
-    , loch-th
-    , megaparsec
-    , monad-coroutine
-    , monad-memo
-    , mtl
-    , parameterized-utils
-    , parser-combinators
-    , regex-base
-    , regex-pcre-builtin
-    , template-haskell
-    , th-lift-instances
-    , timeit
-    , transformers
-    , unordered-containers
-    , utf8-string
-    , vector-sized
+      base >4.14 && <5
+    , bv-sized >=1.0.3
+    , bytestring >=0.10.12
+    , clock >=0.7.1
+    , formatting >=6.3.1
+    , generic-deriving >=1.14.1
+    , grisette ==0.1.0.0
+    , loch-th >=0.2.2
+    , megaparsec >=8
+    , mtl >=2.2.2
+    , parser-combinators >=1
+    , template-haskell >=2.16
+    , transformers >=0.5.6.2
+    , utf8-string >=1.0.1.1
   if flag(fast)
     ghc-options: -O2
   else
@@ -594,35 +474,20 @@ executable stmt-sketch
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie
-    , Unique
-    , base >4.7 && <5
-    , bv-sized
-    , bytestring
-    , clock
-    , deepseq
-    , either
-    , formatting
-    , generic-deriving
-    , grisette
-    , hashable
-    , hashtables
-    , loch-th
-    , megaparsec
-    , monad-coroutine
-    , monad-memo
-    , mtl
-    , parameterized-utils
-    , parser-combinators
-    , regex-base
-    , regex-pcre-builtin
-    , template-haskell
-    , th-lift-instances
-    , timeit
-    , transformers
-    , unordered-containers
-    , utf8-string
-    , vector-sized
+      base >4.14 && <5
+    , bv-sized >=1.0.3
+    , bytestring >=0.10.12
+    , clock >=0.7.1
+    , formatting >=6.3.1
+    , generic-deriving >=1.14.1
+    , grisette ==0.1.0.0
+    , loch-th >=0.2.2
+    , megaparsec >=8
+    , mtl >=2.2.2
+    , parser-combinators >=1
+    , template-haskell >=2.16
+    , transformers >=0.5.6.2
+    , utf8-string >=1.0.1.1
   if flag(fast)
     ghc-options: -O2
   else
@@ -660,35 +525,20 @@ executable tutorial
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie
-    , Unique
-    , base >4.7 && <5
-    , bv-sized
-    , bytestring
-    , clock
-    , deepseq
-    , either
-    , formatting
-    , generic-deriving
-    , grisette
-    , hashable
-    , hashtables
-    , loch-th
-    , megaparsec
-    , monad-coroutine
-    , monad-memo
-    , mtl
-    , parameterized-utils
-    , parser-combinators
-    , regex-base
-    , regex-pcre-builtin
-    , template-haskell
-    , th-lift-instances
-    , timeit
-    , transformers
-    , unordered-containers
-    , utf8-string
-    , vector-sized
+      base >4.14 && <5
+    , bv-sized >=1.0.3
+    , bytestring >=0.10.12
+    , clock >=0.7.1
+    , formatting >=6.3.1
+    , generic-deriving >=1.14.1
+    , grisette ==0.1.0.0
+    , loch-th >=0.2.2
+    , megaparsec >=8
+    , mtl >=2.2.2
+    , parser-combinators >=1
+    , template-haskell >=2.16
+    , transformers >=0.5.6.2
+    , utf8-string >=1.0.1.1
   if flag(fast)
     ghc-options: -O2
   else

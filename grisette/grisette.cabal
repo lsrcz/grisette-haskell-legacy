@@ -35,13 +35,13 @@ library
       src
   ghc-options: -Wall -ferror-spans
   build-depends:
-      base >4.7 && <5
-    , generic-deriving
-    , grisette-backend-sbv
-    , grisette-core
-    , grisette-lib
-    , grisette-symir
-    , sbv
+      base >4.14 && <5
+    , generic-deriving >=1.14.1
+    , grisette-backend-sbv ==0.1.0.0
+    , grisette-core ==0.1.0.0
+    , grisette-lib ==0.1.0.0
+    , grisette-symir ==0.1.0.0
+    , sbv >=8.11
   if flag(fast)
     ghc-options: -O2
   else

@@ -35,11 +35,11 @@ library
       src
   ghc-options: -Wall -ferror-spans
   build-depends:
-      base >4.7 && <5
-    , bytestring
-    , bytestring-strict-builder
-    , grisette-core
-    , grisette-symir
+      base >4.14 && <5
+    , bytestring >=0.10.12
+    , bytestring-strict-builder >=0.4.5.3
+    , grisette-core ==0.1.0.0
+    , grisette-symir ==0.1.0.0
   if flag(fast)
     ghc-options: -O2
   else
@@ -58,12 +58,12 @@ test-suite spec
   ghc-options: -Wall -ferror-spans
   build-depends:
       QuickCheck
-    , base >4.7 && <5
-    , bytestring
-    , bytestring-strict-builder
+    , base >4.14 && <5
+    , bytestring >=0.10.12
+    , bytestring-strict-builder >=0.4.5.3
     , grisette-backend-direct
-    , grisette-core
-    , grisette-symir
+    , grisette-core ==0.1.0.0
+    , grisette-symir ==0.1.0.0
     , hspec ==2.*
     , hspec-junit-formatter
   if flag(fast)

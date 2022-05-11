@@ -4,6 +4,8 @@ jobs:
     parameters:
       resolver:
         type: string
+      yamlpostfix:
+        type: string
     docker:
       - image: fpco/stack-build:<< parameters.resolver >>
     resource_class: medium
@@ -13,8 +15,8 @@ jobs:
           name: Link stack.yaml
           command: |
             rm -f stack.yaml stack.yaml.lock
-            ln -s stack-<< parameters.resolver >>.yaml stack.yaml
-            ln -s stack-<< parameters.resolver >>.yaml.lock stack.yaml.lock
+            ln -s stack-<< parameters.resolver >><< parameters.yamlpostfix >>.yaml stack.yaml
+            cp stack-<< parameters.resolver >><< parameters.yamlpostfix >>.yaml.lock stack.yaml.lock
       - restore_cache:
           name: Restore Cached Dependencies
           keys:
@@ -77,3 +79,7 @@ workflows:
           matrix:
             parameters:
               resolver: ["lts-18.28", "lts-19.6"]
+              yamlpostfix: ["", "-lowerbound"]
+            exclude:
+              - resolver: "lts-19.6"
+                yamlpostfix: "-lowerbound"

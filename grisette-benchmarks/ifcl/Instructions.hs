@@ -87,7 +87,7 @@ instance GenSymSimple SymBool InstructionSpec Instruction where
 
 instance GenSym SymBool [InstructionSpec] Instruction where
   genSymFresh spec =
-    let uniqSpec = uniq $ sort spec
+    let uniqSpec = sortUniq spec
      in do
           l <- traverse (genSymSimpleFresh @SymBool) uniqSpec
           choose l

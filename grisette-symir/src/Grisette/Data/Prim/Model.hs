@@ -1,8 +1,8 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Grisette.Data.Prim.Model
   ( Model (..),
@@ -18,22 +18,21 @@ module Grisette.Data.Prim.Model
   )
 where
 
-import Control.Monad.Memo
 import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet as S
-import Data.Typeable
-import Grisette.Data.MemoUtils
-import Grisette.Data.Prim.InternedTerm
-import Unsafe.Coerce
-import Grisette.Data.Prim.ModelValue
 import Data.Hashable
+import Data.Typeable
 import GHC.Generics
+import Grisette.Data.MemoUtils
 import Grisette.Data.Prim.Bool
+import Grisette.Data.Prim.InternedTerm
+import Grisette.Data.Prim.ModelValue
+import Unsafe.Coerce
 
 newtype Model = Model (M.HashMap TermSymbol ModelValue) deriving (Show, Eq, Generic, Hashable)
 
 equation :: Model -> TermSymbol -> Maybe (Term Bool)
-equation m tsym@(TermSymbol (_ :: Proxy a) sym) = 
+equation m tsym@(TermSymbol (_ :: Proxy a) sym) =
   case valueOf m tsym of
     Just (v :: a) -> Just $ eqterm (symbTerm sym) (concTerm v)
     Nothing -> Nothing
@@ -81,6 +80,7 @@ insert (Model m) sym@(TermSymbol p _) v =
     then Model $ M.insert sym (toModelValue v) m
     else error "Bad value type"
 
+{-
 evaluateSomeTermMemo :: Bool -> Model -> SomeTerm -> MemoState (MemoHashMap SomeTerm SomeTerm) SomeTerm SomeTerm SomeTerm
 evaluateSomeTermMemo fillDefault (Model ma) = go
   where
@@ -115,6 +115,34 @@ evaluateSomeTermMemo fillDefault (Model ma) = go
 
 evaluateSomeTerm :: Bool -> Model -> SomeTerm -> SomeTerm
 evaluateSomeTerm fillDefault m t1 = evalMemoState (evaluateSomeTermMemo fillDefault m t1) (MemoHashMap M.empty)
+-}
+
+evaluateSomeTerm :: Bool -> Model -> SomeTerm -> SomeTerm
+evaluateSomeTerm fillDefault (Model ma) = gomemo
+  where
+    gomemo = htmemo go
+    gotyped :: (SupportedPrim a) => Term a -> Term a
+    gotyped a = case gomemo (SomeTerm a) of
+      SomeTerm v -> unsafeCoerce v
+    go c@(SomeTerm ConcTerm {}) = c
+    go c@(SomeTerm ((SymbTerm _ sym@(TermSymbol (_ :: Proxy t) _)) :: Term a)) = case M.lookup sym ma of
+      Nothing -> if fillDefault then SomeTerm $ concTerm (defaultValue @t) else c
+      Just dy -> SomeTerm $ concTerm (unsafeFromModelValue @a dy)
+    go (SomeTerm (UnaryTerm _ tag (arg :: Term a))) = do
+      SomeTerm $ partialEvalUnary tag (gotyped arg)
+    go (SomeTerm (BinaryTerm _ tag (arg1 :: Term a1) (arg2 :: Term a2))) =
+          SomeTerm $
+            partialEvalBinary
+              tag
+              (gotyped arg1)
+              (gotyped arg2)
+    go (SomeTerm (TernaryTerm _ tag (arg1 :: Term a1) (arg2 :: Term a2) (arg3 :: Term a3))) = do
+          SomeTerm $
+            partialEvalTernary
+              tag
+              (gotyped arg1)
+              (gotyped arg2)
+              (gotyped arg3)
 
 evaluateTerm :: forall a. (SupportedPrim a) => Bool -> Model -> Term a -> Term a
 evaluateTerm fillDefault m t = case evaluateSomeTerm fillDefault m $ SomeTerm t of

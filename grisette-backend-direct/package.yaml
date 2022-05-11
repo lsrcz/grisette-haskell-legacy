@@ -10,11 +10,11 @@ github: lsrcz/grisette-haskell
 copyright: "2021 Sirui Lu"
 
 dependencies:
-- base > 4.7 && < 5
-- grisette-core
-- grisette-symir
-- bytestring-strict-builder
-- bytestring
+- base > 4.14 && < 5
+- grisette-core == 0.1.0.0
+- grisette-symir == 0.1.0.0
+- bytestring-strict-builder >= 0.4.5.3
+- bytestring >= 0.10.12
 
 flags: {
   fast: {

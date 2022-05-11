@@ -154,8 +154,6 @@ module Grisette.Core
     translateBy,
   
     -- * Memoization
-    MemoHashMap (..),
-    emptyMemoHashMap,
     enum',
     htmemo,
     htmemo2,

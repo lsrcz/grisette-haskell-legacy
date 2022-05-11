@@ -35,23 +35,13 @@ library
       src
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie
-    , base >4.7 && <5
-    , bytestring
-    , fused-effects
-    , grisette
-    , hashable
-    , loch-th
-    , monad-coroutine
-    , monad-memo
-    , mtl
-    , regex-base
-    , regex-pcre-builtin
-    , template-haskell
-    , transformers
-    , unordered-containers
-    , utf8-string
-    , vector
+      MemoTrie >=0.6.10
+    , base >4.14 && <5
+    , fused-effects >=1.0.2.2
+    , grisette ==0.1.0.0
+    , mtl >=2.2.2
+    , transformers >=0.5.6.2
+    , vector >=0.12.1.2
   if flag(fast)
     ghc-options: -O2
   else
@@ -66,23 +56,13 @@ executable angelic
       angelic
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie
-    , base >4.7 && <5
-    , bytestring
-    , fused-effects
-    , grisette
-    , hashable
-    , loch-th
-    , monad-coroutine
-    , monad-memo
-    , mtl
-    , regex-base
-    , regex-pcre-builtin
-    , template-haskell
-    , transformers
-    , unordered-containers
-    , utf8-string
-    , vector
+      MemoTrie >=0.6.10
+    , base >4.14 && <5
+    , fused-effects >=1.0.2.2
+    , grisette ==0.1.0.0
+    , mtl >=2.2.2
+    , transformers >=0.5.6.2
+    , vector >=0.12.1.2
   if flag(fast)
     ghc-options: -O2
   else
@@ -97,23 +77,13 @@ executable cegis
       cegis
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie
-    , base >4.7 && <5
-    , bytestring
-    , fused-effects
-    , grisette
-    , hashable
-    , loch-th
-    , monad-coroutine
-    , monad-memo
-    , mtl
-    , regex-base
-    , regex-pcre-builtin
-    , template-haskell
-    , transformers
-    , unordered-containers
-    , utf8-string
-    , vector
+      MemoTrie >=0.6.10
+    , base >4.14 && <5
+    , fused-effects >=1.0.2.2
+    , grisette ==0.1.0.0
+    , mtl >=2.2.2
+    , transformers >=0.5.6.2
+    , vector >=0.12.1.2
   if flag(fast)
     ghc-options: -O2
   else
@@ -129,23 +99,13 @@ executable effects
       effects
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie
-    , base >4.7 && <5
-    , bytestring
-    , fused-effects
-    , grisette
-    , hashable
-    , loch-th
-    , monad-coroutine
-    , monad-memo
-    , mtl
-    , regex-base
-    , regex-pcre-builtin
-    , template-haskell
-    , transformers
-    , unordered-containers
-    , utf8-string
-    , vector
+      MemoTrie >=0.6.10
+    , base >4.14 && <5
+    , fused-effects >=1.0.2.2
+    , grisette ==0.1.0.0
+    , mtl >=2.2.2
+    , transformers >=0.5.6.2
+    , vector >=0.12.1.2
   if flag(fast)
     ghc-options: -O2
   else
@@ -160,23 +120,13 @@ executable interned-trie
       interned-trie
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie
-    , base >4.7 && <5
-    , bytestring
-    , fused-effects
-    , grisette
-    , hashable
-    , loch-th
-    , monad-coroutine
-    , monad-memo
-    , mtl
-    , regex-base
-    , regex-pcre-builtin
-    , template-haskell
-    , transformers
-    , unordered-containers
-    , utf8-string
-    , vector
+      MemoTrie >=0.6.10
+    , base >4.14 && <5
+    , fused-effects >=1.0.2.2
+    , grisette ==0.1.0.0
+    , mtl >=2.2.2
+    , transformers >=0.5.6.2
+    , vector >=0.12.1.2
   if flag(fast)
     ghc-options: -O2
   else
@@ -191,23 +141,13 @@ executable list-funcs
       list-funcs
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie
-    , base >4.7 && <5
-    , bytestring
-    , fused-effects
-    , grisette
-    , hashable
-    , loch-th
-    , monad-coroutine
-    , monad-memo
-    , mtl
-    , regex-base
-    , regex-pcre-builtin
-    , template-haskell
-    , transformers
-    , unordered-containers
-    , utf8-string
-    , vector
+      MemoTrie >=0.6.10
+    , base >4.14 && <5
+    , fused-effects >=1.0.2.2
+    , grisette ==0.1.0.0
+    , mtl >=2.2.2
+    , transformers >=0.5.6.2
+    , vector >=0.12.1.2
   if flag(fast)
     ghc-options: -O2
   else

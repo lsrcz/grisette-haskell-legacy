@@ -10,35 +10,20 @@ github: lsrcz/grisette-haskell
 copyright: "2021 Sirui Lu"
 
 dependencies:
-- base > 4.7 && < 5
-- grisette
-- mtl
-- transformers
-- monad-coroutine
-- bytestring
-- regex-base
-- regex-pcre-builtin
-- hashable
-- MemoTrie
-- monad-memo
-- loch-th
-- template-haskell
-- th-lift-instances
-- utf8-string
-- unordered-containers
-- megaparsec
-- parser-combinators
-- timeit
-- clock
-- formatting
-- deepseq
-- Unique
-- bv-sized
-- vector-sized
-- parameterized-utils
-- either
-- hashtables
-- generic-deriving
+- base > 4.14 && < 5
+- grisette == 0.1.0.0
+- mtl >= 2.2.2
+- transformers >= 0.5.6.2
+- bytestring >= 0.10.12
+- loch-th >= 0.2.2
+- template-haskell >= 2.16
+- utf8-string >= 1.0.1.1
+- megaparsec >= 8
+- parser-combinators >= 1
+- clock >= 0.7.1
+- formatting >= 6.3.1
+- bv-sized >= 1.0.3
+- generic-deriving >= 1.14.1
 
 default-extensions:
 - BangPatterns
