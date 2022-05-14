@@ -12,7 +12,7 @@ import qualified Data.BitVector.Sized.Unsigned as BVU
 import Data.Bits
 import qualified Data.HashSet as S
 import Data.Proxy
-import Grisette.Control.Monad
+import Grisette.Control.Monad.Union
 import Grisette.Control.Monad.UnionM
 import Grisette.Data.Class.BitVector
 import Grisette.Data.Class.Bool

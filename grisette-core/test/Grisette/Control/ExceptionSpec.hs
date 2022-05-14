@@ -2,7 +2,7 @@ module Grisette.Control.ExceptionSpec where
 
 import qualified Data.HashSet as S
 import Grisette.Control.Exception
-import Grisette.Control.Monad
+import Grisette.Control.Monad.Union
 import Grisette.Control.Monad.UnionMBase
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.ExtractSymbolics

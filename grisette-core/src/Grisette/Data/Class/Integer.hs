@@ -18,7 +18,7 @@ import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Error
 import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.SOrd
-import Grisette.Control.Monad
+import Grisette.Control.Monad.Union
 
 -- $setup
 -- >>> import Grisette.Core

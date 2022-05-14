@@ -10,7 +10,7 @@ where
 import Control.Monad.Trans
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.SimpleMergeable
-import Grisette.Control.Monad
+import Grisette.Control.Monad.Union
 
 -- | 'lift' with 'Mergeable' knowledge propagation.
 mrgLift ::

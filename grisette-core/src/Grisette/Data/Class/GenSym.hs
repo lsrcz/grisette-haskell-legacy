@@ -65,6 +65,7 @@ import Data.Hashable
 import Data.Int
 import Data.Word
 import qualified Data.ByteString as B
+import Grisette.Control.Monad.Union
 
 -- $setup
 -- >>> import Grisette.Core

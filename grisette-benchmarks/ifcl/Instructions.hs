@@ -2,7 +2,6 @@
 
 module Instructions where
 
-import Data.List (sort)
 import Data.List.Unique
 import GHC.Generics
 import Grisette

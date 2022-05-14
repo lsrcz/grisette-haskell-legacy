@@ -4,7 +4,7 @@ module Grisette.Data.Class.SimpleMergeableSpec where
 
 import Control.Monad.Except
 import Control.Monad.Trans.Maybe
-import Grisette.Control.Monad
+import Grisette.Control.Monad.Union
 import Grisette.Control.Monad.UnionMBase
 import Grisette.Data.Class.SimpleMergeable
 import Test.Hspec

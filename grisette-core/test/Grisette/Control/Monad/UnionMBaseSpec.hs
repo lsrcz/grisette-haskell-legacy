@@ -10,7 +10,7 @@ import qualified Data.ByteString as B
 import qualified Data.HashMap.Lazy as ML
 import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet as S
-import Grisette.Control.Monad
+import Grisette.Control.Monad.Union
 import Grisette.Control.Monad.UnionMBase
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.ExtractSymbolics

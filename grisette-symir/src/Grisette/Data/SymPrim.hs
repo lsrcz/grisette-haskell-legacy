@@ -40,7 +40,7 @@ import Data.Proxy
 import Data.String
 import GHC.Generics
 import GHC.TypeLits
-import Grisette.Control.Monad
+import Grisette.Control.Monad.Union
 import Grisette.Data.Class.BitVector
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Error

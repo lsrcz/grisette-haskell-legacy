@@ -20,7 +20,6 @@ import Control.Exception
 import Control.Monad.Except
 import GHC.Generics
 import Generics.Deriving
-import Grisette.Control.Monad
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Error
 import Grisette.Data.Class.Evaluate
@@ -31,6 +30,7 @@ import Grisette.Data.Class.SOrd
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
+import Grisette.Control.Monad.Union
 
 -- $setup
 -- >>> import Grisette.Core

@@ -59,13 +59,29 @@ module Grisette.Core
     getSingle,
 
     -- * Wrapped Monadic Combinators with Mergeable Knowledge Propagaion
-    mrgFmap,
-    mrgLift,
     mrgFoldM,
     (>>~),
     mrgMzero,
     mrgMplus,
+    mrgFmap,
+
+    mrgFoldlM,
+    mrgFoldrM,
+    mrgTraverse_,
+    mrgFor_,
+    mrgMapM_,
+    mrgForM_,
+    mrgSequence_,
     mrgMsum,
+
+    mrgTraverse,
+    mrgSequenceA,
+    mrgFor,
+    mrgMapM,
+    mrgForM,
+    mrgSequence,
+
+    mrgLift,
     mrgThrowError,
     mrgCatchError,
     
@@ -208,3 +224,6 @@ import Grisette.TH
 import Grisette.BuiltinUnionMWrappers
 import Grisette.Data.Class.BitVector
 import Grisette.Data.Class.Solver
+import Grisette.Control.Monad.Union
+import Grisette.Data.Foldable
+import Grisette.Data.Traversable

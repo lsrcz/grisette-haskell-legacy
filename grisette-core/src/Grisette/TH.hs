@@ -9,11 +9,11 @@ where
 
 import Control.Monad
 import Data.Bifunctor
-import Grisette.Control.Monad
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax
+import Grisette.Control.Monad.Union
 
 -- | Generate constructor wrappers that wraps the result in a union-like monad with provided names.
 --

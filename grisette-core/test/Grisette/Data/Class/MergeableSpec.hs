@@ -20,7 +20,7 @@ import qualified Data.ByteString.Char8 as C
 import Data.Functor.Sum
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic.Sized as VSized
-import Grisette.Control.Monad
+import Grisette.Control.Monad.Union
 import Grisette.Control.Monad.UnionMBase
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable

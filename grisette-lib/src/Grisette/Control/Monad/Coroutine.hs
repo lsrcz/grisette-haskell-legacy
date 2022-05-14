@@ -16,6 +16,7 @@ import Control.Monad.Coroutine
 import Control.Monad.Coroutine.SuspensionFunctors
 import Data.Functor.Sum
 import Grisette.Control.Monad
+import Grisette.Control.Monad.Union
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
 

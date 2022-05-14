@@ -23,12 +23,12 @@ import Control.Monad.Trans.Maybe
 import qualified Data.ByteString as B
 import Data.Functor.Sum
 import Generics.Deriving
-import Grisette.Control.Monad
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.PrimWrapper
 import Control.Monad.Identity
 import Data.Int
 import Data.Word
+import Grisette.Control.Monad.Union
 
 -- | Auxiliary class for 'SOrd' instance derivation
 class (SEq' bool f) => SOrd' bool f where

@@ -5,9 +5,9 @@ module Grisette.Control.Monad.Except
 where
 
 import Control.Monad.Except
-import Grisette.Control.Monad
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
+import Grisette.Control.Monad.Union
 
 mrgThrowError :: (SymBoolOp bool, MonadError e m, MonadUnion bool m, Mergeable bool e, Mergeable bool a) => e -> m a
 mrgThrowError = merge . throwError

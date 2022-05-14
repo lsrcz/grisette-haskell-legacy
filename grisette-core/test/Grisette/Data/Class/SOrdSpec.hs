@@ -14,7 +14,7 @@ import Data.Bifunctor
 import qualified Data.ByteString as B
 import Data.Foldable
 import Data.Functor.Sum
-import Grisette.Control.Monad
+import Grisette.Control.Monad.Union
 import Grisette.Control.Monad.UnionMBase
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.SOrd

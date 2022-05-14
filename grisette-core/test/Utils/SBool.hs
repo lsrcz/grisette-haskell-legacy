@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -13,7 +12,7 @@ import Data.Hashable
 import Grisette.Data.Class.SOrd
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.Mergeable
-import Grisette.Control.Monad
+import Grisette.Control.Monad.Union
 import Grisette.Data.Class.Evaluate
 import qualified Data.HashMap.Strict as M
 import Grisette.Data.Class.ToCon

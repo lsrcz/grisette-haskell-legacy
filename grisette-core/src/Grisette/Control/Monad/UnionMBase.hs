@@ -50,6 +50,7 @@ import Grisette.Data.MemoUtils
 import Grisette.Data.UnionBase
 import Language.Haskell.TH.Syntax
 import Language.Haskell.TH.Syntax.Compat (unTypeSplice)
+import Grisette.Control.Monad.Union
 
 
 -- $setup

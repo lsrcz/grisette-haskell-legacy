@@ -14,6 +14,7 @@ import Grisette.Data.Class.Error
 import Grisette.Data.Class.Integer
 import Grisette.Data.Class.Mergeable
 import Grisette.Control.Monad
+import Grisette.Control.Monad.Union
 import Grisette.Data.Class.SOrd
 
 (!!~) ::

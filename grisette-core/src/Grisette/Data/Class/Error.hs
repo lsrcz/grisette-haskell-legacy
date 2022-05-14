@@ -9,10 +9,10 @@ module Grisette.Data.Class.Error
 where
 
 import Control.Monad.Except
-import Grisette.Control.Monad
 import Grisette.Control.Monad.Except
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
+import Grisette.Control.Monad.Union
 
 -- | This class indicates error type @to@ can always represent the error type @from@.
 class TransformError from to where
