@@ -68,4 +68,31 @@ spec = do
               b <- mrgIf (SSBool "b") (throwError 2) (mrgIf (SSBool "d") (return 3) (return 6))
               mrgReturn [a, b]
           )
-
+  describe "mrgFor" $
+    it "mrgFor should work" $ do
+      runExceptT
+        ( mrgFor
+            [(SSBool "a", SSBool "c", 3, 4, 5), (SSBool "b", SSBool "d", 2, 3, 6)]
+            (\(c, d, x, y, z) -> ExceptT $ guard c (return $ Left x) (guard d (return $ Right y) (return $ Right z))) ::
+            ExceptT Integer (UnionMBase SBool) [Integer]
+        )
+        `shouldBe` runExceptT
+          ( do
+              a <- mrgIf (SSBool "a") (throwError 3) (mrgIf (SSBool "c") (return 4) (return 5))
+              b <- mrgIf (SSBool "b") (throwError 2) (mrgIf (SSBool "d") (return 3) (return 6))
+              mrgReturn [a, b]
+          )
+  describe "mrgForM" $
+    it "mrgForM should work" $ do
+      runExceptT
+        ( mrgForM
+            [(SSBool "a", SSBool "c", 3, 4, 5), (SSBool "b", SSBool "d", 2, 3, 6)]
+            (\(c, d, x, y, z) -> ExceptT $ guard c (return $ Left x) (guard d (return $ Right y) (return $ Right z))) ::
+            ExceptT Integer (UnionMBase SBool) [Integer]
+        )
+        `shouldBe` runExceptT
+          ( do
+              a <- mrgIf (SSBool "a") (throwError 3) (mrgIf (SSBool "c") (return 4) (return 5))
+              b <- mrgIf (SSBool "b") (throwError 2) (mrgIf (SSBool "d") (return 3) (return 6))
+              mrgReturn [a, b]
+          )
