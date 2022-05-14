@@ -1,6 +1,4 @@
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -20,6 +18,8 @@ import Test.Hspec.QuickCheck
 import Generics.Deriving
 import qualified Data.ByteString as B
 import Control.Monad.Identity
+import Data.Int
+import Data.Word
 
 data A = A1 | A2 SBool | A3 SBool SBool deriving (Generic, Show, Eq) deriving (ExtractSymbolics (S.HashSet Symbol)) via (Default A)
 
@@ -45,6 +45,16 @@ spec = do
     prop "ExtractSymbolics for Bool" (concreteExtractSymbolicsOkSpec @Bool)
     prop "ExtractSymbolics for Integer" (concreteExtractSymbolicsOkSpec @Integer)
     prop "ExtractSymbolics for Char" (concreteExtractSymbolicsOkSpec @Char)
+    prop "ExtractSymbolics for Int" (concreteExtractSymbolicsOkSpec @Int)
+    prop "ExtractSymbolics for Int8" (concreteExtractSymbolicsOkSpec @Int8)
+    prop "ExtractSymbolics for Int16" (concreteExtractSymbolicsOkSpec @Int16)
+    prop "ExtractSymbolics for Int32" (concreteExtractSymbolicsOkSpec @Int32)
+    prop "ExtractSymbolics for Int64" (concreteExtractSymbolicsOkSpec @Int64)
+    prop "ExtractSymbolics for Word" (concreteExtractSymbolicsOkSpec @Word)
+    prop "ExtractSymbolics for Word8" (concreteExtractSymbolicsOkSpec @Word8)
+    prop "ExtractSymbolics for Word16" (concreteExtractSymbolicsOkSpec @Word16)
+    prop "ExtractSymbolics for Word32" (concreteExtractSymbolicsOkSpec @Word32)
+    prop "ExtractSymbolics for Word64" (concreteExtractSymbolicsOkSpec @Word64)
     it "ExtractSymbolics for List" $ do
       extractSymbolics ([] :: [SBool]) `shouldBe` (S.empty :: S.HashSet Symbol)
       extractSymbolics [SSBool "a"] `shouldBe` S.singleton (SSymbol "a")

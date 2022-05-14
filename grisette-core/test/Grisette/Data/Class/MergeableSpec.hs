@@ -28,6 +28,8 @@ import Grisette.Data.Class.UnionOp
 import Test.Hspec
 import Test.Hspec.QuickCheck
 import Utils.SBool
+import Data.Int
+import Data.Word
 
 testMergeableSimpleEquivClass ::
   (HasCallStack, Mergeable SBool x, Show x, Eq x) => x -> [DynamicOrderedIdx] -> [(SBool, x, x, x)] -> Expectation
@@ -82,6 +84,36 @@ spec = do
         testMergeableSimpleEquivClass x [DynamicOrderedIdx x] [(SSBool "a", x, x, x)]
     describe "Mergeable for Char" $ do
       prop "Mergeable for Char should work" $ \(x :: Char) ->
+        testMergeableSimpleEquivClass x [DynamicOrderedIdx x] [(SSBool "a", x, x, x)]
+    describe "Mergeable for Int" $ do
+      prop "Mergeable for Int should work" $ \(x :: Int) ->
+        testMergeableSimpleEquivClass x [DynamicOrderedIdx x] [(SSBool "a", x, x, x)]
+    describe "Mergeable for Int8" $ do
+      prop "Mergeable for Int8 should work" $ \(x :: Int8) ->
+        testMergeableSimpleEquivClass x [DynamicOrderedIdx x] [(SSBool "a", x, x, x)]
+    describe "Mergeable for Int16" $ do
+      prop "Mergeable for Int16 should work" $ \(x :: Int16) ->
+        testMergeableSimpleEquivClass x [DynamicOrderedIdx x] [(SSBool "a", x, x, x)]
+    describe "Mergeable for Int32" $ do
+      prop "Mergeable for Int32 should work" $ \(x :: Int32) ->
+        testMergeableSimpleEquivClass x [DynamicOrderedIdx x] [(SSBool "a", x, x, x)]
+    describe "Mergeable for Int64" $ do
+      prop "Mergeable for Int64 should work" $ \(x :: Int64) ->
+        testMergeableSimpleEquivClass x [DynamicOrderedIdx x] [(SSBool "a", x, x, x)]
+    describe "Mergeable for Word" $ do
+      prop "Mergeable for Word should work" $ \(x :: Word) ->
+        testMergeableSimpleEquivClass x [DynamicOrderedIdx x] [(SSBool "a", x, x, x)]
+    describe "Mergeable for Word8" $ do
+      prop "Mergeable for Word8 should work" $ \(x :: Word8) ->
+        testMergeableSimpleEquivClass x [DynamicOrderedIdx x] [(SSBool "a", x, x, x)]
+    describe "Mergeable for Word16" $ do
+      prop "Mergeable for Word16 should work" $ \(x :: Word16) ->
+        testMergeableSimpleEquivClass x [DynamicOrderedIdx x] [(SSBool "a", x, x, x)]
+    describe "Mergeable for Word32" $ do
+      prop "Mergeable for Word32 should work" $ \(x :: Word32) ->
+        testMergeableSimpleEquivClass x [DynamicOrderedIdx x] [(SSBool "a", x, x, x)]
+    describe "Mergeable for Word64" $ do
+      prop "Mergeable for Word64 should work" $ \(x :: Word64) ->
         testMergeableSimpleEquivClass x [DynamicOrderedIdx x] [(SSBool "a", x, x, x)]
     describe "Mergeable for ()" $ do
       prop "Mergeable for () should work" $ \(x :: ()) ->

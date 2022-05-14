@@ -1,6 +1,4 @@
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -23,6 +21,8 @@ import Grisette.Data.Class.Bool
 import Test.Hspec
 import Test.Hspec.QuickCheck
 import Utils.SBool
+import Data.Int
+import Data.Word
 
 data A = A1 | A2 SBool | A3 SBool SBool
   deriving (Generic, Show, Eq)
@@ -54,6 +54,26 @@ spec = do
       prop "SEq for Integer should work" (concreteSEqOkSpec @Integer)
     describe "SEq for Char" $ do
       prop "SEq for Char should work" (concreteSEqOkSpec @Char)
+    describe "SEq for Int" $ do
+      prop "SEq for Int should work" (concreteSEqOkSpec @Int)
+    describe "SEq for Int8" $ do
+      prop "SEq for Int8 should work" (concreteSEqOkSpec @Int8)
+    describe "SEq for Int16" $ do
+      prop "SEq for Int16 should work" (concreteSEqOkSpec @Int16)
+    describe "SEq for Int32" $ do
+      prop "SEq for Int32 should work" (concreteSEqOkSpec @Int32)
+    describe "SEq for Int64" $ do
+      prop "SEq for Int64 should work" (concreteSEqOkSpec @Int64)
+    describe "SEq for Word" $ do
+      prop "SEq for Word should work" (concreteSEqOkSpec @Word)
+    describe "SEq for Word8" $ do
+      prop "SEq for Word8 should work" (concreteSEqOkSpec @Word8)
+    describe "SEq for Word16" $ do
+      prop "SEq for Word16 should work" (concreteSEqOkSpec @Word16)
+    describe "SEq for Word32" $ do
+      prop "SEq for Word32 should work" (concreteSEqOkSpec @Word32)
+    describe "SEq for Word64" $ do
+      prop "SEq for Word64 should work" (concreteSEqOkSpec @Word64)
     describe "SEq for List" $ do
       prop "SEq for concrete List should work" (concreteSEqOkSpec @[Integer])
       it "SEq for general List should work" $ do

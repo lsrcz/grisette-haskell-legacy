@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE DataKinds #-}
@@ -31,7 +32,7 @@ import Data.BitVector.Sized (knownNat, pattern BV)
 import Data.BitVector.Sized.Signed (SignedBV (..), mkSignedBV)
 import Data.BitVector.Sized.Unsigned
 import Data.Bits
-import Data.Char (chr, ord)
+-- import Data.Char (chr, ord)
 import Data.HashSet as S
 import Data.Hashable
 import Data.MemoTrie
@@ -67,6 +68,8 @@ import Grisette.Data.TabularFunc
 import Language.Haskell.TH.Syntax
 import Grisette.Data.GeneralFunc
 import Grisette.Data.Prim.GeneralFunc
+import Data.Int
+import Data.Word
 
 newtype Sym a = Sym {underlyingTerm :: Term a} deriving (Lift, Generic)
 
@@ -155,11 +158,42 @@ instance (SupportedPrim a) => Hashable (Sym a) where
 instance (SupportedPrim a) => Eq (Sym a) where
   (Sym l) == (Sym r) = l == r
 
+#define SEQ_SYM(type) \
+instance (SupportedPrim (type)) => SEq (Sym Bool) (Sym (type)) where \
+  (Sym l) ==~ (Sym r) = Sym $ eqterm l r
+
+#define SORD_SYM(type) \
+instance (SupportedPrim (type)) => SOrd (Sym Bool) (Sym (type)) where \
+  (Sym a) <=~ (Sym b) = Sym $ withPrim @(type) $ leNum a b; \
+  (Sym a) <~ (Sym b) = Sym $ withPrim @(type) $ ltNum a b; \
+  (Sym a) >=~ (Sym b) = Sym $ withPrim @(type) $ geNum a b; \
+  (Sym a) >~ (Sym b) = Sym $ withPrim @(type) $ gtNum a b; \
+  a `symCompare` b = \
+    withPrim @(type) $ mrgIf \
+      (a <~ b) \
+      (mrgReturn LT) \
+      (mrgIf (a ==~ b) (mrgReturn EQ) (mrgReturn GT))
+
+SEQ_SYM(Bool)
+SEQ_SYM(Integer)
+SEQ_SYM(SignedBV n)
+SEQ_SYM(UnsignedBV n)
+SORD_SYM(Integer)
+SORD_SYM(SignedBV n)
+SORD_SYM(UnsignedBV n)
+
 -- bool
 type SymBool = Sym Bool
 
-instance SEq (Sym Bool) (Sym Bool) where
-  (Sym l) ==~ (Sym r) = Sym $ eqterm l r
+instance SOrd (Sym Bool) (Sym Bool) where
+  l <=~ r = nots l ||~ r
+  l <~ r = nots l &&~ r
+  l >=~ r = l ||~ nots r
+  l >~ r = l &&~ nots r
+  symCompare l r =
+    mrgIf (nots l &&~ r)
+      (mrgReturn LT)
+      (mrgIf (l ==~ r) (mrgReturn EQ) (mrgReturn GT))
 
 instance LogicalOp (Sym Bool) where
   (Sym l) ||~ (Sym r) = Sym $ orb l r
@@ -170,17 +204,8 @@ instance LogicalOp (Sym Bool) where
 
 instance SymBoolOp (Sym Bool)
 
-{-
-instance SymConcView Bool where
-  symConcView (Sym (ConcTerm _ t)) = Just t
-  symConcView _ = Nothing
-  -}
-
 -- integer
 type SymInteger = Sym Integer
-
-instance SEq (Sym Bool) (Sym Integer) where
-  (Sym l) ==~ (Sym r) = Sym $ eqterm l r
 
 instance Num (Sym Integer) where
   (Sym l) + (Sym r) = Sym $ addNum l r
@@ -190,12 +215,6 @@ instance Num (Sym Integer) where
   abs (Sym v) = Sym $ absNum v
   signum (Sym v) = Sym $ signumNum v
   fromInteger i = conc i
-
-{-
-instance SymConcView Integer where
-  symConcView (Sym (IntegerConcTerm t)) = Just t
-  symConcView _ = Nothing
-  -}
 
 instance SignedDivMod (Sym Bool) (Sym Integer) where
   divs (Sym l) rs@(Sym r) =
@@ -211,31 +230,10 @@ instance SignedDivMod (Sym Bool) (Sym Integer) where
         (throwError $ transformError DivideByZero)
         (mrgReturn $ Sym $ modi l r)
 
-instance SOrd (Sym Bool) (Sym Integer) where
-  (Sym a) <=~ (Sym b) = Sym $ leNum a b
-  (Sym a) <~ (Sym b) = Sym $ ltNum a b
-  (Sym a) >=~ (Sym b) = Sym $ geNum a b
-  (Sym a) >~ (Sym b) = Sym $ gtNum a b
-  a `symCompare` b =
-    mrgIf
-      (a <~ b)
-      (mrgReturn LT)
-      (mrgIf (a ==~ b) (mrgReturn EQ) (mrgReturn GT))
-
 instance SymIntegerOp (Sym Bool) (Sym Integer)
 
 -- signed bv
 type SymSignedBV n = Sym (SignedBV n)
-
-instance (SupportedPrim (SignedBV n)) => SEq (Sym Bool) (Sym (SignedBV n)) where
-  (Sym l) ==~ (Sym r) = Sym $ eqterm l r
-
-{-
-instance (SupportedPrim (SignedBV n)) => SymConcView (SignedBV n) where
-  symConcView (Sym x) = withPrim @(SignedBV n) $ case x of
-    SignedBVConcTerm t -> Just t
-    _ -> Nothing
-    -}
 
 instance (SupportedPrim (SignedBV n)) => Num (Sym (SignedBV n)) where
   (Sym l) + (Sym r) = Sym $ withPrim @(SignedBV n) $ addNum l r
@@ -245,12 +243,6 @@ instance (SupportedPrim (SignedBV n)) => Num (Sym (SignedBV n)) where
   abs (Sym v) = Sym $ withPrim @(SignedBV n) $ absNum v
   signum (Sym v) = Sym $ withPrim @(SignedBV n) $ signumNum v
   fromInteger i = withPrim @(SignedBV n) $ conc $ mkSignedBV knownNat i
-
-instance (SupportedPrim (SignedBV n)) => SOrd (Sym Bool) (Sym (SignedBV n)) where
-  (Sym a) <=~ (Sym b) = Sym $ withPrim @(SignedBV n) $ leNum a b
-  (Sym a) <~ (Sym b) = Sym $ withPrim @(SignedBV n) $ ltNum a b
-  (Sym a) >=~ (Sym b) = Sym $ withPrim @(SignedBV n) $ geNum a b
-  (Sym a) >~ (Sym b) = Sym $ withPrim @(SignedBV n) $ gtNum a b
 
 instance (SupportedPrim (SignedBV n)) => Bits (Sym (SignedBV n)) where
   Sym l .&. Sym r = Sym $ withPrim @(SignedBV n) $ bitand l r
@@ -294,25 +286,35 @@ instance
   where
   bvselect pix pw (Sym v) = Sym $ bvtselect pix pw v
 
-instance ToCon (SymSignedBV 8) Char where
-  toCon (Conc (SignedBV (BV v))) = Just $ chr $ fromInteger v
+#define TOSYM_MACHINE_INTEGER(int, bv) \
+instance ToSym (int) (Sym (bv)) where \
+  toSym = fromIntegral
+
+#define TOCON_MACHINE_INTEGER(bvw, n, int) \
+instance ToCon (Sym (bvw n)) (int) where \
+  toCon (Conc (bvw (BV v) :: bvw n)) = Just $ fromIntegral v; \
   toCon _ = Nothing
 
-instance ToSym Char (SymSignedBV 8) where
-  toSym v = conc $ mkSignedBV (knownNat @8) $ toInteger $ ord v
+TOSYM_MACHINE_INTEGER(Int8, SignedBV 8)
+TOSYM_MACHINE_INTEGER(Int16, SignedBV 16)
+TOSYM_MACHINE_INTEGER(Int32, SignedBV 32)
+TOSYM_MACHINE_INTEGER(Int64, SignedBV 64)
+TOSYM_MACHINE_INTEGER(Word8, UnsignedBV 8)
+TOSYM_MACHINE_INTEGER(Word16, UnsignedBV 16)
+TOSYM_MACHINE_INTEGER(Word32, UnsignedBV 32)
+TOSYM_MACHINE_INTEGER(Word64, UnsignedBV 64)
+
+TOCON_MACHINE_INTEGER(SignedBV, 8,  Int8)
+TOCON_MACHINE_INTEGER(SignedBV, 16, Int16)
+TOCON_MACHINE_INTEGER(SignedBV, 32, Int32)
+TOCON_MACHINE_INTEGER(SignedBV, 64, Int64)
+TOCON_MACHINE_INTEGER(UnsignedBV, 8,  Word8)
+TOCON_MACHINE_INTEGER(UnsignedBV, 16, Word16)
+TOCON_MACHINE_INTEGER(UnsignedBV, 32, Word32)
+TOCON_MACHINE_INTEGER(UnsignedBV, 64, Word64)
 
 -- unsigned bv
 type SymUnsignedBV n = Sym (UnsignedBV n)
-
-instance (SupportedPrim (UnsignedBV n)) => SEq (Sym Bool) (Sym (UnsignedBV n)) where
-  (Sym l) ==~ (Sym r) = Sym $ eqterm l r
-
-{-
-instance (SupportedPrim (UnsignedBV n)) => SymConcView (UnsignedBV n) where
-  symConcView (Sym x) = withPrim @(UnsignedBV n) $ case x of
-    UnsignedBVConcTerm t -> Just t
-    _ -> Nothing
-    -}
 
 instance (SupportedPrim (UnsignedBV n)) => Num (Sym (UnsignedBV n)) where
   (Sym l) + (Sym r) = Sym $ withPrim @(UnsignedBV n) $ addNum l r
@@ -322,12 +324,6 @@ instance (SupportedPrim (UnsignedBV n)) => Num (Sym (UnsignedBV n)) where
   abs (Sym v) = Sym $ withPrim @(UnsignedBV n) $ absNum v
   signum (Sym v) = Sym $ withPrim @(UnsignedBV n) $ signumNum v
   fromInteger i = withPrim @(UnsignedBV n) $ conc $ mkUnsignedBV knownNat i
-
-instance (SupportedPrim (UnsignedBV n)) => SOrd (Sym Bool) (Sym (UnsignedBV n)) where
-  (Sym a) <=~ (Sym b) = Sym $ withPrim @(UnsignedBV n) $ leNum a b
-  (Sym a) <~ (Sym b) = Sym $ withPrim @(UnsignedBV n) $ ltNum a b
-  (Sym a) >=~ (Sym b) = Sym $ withPrim @(UnsignedBV n) $ geNum a b
-  (Sym a) >~ (Sym b) = Sym $ withPrim @(UnsignedBV n) $ gtNum a b
 
 instance
   (KnownNat w', KnownNat n, KnownNat w, w' ~ (n + w), 1 <= n, 1 <= w, 1 <= w') =>
@@ -391,20 +387,3 @@ instance (SupportedPrim a, SupportedPrim b) => Function (a -~> b) where
   type Ret (a -~> b) = Sym b
   (Sym f) # (Sym t) = Sym $ applyg f t 
 
-{-
-instance (SupportedPrim a, SupportedPrim b) => SymConcView (a =-> b) where
-  symConcView (Sym (TabularFuncConcTerm t)) = Just t
-  symConcView _ = Nothing
-  -}
-
-{-
-instance
-  ( SupportedPrim a,
-    SupportedPrim b,
-    ExtractSymbolics (S.HashSet TermSymbol) a,
-    ExtractSymbolics (S.HashSet TermSymbol) b
-  ) =>
-  ExtractSymbolics (S.HashSet TermSymbol) (a =~> b)
-  where
-  extractSymbolics (Sym t) = extractSymbolicsTerm t
--}

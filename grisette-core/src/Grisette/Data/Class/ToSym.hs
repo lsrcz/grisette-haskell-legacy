@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -22,6 +23,8 @@ import Data.Functor.Sum
 import Generics.Deriving
 import Grisette.Data.Class.OrphanGeneric ()
 import Control.Monad.Identity
+import Data.Int
+import Data.Word
 
 -- | Convert a concrete value to symbolic value.
 class ToSym a b where
@@ -56,24 +59,27 @@ instance (ToSym' a1 a2, ToSym' b1 b2) => ToSym' (a1 :+: b1) (a2 :+: b2) where
 instance (ToSym' a1 a2, ToSym' b1 b2) => ToSym' (a1 :*: b1) (a2 :*: b2) where
   toSym' (a :*: b) = toSym' a :*: toSym' b
 
--- Bool
-instance ToSym Bool Bool where
+#define CONCRETE_TOSYM(type) \
+instance ToSym type type where \
   toSym = id
 
--- Integer
-instance ToSym Integer Integer where
-  toSym = id
-
--- Char
-instance ToSym Char Char where
-  toSym = id
+CONCRETE_TOSYM(Bool)
+CONCRETE_TOSYM(Integer)
+CONCRETE_TOSYM(Char)
+CONCRETE_TOSYM(Int)
+CONCRETE_TOSYM(Int8)
+CONCRETE_TOSYM(Int16)
+CONCRETE_TOSYM(Int32)
+CONCRETE_TOSYM(Int64)
+CONCRETE_TOSYM(Word)
+CONCRETE_TOSYM(Word8)
+CONCRETE_TOSYM(Word16)
+CONCRETE_TOSYM(Word32)
+CONCRETE_TOSYM(Word64)
+CONCRETE_TOSYM(B.ByteString)
 
 -- Unit
 instance ToSym () () where
-  toSym = id
-
--- ByteString
-instance ToSym B.ByteString B.ByteString where
   toSym = id
 
 -- Either

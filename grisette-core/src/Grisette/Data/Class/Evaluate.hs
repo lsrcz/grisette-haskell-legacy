@@ -4,6 +4,7 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE CPP #-}
 
 module Grisette.Data.Class.Evaluate
   ( Evaluate (..),
@@ -22,6 +23,8 @@ import Generics.Deriving
 import Generics.Deriving.Instances ()
 import Grisette.Data.Class.ToCon
 import Control.Monad.Identity
+import Data.Int
+import Data.Word
 
 -- $setup
 -- >>> import Grisette.Core
@@ -74,24 +77,27 @@ evaluateToCon model a = fromJust $ toCon $ evaluate True model a
 
 -- instances
 
--- Bool
-instance Evaluate model Bool where
+#define CONCRETE_EVALUATE(type) \
+instance Evaluate model type where \
   evaluate _ _ = id
 
--- Integer
-instance Evaluate model Integer where
-  evaluate _ _ = id
-
--- Char
-instance Evaluate model Char where
-  evaluate _ _ = id
+CONCRETE_EVALUATE(Bool)
+CONCRETE_EVALUATE(Integer)
+CONCRETE_EVALUATE(Char)
+CONCRETE_EVALUATE(Int)
+CONCRETE_EVALUATE(Int8)
+CONCRETE_EVALUATE(Int16)
+CONCRETE_EVALUATE(Int32)
+CONCRETE_EVALUATE(Int64)
+CONCRETE_EVALUATE(Word)
+CONCRETE_EVALUATE(Word8)
+CONCRETE_EVALUATE(Word16)
+CONCRETE_EVALUATE(Word32)
+CONCRETE_EVALUATE(Word64)
+CONCRETE_EVALUATE(B.ByteString)
 
 -- ()
 instance Evaluate model () where
-  evaluate _ _ = id
-
--- ByteString
-instance Evaluate model B.ByteString where
   evaluate _ _ = id
 
 -- Either

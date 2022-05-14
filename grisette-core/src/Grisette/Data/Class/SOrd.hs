@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -26,6 +27,8 @@ import Grisette.Control.Monad
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.PrimWrapper
 import Control.Monad.Identity
+import Data.Int
+import Data.Word
 
 -- | Auxiliary class for 'SOrd' instance derivation
 class (SEq' bool f) => SOrd' bool f where
@@ -148,26 +151,28 @@ instance (SEq bool a, Generic a, SOrd' bool (Rep a)) => SOrd bool (Default a) wh
   (Default l) >~ (Default r) = l `derivedSymGt` r
   symCompare (Default l) (Default r) = derivedSymCompare l r
 
-instance (SymBoolOp bool) => SOrd bool Bool where
-  l <=~ r = conc $ l <= r
-  l <~ r = conc $ l < r
-  l >=~ r = conc $ l >= r
-  l >~ r = conc $ l > r
+#define CONCRETE_SORD(type) \
+instance (SymBoolOp bool) => SOrd bool type where \
+  l <=~ r = conc $ l <= r; \
+  l <~ r = conc $ l < r; \
+  l >=~ r = conc $ l >= r; \
+  l >~ r = conc $ l > r; \
   symCompare l r = mrgReturn $ compare l r
 
-instance (SymBoolOp bool) => SOrd bool Integer where
-  l <=~ r = conc $ l <= r
-  l <~ r = conc $ l < r
-  l >=~ r = conc $ l >= r
-  l >~ r = conc $ l > r
-  symCompare l r = mrgReturn $ compare l r
-
-instance (SymBoolOp bool) => SOrd bool Char where
-  l <=~ r = conc $ l <= r
-  l <~ r = conc $ l < r
-  l >=~ r = conc $ l >= r
-  l >~ r = conc $ l > r
-  symCompare l r = mrgReturn $ compare l r
+CONCRETE_SORD(Bool)
+CONCRETE_SORD(Integer)
+CONCRETE_SORD(Char)
+CONCRETE_SORD(Int)
+CONCRETE_SORD(Int8)
+CONCRETE_SORD(Int16)
+CONCRETE_SORD(Int32)
+CONCRETE_SORD(Int64)
+CONCRETE_SORD(Word)
+CONCRETE_SORD(Word8)
+CONCRETE_SORD(Word16)
+CONCRETE_SORD(Word32)
+CONCRETE_SORD(Word64)
+CONCRETE_SORD(B.ByteString)
 
 symCompareSingleList :: (SymBoolOp bool, SOrd bool a) => Bool -> Bool -> [a] -> [a] -> bool
 symCompareSingleList isLess isStrict = go
@@ -248,13 +253,6 @@ deriving via
   (Default (Sum f g a))
   instance
     (SymBoolOp bool, SOrd bool (f a), SOrd bool (g a)) => SOrd bool (Sum f g a)
-
-instance (SymBoolOp bool) => SOrd bool B.ByteString where
-  l <=~ r = conc $ l <= r
-  l <~ r = conc $ l < r
-  l >=~ r = conc $ l >= r
-  l >~ r = conc $ l > r
-  symCompare l r = mrgReturn $ compare l r
 
 instance (SymBoolOp bool, SOrd bool (m (Maybe a))) => SOrd bool (MaybeT m a) where
   (MaybeT l) <=~ (MaybeT r) = l <=~ r

@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -39,8 +40,8 @@ module Grisette.Data.Class.GenSym
     chooseU,
     ListSpec (..),
     SimpleListSpec (..),
-    NumGenBound (..),
-    NumGenUpperBound (..),
+    EnumGenBound (..),
+    EnumGenUpperBound (..),
   )
 where
 
@@ -61,6 +62,9 @@ import Control.Monad.Signatures
 import Language.Haskell.TH.Syntax hiding (lift)
 import Control.DeepSeq
 import Data.Hashable
+import Data.Int
+import Data.Word
+import qualified Data.ByteString as B
 
 -- $setup
 -- >>> import Grisette.Core
@@ -561,59 +565,65 @@ chooseU (r : rs) = do
   return $ mrgIf b r res
 chooseU [] = error "chooseU expects at least one value"
 
--- Bool
-instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSym bool Bool Bool where
-  genSymFresh v = return $ mrgReturn v
-
-instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSymSimple bool Bool Bool where
+#define CONCRETE_GENSYM_SAMESHAPE(type) \
+instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSym bool type type where \
+  genSymFresh v = return $ mrgReturn v;
+#define CONCRETE_GENSYM_SIMPLE_SAMESHAPE(type) \
+instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSymSimple bool type type where \
   genSymSimpleFresh v = return v
 
+CONCRETE_GENSYM_SAMESHAPE(Bool)
+CONCRETE_GENSYM_SAMESHAPE(Integer)
+CONCRETE_GENSYM_SAMESHAPE(Char)
+CONCRETE_GENSYM_SAMESHAPE(Int)
+CONCRETE_GENSYM_SAMESHAPE(Int8)
+CONCRETE_GENSYM_SAMESHAPE(Int16)
+CONCRETE_GENSYM_SAMESHAPE(Int32)
+CONCRETE_GENSYM_SAMESHAPE(Int64)
+CONCRETE_GENSYM_SAMESHAPE(Word)
+CONCRETE_GENSYM_SAMESHAPE(Word8)
+CONCRETE_GENSYM_SAMESHAPE(Word16)
+CONCRETE_GENSYM_SAMESHAPE(Word32)
+CONCRETE_GENSYM_SAMESHAPE(Word64)
+CONCRETE_GENSYM_SAMESHAPE(B.ByteString)
+
+CONCRETE_GENSYM_SIMPLE_SAMESHAPE(Bool)
+CONCRETE_GENSYM_SIMPLE_SAMESHAPE(Integer)
+CONCRETE_GENSYM_SIMPLE_SAMESHAPE(Char)
+CONCRETE_GENSYM_SIMPLE_SAMESHAPE(Int)
+CONCRETE_GENSYM_SIMPLE_SAMESHAPE(Int8)
+CONCRETE_GENSYM_SIMPLE_SAMESHAPE(Int16)
+CONCRETE_GENSYM_SIMPLE_SAMESHAPE(Int32)
+CONCRETE_GENSYM_SIMPLE_SAMESHAPE(Int64)
+CONCRETE_GENSYM_SIMPLE_SAMESHAPE(Word)
+CONCRETE_GENSYM_SIMPLE_SAMESHAPE(Word8)
+CONCRETE_GENSYM_SIMPLE_SAMESHAPE(Word16)
+CONCRETE_GENSYM_SIMPLE_SAMESHAPE(Word32)
+CONCRETE_GENSYM_SIMPLE_SAMESHAPE(Word64)
+CONCRETE_GENSYM_SIMPLE_SAMESHAPE(B.ByteString)
+
+-- Bool
 instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSym bool () Bool where
   genSymFresh _ = derivedNoSpecGenSymFresh
 
--- Integer
-instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSym bool Integer Integer where
-  genSymFresh v = return $ mrgReturn v
-
-instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSymSimple bool Integer Integer where
-  genSymSimpleFresh v = return v
-
--- | Specification for numbers with upper bound (inclusive). The result would chosen from [0 .. upperbound].
+-- Enums
+-- | Specification for enum values with upper bound (exclusive). The result would chosen from [0 .. upperbound].
 --
--- >>> runGenSymFresh (genSymFresh (NumGenUpperBound @Integer 3)) "c" :: UnionM Integer
+-- >>> runGenSymFresh (genSymFresh (EnumGenUpperBound @Integer 4)) "c" :: UnionM Integer
 -- UMrg (Guard c@0 (Single 0) (Guard c@1 (Single 1) (Guard c@2 (Single 2) (Single 3))))
-newtype NumGenUpperBound a = NumGenUpperBound a
+newtype EnumGenUpperBound a = EnumGenUpperBound a
 
--- | Specification for numbers with lower bound and upper bound (inclusive)
+instance (SymBoolOp bool, GenSymSimple bool () bool, Enum v, Mergeable bool v) => GenSym bool (EnumGenUpperBound v) v where
+  genSymFresh (EnumGenUpperBound u) = choose (toEnum <$> [0 .. fromEnum u - 1])
+
+-- | Specification for numbers with lower bound (inclusive) and upper bound (exclusive)
 --
--- >>> runGenSymFresh (genSymFresh (NumGenBound @Integer 0 3)) "c" :: UnionM Integer
+-- >>> runGenSymFresh (genSymFresh (EnumGenBound @Integer 0 4)) "c" :: UnionM Integer
 -- UMrg (Guard c@0 (Single 0) (Guard c@1 (Single 1) (Guard c@2 (Single 2) (Single 3))))
-data NumGenBound a = NumGenBound a a
+data EnumGenBound a = EnumGenBound a a
 
-instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSym bool (NumGenUpperBound Integer) Integer where
-  genSymFresh (NumGenUpperBound upperBound) =
-    if upperBound < 0
-      then error $ "Bad upper bound (should be >= 0): " ++ show upperBound
-      else choose [0, 1 .. upperBound]
-
-instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSym bool (NumGenBound Integer) Integer where
-  genSymFresh (NumGenBound l u) =
-    if u < l
-      then error $ "Bad bounds (upper bound should >= lower bound): " ++ show (l, u)
-      else choose [l, l + 1 .. u]
-
--- Char
-instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSym bool Char Char where
-  genSymFresh v = return $ mrgReturn v
-
-instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSymSimple bool Char Char where
-  genSymSimpleFresh v = return v
-
-instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSym bool (NumGenUpperBound Char) Char where
-  genSymFresh (NumGenUpperBound upperBound) = choose (toEnum <$> [0 .. fromEnum upperBound - 1])
-
-instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSym bool (NumGenBound Char) Char where
-  genSymFresh (NumGenBound l u) = choose (toEnum <$> [fromEnum l .. fromEnum u - 1])
+instance (SymBoolOp bool, GenSymSimple bool () bool, Enum v, Mergeable bool v) => GenSym bool (EnumGenBound v) v where
+  genSymFresh (EnumGenBound l u) = choose (toEnum <$> [fromEnum l .. fromEnum u - 1])
 
 -- Either
 instance

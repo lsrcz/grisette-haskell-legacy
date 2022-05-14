@@ -6,6 +6,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
+{-# LANGUAGE CPP #-}
 
 module Grisette.Data.Class.Bool
   ( SEq (..),
@@ -26,6 +27,8 @@ import Generics.Deriving
 import Grisette.Data.Class.PrimWrapper
 import {-# SOURCE #-} Grisette.Data.Class.SimpleMergeable
 import Control.Monad.Identity
+import Data.Int
+import Data.Word
 
 -- | Auxiliary class for 'SEq' instance derivation
 class (SymBoolOp bool) => SEq' bool f where
@@ -98,16 +101,24 @@ class ITEOp b v where
 -- | Aggregation for the operations on symbolic boolean types
 class (SimpleMergeable b b, SEq b b, Eq b, LogicalOp b, PrimWrapper b Bool, ITEOp b b) => SymBoolOp b
 
--- Bool
-deriving via (Default Bool) instance (SymBoolOp bool) => SEq bool Bool
-
--- Integer
-instance (SymBoolOp bool) => SEq bool Integer where
+#define CONCRETE_SEQ(type) \
+instance (SymBoolOp bool) => SEq bool type where \
   l ==~ r = conc $ l == r
 
--- Char
-instance (SymBoolOp bool) => SEq bool Char where
-  l ==~ r = conc $ l == r
+CONCRETE_SEQ(Bool)
+CONCRETE_SEQ(Integer)
+CONCRETE_SEQ(Char)
+CONCRETE_SEQ(Int)
+CONCRETE_SEQ(Int8)
+CONCRETE_SEQ(Int16)
+CONCRETE_SEQ(Int32)
+CONCRETE_SEQ(Int64)
+CONCRETE_SEQ(Word)
+CONCRETE_SEQ(Word8)
+CONCRETE_SEQ(Word16)
+CONCRETE_SEQ(Word32)
+CONCRETE_SEQ(Word64)
+CONCRETE_SEQ(B.ByteString)
 
 -- List
 deriving via (Default [a]) instance (SymBoolOp bool, SEq bool a) => SEq bool [a]
@@ -127,7 +138,8 @@ instance (SymBoolOp bool, SEq bool (m (Maybe a))) => SEq bool (MaybeT m a) where
   (MaybeT a) ==~ (MaybeT b) = a ==~ b
 
 -- ()
-deriving via (Default ()) instance (SymBoolOp bool) => SEq bool ()
+instance (SymBoolOp bool) => SEq bool () where
+  _ ==~ _ = conc True
 
 -- (,)
 deriving via (Default (a, b)) instance (SymBoolOp bool, SEq bool a, SEq bool b) => SEq bool (a, b)
@@ -169,10 +181,6 @@ deriving via
   instance
     (SymBoolOp bool, SEq bool a, SEq bool b, SEq bool c, SEq bool d, SEq bool e, SEq bool f, SEq bool g, SEq bool h) =>
     SEq bool (a, b, c, d, e, f, g, h)
-
--- ByteString
-instance (SymBoolOp bool) => SEq bool B.ByteString where
-  l ==~ r = conc $ l == r
 
 -- Sum
 deriving via

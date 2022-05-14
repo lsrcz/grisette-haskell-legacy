@@ -45,10 +45,10 @@ spec = do
         (genSymSimple @SBool (1 :: Integer) "a" :: Integer)
           `shouldBe` 1
       it "GenSym for Integer with upper bound" $ do
-        (genSym @SBool (NumGenUpperBound (2 :: Integer)) "a" :: UnionMBase SBool Integer)
+        (genSym @SBool (EnumGenUpperBound (3 :: Integer)) "a" :: UnionMBase SBool Integer)
           `shouldBe` mrgIf (ISBool 0 "a") (mrgReturn 0) (mrgIf (ISBool 1 "a") (mrgReturn 1) (mrgReturn 2))
       it "GenSym for Integer with bound" $ do
-        (genSym @SBool (NumGenBound (-1 :: Integer) 1) "a" :: UnionMBase SBool Integer)
+        (genSym @SBool (EnumGenBound (-1 :: Integer) 2) "a" :: UnionMBase SBool Integer)
           `shouldBe` mrgIf (ISBool 0 "a") (mrgReturn (-1)) (mrgIf (ISBool 1 "a") (mrgReturn 0) (mrgReturn 1))
     describe "GenSym for Char" $ do
       it "GenSym for Char with Char" $ do
@@ -56,10 +56,10 @@ spec = do
           `shouldBe` mrgReturn 'x'
         (genSymSimple @SBool 'x' "a" :: Char) `shouldBe` 'x'
       it "GenSym for Integer with upper bound" $ do
-        (genSym @SBool (NumGenUpperBound @Char (toEnum 3)) "a" :: UnionMBase SBool Char)
+        (genSym @SBool (EnumGenUpperBound @Char (toEnum 3)) "a" :: UnionMBase SBool Char)
           `shouldBe` mrgIf (ISBool 0 "a") (mrgReturn $ toEnum 0) (mrgIf (ISBool 1 "a") (mrgReturn $ toEnum 1) (mrgReturn $ toEnum 2))
       it "GenSym for Integer with bound" $ do
-        (genSym @SBool (NumGenBound 'a' 'd') "a" :: UnionMBase SBool Char)
+        (genSym @SBool (EnumGenBound 'a' 'd') "a" :: UnionMBase SBool Char)
           `shouldBe` mrgIf (ISBool 0 "a") (mrgReturn 'a') (mrgIf (ISBool 1 "a") (mrgReturn 'b') (mrgReturn 'c'))
     describe "GenSym for Maybe" $ do
       it "GenSym for Maybe with Maybe" $ do
@@ -150,7 +150,7 @@ spec = do
         (genSymSimple @SBool () "a" :: ()) `shouldBe` ()
     describe "GenSym for (,)" $ do
       it "GenSym for (,) with some spec" $ do
-        (genSym (NumGenUpperBound @Integer 1, NumGenUpperBound @Integer 1) "a" :: UnionMBase SBool (Integer, Integer))
+        (genSym (EnumGenUpperBound @Integer 2, EnumGenUpperBound @Integer 2) "a" :: UnionMBase SBool (Integer, Integer))
           `shouldBe` do
             x1 <- mrgIf (ISBool 0 "a") (mrgReturn 0) (mrgReturn 1)
             x2 <- mrgIf (ISBool 1 "a") (mrgReturn 0) (mrgReturn 1)
@@ -163,9 +163,9 @@ spec = do
     describe "GenSym for (,,)" $ do
       it "GenSym for (,,) with some spec" $ do
         ( genSym
-            ( NumGenUpperBound @Integer 1,
-              NumGenUpperBound @Integer 1,
-              NumGenUpperBound @Integer 1
+            ( EnumGenUpperBound @Integer 2,
+              EnumGenUpperBound @Integer 2,
+              EnumGenUpperBound @Integer 2
             )
             "a" ::
             UnionMBase SBool (Integer, Integer, Integer)
@@ -185,10 +185,10 @@ spec = do
     describe "GenSym for (,,,)" $ do
       it "GenSym for (,,,) with some spec" $ do
         ( genSym
-            ( NumGenUpperBound @Integer 1,
-              NumGenUpperBound @Integer 1,
-              NumGenUpperBound @Integer 1,
-              NumGenUpperBound @Integer 1
+            ( EnumGenUpperBound @Integer 2,
+              EnumGenUpperBound @Integer 2,
+              EnumGenUpperBound @Integer 2,
+              EnumGenUpperBound @Integer 2
             )
             "a" ::
             UnionMBase SBool (Integer, Integer, Integer, Integer)
@@ -217,11 +217,11 @@ spec = do
     describe "GenSym for (,,,,)" $ do
       it "GenSym for (,,,,) with some spec" $ do
         ( genSym
-            ( NumGenUpperBound @Integer 1,
-              NumGenUpperBound @Integer 1,
-              NumGenUpperBound @Integer 1,
-              NumGenUpperBound @Integer 1,
-              NumGenUpperBound @Integer 1
+            ( EnumGenUpperBound @Integer 2,
+              EnumGenUpperBound @Integer 2,
+              EnumGenUpperBound @Integer 2,
+              EnumGenUpperBound @Integer 2,
+              EnumGenUpperBound @Integer 2
             )
             "a" ::
             UnionMBase SBool (Integer, Integer, Integer, Integer, Integer)
@@ -258,12 +258,12 @@ spec = do
     describe "GenSym for (,,,,,)" $ do
       it "GenSym for (,,,,,) with some spec" $ do
         ( genSym
-            ( NumGenUpperBound @Integer 1,
-              NumGenUpperBound @Integer 1,
-              NumGenUpperBound @Integer 1,
-              NumGenUpperBound @Integer 1,
-              NumGenUpperBound @Integer 1,
-              NumGenUpperBound @Integer 1
+            ( EnumGenUpperBound @Integer 2,
+              EnumGenUpperBound @Integer 2,
+              EnumGenUpperBound @Integer 2,
+              EnumGenUpperBound @Integer 2,
+              EnumGenUpperBound @Integer 2,
+              EnumGenUpperBound @Integer 2
             )
             "a" ::
             UnionMBase SBool (Integer, Integer, Integer, Integer, Integer, Integer)
@@ -309,13 +309,13 @@ spec = do
     describe "GenSym for (,,,,,,)" $ do
       it "GenSym for (,,,,,,) with some spec" $ do
         ( genSym
-            ( NumGenUpperBound @Integer 1,
-              NumGenUpperBound @Integer 1,
-              NumGenUpperBound @Integer 1,
-              NumGenUpperBound @Integer 1,
-              NumGenUpperBound @Integer 1,
-              NumGenUpperBound @Integer 1,
-              NumGenUpperBound @Integer 1
+            ( EnumGenUpperBound @Integer 2,
+              EnumGenUpperBound @Integer 2,
+              EnumGenUpperBound @Integer 2,
+              EnumGenUpperBound @Integer 2,
+              EnumGenUpperBound @Integer 2,
+              EnumGenUpperBound @Integer 2,
+              EnumGenUpperBound @Integer 2
             )
             "a" ::
             UnionMBase SBool (Integer, Integer, Integer, Integer, Integer, Integer, Integer)
@@ -365,14 +365,14 @@ spec = do
     describe "GenSym for (,,,,,,,)" $ do
       it "GenSym for (,,,,,,,) with some spec" $ do
         ( genSym
-            ( NumGenUpperBound @Integer 1,
-              NumGenUpperBound @Integer 1,
-              NumGenUpperBound @Integer 1,
-              NumGenUpperBound @Integer 1,
-              NumGenUpperBound @Integer 1,
-              NumGenUpperBound @Integer 1,
-              NumGenUpperBound @Integer 1,
-              NumGenUpperBound @Integer 1
+            ( EnumGenUpperBound @Integer 2,
+              EnumGenUpperBound @Integer 2,
+              EnumGenUpperBound @Integer 2,
+              EnumGenUpperBound @Integer 2,
+              EnumGenUpperBound @Integer 2,
+              EnumGenUpperBound @Integer 2,
+              EnumGenUpperBound @Integer 2,
+              EnumGenUpperBound @Integer 2
             )
             "a" ::
             UnionMBase SBool (Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer)

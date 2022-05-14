@@ -4,6 +4,7 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE CPP #-}
 
 module Grisette.Data.Class.ExtractSymbolics
   ( ExtractSymbolics (..),
@@ -19,6 +20,8 @@ import qualified Data.ByteString as B
 import Data.Functor.Sum
 import Generics.Deriving
 import Control.Monad.Identity
+import Data.Int
+import Data.Word
 
 -- $setup
 -- >>> import Grisette.Core
@@ -70,24 +73,27 @@ instance
 
 -- instances
 
--- Bool
-instance (Monoid symbolSet) => ExtractSymbolics symbolSet Bool where
+#define CONCRETE_EXTRACT_SYMBOLICS(type) \
+instance (Monoid symbolSet) => ExtractSymbolics symbolSet type where \
   extractSymbolics _ = mempty
 
--- Integer
-instance (Monoid symbolSet) => ExtractSymbolics symbolSet Integer where
-  extractSymbolics _ = mempty
-
--- Char
-instance (Monoid symbolSet) => ExtractSymbolics symbolSet Char where
-  extractSymbolics _ = mempty
+CONCRETE_EXTRACT_SYMBOLICS(Bool)
+CONCRETE_EXTRACT_SYMBOLICS(Integer)
+CONCRETE_EXTRACT_SYMBOLICS(Char)
+CONCRETE_EXTRACT_SYMBOLICS(Int)
+CONCRETE_EXTRACT_SYMBOLICS(Int8)
+CONCRETE_EXTRACT_SYMBOLICS(Int16)
+CONCRETE_EXTRACT_SYMBOLICS(Int32)
+CONCRETE_EXTRACT_SYMBOLICS(Int64)
+CONCRETE_EXTRACT_SYMBOLICS(Word)
+CONCRETE_EXTRACT_SYMBOLICS(Word8)
+CONCRETE_EXTRACT_SYMBOLICS(Word16)
+CONCRETE_EXTRACT_SYMBOLICS(Word32)
+CONCRETE_EXTRACT_SYMBOLICS(Word64)
+CONCRETE_EXTRACT_SYMBOLICS(B.ByteString)
 
 -- ()
 instance (Monoid symbolSet) => ExtractSymbolics symbolSet () where
-  extractSymbolics _ = mempty
-
--- ByteString
-instance (Monoid symbolSet) => ExtractSymbolics symbolSet B.ByteString where
   extractSymbolics _ = mempty
 
 -- Either

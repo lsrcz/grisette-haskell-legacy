@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -20,6 +21,8 @@ import GHC.Generics
 import Generics.Deriving
 import Generics.Deriving.Instances ()
 import Control.Monad.Identity
+import Data.Int
+import Data.Word
 
 -- $setup
 -- >>> import Grisette.Core
@@ -70,24 +73,27 @@ instance (ToCon' a1 a2, ToCon' b1 b2) => ToCon' (a1 :*: b1) (a2 :*: b2) where
     bc <- toCon' b
     return $ ac :*: bc
 
--- Bool
-instance ToCon Bool Bool where
+#define CONCRETE_TOCON(type) \
+instance ToCon type type where \
   toCon = Just
 
--- Integer
-instance ToCon Integer Integer where
-  toCon = Just
-
--- Char
-instance ToCon Char Char where
-  toCon = Just
+CONCRETE_TOCON(Bool)
+CONCRETE_TOCON(Integer)
+CONCRETE_TOCON(Char)
+CONCRETE_TOCON(Int)
+CONCRETE_TOCON(Int8)
+CONCRETE_TOCON(Int16)
+CONCRETE_TOCON(Int32)
+CONCRETE_TOCON(Int64)
+CONCRETE_TOCON(Word)
+CONCRETE_TOCON(Word8)
+CONCRETE_TOCON(Word16)
+CONCRETE_TOCON(Word32)
+CONCRETE_TOCON(Word64)
+CONCRETE_TOCON(B.ByteString)
 
 -- Unit
 instance ToCon () () where
-  toCon = Just
-
--- ByteString
-instance ToCon B.ByteString B.ByteString where
   toCon = Just
 
 -- Either

@@ -17,6 +17,8 @@ import qualified Control.Monad.State.Strict as StateStrict
 import qualified Control.Monad.Writer.Lazy as WriterLazy
 import qualified Control.Monad.Writer.Strict as WriterStrict
 import Control.Monad.Identity
+import Data.Int
+import Data.Word
 
 toSymForConcreteProp :: (HasCallStack, ToSym v v, Show v, Eq v) => v -> Expectation
 toSymForConcreteProp v = toSym v `shouldBe` v
@@ -46,6 +48,28 @@ spec = do
       prop "ToSym for Integer to Integer should be id" $ toSymForConcreteProp @Integer
     describe "ToSym for Char" $ do
       prop "ToSym for Char to Char should be id" $ toSymForConcreteProp @Char
+
+    describe "ToSym for Int" $ do
+      prop "ToSym for Int to Int should be id" $ toSymForConcreteProp @Int
+    describe "ToSym for Int8" $ do
+      prop "ToSym for Int8 to Int8 should be id" $ toSymForConcreteProp @Int8
+    describe "ToSym for Int16" $ do
+      prop "ToSym for Int16 to Int16 should be id" $ toSymForConcreteProp @Int16
+    describe "ToSym for Int32" $ do
+      prop "ToSym for Int32 to Int32 should be id" $ toSymForConcreteProp @Int32
+    describe "ToSym for Int64" $ do
+      prop "ToSym for Int64 to Int64 should be id" $ toSymForConcreteProp @Int64
+    describe "ToSym for Word" $ do
+      prop "ToSym for Word to Word should be id" $ toSymForConcreteProp @Word
+    describe "ToSym for Word8" $ do
+      prop "ToSym for Word8 to Word8 should be id" $ toSymForConcreteProp @Word8
+    describe "ToSym for Word16" $ do
+      prop "ToSym for Word16 to Word16 should be id" $ toSymForConcreteProp @Word16
+    describe "ToSym for Word32" $ do
+      prop "ToSym for Word32 to Word32 should be id" $ toSymForConcreteProp @Word32
+    describe "ToSym for Word64" $ do
+      prop "ToSym for Word64 to Word64 should be id" $ toSymForConcreteProp @Word64
+
     describe "ToSym for ()" $ do
       prop "ToSym for () to () should be id" $ toSymForConcreteProp @()
     describe "ToSym for ByteString" $ do

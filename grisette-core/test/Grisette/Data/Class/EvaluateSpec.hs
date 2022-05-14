@@ -17,6 +17,8 @@ import Test.Hspec
 import Test.Hspec.QuickCheck
 import Utils.SBool
 import Control.Monad.Identity
+import Data.Int
+import Data.Word
 
 concreteEvaluateOkSpec :: (HasCallStack, Evaluate (M.HashMap Symbol Bool) a, Show a, Eq a) => a -> Expectation
 concreteEvaluateOkSpec x = evaluate True (M.empty :: M.HashMap Symbol Bool) x `shouldBe` x
@@ -73,6 +75,28 @@ spec = do
       prop "Evaluate for Integer should work" (concreteEvaluateOkSpec @Integer)
     describe "Evaluate for Char" $ do
       prop "Evaluate for Char should work" (concreteEvaluateOkSpec @Char)
+
+    describe "Evaluate for Int" $ do
+      prop "Evaluate for Int should work" (concreteEvaluateOkSpec @Int)
+    describe "Evaluate for Int8" $ do
+      prop "Evaluate for Int8 should work" (concreteEvaluateOkSpec @Int8)
+    describe "Evaluate for Int16" $ do
+      prop "Evaluate for Int16 should work" (concreteEvaluateOkSpec @Int16)
+    describe "Evaluate for Int32" $ do
+      prop "Evaluate for Int32 should work" (concreteEvaluateOkSpec @Int32)
+    describe "Evaluate for Int64" $ do
+      prop "Evaluate for Int64 should work" (concreteEvaluateOkSpec @Int64)
+    describe "Evaluate for Word" $ do
+      prop "Evaluate for Word should work" (concreteEvaluateOkSpec @Word)
+    describe "Evaluate for Word8" $ do
+      prop "Evaluate for Word8 should work" (concreteEvaluateOkSpec @Word8)
+    describe "Evaluate for Word16" $ do
+      prop "Evaluate for Word16 should work" (concreteEvaluateOkSpec @Word16)
+    describe "Evaluate for Word32" $ do
+      prop "Evaluate for Word32 should work" (concreteEvaluateOkSpec @Word32)
+    describe "Evaluate for Word64" $ do
+      prop "Evaluate for Word64 should work" (concreteEvaluateOkSpec @Word64)
+
     describe "Evaluate for List" $ do
       prop "Evaluate for concrete List should work" (concreteEvaluateOkSpec @[Integer])
       it "Evaluate for List should work" $ do

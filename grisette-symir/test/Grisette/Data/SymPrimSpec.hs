@@ -39,6 +39,8 @@ import Test.Hspec.QuickCheck
 import Grisette.Data.Class.Function
 import Grisette.Data.Prim.TabularFunc
 import Grisette.Data.TabularFunc
+import Data.Int
+import Data.Word
 
 spec :: Spec
 spec = do
@@ -321,11 +323,26 @@ spec = do
           `shouldBe` Sym (bvtselect (Proxy @2) (Proxy @1) aut)
         bvselect (Proxy @2) (Proxy @1) as
           `shouldBe` Sym (bvtselect (Proxy @2) (Proxy @1) ast)
-    describe "conversion from Char to Sym BV" $ do
+    describe "conversion between Int8 and Sym BV" $ do
       it "toSym" $ do
-        toSym 'a' `shouldBe` (conc 97 :: SymSignedBV 8)
+        toSym (0 :: Int8) `shouldBe` (conc 0 :: SymSignedBV 8)
+        toSym (-127 :: Int8) `shouldBe` (conc $ -127 :: SymSignedBV 8)
+        toSym (-128 :: Int8) `shouldBe` (conc $ -128 :: SymSignedBV 8)
+        toSym (127 :: Int8) `shouldBe` (conc 127 :: SymSignedBV 8)
       it "toCon" $ do
-        toCon (conc 97 :: SymSignedBV 8) `shouldBe` Just 'a'
+        toCon (conc 0 :: SymSignedBV 8) `shouldBe` Just (0 :: Int8)
+        toCon (conc $ -127 :: SymSignedBV 8) `shouldBe` Just (-127 :: Int8)
+        toCon (conc $ -128 :: SymSignedBV 8) `shouldBe` Just (-128 :: Int8)
+        toCon (conc 127 :: SymSignedBV 8) `shouldBe` Just (127 :: Int8)
+    describe "conversion between Word8 and Sym BV" $ do
+      it "toSym" $ do
+        toSym (0 :: Word8) `shouldBe` (conc 0 :: SymUnsignedBV 8)
+        toSym (1 :: Word8) `shouldBe` (conc 1 :: SymUnsignedBV 8)
+        toSym (255 :: Word8) `shouldBe` (conc 255 :: SymUnsignedBV 8)
+      it "toCon" $ do
+        toCon (conc 0 :: SymUnsignedBV 8) `shouldBe` Just (0 :: Word8)
+        toCon (conc 1 :: SymUnsignedBV 8) `shouldBe` Just (1 :: Word8)
+        toCon (conc 255 :: SymUnsignedBV 8) `shouldBe` Just (255 :: Word8)
   describe "TabularFunc" $ do
     it "apply" $ do
       (ssymb "a" :: Integer =~> Integer) # ssymb "b" `shouldBe`

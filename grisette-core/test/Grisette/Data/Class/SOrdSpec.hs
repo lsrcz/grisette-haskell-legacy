@@ -22,6 +22,8 @@ import Test.Hspec
 import Test.Hspec.QuickCheck
 import Utils.SBool
 import Control.Monad.Identity
+import Data.Int
+import Data.Word
 
 concreteOrdOkProp :: (HasCallStack, SOrd SBool a, Ord a) => (a, a) -> Expectation
 concreteOrdOkProp (i, j) = do
@@ -136,6 +138,26 @@ spec = do
       prop "SOrd for Integer should work" (concreteOrdOkProp @Integer)
     describe "SOrd for Char" $ do
       prop "SOrd for Char should work" (concreteOrdOkProp @Char)
+    describe "SOrd for Int" $ do
+      prop "SOrd for Int should work" (concreteOrdOkProp @Int)
+    describe "SOrd for Int8" $ do
+      prop "SOrd for Int8 should work" (concreteOrdOkProp @Int8)
+    describe "SOrd for Int16" $ do
+      prop "SOrd for Int16 should work" (concreteOrdOkProp @Int16)
+    describe "SOrd for Int32" $ do
+      prop "SOrd for Int32 should work" (concreteOrdOkProp @Int32)
+    describe "SOrd for Int64" $ do
+      prop "SOrd for Int64 should work" (concreteOrdOkProp @Int64)
+    describe "SOrd for Word" $ do
+      prop "SOrd for Word should work" (concreteOrdOkProp @Word)
+    describe "SOrd for Word8" $ do
+      prop "SOrd for Word8 should work" (concreteOrdOkProp @Word8)
+    describe "SOrd for Word16" $ do
+      prop "SOrd for Word16 should work" (concreteOrdOkProp @Word16)
+    describe "SOrd for Word32" $ do
+      prop "SOrd for Word32 should work" (concreteOrdOkProp @Word32)
+    describe "SOrd for Word64" $ do
+      prop "SOrd for Word64 should work" (concreteOrdOkProp @Word64)
     describe "SOrd for List" $ do
       prop "SOrd for concrete List should work" (concreteOrdOkProp @[Integer])
       prop "SOrd for concrete String should work" (concreteOrdOkProp @String)

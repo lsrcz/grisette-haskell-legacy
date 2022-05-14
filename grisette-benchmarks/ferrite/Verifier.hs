@@ -34,7 +34,7 @@ verify config (Litmus _ make setupProc prog allowCond) =
       prog1 = crack newfs prog
       order =
         genSymSimple @SymBool
-          (SimpleListSpec (fromIntegral $ length prog1) (NumGenUpperBound @Integer (fromIntegral $ length prog1 - 1)))
+          (SimpleListSpec (fromIntegral $ length prog1) (EnumGenUpperBound @Integer (fromIntegral $ length prog1)))
           "order"
 
       (verifFs, _) = runGenSymFresh (runStateT (interpretOrderOps prog1 order (mrgReturn $ (toSym newfs :: fs))) []) "crash"

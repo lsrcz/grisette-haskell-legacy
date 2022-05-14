@@ -15,6 +15,8 @@ import Test.Hspec
 import Test.Hspec.QuickCheck
 import Utils.SBool
 import Control.Monad.Identity
+import Data.Int
+import Data.Word
 
 toConForConcreteProp :: (HasCallStack, ToCon v v, Show v, Eq v) => v -> Expectation
 toConForConcreteProp v = toCon v `shouldBe` Just v
@@ -55,6 +57,29 @@ spec = do
       prop "ToCon for Integer should always be identical to Just" $ toConForConcreteProp @Integer
     describe "ToCon for Char" $ do
       prop "ToCon for Char should always be identical to Just" $ toConForConcreteProp @Char
+
+    describe "ToCon for Int" $ do
+      prop "ToCon for Int should always be identical to Just" $ toConForConcreteProp @Int
+    describe "ToCon for Int8" $ do
+      prop "ToCon for Int8 should always be identical to Just" $ toConForConcreteProp @Int8
+    describe "ToCon for Int16" $ do
+      prop "ToCon for Int16 should always be identical to Just" $ toConForConcreteProp @Int16
+    describe "ToCon for Int32" $ do
+      prop "ToCon for Int32 should always be identical to Just" $ toConForConcreteProp @Int32
+    describe "ToCon for Int64" $ do
+      prop "ToCon for Int64 should always be identical to Just" $ toConForConcreteProp @Int64
+
+    describe "ToCon for Word" $ do
+      prop "ToCon for Word should always be identical to Just" $ toConForConcreteProp @Word
+    describe "ToCon for Word8" $ do
+      prop "ToCon for Word8 should always be identical to Just" $ toConForConcreteProp @Word8
+    describe "ToCon for Word16" $ do
+      prop "ToCon for Word16 should always be identical to Just" $ toConForConcreteProp @Word16
+    describe "ToCon for Word32" $ do
+      prop "ToCon for Word32 should always be identical to Just" $ toConForConcreteProp @Word32
+    describe "ToCon for Word64" $ do
+      prop "ToCon for Word64 should always be identical to Just" $ toConForConcreteProp @Word64
+
     describe "ToCon for ()" $ do
       prop "ToCon for () should always be identical to Just" $ toConForConcreteProp @()
     describe "ToCon for ByteString" $ do

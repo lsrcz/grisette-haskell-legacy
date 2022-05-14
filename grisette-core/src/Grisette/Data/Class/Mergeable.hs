@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE DerivingVia #-}
@@ -57,6 +58,8 @@ import Grisette.Data.Class.OrphanGeneric ()
 import Grisette.Data.Class.Utils.CConst
 import Unsafe.Coerce
 import Data.Kind
+import Data.Int
+import Data.Word
 
 -- | Helper type for combining arbitrary number of indices into one.
 -- Useful when trying to write efficient merge strategy for lists / vectors.
@@ -276,23 +279,29 @@ instance (Mergeable' bool a, Mergeable' bool b) => Mergeable' bool (a :*: b) whe
 
 -- instances
 
--- Bool
-deriving via (Default Bool) instance (SymBoolOp bool) => Mergeable bool Bool
+#define CONCRETE_ORD_MERGABLE(type) \
+instance (SymBoolOp bool) => Mergeable bool type where \
+  mergeStrategy = \
+    let sub = SimpleStrategy $ \_ t _ -> t \
+     in OrderedStrategy id $ const sub
 
--- Integer
-instance (SymBoolOp bool) => Mergeable bool Integer where
-  mergeStrategy = OrderedStrategy id $ \_ -> SimpleStrategy $ \_ t _ -> t
-
--- Char
-instance (SymBoolOp bool) => Mergeable bool Char where
-  mergeStrategy = OrderedStrategy id $ \_ -> SimpleStrategy $ \_ t _ -> t
+CONCRETE_ORD_MERGABLE(Bool)
+CONCRETE_ORD_MERGABLE(Integer)
+CONCRETE_ORD_MERGABLE(Char)
+CONCRETE_ORD_MERGABLE(Int)
+CONCRETE_ORD_MERGABLE(Int8)
+CONCRETE_ORD_MERGABLE(Int16)
+CONCRETE_ORD_MERGABLE(Int32)
+CONCRETE_ORD_MERGABLE(Int64)
+CONCRETE_ORD_MERGABLE(Word)
+CONCRETE_ORD_MERGABLE(Word8)
+CONCRETE_ORD_MERGABLE(Word16)
+CONCRETE_ORD_MERGABLE(Word32)
+CONCRETE_ORD_MERGABLE(Word64)
+CONCRETE_ORD_MERGABLE(B.ByteString)
 
 -- ()
 deriving via (Default ()) instance (SymBoolOp bool) => Mergeable bool ()
-
--- ByteString
-instance (SymBoolOp bool) => Mergeable bool B.ByteString where
-  mergeStrategy = OrderedStrategy id $ \_ -> SimpleStrategy $ \_ t _ -> t
 
 -- Either
 deriving via (Default (Either e a)) instance (SymBoolOp bool, Mergeable bool e, Mergeable bool a) => Mergeable bool (Either e a)

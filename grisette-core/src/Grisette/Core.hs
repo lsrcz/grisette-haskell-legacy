@@ -113,8 +113,8 @@ module Grisette.Core
     chooseU,
 
     -- ** Useful specifications
-    NumGenBound(..),
-    NumGenUpperBound(..),
+    EnumGenBound(..),
+    EnumGenUpperBound(..),
     ListSpec (..),
     SimpleListSpec (..),
 
