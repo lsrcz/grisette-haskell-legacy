@@ -10,9 +10,6 @@ import Utils.Timing
 import Core
 import Ops
 import MAS
-import MIS
-import MMM
-import MSS
 import Data.Maybe
 import Debug.Trace
 
@@ -62,12 +59,10 @@ main = do
   print $ interpretSketch @(SymSignedBV 11) availableUnary availableBinary (toSym $ fromJust masIntSynthedOpt1) ((: []) <$> [-1,1,1,-2])
   print $ interpretSketch @(SymSignedBV 11) availableUnary availableBinary (toSym $ masSynthedOpt1 @(SignedBV 11)) ((: []) <$> [-1,1,1,-2])
 
-{-
   masIntSynthedOpt :: Maybe (ConProgram Integer) <-
     timeItAll "masOpt" $ synth1 config availableUnary availableBinary ()
        (const $ conc True) (masSpec @Integer . fmap (getSingle . head)) masSketchOpt
   print masIntSynthedOpt
-  -}
 
   masIntSynthed1 :: Maybe (ConProgram (SignedBV 10)) <-
     timeItAll "mas1" $ synth1 configb availableUnary availableBinary ()
