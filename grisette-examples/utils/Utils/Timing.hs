@@ -3,8 +3,23 @@
 module Utils.Timing where
 
 import Formatting
-import Formatting.Clock
+import Formatting.Internal
 import System.Clock
+import Data.Text.Lazy.Builder
+
+fmt :: Integer -> Builder
+fmt diff = bprint (fixed 6 % " s") (fromIntegral diff /
+  (fromIntegral (10 ^ (9 :: Integer) :: Integer) :: Double))
+
+timeSpecs :: Format r (TimeSpec -> TimeSpec -> r)
+timeSpecs = Format (\g x y -> g (fmt0 x y))
+  where
+    fmt0 (TimeSpec s1 n1) (TimeSpec s2 n2) = fmt diff
+      where
+        diff :: Integer
+        diff = a2 - a1
+        a1 = (fromIntegral s1 * 10 ^ (9 :: Integer)) + fromIntegral n1
+        a2 = (fromIntegral s2 * 10 ^ (9 :: Integer)) + fromIntegral n2
 
 timeItAll :: String -> IO a -> IO a
 timeItAll str x = do
