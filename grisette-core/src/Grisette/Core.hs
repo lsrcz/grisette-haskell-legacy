@@ -40,6 +40,7 @@ module Grisette.Core
     pattern GuardU,
     makeUnionMWrapper,
     makeUnionMWrapper',
+    liftToMonadUnion,
 
     -- * Merging
     MergeStrategy (..),
