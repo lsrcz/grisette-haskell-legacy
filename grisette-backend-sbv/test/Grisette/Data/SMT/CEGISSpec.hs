@@ -24,14 +24,15 @@ import Grisette.Data.Prim.InternedTerm
 import Grisette.Data.SMT.Config
 import Grisette.Data.SMT.Solving
 import Grisette.Data.SymPrim
+import Grisette.Data.Prim.Model
 import Test.Hspec
 
-testCegis :: (HasCallStack, ExtractSymbolics (S.HashSet TermSymbol) a) => GrisetteSMTConfig i -> Bool -> a -> [SymBool] -> Expectation
+testCegis :: (HasCallStack, ExtractSymbolics (S.HashSet TermSymbol) a, Evaluate Model a, Show a) => GrisetteSMTConfig i -> Bool -> a -> [SymBool] -> Expectation
 testCegis config shouldSuccess a bs = do
   x <- cegisWithExcept DefaultVerificationCondition config (a, ssymb "internal" :: SymInteger) (buildFormula bs)
   case x of
     Left _ -> shouldSuccess `shouldBe` False
-    Right m -> do
+    Right (_, m) -> do
       shouldSuccess `shouldBe` True
       verify bs
       where

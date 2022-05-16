@@ -54,9 +54,9 @@ v = do
 
 main :: IO()
 main = do
-  Right mo <- cegisWithExcept X (UnboundedReasoning z3) input v
-  print (evaluate False mo input2)
-  Right mo1 <- cegisWithExcept X (UnboundedReasoning z3) (ssymb "a" :: Sym Bool) m1
-  print (evaluate False mo1 m)
-  Right mo2 <- cegisWithExcept Y (UnboundedReasoning z3) (ssymb "a" :: Sym Bool) (lift m)
-  print (evaluate False mo2 m)
+  Right (cexs, mo) <- cegisWithExcept X (UnboundedReasoning z3) input v
+  print (cexs, evaluate False mo input2)
+  Right (cexs1, mo1) <- cegisWithExcept X (UnboundedReasoning z3) (ssymb "a" :: Sym Bool) m1
+  print (cexs1, evaluate False mo1 m)
+  Right (cexs2, mo2) <- cegisWithExcept Y (UnboundedReasoning z3) (ssymb "a" :: Sym Bool) (lift m)
+  print (cexs2, evaluate False mo2 m)

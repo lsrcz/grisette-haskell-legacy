@@ -6,6 +6,7 @@
 {-# LANGUAGE UndecidableSuperClasses #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE InstanceSigs #-}
 
 module Grisette.Data.SMT.Solving
   ( DefaultVerificationCondition (..),
@@ -29,6 +30,7 @@ import Grisette.Data.SMT.Config
 import Grisette.Data.SMT.Lowering
 import Grisette.Data.SymPrim
 import Grisette.Control.Exception
+import Grisette.Data.Class.PrimWrapper
 
 solveTermWith ::
   forall integerBitWidth.
@@ -86,6 +88,8 @@ instance Solver (GrisetteSMTConfig n) SymBool (S.HashSet TermSymbol) SBVC.CheckS
               return $ md : rmmd
         | otherwise = return [md]
   solveFormulaAll = undefined
+  cegisFormulas :: forall forallArg. (ExtractSymbolics (S.HashSet TermSymbol) forallArg, Evaluate PM.Model forallArg) =>
+   GrisetteSMTConfig n -> forallArg -> SymBool -> SymBool -> IO (Either SBVC.CheckSatResult ([forallArg], PM.Model))
   cegisFormulas config foralls assumption assertion = SBV.runSMTWith (sbvConfig config) $ do
     let Sym t = phi
     (newm, a) <- lowerSinglePrim config t
@@ -98,19 +102,20 @@ instance Solver (GrisetteSMTConfig n) SymBool (S.HashSet TermSymbol) SBVC.CheckS
             md <- SBVC.getModel
             return $ Right $ parseModel config md newm
           _ -> return $ Left r
-        loop ((`exceptFor` forallSymbols) <$> mr) newm
+        loop ((`exceptFor` forallSymbols) <$> mr) [] newm
     where
       forallSymbols :: S.HashSet TermSymbol
       forallSymbols = extractSymbolics foralls
       phi = nots assertion &&~ nots assumption
       negphi = assertion &&~ nots assumption
-      check :: Model -> IO (Either SBVC.CheckSatResult PM.Model)
+      check :: Model -> IO (Either SBVC.CheckSatResult (forallArg, PM.Model))
       check candidate = do
         let evaluated = evaluate False candidate negphi
         r <- solveFormula config evaluated
         return $ do
           m <- r
-          return $ exact m forallSymbols
+          let newm = exact m forallSymbols
+          return (evaluate False newm foralls, newm)
       guess :: Model -> SymBiMap -> Query (SymBiMap, Either SBVC.CheckSatResult PM.Model)
       guess candidate origm = do
         let Sym evaluated = evaluate False candidate phi
@@ -125,19 +130,27 @@ instance Solver (GrisetteSMTConfig n) SymBool (S.HashSet TermSymbol) SBVC.CheckS
           _ -> return (newm, Left r)
       loop ::
         Either SBVC.CheckSatResult PM.Model ->
+        [forallArg] ->
         SymBiMap ->
-        Query (SymBiMap, Either SBVC.CheckSatResult PM.Model)
-      loop (Right mo) origm = do
+        Query (SymBiMap, Either SBVC.CheckSatResult ([forallArg], PM.Model))
+      loop (Right mo) cexs origm = do
         r <- liftIO $ check mo
         case r of
-          Left SBVC.Unsat -> return (origm, Right mo)
-          Left _ -> return (origm, r)
-          Right cex -> do
-            (newm, res) <- guess cex origm
-            loop res newm
-      loop l@(Left _) origm = return (origm, l)
+          Left SBVC.Unsat -> return (origm, Right (cexs, mo))
+          Left v -> return (origm, Left v)
+          Right (cex, cexm) -> do
+            (newm, res) <- guess cexm origm
+            loop res (cex : cexs) newm
+      loop (Left v) _ origm = return (origm, Left v)
 
 data DefaultVerificationCondition = DefaultVerificationCondition
+
+instance SolverErrorTranslation DefaultVerificationCondition VerificationConditions where
+  errorTranslation _ AssumptionViolation = False
+  errorTranslation _ AssertionViolation = True
+
+instance SymBoolOp bool => SolverTranslation DefaultVerificationCondition bool VerificationConditions () where
+  valueTranslation _ _ = conc False
 
 instance CegisErrorTranslation DefaultVerificationCondition VerificationConditions where
   cegisErrorTranslation _ = id

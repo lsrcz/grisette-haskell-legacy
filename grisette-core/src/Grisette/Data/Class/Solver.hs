@@ -50,6 +50,7 @@ where
 import Control.DeepSeq
 import Control.Monad.Except
 import Data.Hashable
+import Data.Kind
 import Generics.Deriving
 import Grisette.Control.Exception
 import Grisette.Control.Monad
@@ -63,7 +64,6 @@ import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.UnionOp
 import Language.Haskell.TH.Syntax
-import Data.Kind
 
 class SolverErrorTranslation spec e | spec -> e where
   errorTranslation :: spec -> e -> Bool
@@ -115,7 +115,13 @@ class
   solveFormula :: config -> bool -> IO (Either failure model)
   solveFormulaMulti :: config -> Int -> bool -> IO [model]
   solveFormulaAll :: config -> Int -> bool -> IO [model]
-  cegisFormulas :: (ExtractSymbolics symbolSet forallArg) => config -> forallArg -> bool -> bool -> IO (Either failure model)
+  cegisFormulas ::
+    (Evaluate model forallArg, ExtractSymbolics symbolSet forallArg) =>
+    config ->
+    forallArg ->
+    bool ->
+    bool ->
+    IO (Either failure ([forallArg], model))
 
   solveArgFormula ::
     forall spec arg.
@@ -167,12 +173,12 @@ class
     IO [model]
   solveWithExceptMulti spec config n e = solveFormulaMulti config n (translateExceptT spec e)
   cegisWithExcept ::
-    (CegisTranslation spec bool err v, ExtractSymbolics symbolSet forallArgs) =>
+    (CegisTranslation spec bool err v, ExtractSymbolics symbolSet forallArgs, Evaluate model forallArgs) =>
     spec ->
     config ->
     forallArgs ->
     ExceptT err (UnionMBase bool) v ->
-    IO (Either failure model)
+    IO (Either failure ([forallArgs], model))
   cegisWithExcept p config foralls e =
     let (assumes, asserts) = translateCegis p e
      in cegisFormulas config foralls assumes asserts
@@ -183,27 +189,35 @@ class
       ExtractSymbolics symbolSet bool,
       GenSym bool forallSpec a,
       Mergeable bool err,
-      Mergeable bool v
+      Mergeable bool v,
+      Evaluate model a
     ) =>
     spec ->
     config ->
     forallSpec ->
     (a -> ExceptT err (UnionMBase bool) v) ->
-    IO (Either failure model)
+    IO (Either failure ([a], model))
   cegisForallByWithExcept p config forallSpec f =
     let forallArgs = genSym forallSpec (nameWithInfo "forallarg" SolveInternal) :: UnionMBase bool a
-     in cegisWithExcept p config forallArgs (f #~ forallArgs)
+     in do
+          r <- cegisWithExcept p config forallArgs (f #~ forallArgs)
+          case r of
+            Left err -> return $ Left err
+            Right (v, model) -> return $ Right ((\(SingleU vs) -> vs) <$> v, model)
   cegisForallByFormulas ::
     forall spec a.
-    (ExtractSymbolics symbolSet a, ExtractSymbolics symbolSet bool, GenSym bool spec a) =>
+    (ExtractSymbolics symbolSet a, ExtractSymbolics symbolSet bool, GenSym bool spec a, Evaluate model a) =>
     config ->
     spec ->
     (a -> (bool, bool)) ->
-    IO (Either failure model)
+    IO (Either failure ([a], model))
   cegisForallByFormulas config forallSpec formulas =
     let forallArgs = genSym forallSpec (nameWithInfo "forallarg" SolveInternal) :: UnionMBase bool a
-     in uncurry (cegisFormulas config forallArgs) (formulas #~ forallArgs)
-
+     in do
+          r <- uncurry (cegisFormulas config forallArgs) (formulas #~ forallArgs)
+          case r of
+            Left err -> return $ Left err
+            Right (v, model) -> return $ Right ((\(SingleU vs) -> vs) <$> v, model)
   cegisArgWithExcept ::
     forall spec err v forallArgs argSpec arg.
     ( CegisTranslation spec bool err v,
@@ -211,14 +225,15 @@ class
       GenSym bool argSpec arg,
       Mergeable bool v,
       Mergeable bool err,
-      Evaluate model arg
+      Evaluate model arg,
+      Evaluate model forallArgs
     ) =>
     spec ->
     config ->
     forallArgs ->
     argSpec ->
     (arg -> ExceptT err (UnionMBase bool) v) ->
-    IO (Either failure (arg, model))
+    IO (Either failure (arg, [forallArgs], model))
   cegisArgWithExcept p config foralls argSpec f =
     let args = genSym argSpec (nameWithInfo "arg" SolveInternal) :: UnionMBase bool arg
         (assumes, asserts) = translateCegis p (f #~ args) :: (bool, bool)
@@ -226,12 +241,13 @@ class
           r <- cegisFormulas config foralls assumes asserts
           case r of
             Left csr -> return $ Left csr
-            Right mo -> do
+            Right (forallArgs, mo) -> do
               return $
                 Right
                   ( case evaluate True mo args of
                       SingleU v -> v
                       _ -> error "Should not happen",
+                    forallArgs,
                     mo
                   )
   cegisArgForallByWithExcept ::
@@ -243,37 +259,43 @@ class
       GenSym bool argSpec arg,
       Mergeable bool err,
       Mergeable bool v,
-      Evaluate model arg
+      Evaluate model arg,
+      Evaluate model forallArg
     ) =>
     spec ->
     config ->
     forallSpec ->
     argSpec ->
     (arg -> forallArg -> ExceptT err (UnionMBase bool) v) ->
-    IO (Either failure (arg, model))
+    IO (Either failure (arg, [forallArg], model))
   cegisArgForallByWithExcept p config forallSpec argSpec f =
     let forallArgs = genSym forallSpec (nameWithInfo "forallarg" SolveInternal) :: UnionMBase bool forallArg
-     in cegisArgWithExcept p config forallArgs argSpec (flip f #~ forallArgs)
+     in do
+          r <- cegisArgWithExcept p config forallArgs argSpec (flip f #~ forallArgs)
+          case r of
+            Left err -> return $ Left err
+            Right (v, forallArgsRet, model) -> return $ Right (v, (\(SingleU vs) -> vs) <$> forallArgsRet, model)
   cegisArgFormulas ::
     forall forallArg argSpec arg.
-    (ExtractSymbolics symbolSet forallArg, GenSym bool argSpec arg, Evaluate model arg) =>
+    (ExtractSymbolics symbolSet forallArg, GenSym bool argSpec arg, Evaluate model arg, Evaluate model forallArg) =>
     config ->
     forallArg ->
     argSpec ->
     (arg -> (bool, bool)) ->
-    IO (Either failure (arg, model))
+    IO (Either failure (arg, [forallArg], model))
   cegisArgFormulas config forallArg argSpec formulas =
     let args = genSym argSpec (nameWithInfo "arg" SolveInternal) :: UnionMBase bool arg
      in do
           r <- uncurry (cegisFormulas config forallArg) (formulas #~ args)
           case r of
             Left csr -> return $ Left csr
-            Right mo -> do
+            Right (forallArgRet, mo) -> do
               return $
                 Right
                   ( case evaluate True mo args of
                       SingleU v -> v
                       _ -> error "Should not happen",
+                    forallArgRet,
                     mo
                   )
   cegisArgForallByFormulas ::
@@ -282,16 +304,21 @@ class
       ExtractSymbolics symbolSet bool,
       GenSym bool forallSpec forallArg,
       GenSym bool argSpec arg,
-      Evaluate model arg
+      Evaluate model arg,
+      Evaluate model forallArg
     ) =>
     config ->
     forallSpec ->
     argSpec ->
     (arg -> forallArg -> (bool, bool)) ->
-    IO (Either failure (arg, model))
+    IO (Either failure (arg, [forallArg], model))
   cegisArgForallByFormulas config forallSpec argSpec formulas =
     let forallArgs = genSym forallSpec (nameWithInfo "forallarg" SolveInternal) :: UnionMBase bool forallArg
-     in cegisArgFormulas config forallArgs argSpec (flip formulas #~ forallArgs)
+     in do
+          r <- cegisArgFormulas config forallArgs argSpec (flip formulas #~ forallArgs)
+          case r of
+            Left err -> return $ Left err
+            Right (arg, forallArgRet, model) -> return $ Right (arg, (\(SingleU v) -> v) <$> forallArgRet, model)
 
 data
   SolveProblem
@@ -351,46 +378,47 @@ data
     forallIn
     (unResolvedForallArg :: Bool)
     forallArg
+    (haveForallIn :: Bool)
     (translate :: Bool)
     err
     v
   where
-  CFormulaPair :: bool -> bool -> CegisProblem bool symbolSet model 'False 'False () 'True () 'False () 'False () ()
+  CFormulaPair :: bool -> bool -> CegisProblem bool symbolSet model 'False 'False () 'True () 'False () 'True 'False () ()
   CWithExcept ::
     ExceptT err (UnionMBase bool) v ->
-    CegisProblem bool symbolSet model 'False 'False () 'True () 'False () 'True err v
+    CegisProblem bool symbolSet model 'False 'False () 'True () 'False () 'True 'True err v
   CArgFormulaPair ::
     (arg -> (bool, bool)) ->
-    CegisProblem bool symbolSet model 'True 'True arg 'True () 'False () 'False () ()
+    CegisProblem bool symbolSet model 'True 'True arg 'True () 'False () 'True 'False () ()
   CForallFormulaPair ::
     (ExtractSymbolics symbolSet bool, ExtractSymbolics symbolSet forallArg) =>
     (forallArg -> (bool, bool)) ->
-    CegisProblem bool symbolSet model 'False 'False () 'False () 'True forallArg 'False () ()
+    CegisProblem bool symbolSet model 'False 'False () 'False () 'True forallArg 'False 'False () ()
   CArgForallFormulaPair ::
     (ExtractSymbolics symbolSet bool, ExtractSymbolics symbolSet forallArg) =>
     (arg -> forallArg -> (bool, bool)) ->
-    CegisProblem bool symbolSet model 'True 'True arg 'False () 'True forallArg 'False () ()
+    CegisProblem bool symbolSet model 'True 'True arg 'False () 'True forallArg 'False 'False () ()
   CArgWithExcept ::
     (arg -> ExceptT err (UnionMBase bool) v) ->
-    CegisProblem bool symbolSet model 'True 'True arg 'True () 'False () 'True err v
+    CegisProblem bool symbolSet model 'True 'True arg 'True () 'False () 'True 'True err v
   CForallWithExcept ::
     (ExtractSymbolics symbolSet bool, ExtractSymbolics symbolSet forallArg) =>
     (forallArg -> ExceptT err (UnionMBase bool) v) ->
-    CegisProblem bool symbolSet model 'False 'False () 'False () 'True forallArg 'True err v
+    CegisProblem bool symbolSet model 'False 'False () 'False () 'True forallArg 'False 'True err v
   CArgForallWithExcept ::
     (ExtractSymbolics symbolSet bool, ExtractSymbolics symbolSet forallArg, ExtractSymbolics symbolSet arg) =>
     (arg -> forallArg -> ExceptT err (UnionMBase bool) v) ->
-    CegisProblem bool symbolSet model 'True 'True arg 'False () 'True forallArg 'True err v
+    CegisProblem bool symbolSet model 'True 'True arg 'False () 'True forallArg 'False 'True err v
   CWithForallSpec ::
-    (GenSym bool forallSpec forallArg) =>
+    (GenSym bool forallSpec forallArg, Evaluate model forallArg) =>
     forallSpec ->
-    CegisProblem bool symbolSet model unResolvedArg haveArg arg 'False () 'True forallArg translate err v ->
-    CegisProblem bool symbolSet model unResolvedArg haveArg arg 'False () 'False forallArg translate err v
+    CegisProblem bool symbolSet model unResolvedArg haveArg arg 'False () 'True forallArg haveForallIn translate err v ->
+    CegisProblem bool symbolSet model unResolvedArg haveArg arg 'False () 'False forallArg haveForallIn translate err v
   CWithForallIn ::
-    (ExtractSymbolics symbolSet forallIn) =>
+    (ExtractSymbolics symbolSet forallIn, Evaluate model forallIn) =>
     forallIn ->
-    CegisProblem bool symbolSet model unResolvedArg haveArg arg 'True () 'False () translate err v ->
-    CegisProblem bool symbolSet model unResolvedArg haveArg arg 'False forallIn 'False () translate err v
+    CegisProblem bool symbolSet model unResolvedArg haveArg arg 'True () 'False () 'True translate err v ->
+    CegisProblem bool symbolSet model unResolvedArg haveArg arg 'False forallIn 'False () 'True translate err v
   CWithArgSpec ::
     (GenSym bool argSpec arg, Evaluate model arg) =>
     argSpec ->
@@ -405,6 +433,7 @@ data
       forallIn
       unResolvedForallArg
       forallArg
+      haveForallIn
       translate
       err
       v ->
@@ -419,6 +448,7 @@ data
       forallIn
       unResolvedForallArg
       forallArg
+      haveForallIn
       translate
       err
       v
@@ -436,6 +466,7 @@ data
       forallIn
       unResolvedForallArg
       forallArg
+      haveForallIn
       'True
       err
       v ->
@@ -450,6 +481,7 @@ data
       forallIn
       unResolvedForallArg
       forallArg
+      haveForallIn
       'False
       err
       v
@@ -466,6 +498,7 @@ sortCegisProblem ::
     forallIn
     unResolvedForallArg
     forallArg
+    haveForallIn
     translate
     err
     v ->
@@ -480,6 +513,7 @@ sortCegisProblem ::
     forallIn
     unResolvedForallArg
     forallArg
+    haveForallIn
     translate
     err
     v
@@ -501,6 +535,7 @@ sortCegisProblem1 ::
     forallIn
     unResolvedForallArg
     forallArg
+    haveForallIn
     translate
     err
     v ->
@@ -515,6 +550,7 @@ sortCegisProblem1 ::
     forallIn
     unResolvedForallArg
     forallArg
+    haveForallIn
     translate
     err
     v
@@ -530,9 +566,11 @@ sortCegisProblem1 (CWithForallSpec forallSpec (CWithArgSpec argSpec v)) =
   CWithArgSpec argSpec $ sortCegisProblem1 $ CWithForallSpec forallSpec v
 sortCegisProblem1 v = v
 
-type family CegisResult failure model arg haveArg where
-  CegisResult failure model arg 'True = IO (Either failure (arg, model))
-  CegisResult failure model arg 'False = IO (Either failure model)
+type family CegisResult failure model arg haveArg forallIn forallArg haveForallIn where
+  CegisResult failure model arg 'True forallIn forallArg 'True = IO (Either failure (arg, [forallIn], model))
+  CegisResult failure model arg 'True forallIn forallArg 'False = IO (Either failure (arg, [forallArg], model))
+  CegisResult failure model arg 'False forallIn forallArg 'True = IO (Either failure ([forallIn], model))
+  CegisResult failure model arg 'False forallIn forallArg 'False = IO (Either failure ([forallArg], model))
 
 {-
 type family ArgByResolved unResolvedArg where
@@ -566,12 +604,12 @@ cegis config p = cegisR config (unsafeCoerce p)
 -}
 
 cegis ::
-  forall config bool symbolSet failure model haveArg arg forallIn forallArg err v.
+  forall config bool symbolSet failure model haveArg arg forallIn forallArg haveForallIn err v.
   ( Solver config bool symbolSet failure model
   ) =>
   config ->
-  CegisProblem bool symbolSet model 'False haveArg arg 'False forallIn 'False forallArg 'False err v ->
-  CegisResult failure model arg haveArg
+  CegisProblem bool symbolSet model 'False haveArg arg 'False forallIn 'False forallArg haveForallIn 'False err v ->
+  CegisResult failure model arg haveArg forallIn forallArg haveForallIn
 cegis config v = cegis' $ sortCegisProblem v
   where
     cegis' (CWithForallIn fi (CFormulaPair assumptions assertions)) =
@@ -593,7 +631,7 @@ cegis config v = cegis' $ sortCegisProblem v
     cegis' _ = error "Should not happen"
 
 forallIn ::
-  (ExtractSymbolics symbolSet forallIn) =>
+  (ExtractSymbolics symbolSet forallIn, Evaluate model forallIn) =>
   forallIn ->
   CegisProblem
     bool
@@ -606,6 +644,7 @@ forallIn ::
     ()
     'False
     ()
+    'True
     translate
     err
     v ->
@@ -620,6 +659,7 @@ forallIn ::
     forallIn
     'False
     ()
+    'True
     translate
     err
     v
@@ -643,6 +683,7 @@ instance
         forallIn
         unResolvedForallArg
         forallArg
+        haveForallIn
         translate
         err
         v
@@ -658,6 +699,7 @@ instance
         forallIn
         unResolvedForallArg
         forallArg
+        haveForallIn
         translate
         err
         v
@@ -675,10 +717,10 @@ instance
   argBy = WithArgSpec
 
 forallBy ::
-  (GenSym bool forallSpec forallArg) =>
+  (GenSym bool forallSpec forallArg, Evaluate model forallArg) =>
   forallSpec ->
-  CegisProblem bool symbolSet model unResolvedArg haveArg arg 'False () 'True forallArg translate err v ->
-  CegisProblem bool symbolSet model unResolvedArg haveArg arg 'False () 'False forallArg translate err v
+  CegisProblem bool symbolSet model unResolvedArg haveArg arg 'False () 'True forallArg haveForallIn translate err v ->
+  CegisProblem bool symbolSet model unResolvedArg haveArg arg 'False () 'False forallArg haveForallIn translate err v
 forallBy = CWithForallSpec
 
 class TranslateByClause spec input out | input -> out where
@@ -708,6 +750,7 @@ instance
         forallIn
         unResolvedForallArg
         forallArg
+        haveForallIn
         'True
         err
         v
@@ -723,6 +766,7 @@ instance
         forallIn
         unResolvedForallArg
         forallArg
+        haveForallIn
         'False
         err
         v
