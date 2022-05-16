@@ -26,6 +26,7 @@ module Grisette.IR.SymPrim
     exact,
     insert,
     evaluateTerm,
+    SupportedPrim,
   )
 where
 
