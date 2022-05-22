@@ -12,6 +12,7 @@ module Core
     uUnary,
     uBinary,
     uNoMrg,
+    uConst,
     CombASTSpec (..),
     CombASTSpec0 (..),
     CombProgramSpec (..),
@@ -151,9 +152,6 @@ instance Mergeable SymBool val => Mergeable SymBool (AST val) where
       _ -> undefined
     )
 
-
-$(makeUnionMWrapper "u" ''AST)
-
 deriving via
   (Default (AST val))
   instance
@@ -179,6 +177,8 @@ data CombASTSpec sval = CombASTSpec
   { combSpec0 :: CombASTSpec0 sval,
     combArgs :: [Int]
   }
+
+$(makeUnionMWrapper "u" ''AST)
 
 instance Mergeable SymBool sval => GenSym SymBool (CombASTSpec sval) (AST sval) where
   genSymFresh ::
