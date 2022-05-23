@@ -11,8 +11,8 @@ import Test.Hspec
 import Utils.SBool
 import Control.Monad.Coroutine
 import Control.Monad.Coroutine.SuspensionFunctors
-import Grisette.Data.Class.UnionOp
 import Grisette.Data.Class.Bool
+import Grisette.Data.Class.UnionOp
 import Control.Monad.Reader
 import qualified Control.Monad.State.Lazy as StateLazy
 import qualified Control.Monad.State.Strict as StateStrict
@@ -125,7 +125,7 @@ spec = do
       it "SimpleMergeable for MaybeT should work" $ do
         mrgIte (SSBool "a") l r `shouldBe` res
         mrgIte1 (SSBool "a") l r `shouldBe` res
-        mrgIteu1 (SSBool "a") l r `shouldBe` res
+        mrgIf (SSBool "a") l r `shouldBe` res
     describe "SimpleMergeable for ExceptT" $ do
       let l :: ExceptT SBool (UnionMBase SBool) SBool =
             ExceptT (mrgIf (SSBool "b") (mrgReturn $ Left $ SSBool "c") (mrgReturn $ Right $ SSBool "d"))
@@ -146,7 +146,7 @@ spec = do
             Coroutine (mrgReturn (Left (Yield (SSBool "c") (Coroutine (mrgReturn (Right $ SSBool "d"))))))
       let Coroutine r = mrgIte (SSBool "e") a1 a2
       let Coroutine r1 = mrgIte1 (SSBool "e") a1 a2
-      let Coroutine ru1 = mrgIteu1 (SSBool "e") a1 a2
+      let Coroutine ru1 = mrgIf (SSBool "e") a1 a2
       it "SimpleMergeable for ExceptT should work" $ do
         case r of
           SingleU (Left (Yield x (Coroutine (SingleU (Right y))))) -> do
@@ -171,7 +171,7 @@ spec = do
               StateLazy.StateT $ \(x :: Integer) -> mrgReturn (SSBool "b", x * 2)
         let st3 = mrgIte (SSBool "c") st1 st2
         let st31 = mrgIte1 (SSBool "c") st1 st2
-        let st3u1 = mrgIteu1 (SSBool "c") st1 st2
+        let st3u1 = mrgIf (SSBool "c") st1 st2
         StateLazy.runStateT st3 2 `shouldBe` mrgReturn (ITE (SSBool "c") (SSBool "a") (SSBool "b"), 4)
         StateLazy.runStateT st3 3 `shouldBe` mrgIf (SSBool "c") (mrgReturn (SSBool "a", 5)) (mrgReturn (SSBool "b", 6))
         StateLazy.runStateT st31 2 `shouldBe` mrgReturn (ITE (SSBool "c") (SSBool "a") (SSBool "b"), 4)
@@ -185,7 +185,7 @@ spec = do
               StateStrict.StateT $ \(x :: Integer) -> mrgReturn (SSBool "b", x * 2)
         let st3 = mrgIte (SSBool "c") st1 st2
         let st31 = mrgIte1 (SSBool "c") st1 st2
-        let st3u1 = mrgIteu1 (SSBool "c") st1 st2
+        let st3u1 = mrgIf (SSBool "c") st1 st2
         StateStrict.runStateT st3 2 `shouldBe` mrgReturn (ITE (SSBool "c") (SSBool "a") (SSBool "b"), 4)
         StateStrict.runStateT st3 3 `shouldBe` mrgIf (SSBool "c") (mrgReturn (SSBool "a", 5)) (mrgReturn (SSBool "b", 6))
         StateStrict.runStateT st31 2 `shouldBe` mrgReturn (ITE (SSBool "c") (SSBool "a") (SSBool "b"), 4)
@@ -202,10 +202,10 @@ spec = do
               WriterLazy.WriterT $ mrgReturn (SSBool "c", 1)
         let st4 = mrgIte (SSBool "d") st1 st2
         let st41 = mrgIte1 (SSBool "d") st1 st2
-        let st4u1 = mrgIteu1 (SSBool "d") st1 st2
+        let st4u1 = mrgIf (SSBool "d") st1 st2
         let st5 = mrgIte (SSBool "d") st1 st3
         let st51 = mrgIte1 (SSBool "d") st1 st3
-        let st5u1 = mrgIteu1 (SSBool "d") st1 st3
+        let st5u1 = mrgIf (SSBool "d") st1 st3
         WriterLazy.runWriterT st4 `shouldBe` mrgIf (SSBool "d") (mrgReturn (SSBool "a", 1)) (mrgReturn (SSBool "b", 2))
         WriterLazy.runWriterT st41 `shouldBe` mrgIf (SSBool "d") (mrgReturn (SSBool "a", 1)) (mrgReturn (SSBool "b", 2))
         WriterLazy.runWriterT st4u1 `shouldBe` mrgIf (SSBool "d") (mrgReturn (SSBool "a", 1)) (mrgReturn (SSBool "b", 2))
@@ -221,10 +221,10 @@ spec = do
               WriterStrict.WriterT $ mrgReturn (SSBool "c", 1)
         let st4 = mrgIte (SSBool "d") st1 st2
         let st41 = mrgIte1 (SSBool "d") st1 st2
-        let st4u1 = mrgIteu1 (SSBool "d") st1 st2
+        let st4u1 = mrgIf (SSBool "d") st1 st2
         let st5 = mrgIte (SSBool "d") st1 st3
         let st51 = mrgIte1 (SSBool "d") st1 st3
-        let st5u1 = mrgIteu1 (SSBool "d") st1 st3
+        let st5u1 = mrgIf (SSBool "d") st1 st3
         WriterStrict.runWriterT st4 `shouldBe` mrgIf (SSBool "d") (mrgReturn (SSBool "a", 1)) (mrgReturn (SSBool "b", 2))
         WriterStrict.runWriterT st41 `shouldBe` mrgIf (SSBool "d") (mrgReturn (SSBool "a", 1)) (mrgReturn (SSBool "b", 2))
         WriterStrict.runWriterT st4u1 `shouldBe` mrgIf (SSBool "d") (mrgReturn (SSBool "a", 1)) (mrgReturn (SSBool "b", 2))
@@ -239,7 +239,7 @@ spec = do
               ReaderT $ \(x :: Integer) -> mrgReturn $ x * 2
         let r3 = mrgIte (SSBool "c") r1 r2
         -- let r31 = mrgIte1 (SSBool "c") r1 r2
-        let r3u1 = mrgIteu1 (SSBool "c") r1 r2
+        let r3u1 = mrgIf (SSBool "c") r1 r2
         runReaderT r3 2 `shouldBe` mrgReturn 4
         runReaderT r3 3 `shouldBe` mrgIf (SSBool "c") (mrgReturn 5) (mrgReturn 6)
         -- runReaderT r31 2 `shouldBe` mrgReturn 4
@@ -267,7 +267,7 @@ spec = do
         let i2 :: IdentityT (UnionMBase SBool) SBool = IdentityT $ mrgReturn $ SSBool "b"
         let i3 = mrgIte (SSBool "c") i1 i2
         let i31 = mrgIte1 (SSBool "c") i1 i2
-        let i3u1 = mrgIteu1 (SSBool "c") i1 i2
+        let i3u1 = mrgIf (SSBool "c") i1 i2
         runIdentityT i3 `shouldBe` mrgReturn (ITE (SSBool "c") (SSBool "a") (SSBool "b"))
         runIdentityT i31 `shouldBe` mrgReturn (ITE (SSBool "c") (SSBool "a") (SSBool "b"))
         runIdentityT i3u1 `shouldBe` mrgReturn (ITE (SSBool "c") (SSBool "a") (SSBool "b"))

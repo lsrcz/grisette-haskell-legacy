@@ -5,6 +5,7 @@ module Grisette.Control.MonadSpec where
 import Grisette.Control.Monad
 import Grisette.Control.Monad.Union
 import Grisette.Control.Monad.UnionMBase
+import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.UnionOp
 import Test.Hspec
 import Utils.SBool

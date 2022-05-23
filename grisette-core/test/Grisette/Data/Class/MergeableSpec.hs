@@ -24,6 +24,7 @@ import Grisette.Control.Monad.Union
 import Grisette.Control.Monad.UnionMBase
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
+import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.UnionOp
 import Test.Hspec
 import Test.Hspec.QuickCheck
@@ -34,7 +35,7 @@ import Data.Word
 testMergeableSimpleEquivClass ::
   (HasCallStack, Mergeable SBool x, Show x, Eq x) => x -> [DynamicOrderedIdx] -> [(SBool, x, x, x)] -> Expectation
 testMergeableSimpleEquivClass x idxs cases = do
-  let (idxsT, s) = resolveStrategy @SBool x
+  let (idxsT, s) = resolveStrategy @SBool mergeStrategy x
   case s of
     SimpleStrategy m -> do
       idxsT `shouldBe` idxs
@@ -42,9 +43,9 @@ testMergeableSimpleEquivClass x idxs cases = do
       where
         go [] = return ()
         go ((c, t, f, r) : xs) = do
-          fst (resolveStrategy @SBool t) `shouldBe` idxs
-          fst (resolveStrategy @SBool f) `shouldBe` idxs
-          fst (resolveStrategy @SBool r) `shouldBe` idxs
+          fst (resolveStrategy @SBool mergeStrategy t) `shouldBe` idxs
+          fst (resolveStrategy @SBool mergeStrategy f) `shouldBe` idxs
+          fst (resolveStrategy @SBool mergeStrategy r) `shouldBe` idxs
           m c t f `shouldBe` r
           go xs
     _ -> expectationFailure $ "Bad strategy type for " ++ show x
@@ -52,7 +53,7 @@ testMergeableSimpleEquivClass x idxs cases = do
 testMergeableSimpleEquivClass' ::
   (HasCallStack, Mergeable SBool x, Show y, Eq y) => (x -> y) -> x -> [DynamicOrderedIdx] -> [(SBool, x, x, x)] -> Expectation
 testMergeableSimpleEquivClass' vis x idxs cases = do
-  let (idxsT, s) = resolveStrategy @SBool x
+  let (idxsT, s) = resolveStrategy @SBool mergeStrategy x
   case s of
     SimpleStrategy m -> do
       idxsT `shouldBe` idxs
@@ -60,9 +61,9 @@ testMergeableSimpleEquivClass' vis x idxs cases = do
       where
         go [] = return ()
         go ((c, t, f, r) : xs) = do
-          fst (resolveStrategy @SBool t) `shouldBe` idxs
-          fst (resolveStrategy @SBool f) `shouldBe` idxs
-          fst (resolveStrategy @SBool r) `shouldBe` idxs
+          fst (resolveStrategy @SBool mergeStrategy t) `shouldBe` idxs
+          fst (resolveStrategy @SBool mergeStrategy f) `shouldBe` idxs
+          fst (resolveStrategy @SBool mergeStrategy r) `shouldBe` idxs
           vis (m c t f) `shouldBe` vis r
           go xs
     _ -> expectationFailure $ "Bad strategy type for " ++ show (vis x)
@@ -133,11 +134,11 @@ spec = do
           [DynamicOrderedIdx True, DynamicOrderedIdx x]
           [(SSBool "a", Right x, Right x, Right x)]
       it "Mergeable for Either SBool SBool should work" $ do
-        let (idxsL, SimpleStrategy fL) = resolveStrategy @SBool (Left (SSBool "a") :: Either SBool SBool)
+        let (idxsL, SimpleStrategy fL) = resolveStrategy @SBool mergeStrategy (Left (SSBool "a") :: Either SBool SBool)
         idxsL `shouldBe` [DynamicOrderedIdx False]
         fL (SSBool "a") (Left $ SSBool "b") (Left $ SSBool "c")
           `shouldBe` Left (ITE (SSBool "a") (SSBool "b") (SSBool "c"))
-        let (idxsR, SimpleStrategy fR) = resolveStrategy @SBool (Right (SSBool "a") :: Either SBool SBool)
+        let (idxsR, SimpleStrategy fR) = resolveStrategy @SBool mergeStrategy (Right (SSBool "a") :: Either SBool SBool)
         idxsR `shouldBe` [DynamicOrderedIdx True]
         fR (SSBool "a") (Right $ SSBool "b") (Right $ SSBool "c")
           `shouldBe` Right (ITE (SSBool "a") (SSBool "b") (SSBool "c"))
@@ -152,13 +153,13 @@ spec = do
           [DynamicOrderedIdx True, DynamicOrderedIdx x]
           [(SSBool "a", Just x, Just x, Just x)]
       it "Mergeable for Maybe SBool should work" $ do
-        let (idxsJ, SimpleStrategy fJ) = resolveStrategy @SBool (Just (SSBool "a") :: Maybe SBool)
+        let (idxsJ, SimpleStrategy fJ) = resolveStrategy @SBool mergeStrategy (Just (SSBool "a") :: Maybe SBool)
         idxsJ `shouldBe` [DynamicOrderedIdx True]
         fJ (SSBool "a") (Just $ SSBool "b") (Just $ SSBool "c")
           `shouldBe` Just (ITE (SSBool "a") (SSBool "b") (SSBool "c"))
     describe "Mergeable for List" $ do
       it "BuildStrategyList should work" $ do
-        case buildStrategyList @SBool @Integer [1, 2, 3] of
+        case buildStrategyList @SBool @Integer mergeStrategy [1, 2, 3] of
           StrategyList idxs _ -> do
             idxs
               `shouldBe` [ [DynamicOrderedIdx (1 :: Integer)],
@@ -168,12 +169,12 @@ spec = do
       prop "Mergeable for List for ordered type should work" $ \(x :: [Integer]) -> do
         testMergeableSimpleEquivClass
           x
-          [DynamicOrderedIdx (length x), DynamicOrderedIdx $ buildStrategyList @SBool x]
+          [DynamicOrderedIdx (length x), DynamicOrderedIdx $ buildStrategyList @SBool mergeStrategy x]
           [(SSBool "a", x, x, x)]
       prop "Mergeable for nested List for ordered type should work" $ \(x :: [[Integer]]) -> do
         testMergeableSimpleEquivClass
           x
-          [DynamicOrderedIdx (length x), DynamicOrderedIdx $ buildStrategyList @SBool x]
+          [DynamicOrderedIdx (length x), DynamicOrderedIdx $ buildStrategyList @SBool mergeStrategy x]
           [(SSBool "a", x, x, x)]
       it "Mergeable for List for simple type should work" $ do
         testMergeableSimpleEquivClass
@@ -194,7 +195,7 @@ spec = do
         testMergeableSimpleEquivClass
           ([1 :: Integer], [SSBool "b", SSBool "c"])
           [ DynamicOrderedIdx (1 :: Int),
-            DynamicOrderedIdx $ buildStrategyList @SBool [1 :: Integer],
+            DynamicOrderedIdx $ buildStrategyList @SBool mergeStrategy [1 :: Integer],
             DynamicOrderedIdx (2 :: Int)
           ]
           [ ( SSBool "a",
@@ -212,7 +213,7 @@ spec = do
         testMergeableSimpleEquivClass
           ([1 :: Integer], [SSBool "b", SSBool "c"], SSBool "d")
           [ DynamicOrderedIdx (1 :: Int),
-            DynamicOrderedIdx $ buildStrategyList @SBool [1 :: Integer],
+            DynamicOrderedIdx $ buildStrategyList @SBool mergeStrategy [1 :: Integer],
             DynamicOrderedIdx (2 :: Int)
           ]
           [ ( SSBool "a",
@@ -231,7 +232,7 @@ spec = do
         testMergeableSimpleEquivClass
           ([1 :: Integer], [SSBool "b", SSBool "c"], SSBool "d", [SSBool "f"])
           [ DynamicOrderedIdx (1 :: Int),
-            DynamicOrderedIdx $ buildStrategyList @SBool [1 :: Integer],
+            DynamicOrderedIdx $ buildStrategyList @SBool mergeStrategy [1 :: Integer],
             DynamicOrderedIdx (2 :: Int),
             DynamicOrderedIdx (1 :: Int)
           ]
@@ -252,11 +253,11 @@ spec = do
         testMergeableSimpleEquivClass
           ([1 :: Integer], [SSBool "b", SSBool "c"], SSBool "d", [SSBool "f"], [2 :: Integer, 3])
           [ DynamicOrderedIdx (1 :: Int),
-            DynamicOrderedIdx $ buildStrategyList @SBool [1 :: Integer],
+            DynamicOrderedIdx $ buildStrategyList @SBool mergeStrategy [1 :: Integer],
             DynamicOrderedIdx (2 :: Int),
             DynamicOrderedIdx (1 :: Int),
             DynamicOrderedIdx (2 :: Int),
-            DynamicOrderedIdx $ buildStrategyList @SBool [2 :: Integer, 3]
+            DynamicOrderedIdx $ buildStrategyList @SBool mergeStrategy [2 :: Integer, 3]
           ]
           [ ( SSBool "a",
               ([1], [SSBool "c", SSBool "d"], SSBool "e", [SSBool "i"], [2, 3]),
@@ -276,11 +277,11 @@ spec = do
         testMergeableSimpleEquivClass
           ([1 :: Integer], [SSBool "b", SSBool "c"], SSBool "d", [SSBool "f"], [2 :: Integer, 3], 2 :: Integer)
           [ DynamicOrderedIdx (1 :: Int),
-            DynamicOrderedIdx $ buildStrategyList @SBool [1 :: Integer],
+            DynamicOrderedIdx $ buildStrategyList @SBool mergeStrategy [1 :: Integer],
             DynamicOrderedIdx (2 :: Int),
             DynamicOrderedIdx (1 :: Int),
             DynamicOrderedIdx (2 :: Int),
-            DynamicOrderedIdx $ buildStrategyList @SBool [2 :: Integer, 3],
+            DynamicOrderedIdx $ buildStrategyList @SBool mergeStrategy [2 :: Integer, 3],
             DynamicOrderedIdx (2 :: Integer)
           ]
           [ ( SSBool "a",
@@ -309,11 +310,11 @@ spec = do
             Just (SSBool "a")
           )
           [ DynamicOrderedIdx (1 :: Int),
-            DynamicOrderedIdx $ buildStrategyList @SBool [1 :: Integer],
+            DynamicOrderedIdx $ buildStrategyList @SBool mergeStrategy [1 :: Integer],
             DynamicOrderedIdx (2 :: Int),
             DynamicOrderedIdx (1 :: Int),
             DynamicOrderedIdx (2 :: Int),
-            DynamicOrderedIdx $ buildStrategyList @SBool [2 :: Integer, 3],
+            DynamicOrderedIdx $ buildStrategyList @SBool mergeStrategy [2 :: Integer, 3],
             DynamicOrderedIdx (2 :: Integer),
             DynamicOrderedIdx True
           ]
@@ -345,11 +346,11 @@ spec = do
             Left 1 :: Either Integer Integer
           )
           [ DynamicOrderedIdx (1 :: Int),
-            DynamicOrderedIdx $ buildStrategyList @SBool [1 :: Integer],
+            DynamicOrderedIdx $ buildStrategyList @SBool mergeStrategy [1 :: Integer],
             DynamicOrderedIdx (2 :: Int),
             DynamicOrderedIdx (1 :: Int),
             DynamicOrderedIdx (2 :: Int),
-            DynamicOrderedIdx $ buildStrategyList @SBool [2 :: Integer, 3],
+            DynamicOrderedIdx $ buildStrategyList @SBool mergeStrategy [2 :: Integer, 3],
             DynamicOrderedIdx (2 :: Integer),
             DynamicOrderedIdx True,
             DynamicOrderedIdx False,
@@ -401,7 +402,7 @@ spec = do
           [(SSBool "a", MaybeT $ Just $ Just x, MaybeT $ Just $ Just x, MaybeT $ Just $ Just x)]
       it "Mergeable for MaybeT Maybe SBool should work" $ do
         let (idxsJ, SimpleStrategy fJ) =
-              resolveStrategy @SBool
+              resolveStrategy @SBool mergeStrategy 
                 (MaybeT (Just (Just (SSBool "a"))) :: MaybeT Maybe SBool)
         idxsJ `shouldBe` [DynamicOrderedIdx True, DynamicOrderedIdx True]
         fJ (SSBool "a") (MaybeT $ Just $ Just $ SSBool "b") (MaybeT $ Just $ Just $ SSBool "c")
@@ -422,13 +423,13 @@ spec = do
           [(SSBool "a", ExceptT $ Just $ Right x, ExceptT $ Just $ Right x, ExceptT $ Just $ Right x)]
       it "Mergeable for ExceptT SBool Maybe SBool should work" $ do
         let (idxsJL, SimpleStrategy fJL) =
-              resolveStrategy @SBool
+              resolveStrategy @SBool mergeStrategy 
                 (ExceptT (Just (Left (SSBool "a"))) :: ExceptT SBool Maybe SBool)
         idxsJL `shouldBe` [DynamicOrderedIdx True, DynamicOrderedIdx False]
         fJL (SSBool "a") (ExceptT $ Just $ Left $ SSBool "b") (ExceptT $ Just $ Left $ SSBool "c")
           `shouldBe` ExceptT (Just (Left (ITE (SSBool "a") (SSBool "b") (SSBool "c"))))
         let (idxsJR, SimpleStrategy fJR) =
-              resolveStrategy @SBool
+              resolveStrategy @SBool mergeStrategy 
                 (ExceptT (Just (Right (SSBool "a"))) :: ExceptT SBool Maybe SBool)
         idxsJR `shouldBe` [DynamicOrderedIdx True, DynamicOrderedIdx True]
         fJR (SSBool "a") (ExceptT $ Just $ Right $ SSBool "b") (ExceptT $ Just $ Right $ SSBool "c")
@@ -643,7 +644,7 @@ spec = do
             )
           ]
       it "BuildStrategyList should work for Sized Vector" $ do
-        case buildStrategyList @SBool @Integer
+        case buildStrategyList @SBool @Integer mergeStrategy 
           (VSized.cons 1 (VSized.cons 2 (VSized.cons 3 VSized.empty)) :: VSized.Vector V.Vector 3 Integer) of
           StrategyList idxs _ -> do
             idxs
@@ -659,7 +660,7 @@ spec = do
         let v = VSized.cons x (VSized.cons y (VSized.cons z VSized.empty)) :: VSized.Vector V.Vector 3 Integer
         testMergeableSimpleEquivClass
           v
-          [DynamicOrderedIdx $ buildStrategyList @SBool v]
+          [DynamicOrderedIdx $ buildStrategyList @SBool mergeStrategy v]
           [(SSBool "a", v, v, v)]
       it "Mergeable for Sized Vector for complex ordered type should work" $ do
         let v1 = VSized.cons Nothing (VSized.singleton Nothing) :: VSized.Vector V.Vector 2 (Maybe SBool)
@@ -671,19 +672,19 @@ spec = do
         let v4' = VSized.cons (Just $ SSBool "c") (VSized.singleton (Just $ SSBool "d")) :: VSized.Vector V.Vector 2 (Maybe SBool)
         testMergeableSimpleEquivClass
           v1
-          [DynamicOrderedIdx $ buildStrategyList @SBool v1]
+          [DynamicOrderedIdx $ buildStrategyList @SBool mergeStrategy v1]
           [(SSBool "a", v1, v1, v1)]
         testMergeableSimpleEquivClass
           v2
-          [DynamicOrderedIdx $ buildStrategyList @SBool v2]
+          [DynamicOrderedIdx $ buildStrategyList @SBool mergeStrategy v2]
           [(SSBool "c", v2, v2', VSized.cons (Just $ ITE (SSBool "c") (SSBool "a") (SSBool "b")) (VSized.singleton Nothing))]
         testMergeableSimpleEquivClass
           v3
-          [DynamicOrderedIdx $ buildStrategyList @SBool v3]
+          [DynamicOrderedIdx $ buildStrategyList @SBool mergeStrategy v3]
           [(SSBool "c", v3, v3', VSized.cons Nothing (VSized.singleton (Just $ ITE (SSBool "c") (SSBool "a") (SSBool "b"))))]
         testMergeableSimpleEquivClass
           v4
-          [DynamicOrderedIdx $ buildStrategyList @SBool v4]
+          [DynamicOrderedIdx $ buildStrategyList @SBool mergeStrategy v4]
           [ ( SSBool "e",
               v4,
               v4',

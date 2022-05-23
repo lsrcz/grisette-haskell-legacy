@@ -1,7 +1,7 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveLift #-}
-{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PatternSynonyms #-}
@@ -26,8 +26,8 @@ where
 
 import Control.DeepSeq
 import Control.Monad.Except
-import Control.Monad.State
 import Control.Monad.Reader
+import Control.Monad.State
 import Data.BitVector.Sized (knownNat, pattern BV)
 import Data.BitVector.Sized.Signed (SignedBV (..), mkSignedBV)
 import Data.BitVector.Sized.Unsigned
@@ -35,30 +35,34 @@ import Data.Bits
 -- import Data.Char (chr, ord)
 import Data.HashSet as S
 import Data.Hashable
+import Data.Int
 import Data.MemoTrie
 import Data.Proxy
 import Data.String
+import Data.Word
 import GHC.Generics
 import GHC.TypeLits
 import Grisette.Control.Monad.Union
 import Grisette.Data.Class.BitVector
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Error
+import Grisette.Data.Class.Evaluate
 import Grisette.Data.Class.ExtractSymbolics
 import Grisette.Data.Class.Function
+import Grisette.Data.Class.GenSym
 import Grisette.Data.Class.Integer
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.PrimWrapper
 import Grisette.Data.Class.SOrd
 import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.Class.Evaluate
-import Grisette.Data.Class.GenSym
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
+import Grisette.Data.GeneralFunc
 import Grisette.Data.MemoUtils
 import Grisette.Data.Prim.BV
 import Grisette.Data.Prim.Bits
 import Grisette.Data.Prim.Bool
+import Grisette.Data.Prim.GeneralFunc
 import Grisette.Data.Prim.Integer
 import Grisette.Data.Prim.InternedTerm
 import Grisette.Data.Prim.Model
@@ -66,10 +70,6 @@ import Grisette.Data.Prim.Num
 import Grisette.Data.Prim.TabularFunc
 import Grisette.Data.TabularFunc
 import Language.Haskell.TH.Syntax
-import Grisette.Data.GeneralFunc
-import Grisette.Data.Prim.GeneralFunc
-import Data.Int
-import Data.Word
 
 newtype Sym a = Sym {underlyingTerm :: Term a} deriving (Lift, Generic)
 
@@ -174,13 +174,13 @@ instance (SupportedPrim (type)) => SOrd (Sym Bool) (Sym (type)) where \
       (mrgReturn LT) \
       (mrgIf (a ==~ b) (mrgReturn EQ) (mrgReturn GT))
 
-SEQ_SYM(Bool)
-SEQ_SYM(Integer)
-SEQ_SYM(SignedBV n)
-SEQ_SYM(UnsignedBV n)
-SORD_SYM(Integer)
-SORD_SYM(SignedBV n)
-SORD_SYM(UnsignedBV n)
+SEQ_SYM (Bool)
+SEQ_SYM (Integer)
+SEQ_SYM (SignedBV n)
+SEQ_SYM (UnsignedBV n)
+SORD_SYM (Integer)
+SORD_SYM (SignedBV n)
+SORD_SYM (UnsignedBV n)
 
 -- bool
 type SymBool = Sym Bool
@@ -191,7 +191,8 @@ instance SOrd (Sym Bool) (Sym Bool) where
   l >=~ r = l ||~ nots r
   l >~ r = l &&~ nots r
   symCompare l r =
-    mrgIf (nots l &&~ r)
+    mrgIf
+      (nots l &&~ r)
       (mrgReturn LT)
       (mrgIf (l ==~ r) (mrgReturn EQ) (mrgReturn GT))
 
@@ -218,17 +219,15 @@ instance Num (Sym Integer) where
 
 instance SignedDivMod (Sym Bool) (Sym Integer) where
   divs (Sym l) rs@(Sym r) =
-    withSimpleMergeableU @(Sym Bool) $
-      mrgIf @(Sym Bool)
-        (rs ==~ conc 0)
-        (throwError $ transformError DivideByZero)
-        (mrgReturn $ Sym $ divi l r)
+    mrgIf @(Sym Bool)
+      (rs ==~ conc 0)
+      (throwError $ transformError DivideByZero)
+      (mrgReturn $ Sym $ divi l r)
   mods (Sym l) rs@(Sym r) =
-    withSimpleMergeableU @(Sym Bool) $
-      mrgIf @(Sym Bool)
-        (rs ==~ conc 0)
-        (throwError $ transformError DivideByZero)
-        (mrgReturn $ Sym $ modi l r)
+    mrgIf @(Sym Bool)
+      (rs ==~ conc 0)
+      (throwError $ transformError DivideByZero)
+      (mrgReturn $ Sym $ modi l r)
 
 instance SymIntegerOp (Sym Bool) (Sym Integer)
 
@@ -295,23 +294,23 @@ instance ToCon (Sym (bvw n)) (int) where \
   toCon (Conc (bvw (BV v) :: bvw n)) = Just $ fromIntegral v; \
   toCon _ = Nothing
 
-TOSYM_MACHINE_INTEGER(Int8, SignedBV 8)
-TOSYM_MACHINE_INTEGER(Int16, SignedBV 16)
-TOSYM_MACHINE_INTEGER(Int32, SignedBV 32)
-TOSYM_MACHINE_INTEGER(Int64, SignedBV 64)
-TOSYM_MACHINE_INTEGER(Word8, UnsignedBV 8)
-TOSYM_MACHINE_INTEGER(Word16, UnsignedBV 16)
-TOSYM_MACHINE_INTEGER(Word32, UnsignedBV 32)
-TOSYM_MACHINE_INTEGER(Word64, UnsignedBV 64)
+TOSYM_MACHINE_INTEGER (Int8, SignedBV 8)
+TOSYM_MACHINE_INTEGER (Int16, SignedBV 16)
+TOSYM_MACHINE_INTEGER (Int32, SignedBV 32)
+TOSYM_MACHINE_INTEGER (Int64, SignedBV 64)
+TOSYM_MACHINE_INTEGER (Word8, UnsignedBV 8)
+TOSYM_MACHINE_INTEGER (Word16, UnsignedBV 16)
+TOSYM_MACHINE_INTEGER (Word32, UnsignedBV 32)
+TOSYM_MACHINE_INTEGER (Word64, UnsignedBV 64)
 
-TOCON_MACHINE_INTEGER(SignedBV, 8,  Int8)
-TOCON_MACHINE_INTEGER(SignedBV, 16, Int16)
-TOCON_MACHINE_INTEGER(SignedBV, 32, Int32)
-TOCON_MACHINE_INTEGER(SignedBV, 64, Int64)
-TOCON_MACHINE_INTEGER(UnsignedBV, 8,  Word8)
-TOCON_MACHINE_INTEGER(UnsignedBV, 16, Word16)
-TOCON_MACHINE_INTEGER(UnsignedBV, 32, Word32)
-TOCON_MACHINE_INTEGER(UnsignedBV, 64, Word64)
+TOCON_MACHINE_INTEGER (SignedBV, 8, Int8)
+TOCON_MACHINE_INTEGER (SignedBV, 16, Int16)
+TOCON_MACHINE_INTEGER (SignedBV, 32, Int32)
+TOCON_MACHINE_INTEGER (SignedBV, 64, Int64)
+TOCON_MACHINE_INTEGER (UnsignedBV, 8, Word8)
+TOCON_MACHINE_INTEGER (UnsignedBV, 16, Word16)
+TOCON_MACHINE_INTEGER (UnsignedBV, 32, Word32)
+TOCON_MACHINE_INTEGER (UnsignedBV, 64, Word64)
 
 -- unsigned bv
 type SymUnsignedBV n = Sym (UnsignedBV n)
@@ -385,5 +384,4 @@ infixr 0 -~>
 instance (SupportedPrim a, SupportedPrim b) => Function (a -~> b) where
   type Arg (a -~> b) = Sym a
   type Ret (a -~> b) = Sym b
-  (Sym f) # (Sym t) = Sym $ applyg f t 
-
+  (Sym f) # (Sym t) = Sym $ applyg f t

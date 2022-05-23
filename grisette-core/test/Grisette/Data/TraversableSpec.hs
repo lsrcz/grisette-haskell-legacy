@@ -3,6 +3,7 @@ module Grisette.Data.TraversableSpec where
 import Control.Monad.Except hiding (guard)
 import Grisette.Control.Monad.Union
 import Grisette.Control.Monad.UnionMBase
+import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.UnionOp
 import Grisette.Data.Traversable
 import Test.Hspec

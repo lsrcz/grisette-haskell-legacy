@@ -17,6 +17,7 @@ import Data.Functor.Sum
 import Grisette.Control.Monad.Union
 import Grisette.Control.Monad.UnionMBase
 import Grisette.Data.Class.Bool
+import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.SOrd
 import Test.Hspec
 import Test.Hspec.QuickCheck

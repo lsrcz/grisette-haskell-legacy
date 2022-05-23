@@ -11,8 +11,8 @@ symFilter1 f l = go l (mrgReturn [])
   where
     go :: [a] -> u [a] -> u [a]
     go [] r = mrgFmap reverse r
-    go (x : xs) r = withUnionSimpleMergeable @bool @u @[a] $ do
-      res <- mrgIf (f x) (mrgReturn $ mrgFmap (x:) r) (mrgReturn r)
+    go (x : xs) r = do
+      res <- mrgReturnWithStrategy mergeStrategy1 $ mrgIf @bool @u @[a] (f x) (mrgFmap (x:) r) r
       go xs res
 
 

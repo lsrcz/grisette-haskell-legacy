@@ -14,6 +14,7 @@ import qualified Control.Monad.Trans.Writer.Lazy as WriterLazy
 import qualified Control.Monad.Trans.Writer.Strict as WriterStrict
 import Grisette.Control.Monad.Union
 import Grisette.Control.Monad.UnionMBase
+import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.UnionOp
 import Test.Hspec
 import Utils.SBool

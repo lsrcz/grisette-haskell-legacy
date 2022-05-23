@@ -17,6 +17,7 @@ import {-# SOURCE #-} Grisette.Control.Monad
 import Grisette.Control.Monad.Union
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
+import Grisette.Data.Class.SimpleMergeable
 
 -- | 'foldlM' with 'Mergeable' knowledge propagation.
 mrgFoldlM :: (MonadUnion bool m, Mergeable bool b, Foldable t) => (b -> a -> m b) -> b -> t a -> m b

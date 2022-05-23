@@ -53,7 +53,6 @@ spec = do
       let l :: UnionMBase SBool (Either SBool SBool) = mrgIf (SSBool "b") (mrgReturn $ Left $ SSBool "c") (mrgReturn $ Right $ SSBool "d")
       let r = mrgIf (SSBool "e") (mrgReturn $ Left $ SSBool "f") (mrgReturn $ Right $ SSBool "g")
       let res = mrgIte (SSBool "a") l r
-      let resu1 = mrgIteu1 (SSBool "a") l r
       let ref =
             Guard
               (Left $ ITE (SSBool "a") (SSBool "c") (SSBool "f"))
@@ -63,8 +62,6 @@ spec = do
               (Single $ Right $ ITE (SSBool "a") (SSBool "d") (SSBool "g"))
       isMerged res `shouldBe` True
       underlyingUnion res `shouldBe` ref
-      isMerged resu1 `shouldBe` True
-      underlyingUnion resu1 `shouldBe` ref
     it "SimpleMergeable1 for UnionMBase should work" $ do
       let l :: UnionMBase SBool SBool = mrgIf (SSBool "b") (mrgReturn $ SSBool "c") (mrgReturn $ SSBool "d")
       let r :: UnionMBase SBool SBool = mrgIf (SSBool "e") (mrgReturn $ SSBool "f") (mrgReturn $ SSBool "g")

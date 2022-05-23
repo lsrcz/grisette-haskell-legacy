@@ -13,6 +13,7 @@ import Grisette.Control.Monad.Except
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
 import Grisette.Control.Monad.Union
+import Grisette.Data.Class.SimpleMergeable
 
 -- | This class indicates error type @to@ can always represent the error type @from@.
 class TransformError from to where

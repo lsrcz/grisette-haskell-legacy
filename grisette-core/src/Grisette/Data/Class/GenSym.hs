@@ -1,21 +1,21 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
-{-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE TupleSections #-}
 
 module Grisette.Data.Class.GenSym
   ( GenSymIndex (..),
@@ -45,27 +45,27 @@ module Grisette.Data.Class.GenSym
   )
 where
 
+import Control.DeepSeq
 import Control.Monad.Except
 import Control.Monad.Identity
 import Control.Monad.Reader
+import Control.Monad.Signatures
 import Control.Monad.State.Strict
 import Control.Monad.Trans.Maybe
 import Data.Bifunctor
+import qualified Data.ByteString as B
+import Data.Hashable
+import Data.Int
 import Data.String
 import Data.Typeable
+import Data.Word
 import Generics.Deriving hiding (index)
 import Grisette.Control.Monad
+import Grisette.Control.Monad.Union
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.SimpleMergeable
-import Control.Monad.Signatures
 import Language.Haskell.TH.Syntax hiding (lift)
-import Control.DeepSeq
-import Data.Hashable
-import Data.Int
-import Data.Word
-import qualified Data.ByteString as B
-import Grisette.Control.Monad.Union
 
 -- $setup
 -- >>> import Grisette.Core
@@ -105,7 +105,6 @@ instance (SymBoolOp bool) => SimpleMergeable bool GenSymIndex where
 --
 -- >>> nameWithInfo "a" (1 :: Int)
 -- a:1
---
 data GenSymIdent where
   GenSymIdent :: String -> GenSymIdent
   GenSymIdentWithInfo :: (Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) => String -> a -> GenSymIdent
@@ -139,33 +138,40 @@ nameWithInfo = GenSymIdentWithInfo
 -- Each time a fresh symbolic variable is generated, the index should be increased.
 newtype GenSymFreshT m a = GenSymFreshT {runGenSymFreshT' :: GenSymIdent -> GenSymIndex -> m (a, GenSymIndex)}
 
-instance (SymBoolOp bool, Mergeable bool a, Mergeable1 bool m) =>
-  Mergeable bool (GenSymFreshT m a) where
+instance
+  (SymBoolOp bool, Mergeable bool a, Mergeable1 bool m) =>
+  Mergeable bool (GenSymFreshT m a)
+  where
   mergeStrategy =
-    withMergeable @bool @m @(a, GenSymIndex) $
-      withMergeable @bool @((->) GenSymIndex) @(m (a, GenSymIndex)) $
-        withMergeable @bool @((->) GenSymIdent) @(GenSymIndex -> m (a, GenSymIndex)) $
-          wrapMergeStrategy mergeStrategy GenSymFreshT runGenSymFreshT'
+    wrapMergeStrategy (liftMergeStrategy (liftMergeStrategy mergeStrategy1)) GenSymFreshT runGenSymFreshT'
 
-instance (SymBoolOp bool, Mergeable1 bool m) => Mergeable1 bool (GenSymFreshT m)
+instance (SymBoolOp bool, Mergeable1 bool m) => Mergeable1 bool (GenSymFreshT m) where
+  liftMergeStrategy m =
+    wrapMergeStrategy
+      (liftMergeStrategy (liftMergeStrategy (liftMergeStrategy (liftMergeStrategy2 m mergeStrategy))))
+      GenSymFreshT
+      runGenSymFreshT'
 
-instance (SymBoolOp bool, UnionSimpleMergeable1 bool m, Mergeable bool a) =>
-  SimpleMergeable bool (GenSymFreshT m a) where
-    mrgIte cond (GenSymFreshT t) (GenSymFreshT f) =
-      withUnionSimpleMergeable @bool @m @(a, GenSymIndex) $ GenSymFreshT $ mrgIte cond t f
+instance
+  (SymBoolOp bool, UnionMergeable1 bool m, Mergeable bool a) =>
+  SimpleMergeable bool (GenSymFreshT m a)
+  where
+  mrgIte = mrgIf
 
-instance (SymBoolOp bool, UnionSimpleMergeable1 bool m) =>
-  SimpleMergeable1 bool (GenSymFreshT m) 
+instance
+  (SymBoolOp bool, UnionMergeable1 bool m) =>
+  SimpleMergeable1 bool (GenSymFreshT m)
+  where
+  liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
 
-instance (SymBoolOp bool, UnionSimpleMergeable1 bool m) =>
-  UnionSimpleMergeable1 bool (GenSymFreshT m)
-
-instance (SymBoolOp bool, MonadUnion bool m) => 
-  MonadUnion bool (GenSymFreshT m) where
-  merge (GenSymFreshT f) = GenSymFreshT $ \ident index -> merge $ f ident index
-  mrgReturn v = GenSymFreshT $ \_ index -> mrgReturn (v, index)
-  mrgIf cond (GenSymFreshT t) (GenSymFreshT f) =
-    GenSymFreshT $ \ident index -> mrgIf cond (t ident index) (f ident index)
+instance
+  (SymBoolOp bool, UnionMergeable1 bool m) =>
+  UnionMergeable1 bool (GenSymFreshT m)
+  where
+  mergeWithStrategy s (GenSymFreshT f) =
+    GenSymFreshT $ \ident index -> mergeWithStrategy (liftMergeStrategy2 s mergeStrategy) $ f ident index
+  mrgIfWithStrategy s cond (GenSymFreshT t) (GenSymFreshT f) =
+    GenSymFreshT $ \ident index -> mrgIfWithStrategy (liftMergeStrategy2 s mergeStrategy) cond (t ident index) (f ident index)
 
 -- | Run the symbolic generation with the given identifier and 0 as the initial index.
 runGenSymFreshT :: (Monad m) => GenSymFreshT m a -> GenSymIdent -> m a
@@ -380,7 +386,7 @@ instance
 -- This 'genSymFresh' implementation is for the types that does not need any specification.
 -- It will generate product types by generating each fields with '()' as specification,
 -- and generate all possible values for a sum type.
--- 
+--
 -- N.B. Never use on recursive types
 derivedNoSpecGenSymFresh ::
   forall bool a m u.
@@ -421,7 +427,7 @@ instance
 -- This 'genSymSimpleFresh' implementation is for the types that does not need any specification.
 -- It will generate product types by generating each fields with '()' as specification.
 -- It will not work on sum types.
--- 
+--
 -- N.B. Never use on recursive types
 derivedNoSpecGenSymSimpleFresh ::
   forall bool a m.
@@ -473,7 +479,7 @@ instance
 --
 -- For sum types, it will generate the result with the same data constructor.
 -- For product types, it will generate the result by generating each field with the corresponding reference value.
--- 
+--
 -- N.B. Can be used on recursive types
 derivedSameShapeGenSymSimpleFresh ::
   forall bool a m.
@@ -573,41 +579,42 @@ instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSym bool type type wh
 instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSymSimple bool type type where \
   genSymSimpleFresh v = return v
 
-CONCRETE_GENSYM_SAMESHAPE(Bool)
-CONCRETE_GENSYM_SAMESHAPE(Integer)
-CONCRETE_GENSYM_SAMESHAPE(Char)
-CONCRETE_GENSYM_SAMESHAPE(Int)
-CONCRETE_GENSYM_SAMESHAPE(Int8)
-CONCRETE_GENSYM_SAMESHAPE(Int16)
-CONCRETE_GENSYM_SAMESHAPE(Int32)
-CONCRETE_GENSYM_SAMESHAPE(Int64)
-CONCRETE_GENSYM_SAMESHAPE(Word)
-CONCRETE_GENSYM_SAMESHAPE(Word8)
-CONCRETE_GENSYM_SAMESHAPE(Word16)
-CONCRETE_GENSYM_SAMESHAPE(Word32)
-CONCRETE_GENSYM_SAMESHAPE(Word64)
-CONCRETE_GENSYM_SAMESHAPE(B.ByteString)
+CONCRETE_GENSYM_SAMESHAPE (Bool)
+CONCRETE_GENSYM_SAMESHAPE (Integer)
+CONCRETE_GENSYM_SAMESHAPE (Char)
+CONCRETE_GENSYM_SAMESHAPE (Int)
+CONCRETE_GENSYM_SAMESHAPE (Int8)
+CONCRETE_GENSYM_SAMESHAPE (Int16)
+CONCRETE_GENSYM_SAMESHAPE (Int32)
+CONCRETE_GENSYM_SAMESHAPE (Int64)
+CONCRETE_GENSYM_SAMESHAPE (Word)
+CONCRETE_GENSYM_SAMESHAPE (Word8)
+CONCRETE_GENSYM_SAMESHAPE (Word16)
+CONCRETE_GENSYM_SAMESHAPE (Word32)
+CONCRETE_GENSYM_SAMESHAPE (Word64)
+CONCRETE_GENSYM_SAMESHAPE (B.ByteString)
 
-CONCRETE_GENSYM_SIMPLE_SAMESHAPE(Bool)
-CONCRETE_GENSYM_SIMPLE_SAMESHAPE(Integer)
-CONCRETE_GENSYM_SIMPLE_SAMESHAPE(Char)
-CONCRETE_GENSYM_SIMPLE_SAMESHAPE(Int)
-CONCRETE_GENSYM_SIMPLE_SAMESHAPE(Int8)
-CONCRETE_GENSYM_SIMPLE_SAMESHAPE(Int16)
-CONCRETE_GENSYM_SIMPLE_SAMESHAPE(Int32)
-CONCRETE_GENSYM_SIMPLE_SAMESHAPE(Int64)
-CONCRETE_GENSYM_SIMPLE_SAMESHAPE(Word)
-CONCRETE_GENSYM_SIMPLE_SAMESHAPE(Word8)
-CONCRETE_GENSYM_SIMPLE_SAMESHAPE(Word16)
-CONCRETE_GENSYM_SIMPLE_SAMESHAPE(Word32)
-CONCRETE_GENSYM_SIMPLE_SAMESHAPE(Word64)
-CONCRETE_GENSYM_SIMPLE_SAMESHAPE(B.ByteString)
+CONCRETE_GENSYM_SIMPLE_SAMESHAPE (Bool)
+CONCRETE_GENSYM_SIMPLE_SAMESHAPE (Integer)
+CONCRETE_GENSYM_SIMPLE_SAMESHAPE (Char)
+CONCRETE_GENSYM_SIMPLE_SAMESHAPE (Int)
+CONCRETE_GENSYM_SIMPLE_SAMESHAPE (Int8)
+CONCRETE_GENSYM_SIMPLE_SAMESHAPE (Int16)
+CONCRETE_GENSYM_SIMPLE_SAMESHAPE (Int32)
+CONCRETE_GENSYM_SIMPLE_SAMESHAPE (Int64)
+CONCRETE_GENSYM_SIMPLE_SAMESHAPE (Word)
+CONCRETE_GENSYM_SIMPLE_SAMESHAPE (Word8)
+CONCRETE_GENSYM_SIMPLE_SAMESHAPE (Word16)
+CONCRETE_GENSYM_SIMPLE_SAMESHAPE (Word32)
+CONCRETE_GENSYM_SIMPLE_SAMESHAPE (Word64)
+CONCRETE_GENSYM_SIMPLE_SAMESHAPE (B.ByteString)
 
 -- Bool
 instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSym bool () Bool where
   genSymFresh _ = derivedNoSpecGenSymFresh
 
 -- Enums
+
 -- | Specification for enum values with upper bound (exclusive). The result would chosen from [0 .. upperbound].
 --
 -- >>> runGenSymFresh (genSymFresh (EnumGenUpperBound @Integer 4)) "c" :: UnionM Integer
@@ -692,9 +699,12 @@ instance
 -- >>> runGenSymFresh (genSymFresh (ListSpec 0 2 ())) "c" :: UnionM [SymBool]
 -- UMrg (Guard c@2 (Single []) (Guard c@3 (Single [c@1]) (Single [c@0,c@1])))
 data ListSpec spec = ListSpec
-  { genListMinLength :: Integer, -- ^ The minimum length of the generated lists
-    genListMaxLength :: Integer, -- ^ The maximum length of the generated lists
-    genListSubSpec :: spec       -- ^ Each element in the lists will be generated with the sub-specification
+  { -- | The minimum length of the generated lists
+    genListMinLength :: Integer,
+    -- | The maximum length of the generated lists
+    genListMaxLength :: Integer,
+    -- | Each element in the lists will be generated with the sub-specification
+    genListSubSpec :: spec
   }
   deriving (Show)
 
@@ -733,8 +743,10 @@ instance
 -- >>> runGenSymFresh (genSymSimpleFresh @SymBool (SimpleListSpec 2 ())) "c" :: [SymBool]
 -- [c@0,c@1]
 data SimpleListSpec spec = SimpleListSpec
-  { genSimpleListLength :: Integer, -- ^ The length of the generated list
-    genSimpleListSubSpec :: spec    -- ^ Each element in the list will be generated with the sub-specification
+  { -- | The length of the generated list
+    genSimpleListLength :: Integer,
+    -- | Each element in the list will be generated with the sub-specification
+    genSimpleListSubSpec :: spec
   }
   deriving (Show)
 

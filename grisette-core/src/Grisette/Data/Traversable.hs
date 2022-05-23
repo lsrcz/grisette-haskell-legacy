@@ -14,6 +14,7 @@ where
 
 import Grisette.Control.Monad.Union
 import Grisette.Data.Class.Mergeable
+import Grisette.Data.Class.SimpleMergeable
 
 -- | 'traverse' with 'Mergeable' knowledge propagation.
 mrgTraverse ::
@@ -26,7 +27,7 @@ mrgTraverse ::
   (a -> f b) ->
   t a ->
   f (t b)
-mrgTraverse f = withMergeable @bool @t @b $ merge . traverse (merge . f)
+mrgTraverse f = mergeWithStrategy mergeStrategy1 . traverse (merge . f)
 {-# INLINE mrgTraverse #-}
 
 -- | 'sequenceA' with 'Mergeable' knowledge propagation.

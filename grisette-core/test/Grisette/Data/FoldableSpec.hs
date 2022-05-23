@@ -5,6 +5,7 @@ import Control.Monad.Trans.Maybe
 import Grisette.Control.Monad
 import Grisette.Control.Monad.Union
 import Grisette.Control.Monad.UnionMBase
+import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.UnionOp
 import Grisette.Data.Foldable
 import Test.Hspec

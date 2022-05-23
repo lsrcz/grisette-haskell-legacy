@@ -1,6 +1,7 @@
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE RankNTypes #-}
+
 module Grisette.Control.Monad.Coroutine
   ( mrgSuspend,
     mrgYield,
@@ -15,17 +16,21 @@ where
 import Control.Monad.Coroutine
 import Control.Monad.Coroutine.SuspensionFunctors
 import Data.Functor.Sum
-import Grisette.Control.Monad
 import Grisette.Control.Monad.Union
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
+import Grisette.Data.Class.SimpleMergeable
 
 mrgSuspend ::
   forall m s bool x.
   (Functor s, MonadUnion bool m, SymBoolOp bool, Mergeable bool x, Mergeable1 bool s) =>
   s (Coroutine s m x) ->
   Coroutine s m x
-mrgSuspend s = withMergeable @bool @s @(Coroutine s m x) $ Coroutine $ mrgReturn @bool (Left s)
+mrgSuspend s =
+  Coroutine $
+    mergeWithStrategy
+      (liftMergeStrategy2 mergeStrategy1 mergeStrategy) $
+      return (Left s)
 {-# INLINEABLE mrgSuspend #-}
 
 mrgYield :: (SymBoolOp bool, MonadUnion bool m, Mergeable bool x) => x -> Coroutine (Yield x) m ()
@@ -38,7 +43,8 @@ mrgMapSuspension ::
   (forall y. s y -> s' y) ->
   Coroutine s m x ->
   Coroutine s' m x
-mrgMapSuspension f cort = withMergeable @bool @s' @(Coroutine s' m x) Coroutine {resume = mrgFmap map' $ resume cort}
+mrgMapSuspension f cort = Coroutine {resume = resume cort >>= \x ->
+  mergeWithStrategy (liftMergeStrategy2 mergeStrategy1 mergeStrategy) $ return $ map' x}
   where
     map' :: Either (s (Coroutine s m x)) x -> Either (s' (Coroutine s' m x)) x
     map' (Right r1) = Right r1

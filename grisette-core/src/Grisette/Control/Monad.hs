@@ -16,6 +16,7 @@ where
 import Control.Monad hiding (guard)
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
+import Grisette.Data.Class.SimpleMergeable
 import Grisette.Control.Monad.Union
 import Grisette.Data.Foldable
 

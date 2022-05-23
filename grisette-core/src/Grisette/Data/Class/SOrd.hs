@@ -29,6 +29,7 @@ import Control.Monad.Identity
 import Data.Int
 import Data.Word
 import Grisette.Control.Monad.Union
+import Grisette.Data.Class.SimpleMergeable
 
 -- | Auxiliary class for 'SOrd' instance derivation
 class (SEq' bool f) => SOrd' bool f where

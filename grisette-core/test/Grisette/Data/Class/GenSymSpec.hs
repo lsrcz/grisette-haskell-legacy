@@ -8,6 +8,7 @@ import Control.Monad.Trans.Maybe
 import Grisette.Control.Monad.Union
 import Grisette.Control.Monad.UnionMBase
 import Grisette.Data.Class.GenSym
+import Grisette.Data.Class.SimpleMergeable
 import Test.Hspec
 import Utils.SBool
 

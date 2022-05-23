@@ -7,6 +7,7 @@ where
 import Control.Monad.Except
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
+import Grisette.Data.Class.SimpleMergeable
 import Grisette.Control.Monad.Union
 
 -- | 'throwError' with 'Mergeable' knowledge propagation.

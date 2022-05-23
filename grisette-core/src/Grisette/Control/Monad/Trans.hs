@@ -1,6 +1,5 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
 
 module Grisette.Control.Monad.Trans
   ( mrgLift,
@@ -18,4 +17,4 @@ mrgLift ::
   (MonadUnion bool (t m), MonadTrans t, Monad m, Mergeable bool a) =>
   m a ->
   t m a
-mrgLift v = withUnionSimpleMergeableU @bool $ merge $ lift v
+mrgLift v = merge $ lift v

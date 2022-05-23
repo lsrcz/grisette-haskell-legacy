@@ -94,7 +94,8 @@ data UnionMBase bool a where
     UnionBase bool a ->
     UnionMBase bool a
   -- | 'UnionMBase' with 'Mergeable' knowledge.
-  UMrg :: (Mergeable bool a) =>
+  UMrg ::
+    MergeStrategy bool a ->
     UnionBase bool a ->
     UnionMBase bool a
 
@@ -112,11 +113,11 @@ instance (NFData bool) => NFData1 (UnionMBase bool) where
 
 instance NFData2 UnionMBase where
   liftRnf2 _bool _a (UAny i m) = rnf i `seq` liftRnf2 _bool _a m
-  liftRnf2 _bool _a (UMrg m) = liftRnf2 _bool _a m
+  liftRnf2 _bool _a (UMrg _ m) = liftRnf2 _bool _a m
 
 instance (Lift bool, Lift a) => Lift (UnionMBase bool a) where
   liftTyped (UAny _ v) = [||freshUAny v||]
-  liftTyped (UMrg v) = [||UMrg v||]
+  liftTyped (UMrg _ v) = [||freshUAny v||]
   lift = unTypeSplice . liftTyped
 
 freshUAny :: UnionBase bool a -> UnionMBase bool a
@@ -128,11 +129,11 @@ instance (Show a, Show bool) => (Show (UnionMBase bool a)) where
 
 instance (Show b) => Show1 (UnionMBase b) where
   liftShowsPrec sp sl i (UAny _ a) = showsUnaryWith (liftShowsPrec sp sl) "UAny" i a
-  liftShowsPrec sp sl i (UMrg a) = showsUnaryWith (liftShowsPrec sp sl) "UMrg" i a
+  liftShowsPrec sp sl i (UMrg _ a) = showsUnaryWith (liftShowsPrec sp sl) "UMrg" i a
 
 underlyingUnion :: UnionMBase bool a -> UnionBase bool a
 underlyingUnion (UAny _ a) = a
-underlyingUnion (UMrg a) = a
+underlyingUnion (UMrg _ a) = a
 
 isMerged :: UnionMBase bool a -> Bool
 isMerged UAny {} = False
@@ -141,14 +142,14 @@ isMerged UMrg {} = True
 instance SymBoolOp bool => UnionOp bool (UnionMBase bool) where
   single v = (freshUAny . single) v
   guard cond (UAny _ a) (UAny _ b) = freshUAny $ guard cond a b
-  guard cond (UMrg a) (UAny _ b) = UMrg $ guardWithStrategy mergeStrategy cond a b
-  guard cond a (UMrg b) = UMrg $ guardWithStrategy mergeStrategy cond (underlyingUnion a) b
+  guard cond (UMrg m a) (UAny _ b) = UMrg m $ guardWithStrategy m cond a b
+  guard cond a (UMrg m b) = UMrg m $ guardWithStrategy m cond (underlyingUnion a) b
   singleView = singleView . underlyingUnion
   guardView (UAny _ u) = case guardView u of
     Just (c, t, f) -> Just (c, freshUAny t, freshUAny f)
     Nothing -> Nothing
-  guardView (UMrg u) = case guardView u of
-    Just (c, t, f) -> Just (c, UMrg t, UMrg f)
+  guardView (UMrg m u) = case guardView u of
+    Just (c, t, f) -> Just (c, UMrg m t, UMrg m f)
     Nothing -> Nothing
   leftMost = leftMost . underlyingUnion
 
@@ -173,25 +174,24 @@ instance (SymBoolOp bool, Mergeable bool a) => Mergeable bool (UnionMBase bool a
 instance (SymBoolOp bool, Mergeable bool a) => SimpleMergeable bool (UnionMBase bool a) where
   mrgIte = mrgIf
 
-instance (SymBoolOp bool) => Mergeable1 bool (UnionMBase bool)
+instance (SymBoolOp bool) => Mergeable1 bool (UnionMBase bool) where
+  liftMergeStrategy m = SimpleStrategy $ \cond t f -> guard cond t f >>= (UMrg m . Single)
 
-instance SymBoolOp bool => SimpleMergeable1 bool (UnionMBase bool)
+instance SymBoolOp bool => SimpleMergeable1 bool (UnionMBase bool) where
+  liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
 
-instance SymBoolOp bool => UnionSimpleMergeable1 bool (UnionMBase bool)
-
-instance SymBoolOp bool => MonadUnion bool (UnionMBase bool) where
-  merge m@(UMrg _) = m
-  merge (UAny ref u) = unsafeDupablePerformIO $
+instance SymBoolOp bool => UnionMergeable1 bool (UnionMBase bool) where
+  mergeWithStrategy _ m@(UMrg _ _) = m
+  mergeWithStrategy s (UAny ref u) = unsafeDupablePerformIO $
     atomicModifyIORef' ref $ \case
       x@(Right r) -> (x, r)
       Left _ -> (Right r, r)
         where
-          !r = UMrg $ fullReconstruct mergeStrategy u --m >>= mrgSingle
-  {-# NOINLINE merge #-}
-  mrgReturn = UMrg . single
-  mrgIf (Conc c) l r = if c then merge l else merge r
-  mrgIf cond l r =
-    merge $ guard cond l r
+          !r = UMrg s $ fullReconstruct s u --m >>= mrgSingle
+  {-# NOINLINE mergeWithStrategy #-}
+  mrgIfWithStrategy s (Conc c) l r = if c then mergeWithStrategy s l else mergeWithStrategy s r
+  mrgIfWithStrategy s cond l r =
+    mergeWithStrategy s $ guard cond l r
 
 instance (SymBoolOp bool, SEq bool a) => SEq bool (UnionMBase bool a) where
   x ==~ y = getSingle $ do
@@ -265,11 +265,11 @@ instance
 
 instance (Hashable bool, Hashable a) => Hashable (UnionMBase bool a) where
   s `hashWithSalt` (UAny _ u) = s `hashWithSalt` (0 :: Int) `hashWithSalt` u
-  s `hashWithSalt` (UMrg u) = s `hashWithSalt` (1 :: Int) `hashWithSalt` u
+  s `hashWithSalt` (UMrg _ u) = s `hashWithSalt` (1 :: Int) `hashWithSalt` u
 
 instance (Eq bool, Eq a) => Eq (UnionMBase bool a) where
   UAny _ l == UAny _ r = l == r
-  UMrg l == UMrg r = l == r
+  UMrg _ l == UMrg _ r = l == r
   _ == _ = False
 
 instance (Eq bool) => Eq1 (UnionMBase bool) where
