@@ -13,13 +13,11 @@ import Data.Functor.Sum
 import Grisette.Data.Class.ToCon
 import Test.Hspec
 import Test.Hspec.QuickCheck
-import Utils.SBool
+import Grisette.TestUtils.SBool
+import Grisette.TestUtils.ToCon
 import Control.Monad.Identity
 import Data.Int
 import Data.Word
-
-toConForConcreteProp :: (HasCallStack, ToCon v v, Show v, Eq v) => v -> Expectation
-toConForConcreteProp v = toCon v `shouldBe` Just v
 
 spec :: Spec
 spec = do
@@ -52,41 +50,41 @@ spec = do
               ]
         traverse_ (\v -> toCon v `shouldBe` (Nothing :: Maybe Bool)) sbools
     describe "ToCon for Bool" $ do
-      prop "ToCon for Bool should always be identical to Just" $ toConForConcreteProp @Bool
+      prop "ToCon for Bool should always be identical to Just" $ toConForConcreteOkProp @Bool
     describe "ToCon for Integer" $ do
-      prop "ToCon for Integer should always be identical to Just" $ toConForConcreteProp @Integer
+      prop "ToCon for Integer should always be identical to Just" $ toConForConcreteOkProp @Integer
     describe "ToCon for Char" $ do
-      prop "ToCon for Char should always be identical to Just" $ toConForConcreteProp @Char
+      prop "ToCon for Char should always be identical to Just" $ toConForConcreteOkProp @Char
 
     describe "ToCon for Int" $ do
-      prop "ToCon for Int should always be identical to Just" $ toConForConcreteProp @Int
+      prop "ToCon for Int should always be identical to Just" $ toConForConcreteOkProp @Int
     describe "ToCon for Int8" $ do
-      prop "ToCon for Int8 should always be identical to Just" $ toConForConcreteProp @Int8
+      prop "ToCon for Int8 should always be identical to Just" $ toConForConcreteOkProp @Int8
     describe "ToCon for Int16" $ do
-      prop "ToCon for Int16 should always be identical to Just" $ toConForConcreteProp @Int16
+      prop "ToCon for Int16 should always be identical to Just" $ toConForConcreteOkProp @Int16
     describe "ToCon for Int32" $ do
-      prop "ToCon for Int32 should always be identical to Just" $ toConForConcreteProp @Int32
+      prop "ToCon for Int32 should always be identical to Just" $ toConForConcreteOkProp @Int32
     describe "ToCon for Int64" $ do
-      prop "ToCon for Int64 should always be identical to Just" $ toConForConcreteProp @Int64
+      prop "ToCon for Int64 should always be identical to Just" $ toConForConcreteOkProp @Int64
 
     describe "ToCon for Word" $ do
-      prop "ToCon for Word should always be identical to Just" $ toConForConcreteProp @Word
+      prop "ToCon for Word should always be identical to Just" $ toConForConcreteOkProp @Word
     describe "ToCon for Word8" $ do
-      prop "ToCon for Word8 should always be identical to Just" $ toConForConcreteProp @Word8
+      prop "ToCon for Word8 should always be identical to Just" $ toConForConcreteOkProp @Word8
     describe "ToCon for Word16" $ do
-      prop "ToCon for Word16 should always be identical to Just" $ toConForConcreteProp @Word16
+      prop "ToCon for Word16 should always be identical to Just" $ toConForConcreteOkProp @Word16
     describe "ToCon for Word32" $ do
-      prop "ToCon for Word32 should always be identical to Just" $ toConForConcreteProp @Word32
+      prop "ToCon for Word32 should always be identical to Just" $ toConForConcreteOkProp @Word32
     describe "ToCon for Word64" $ do
-      prop "ToCon for Word64 should always be identical to Just" $ toConForConcreteProp @Word64
+      prop "ToCon for Word64 should always be identical to Just" $ toConForConcreteOkProp @Word64
 
     describe "ToCon for ()" $ do
-      prop "ToCon for () should always be identical to Just" $ toConForConcreteProp @()
+      prop "ToCon for () should always be identical to Just" $ toConForConcreteOkProp @()
     describe "ToCon for ByteString" $ do
       prop "ToCon for ByteString should always be identical to Just" $
-        \(v :: String) -> toConForConcreteProp (C.pack v)
+        \(v :: String) -> toConForConcreteOkProp (C.pack v)
     describe "ToCon for List" $ do
-      prop "ToCon for concrete List should always be identical to Just" $ toConForConcreteProp @[Integer]
+      prop "ToCon for concrete List should always be identical to Just" $ toConForConcreteOkProp @[Integer]
       it "ToCon for general List should work" $ do
         toCon ([] :: [SBool]) `shouldBe` (Just [] :: Maybe [Bool])
         toCon ([CBool True] :: [SBool]) `shouldBe` (Just [True] :: Maybe [Bool])
@@ -94,13 +92,13 @@ spec = do
         toCon ([CBool True, CBool False] :: [SBool]) `shouldBe` (Just [True, False] :: Maybe [Bool])
         toCon ([CBool True, SSBool "a"] :: [SBool]) `shouldBe` (Nothing :: Maybe [Bool])
     describe "ToCon for Maybe" $ do
-      prop "ToCon for concrete Maybe should always be identical to Just" $ toConForConcreteProp @(Maybe Integer)
+      prop "ToCon for concrete Maybe should always be identical to Just" $ toConForConcreteOkProp @(Maybe Integer)
       it "ToCon for general Maybe should work" $ do
         toCon (Nothing :: Maybe SBool) `shouldBe` (Just Nothing :: Maybe (Maybe Bool))
         toCon (Just (CBool True) :: Maybe SBool) `shouldBe` (Just (Just True) :: Maybe (Maybe Bool))
         toCon (Just (SSBool "a") :: Maybe SBool) `shouldBe` (Nothing :: Maybe (Maybe Bool))
     describe "ToCon for Either" $ do
-      prop "ToCon for concrete Either should always be identical to Just" $ toConForConcreteProp @(Either Integer Integer)
+      prop "ToCon for concrete Either should always be identical to Just" $ toConForConcreteOkProp @(Either Integer Integer)
       it "ToCon for general Either should work" $ do
         toCon (Left (CBool True) :: Either SBool SBool) `shouldBe` (Just (Left True) :: Maybe (Either Bool Bool))
         toCon (Right (CBool True) :: Either SBool SBool) `shouldBe` (Just (Right True) :: Maybe (Either Bool Bool))
@@ -108,7 +106,7 @@ spec = do
         toCon (Right (SSBool "a") :: Either SBool SBool) `shouldBe` (Nothing :: Maybe (Either Bool Bool))
     describe "ToCon for MaybeT" $ do
       prop "ToCon for concrete MaybeT should always be identical to Just" $
-        \(v :: Maybe (Maybe Integer)) -> toConForConcreteProp (MaybeT v)
+        \(v :: Maybe (Maybe Integer)) -> toConForConcreteOkProp (MaybeT v)
       it "ToCon for general MaybeT should work" $ do
         toCon (MaybeT Nothing :: MaybeT Maybe SBool) `shouldBe` (Just $ MaybeT Nothing :: Maybe (MaybeT Maybe Bool))
         toCon (MaybeT $ Just Nothing :: MaybeT Maybe SBool)
@@ -119,7 +117,7 @@ spec = do
           `shouldBe` (Nothing :: Maybe (MaybeT Maybe Bool))
     describe "ToCon for ExceptT" $ do
       prop "ToCon for concrete ExceptT should always be identical to Just" $
-        \(v :: Maybe (Either Integer Integer)) -> toConForConcreteProp (ExceptT v)
+        \(v :: Maybe (Either Integer Integer)) -> toConForConcreteOkProp (ExceptT v)
       it "ToCon for general ExceptT should work" $ do
         toCon (ExceptT Nothing :: ExceptT SBool Maybe SBool)
           `shouldBe` (Just $ ExceptT Nothing :: Maybe (ExceptT Bool Maybe Bool))
@@ -133,25 +131,25 @@ spec = do
           `shouldBe` (Nothing :: Maybe (ExceptT Bool Maybe Bool))
     describe "ToCon for (,)" $ do
       prop "ToCon for concrete (,) should always be identical to Just" $
-        toConForConcreteProp @(Integer, Integer)
+        toConForConcreteOkProp @(Integer, Integer)
       it "ToCon for generic (,) should work" $ do
         toCon (CBool True, CBool False) `shouldBe` Just (True, False)
         toCon (CBool True, SSBool "a") `shouldBe` (Nothing :: Maybe (Bool, Bool))
     describe "ToCon for (,,)" $ do
       prop "ToCon for concrete (,,) should always be identical to Just" $
-        toConForConcreteProp @(Integer, Integer, Integer)
+        toConForConcreteOkProp @(Integer, Integer, Integer)
       it "ToCon for generic (,,) should work" $ do
         toCon (CBool False, CBool True, CBool False) `shouldBe` Just (False, True, False)
         toCon (CBool False, CBool True, SSBool "a") `shouldBe` (Nothing :: Maybe (Bool, Bool, Bool))
     describe "ToCon for (,,,)" $ do
       prop "ToCon for concrete (,,,) should always be identical to Just" $
-        toConForConcreteProp @(Integer, Integer, Integer, Integer)
+        toConForConcreteOkProp @(Integer, Integer, Integer, Integer)
       it "ToCon for generic (,,,) should work" $ do
         toCon (CBool True, CBool False, CBool True, CBool False) `shouldBe` Just (True, False, True, False)
         toCon (CBool True, CBool False, CBool True, SSBool "a") `shouldBe` (Nothing :: Maybe (Bool, Bool, Bool, Bool))
     describe "ToCon for (,,,,)" $ do
       prop "ToCon for concrete (,,,,) should always be identical to Just" $
-        toConForConcreteProp @(Integer, Integer, Integer, Integer, Integer)
+        toConForConcreteOkProp @(Integer, Integer, Integer, Integer, Integer)
       it "ToCon for generic (,,,,) should work" $ do
         toCon (CBool False, CBool True, CBool False, CBool True, CBool False)
           `shouldBe` Just (False, True, False, True, False)
@@ -159,7 +157,7 @@ spec = do
           `shouldBe` (Nothing :: Maybe (Bool, Bool, Bool, Bool, Bool))
     describe "ToCon for (,,,,,)" $ do
       prop "ToCon for concrete (,,,,,) should always be identical to Just" $
-        toConForConcreteProp @(Integer, Integer, Integer, Integer, Integer, Integer)
+        toConForConcreteOkProp @(Integer, Integer, Integer, Integer, Integer, Integer)
       it "ToCon for generic (,,,,,) should work" $ do
         toCon (CBool True, CBool False, CBool True, CBool False, CBool True, CBool False)
           `shouldBe` Just (True, False, True, False, True, False)
@@ -167,7 +165,7 @@ spec = do
           `shouldBe` (Nothing :: Maybe (Bool, Bool, Bool, Bool, Bool, Bool))
     describe "ToCon for (,,,,,,)" $ do
       prop "ToCon for concrete (,,,,,,) should always be identical to Just" $
-        toConForConcreteProp @(Integer, Integer, Integer, Integer, Integer, Integer, Integer)
+        toConForConcreteOkProp @(Integer, Integer, Integer, Integer, Integer, Integer, Integer)
       it "ToCon for generic (,,,,,,) should work" $ do
         toCon (CBool False, CBool True, CBool False, CBool True, CBool False, CBool True, CBool False)
           `shouldBe` Just (False, True, False, True, False, True, False)
@@ -175,7 +173,7 @@ spec = do
           `shouldBe` (Nothing :: Maybe (Bool, Bool, Bool, Bool, Bool, Bool, Bool))
     describe "ToCon for (,,,,,,,)" $ do
       prop "ToCon for concrete (,,,,,,,) should always be identical to Just" $
-        toConForConcreteProp @(Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer)
+        toConForConcreteOkProp @(Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer)
       it "ToCon for generic (,,,,,,,) should work" $ do
         toCon (CBool True, CBool False, CBool True, CBool False, CBool True, CBool False, CBool True, CBool False)
           `shouldBe` Just (True, False, True, False, True, False, True, False)
@@ -183,7 +181,7 @@ spec = do
           `shouldBe` (Nothing :: Maybe (Bool, Bool, Bool, Bool, Bool, Bool, Bool, Bool))
     describe "ToCon for Sum" $ do
       prop "ToCon for concrete Sum should always be identical to Just" $
-        \(v :: Either (Maybe Integer) (Maybe Integer)) -> toConForConcreteProp $ case v of
+        \(v :: Either (Maybe Integer) (Maybe Integer)) -> toConForConcreteOkProp $ case v of
           Left x -> InL x
           Right x -> InR x
       it "ToCon for generic Sum should work" $ do
@@ -201,9 +199,9 @@ spec = do
           (Nothing :: Maybe (Sum Maybe (Either Bool) Bool))
     describe "ToCon for WriterT" $ do
       prop "ToCon for concrete Lazy WriterT should always be identical to Just" $
-        \(v :: Either Integer (Integer, Integer)) -> toConForConcreteProp $ WriterLazy.WriterT v
+        \(v :: Either Integer (Integer, Integer)) -> toConForConcreteOkProp $ WriterLazy.WriterT v
       prop "ToCon for concrete Strict WriterT should always be identical to Just" $
-        \(v :: Either Integer (Integer, Integer)) -> toConForConcreteProp $ WriterStrict.WriterT v
+        \(v :: Either Integer (Integer, Integer)) -> toConForConcreteOkProp $ WriterStrict.WriterT v
       it "ToCon for generic Lazy WriterT should work" $ do
         toCon (WriterLazy.WriterT $ Left $ CBool True :: WriterLazy.WriterT SBool (Either SBool) SBool) `shouldBe`
           Just (WriterLazy.WriterT $ Left $ True :: WriterLazy.WriterT Bool (Either Bool) Bool)
@@ -232,13 +230,13 @@ spec = do
           (Nothing :: Maybe (WriterStrict.WriterT Bool (Either Bool) Bool))
     describe "ToCon for Identity" $ do
       prop "ToCon for concrete Identity should always be identical to Just" $
-        \(v :: Integer) -> toConForConcreteProp $ Identity v
+        \(v :: Integer) -> toConForConcreteOkProp $ Identity v
       it "ToCon for general Identity should work" $ do
         toCon (Identity $ CBool True) `shouldBe` Just (Identity True)
         toCon (Identity $ SSBool "a") `shouldBe` (Nothing :: Maybe (Identity Bool))
     describe "ToCon for IdentityT" $ do
       prop "ToCon for concrete IdentityT should always be identical to Just" $
-        \(v :: Either Integer Integer) -> toConForConcreteProp $ IdentityT v
+        \(v :: Either Integer Integer) -> toConForConcreteOkProp $ IdentityT v
       it "ToCon for general IdentityT should work" $ do
         toCon (IdentityT $ Left $ CBool True :: IdentityT (Either SBool) SBool)
           `shouldBe` Just (IdentityT $ Left True :: IdentityT (Either Bool) Bool)

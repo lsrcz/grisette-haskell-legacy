@@ -20,18 +20,14 @@ import Generics.Deriving
 import Grisette.Data.Class.Bool
 import Test.Hspec
 import Test.Hspec.QuickCheck
-import Utils.SBool
+import Grisette.TestUtils.SBool
+import Grisette.TestUtils.SEq
 import Data.Int
 import Data.Word
 
 data A = A1 | A2 SBool | A3 SBool SBool
   deriving (Generic, Show, Eq)
   deriving (SEq SBool) via (Default A)
-
-concreteSEqOkSpec :: (HasCallStack, SEq SBool a, Eq a) => (a, a) -> Expectation
-concreteSEqOkSpec (i, j) = do
-  i ==~ j `shouldBe` CBool (i == j)
-  i /=~ j `shouldBe` CBool (i /= j)
 
 spec :: Spec
 spec = do
@@ -49,33 +45,33 @@ spec = do
         SSBool "a" ==~ SSBool "b" `shouldBe` Equal (SSBool "a") (SSBool "b")
         SSBool "a" ==~ SSBool "a" `shouldBe` CBool True
     describe "SEq for Bool" $ do
-      prop "SEq for Bool should work" (concreteSEqOkSpec @Bool)
+      prop "SEq for Bool should work" (concreteSEqOkProp @Bool)
     describe "SEq for Integer" $ do
-      prop "SEq for Integer should work" (concreteSEqOkSpec @Integer)
+      prop "SEq for Integer should work" (concreteSEqOkProp @Integer)
     describe "SEq for Char" $ do
-      prop "SEq for Char should work" (concreteSEqOkSpec @Char)
+      prop "SEq for Char should work" (concreteSEqOkProp @Char)
     describe "SEq for Int" $ do
-      prop "SEq for Int should work" (concreteSEqOkSpec @Int)
+      prop "SEq for Int should work" (concreteSEqOkProp @Int)
     describe "SEq for Int8" $ do
-      prop "SEq for Int8 should work" (concreteSEqOkSpec @Int8)
+      prop "SEq for Int8 should work" (concreteSEqOkProp @Int8)
     describe "SEq for Int16" $ do
-      prop "SEq for Int16 should work" (concreteSEqOkSpec @Int16)
+      prop "SEq for Int16 should work" (concreteSEqOkProp @Int16)
     describe "SEq for Int32" $ do
-      prop "SEq for Int32 should work" (concreteSEqOkSpec @Int32)
+      prop "SEq for Int32 should work" (concreteSEqOkProp @Int32)
     describe "SEq for Int64" $ do
-      prop "SEq for Int64 should work" (concreteSEqOkSpec @Int64)
+      prop "SEq for Int64 should work" (concreteSEqOkProp @Int64)
     describe "SEq for Word" $ do
-      prop "SEq for Word should work" (concreteSEqOkSpec @Word)
+      prop "SEq for Word should work" (concreteSEqOkProp @Word)
     describe "SEq for Word8" $ do
-      prop "SEq for Word8 should work" (concreteSEqOkSpec @Word8)
+      prop "SEq for Word8 should work" (concreteSEqOkProp @Word8)
     describe "SEq for Word16" $ do
-      prop "SEq for Word16 should work" (concreteSEqOkSpec @Word16)
+      prop "SEq for Word16 should work" (concreteSEqOkProp @Word16)
     describe "SEq for Word32" $ do
-      prop "SEq for Word32 should work" (concreteSEqOkSpec @Word32)
+      prop "SEq for Word32 should work" (concreteSEqOkProp @Word32)
     describe "SEq for Word64" $ do
-      prop "SEq for Word64 should work" (concreteSEqOkSpec @Word64)
+      prop "SEq for Word64 should work" (concreteSEqOkProp @Word64)
     describe "SEq for List" $ do
-      prop "SEq for concrete List should work" (concreteSEqOkSpec @[Integer])
+      prop "SEq for concrete List should work" (concreteSEqOkProp @[Integer])
       it "SEq for general List should work" $ do
         ([] :: [Bool]) ==~ [] `shouldBe` CBool True
         [SSBool "a"] ==~ [SSBool "b"] `shouldBe` Equal (SSBool "a") (SSBool "b")
@@ -84,14 +80,14 @@ spec = do
         [SSBool "a"] ==~ [] `shouldBe` CBool False
         [SSBool "a"] ==~ [SSBool "c", SSBool "d"] `shouldBe` CBool False
     describe "SEq for Maybe" $ do
-      prop "SEq for concrete Maybe should work" (concreteSEqOkSpec @(Maybe Integer))
+      prop "SEq for concrete Maybe should work" (concreteSEqOkProp @(Maybe Integer))
       it "SEq for general Maybe should work" $ do
         (Nothing :: Maybe SBool) ==~ Nothing `shouldBe` CBool True
         Just (SSBool "a") ==~ Nothing `shouldBe` CBool False
         Nothing ==~ Just (SSBool "a") `shouldBe` CBool False
         Just (SSBool "a") ==~ Just (SSBool "b") `shouldBe` Equal (SSBool "a") (SSBool "b")
     describe "SEq for Either" $ do
-      prop "SEq for concrete Either should work" (concreteSEqOkSpec @(Either Integer Integer))
+      prop "SEq for concrete Either should work" (concreteSEqOkProp @(Either Integer Integer))
       it "SEq for general Either should work" $ do
         (Left (SSBool "a") :: Either SBool SBool) ==~ Left (SSBool "b")
           `shouldBe` Equal (SSBool "a") (SSBool "b")
@@ -100,7 +96,7 @@ spec = do
         (Right (SSBool "a") :: Either SBool SBool) ==~ Right (SSBool "b")
           `shouldBe` Equal (SSBool "a") (SSBool "b")
     describe "SEq for MaybeT" $ do
-      prop "SEq for concrete MaybeT should work" (concreteSEqOkSpec @(MaybeT Maybe Integer) . bimap MaybeT MaybeT)
+      prop "SEq for concrete MaybeT should work" (concreteSEqOkProp @(MaybeT Maybe Integer) . bimap MaybeT MaybeT)
       it "SEq for general MaybeT should work" $ do
         (MaybeT Nothing :: MaybeT Maybe SBool) ==~ MaybeT Nothing `shouldBe` CBool True
         (MaybeT Nothing :: MaybeT Maybe SBool) ==~ MaybeT (Just Nothing) `shouldBe` CBool False
@@ -113,7 +109,7 @@ spec = do
         MaybeT (Just (Just (SSBool "a"))) ==~ (MaybeT (Just (Just (SSBool "b"))) :: MaybeT Maybe SBool)
           `shouldBe` Equal (SSBool "a") (SSBool "b")
     describe "SEq for ExceptT" $ do
-      prop "SEq for concrete ExceptT should work" (concreteSEqOkSpec @(ExceptT Integer Maybe Integer) . bimap ExceptT ExceptT)
+      prop "SEq for concrete ExceptT should work" (concreteSEqOkProp @(ExceptT Integer Maybe Integer) . bimap ExceptT ExceptT)
       it "SEq for general ExceptT should work" $ do
         (ExceptT Nothing :: ExceptT SBool Maybe SBool) ==~ ExceptT Nothing `shouldBe` CBool True
         (ExceptT Nothing :: ExceptT SBool Maybe SBool) ==~ ExceptT (Just (Left (SSBool "a"))) `shouldBe` CBool False
@@ -129,21 +125,21 @@ spec = do
         ExceptT (Just (Right (SSBool "a"))) ==~ (ExceptT (Just (Right (SSBool "b"))) :: ExceptT SBool Maybe SBool)
           `shouldBe` Equal (SSBool "a") (SSBool "b")
     describe "SEq for ()" $ do
-      prop "SEq for () should work" (concreteSEqOkSpec @())
+      prop "SEq for () should work" (concreteSEqOkProp @())
     describe "SEq for (,)" $ do
-      prop "SEq for concrete (,) should work" (concreteSEqOkSpec @(Integer, Integer))
+      prop "SEq for concrete (,) should work" (concreteSEqOkProp @(Integer, Integer))
       it "SEq for general (,) should work" $ do
         (SSBool "a", SSBool "c") ==~ (SSBool "b", SSBool "d")
           `shouldBe` And (Equal (SSBool "a") (SSBool "b")) (Equal (SSBool "c") (SSBool "d"))
     describe "SEq for (,,)" $ do
-      prop "SEq for concrete (,,) should work" (concreteSEqOkSpec @(Integer, Integer, Integer))
+      prop "SEq for concrete (,,) should work" (concreteSEqOkProp @(Integer, Integer, Integer))
       it "SEq for general (,,) should work" $ do
         (SSBool "a", SSBool "c", SSBool "e") ==~ (SSBool "b", SSBool "d", SSBool "f")
           `shouldBe` And
             (Equal (SSBool "a") (SSBool "b"))
             (And (Equal (SSBool "c") (SSBool "d")) (Equal (SSBool "e") (SSBool "f")))
     describe "SEq for (,,,)" $ do
-      prop "SEq for concrete (,,,) should work" (concreteSEqOkSpec @(Integer, Integer, Integer, Integer))
+      prop "SEq for concrete (,,,) should work" (concreteSEqOkProp @(Integer, Integer, Integer, Integer))
       it "SEq for general (,,,) should work" $ do
         (SSBool "a", SSBool "c", SSBool "e", SSBool "g") ==~ (SSBool "b", SSBool "d", SSBool "f", SSBool "h")
           `shouldBe` And
@@ -156,7 +152,7 @@ spec = do
                 (Equal (SSBool "g") (SSBool "h"))
             )
     describe "SEq for (,,,,)" $ do
-      prop "SEq for concrete (,,,,) should work" (concreteSEqOkSpec @(Integer, Integer, Integer, Integer, Integer))
+      prop "SEq for concrete (,,,,) should work" (concreteSEqOkProp @(Integer, Integer, Integer, Integer, Integer))
       it "SEq for general (,,,,) should work" $ do
         (SSBool "a", SSBool "c", SSBool "e", SSBool "g", SSBool "i")
           ==~ (SSBool "b", SSBool "d", SSBool "f", SSBool "h", SSBool "j")
@@ -173,7 +169,7 @@ spec = do
                 )
             )
     describe "SEq for (,,,,,)" $ do
-      prop "SEq for concrete (,,,,,) should work" (concreteSEqOkSpec @(Integer, Integer, Integer, Integer, Integer, Integer))
+      prop "SEq for concrete (,,,,,) should work" (concreteSEqOkProp @(Integer, Integer, Integer, Integer, Integer, Integer))
       it "SEq for general (,,,,,) should work" $ do
         (SSBool "a", SSBool "c", SSBool "e", SSBool "g", SSBool "i", SSBool "k")
           ==~ (SSBool "b", SSBool "d", SSBool "f", SSBool "h", SSBool "j", SSBool "l")
@@ -193,7 +189,7 @@ spec = do
                 )
             )
     describe "SEq for (,,,,,,)" $ do
-      prop "SEq for concrete (,,,,,,) should work" (concreteSEqOkSpec @(Integer, Integer, Integer, Integer, Integer, Integer, Integer))
+      prop "SEq for concrete (,,,,,,) should work" (concreteSEqOkProp @(Integer, Integer, Integer, Integer, Integer, Integer, Integer))
       it "SEq for general (,,,,,) should work" $ do
         (SSBool "a", SSBool "c", SSBool "e", SSBool "g", SSBool "i", SSBool "k", SSBool "m")
           ==~ (SSBool "b", SSBool "d", SSBool "f", SSBool "h", SSBool "j", SSBool "l", SSBool "n")
@@ -218,7 +214,7 @@ spec = do
     describe "SEq for (,,,,,,,)" $ do
       prop
         "SEq for concrete (,,,,,,,) should work"
-        (concreteSEqOkSpec @(Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer))
+        (concreteSEqOkProp @(Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer))
       it "SEq for general (,,,,,,) should work" $ do
         (SSBool "a", SSBool "c", SSBool "e", SSBool "g", SSBool "i", SSBool "k", SSBool "m", SSBool "o")
           ==~ (SSBool "b", SSBool "d", SSBool "f", SSBool "h", SSBool "j", SSBool "l", SSBool "n", SSBool "p")
@@ -254,7 +250,7 @@ spec = do
             let eitherToSum :: Either (Maybe Integer) (Maybe Integer) -> Sum Maybe Maybe Integer
                 eitherToSum (Left x) = InL x
                 eitherToSum (Right x) = InR x
-             in concreteSEqOkSpec (bimap eitherToSum eitherToSum v)
+             in concreteSEqOkProp (bimap eitherToSum eitherToSum v)
         )
       it "SEq for general Sum should work" $ do
         (InL $ Just $ SSBool "a" :: Sum Maybe Maybe SBool) ==~ InL (Just $ SSBool "b")
@@ -267,12 +263,12 @@ spec = do
       prop
         "SEq for concrete Lazy WriterT should work"
         ( \(v1 :: Either Integer (Integer, Integer), v2 :: Either Integer (Integer, Integer)) ->
-            concreteSEqOkSpec (WriterLazy.WriterT v1, WriterLazy.WriterT v2)
+            concreteSEqOkProp (WriterLazy.WriterT v1, WriterLazy.WriterT v2)
         )
       prop
         "SEq for concrete Strict WriterT should work"
         ( \(v1 :: Either Integer (Integer, Integer), v2 :: Either Integer (Integer, Integer)) ->
-            concreteSEqOkSpec (WriterStrict.WriterT v1, WriterStrict.WriterT v2)
+            concreteSEqOkProp (WriterStrict.WriterT v1, WriterStrict.WriterT v2)
         )
       it "SEq for general Lazy WriterT should work" $ do
         (WriterLazy.WriterT (Left $ SSBool "a") :: WriterLazy.WriterT SBool (Either SBool) SBool)
@@ -297,14 +293,14 @@ spec = do
     describe "SEq for Identity" $ do
       prop
         "SEq for concrete Identity should work"
-        (\(v1 :: Integer, v2) -> concreteSEqOkSpec (Identity v1, Identity v2))
+        (\(v1 :: Integer, v2) -> concreteSEqOkProp (Identity v1, Identity v2))
       it "SEq for general IdentityT should work" $ do
         (Identity $ SSBool "a" :: Identity SBool) ==~ Identity (SSBool "b")
           `shouldBe` Equal (SSBool "a") (SSBool "b")
     describe "SEq for IdentityT" $ do
       prop
         "SEq for concrete IdentityT should work"
-        (\(v1 :: Either Integer Integer, v2) -> concreteSEqOkSpec (IdentityT v1, IdentityT v2))
+        (\(v1 :: Either Integer Integer, v2) -> concreteSEqOkProp (IdentityT v1, IdentityT v2))
       it "SEq for general IdentityT should work" $ do
         (IdentityT $ Left $ SSBool "a" :: IdentityT (Either SBool) SBool) ==~ IdentityT (Left $ SSBool "b")
           `shouldBe` Equal (SSBool "a") (SSBool "b")

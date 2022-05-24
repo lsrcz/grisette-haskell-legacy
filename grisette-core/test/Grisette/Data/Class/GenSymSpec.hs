@@ -9,8 +9,8 @@ import Grisette.Control.Monad.Union
 import Grisette.Control.Monad.UnionMBase
 import Grisette.Data.Class.GenSym
 import Grisette.Data.Class.SimpleMergeable
+import Grisette.TestUtils.SBool
 import Test.Hspec
-import Utils.SBool
 
 spec :: Spec
 spec = do

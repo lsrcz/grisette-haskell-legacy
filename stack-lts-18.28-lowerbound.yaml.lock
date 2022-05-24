@@ -277,6 +277,41 @@ packages:
       sha256: 4629996e2e8b5bfd5fbd231fb72e2bf68fbeca2c36071f44a90c4310ea73ad01
   original:
     hackage: th-compat-0.1.2
+- completed:
+    hackage: hspec-2.7.8@sha256:d9c8e3a8ff5f8d38eb7ab95aac0b50215def0071de091335dcab2f6e0324f226,1709
+    pantry-tree:
+      size: 583
+      sha256: 68cfb48dcf32e6a12ed9abb36a15e54c94c46f32e665f771ea3642dbf4ba2a7d
+  original:
+    hackage: hspec-2.7.8
+- completed:
+    hackage: hspec-core-2.7.8@sha256:cf7b487eba15177bdf85fcc0871aab8811964fcf570e52bd08aa3c7a30055742,4768
+    pantry-tree:
+      size: 3799
+      sha256: c34db55bd7c647ceeaa690139a3484cb0de3b03bab06a90424f22f0a1afc3a49
+  original:
+    hackage: hspec-core-2.7.8
+- completed:
+    hackage: hspec-discover-2.7.8@sha256:d2a4c026af0878d9da5f67fbe8928b93798eab51a807171b59c43a164feb72ed,2183
+    pantry-tree:
+      size: 1131
+      sha256: 37a471f0da39cbe11800584eb6c744374cf4756d32ae9477627d86403650f1a2
+  original:
+    hackage: hspec-discover-2.7.8
+- completed:
+    hackage: QuickCheck-2.14.1@sha256:843e6428c2d80656a0cbff61929d3924e8b450841b6dfba463d0b3f41a48265c,8006
+    pantry-tree:
+      size: 2315
+      sha256: 543c1e661669b7235d3846b08ad3d1f6f6cba0d81c285dbfc15a28e148a347ed
+  original:
+    hackage: QuickCheck-2.14.1
+- completed:
+    hackage: hspec-junit-formatter-1.0.0.0@sha256:b8675a71fb44d0e4546a4caa5fba92b370b35e076dcd13b9c6474508ed15b497,1954
+    pantry-tree:
+      size: 510
+      sha256: 71ad7eb752ce8ce38ff4aafa717885ec7259ee8a1a643fa122ff6ceed86c08ef
+  original:
+    hackage: hspec-junit-formatter-1.0.0.0
 snapshots:
 - completed:
     size: 590100

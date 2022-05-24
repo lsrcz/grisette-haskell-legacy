@@ -6,8 +6,6 @@
 
 module Grisette.Data.Class.MergeableSpec where
 
-import Control.Monad.Coroutine
-import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Monad.Except
 import Control.Monad.Identity
 import Control.Monad.Reader
@@ -25,48 +23,12 @@ import Grisette.Control.Monad.UnionMBase
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.Class.UnionOp
 import Test.Hspec
 import Test.Hspec.QuickCheck
-import Utils.SBool
+import Grisette.TestUtils.SBool
+import Grisette.TestUtils.Mergeable
 import Data.Int
 import Data.Word
-
-testMergeableSimpleEquivClass ::
-  (HasCallStack, Mergeable SBool x, Show x, Eq x) => x -> [DynamicOrderedIdx] -> [(SBool, x, x, x)] -> Expectation
-testMergeableSimpleEquivClass x idxs cases = do
-  let (idxsT, s) = resolveStrategy @SBool mergeStrategy x
-  case s of
-    SimpleStrategy m -> do
-      idxsT `shouldBe` idxs
-      go cases
-      where
-        go [] = return ()
-        go ((c, t, f, r) : xs) = do
-          fst (resolveStrategy @SBool mergeStrategy t) `shouldBe` idxs
-          fst (resolveStrategy @SBool mergeStrategy f) `shouldBe` idxs
-          fst (resolveStrategy @SBool mergeStrategy r) `shouldBe` idxs
-          m c t f `shouldBe` r
-          go xs
-    _ -> expectationFailure $ "Bad strategy type for " ++ show x
-
-testMergeableSimpleEquivClass' ::
-  (HasCallStack, Mergeable SBool x, Show y, Eq y) => (x -> y) -> x -> [DynamicOrderedIdx] -> [(SBool, x, x, x)] -> Expectation
-testMergeableSimpleEquivClass' vis x idxs cases = do
-  let (idxsT, s) = resolveStrategy @SBool mergeStrategy x
-  case s of
-    SimpleStrategy m -> do
-      idxsT `shouldBe` idxs
-      go cases
-      where
-        go [] = return ()
-        go ((c, t, f, r) : xs) = do
-          fst (resolveStrategy @SBool mergeStrategy t) `shouldBe` idxs
-          fst (resolveStrategy @SBool mergeStrategy f) `shouldBe` idxs
-          fst (resolveStrategy @SBool mergeStrategy r) `shouldBe` idxs
-          vis (m c t f) `shouldBe` vis r
-          go xs
-    _ -> expectationFailure $ "Bad strategy type for " ++ show (vis x)
 
 spec :: Spec
 spec = do
@@ -573,49 +535,7 @@ spec = do
               InR $ Just $ ITE (SSBool "a") (SSBool "b") (SSBool "c")
             )
           ]
-    describe "Mergeable for Coroutine" $ do
-      prop "Mergeable for Yield Integer Integer should work" $ \(x :: Integer, y :: Integer) -> do
-        testMergeableSimpleEquivClass'
-          (\(Yield a b) -> (a, b))
-          (Yield x y)
-          [DynamicOrderedIdx x, DynamicOrderedIdx y]
-          [(SSBool "a", Yield x y, Yield x y, Yield x y)]
-      it "Mergeable for Yield SBool SBool should work" $ do
-        testMergeableSimpleEquivClass'
-          (\(Yield a b) -> (a, b))
-          (Yield (SSBool "a") (SSBool "b"))
-          []
-          [ ( SSBool "a",
-              Yield (SSBool "b") (SSBool "c"),
-              Yield (SSBool "d") (SSBool "e"),
-              Yield (ITE (SSBool "a") (SSBool "b") (SSBool "d")) (ITE (SSBool "a") (SSBool "c") (SSBool "e"))
-            )
-          ]
-      it "Mergeable for Await SBool SBool should work" $ do
-        let SimpleStrategy s = mergeStrategy :: MergeStrategy SBool (Await SBool SBool)
-        let a1 = Await Not
-        let a2 = Await (And (SSBool "a"))
-        let Await a3 = s (SSBool "b") a1 a2
-        a3 (SSBool "c") `shouldBe` ITE (SSBool "b") (Not (SSBool "c")) (And (SSBool "a") (SSBool "c"))
-      it "Mergeable for Request SBool SBool SBool should work" $ do
-        let SimpleStrategy s = mergeStrategy :: MergeStrategy SBool (Request SBool SBool SBool)
-        let a1 = Request (SSBool "a") Not
-        let a2 = Request (SSBool "b") (And (SSBool "c"))
-        let Request v3 a3 = s (SSBool "d") a1 a2
-        v3 `shouldBe` ITE (SSBool "d") (SSBool "a") (SSBool "b")
-        a3 (SSBool "e") `shouldBe` ITE (SSBool "d") (Not (SSBool "e")) (And (SSBool "c") (SSBool "e"))
-      it "Mergeable for Coroutine should work" $ do
-        let SimpleStrategy s = mergeStrategy :: MergeStrategy SBool (Coroutine (Yield SBool) (UnionMBase SBool) SBool)
-        let a1 :: Coroutine (Yield SBool) (UnionMBase SBool) SBool =
-              Coroutine (mrgReturn (Left (Yield (SSBool "a") (Coroutine (mrgReturn (Right $ SSBool "b"))))))
-        let a2 :: Coroutine (Yield SBool) (UnionMBase SBool) SBool =
-              Coroutine (mrgReturn (Left (Yield (SSBool "c") (Coroutine (mrgReturn (Right $ SSBool "d"))))))
-        let Coroutine r = s (SSBool "e") a1 a2
-        case r of
-          SingleU (Left (Yield x (Coroutine (SingleU (Right y))))) -> do
-            x `shouldBe` ITE (SSBool "e") (SSBool "a") (SSBool "c")
-            y `shouldBe` ITE (SSBool "e") (SSBool "b") (SSBool "d")
-          _ -> expectationFailure "Bad shape"
+    
     describe "Mergeable for Ordering" $ do
       it "Mergeable for Ordering should work" $ do
         testMergeableSimpleEquivClass

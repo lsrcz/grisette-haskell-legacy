@@ -2,8 +2,6 @@
 
 module Grisette.Control.Monad.UnionSpec where
 
-import Control.Monad.Coroutine hiding (merge)
-import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Monad.Except hiding (guard)
 import Control.Monad.Identity hiding (guard)
 import Control.Monad.Reader hiding (guard)
@@ -17,7 +15,7 @@ import Grisette.Control.Monad.UnionMBase
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.UnionOp
 import Test.Hspec
-import Utils.SBool
+import Grisette.TestUtils.SBool
 
 spec :: Spec
 spec = do
@@ -61,38 +59,7 @@ spec = do
           ( mrgReturn $ Right $ ITE (SSBool "a") (SSBool "b") (SSBool "c") ::
               UnionMBase SBool (Either SBool SBool)
           )
-  describe "MonadUnion for Coroutine" $ do
-    it "merge should work" $ do
-      let Coroutine v =
-            merge
-              ( Coroutine $
-                  guard
-                    (SSBool "a")
-                    (single $ Left $ Yield (SSBool "b") $ Coroutine $ single $ Right $ SSBool "c")
-                    (single $ Left $ Yield (SSBool "d") $ Coroutine $ single $ Right $ SSBool "e") ::
-                  Coroutine (Yield SBool) (UnionMBase SBool) SBool
-              )
-      case v of
-        SingleU (Left (Yield x (Coroutine (SingleU (Right y))))) -> do
-          x `shouldBe` ITE (SSBool "a") (SSBool "b") (SSBool "d")
-          y `shouldBe` ITE (SSBool "a") (SSBool "c") (SSBool "e")
-        _ -> expectationFailure "Failed to merge Coroutine"
-    it "mrgReturn should work" $ do
-      case (mrgReturn 1 :: Coroutine (Yield SBool) (UnionMBase SBool) Integer) of
-        Coroutine (SingleU (Right 1)) -> return ()
-        _ -> expectationFailure "mrgReturn for Coroutine is not working"
-    it "mrgIf should work" $ do
-      let Coroutine v =
-            mrgIf
-              (SSBool "a")
-              (Coroutine $ single $ Left $ Yield (SSBool "b") $ Coroutine $ single $ Right $ SSBool "c")
-              (Coroutine $ single $ Left $ Yield (SSBool "d") $ Coroutine $ single $ Right $ SSBool "e") ::
-              Coroutine (Yield SBool) (UnionMBase SBool) SBool
-      case v of
-        SingleU (Left (Yield x (Coroutine (SingleU (Right y))))) -> do
-          x `shouldBe` ITE (SSBool "a") (SSBool "b") (SSBool "d")
-          y `shouldBe` ITE (SSBool "a") (SSBool "c") (SSBool "e")
-        _ -> expectationFailure "Failed to merge Coroutine"
+  
   describe "MonadUnion for StateT lazy" $ do
     it "merge should work" $ do
       let s :: StateLazy.StateT SBool (UnionMBase SBool) SBool =

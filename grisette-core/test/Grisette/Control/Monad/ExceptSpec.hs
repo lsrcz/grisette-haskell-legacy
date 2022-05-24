@@ -6,7 +6,7 @@ import Grisette.Control.Monad.Union
 import Grisette.Control.Monad.UnionMBase
 import Grisette.Data.Class.UnionOp
 import Test.Hspec
-import Utils.SBool
+import Grisette.TestUtils.SBool
 
 spec :: Spec
 spec = do

@@ -32,6 +32,7 @@ resolver:
 packages:
   - grisette-symir
   - grisette-core
+  - grisette-monad-coroutine
   - grisette-lib
   - grisette-examples
   - grisette-benchmarks
@@ -91,6 +92,11 @@ extra-deps:
   - template-haskell-2.16.0.0
   - loch-th-0.2.2
   - th-compat-0.1.2
+  - hspec-2.7.8
+  - hspec-core-2.7.8
+  - hspec-discover-2.7.8
+  - QuickCheck-2.14.1
+  - hspec-junit-formatter-1.0.0.0
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

@@ -25,7 +25,7 @@ import Grisette.Data.Class.ToSym
 import Grisette.Data.Class.UnionOp
 import Grisette.Data.UnionBase
 import Test.Hspec
-import Utils.SBool
+import Grisette.TestUtils.SBool
 
 spec :: Spec
 spec = do

@@ -15,13 +15,11 @@ import qualified Data.HashMap.Strict as M
 import Grisette.Data.Class.Evaluate
 import Test.Hspec
 import Test.Hspec.QuickCheck
-import Utils.SBool
+import Grisette.TestUtils.SBool
+import Grisette.TestUtils.Evaluate
 import Control.Monad.Identity
 import Data.Int
 import Data.Word
-
-concreteEvaluateOkSpec :: (HasCallStack, Evaluate (M.HashMap Symbol Bool) a, Show a, Eq a) => a -> Expectation
-concreteEvaluateOkSpec x = evaluate True (M.empty :: M.HashMap Symbol Bool) x `shouldBe` x
 
 spec :: Spec
 spec = do
@@ -70,35 +68,35 @@ spec = do
         evaluate True model (Not (SSBool "a")) `shouldBe` CBool False
         evaluate True model (ITE (SSBool "a") (SSBool "b") (SSBool "c")) `shouldBe` CBool False
     describe "Evaluate for Bool" $ do
-      prop "Evaluate for Bool should work" (concreteEvaluateOkSpec @Bool)
+      prop "Evaluate for Bool should work" (concreteEvaluateOkProp @Bool)
     describe "Evaluate for Integer" $ do
-      prop "Evaluate for Integer should work" (concreteEvaluateOkSpec @Integer)
+      prop "Evaluate for Integer should work" (concreteEvaluateOkProp @Integer)
     describe "Evaluate for Char" $ do
-      prop "Evaluate for Char should work" (concreteEvaluateOkSpec @Char)
+      prop "Evaluate for Char should work" (concreteEvaluateOkProp @Char)
 
     describe "Evaluate for Int" $ do
-      prop "Evaluate for Int should work" (concreteEvaluateOkSpec @Int)
+      prop "Evaluate for Int should work" (concreteEvaluateOkProp @Int)
     describe "Evaluate for Int8" $ do
-      prop "Evaluate for Int8 should work" (concreteEvaluateOkSpec @Int8)
+      prop "Evaluate for Int8 should work" (concreteEvaluateOkProp @Int8)
     describe "Evaluate for Int16" $ do
-      prop "Evaluate for Int16 should work" (concreteEvaluateOkSpec @Int16)
+      prop "Evaluate for Int16 should work" (concreteEvaluateOkProp @Int16)
     describe "Evaluate for Int32" $ do
-      prop "Evaluate for Int32 should work" (concreteEvaluateOkSpec @Int32)
+      prop "Evaluate for Int32 should work" (concreteEvaluateOkProp @Int32)
     describe "Evaluate for Int64" $ do
-      prop "Evaluate for Int64 should work" (concreteEvaluateOkSpec @Int64)
+      prop "Evaluate for Int64 should work" (concreteEvaluateOkProp @Int64)
     describe "Evaluate for Word" $ do
-      prop "Evaluate for Word should work" (concreteEvaluateOkSpec @Word)
+      prop "Evaluate for Word should work" (concreteEvaluateOkProp @Word)
     describe "Evaluate for Word8" $ do
-      prop "Evaluate for Word8 should work" (concreteEvaluateOkSpec @Word8)
+      prop "Evaluate for Word8 should work" (concreteEvaluateOkProp @Word8)
     describe "Evaluate for Word16" $ do
-      prop "Evaluate for Word16 should work" (concreteEvaluateOkSpec @Word16)
+      prop "Evaluate for Word16 should work" (concreteEvaluateOkProp @Word16)
     describe "Evaluate for Word32" $ do
-      prop "Evaluate for Word32 should work" (concreteEvaluateOkSpec @Word32)
+      prop "Evaluate for Word32 should work" (concreteEvaluateOkProp @Word32)
     describe "Evaluate for Word64" $ do
-      prop "Evaluate for Word64 should work" (concreteEvaluateOkSpec @Word64)
+      prop "Evaluate for Word64 should work" (concreteEvaluateOkProp @Word64)
 
     describe "Evaluate for List" $ do
-      prop "Evaluate for concrete List should work" (concreteEvaluateOkSpec @[Integer])
+      prop "Evaluate for concrete List should work" (concreteEvaluateOkProp @[Integer])
       it "Evaluate for List should work" $ do
         let model =
               M.fromList
@@ -111,7 +109,7 @@ spec = do
         evaluate False model [SSBool "a", SSBool "b", SSBool "c"] `shouldBe` [CBool True, CBool False, SSBool "c"]
         evaluate True model [SSBool "a", SSBool "b", SSBool "c"] `shouldBe` [CBool True, CBool False, CBool False]
     describe "Evaluate for Maybe" $ do
-      prop "Evaluate for concrete Maybe should work" (concreteEvaluateOkSpec @(Maybe Integer))
+      prop "Evaluate for concrete Maybe should work" (concreteEvaluateOkProp @(Maybe Integer))
       it "Evaluate for Maybe should work" $ do
         let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
         evaluate False model (Nothing :: Maybe SBool) `shouldBe` Nothing
@@ -121,7 +119,7 @@ spec = do
         evaluate False model (Just (SSBool "b")) `shouldBe` Just (SSBool "b")
         evaluate True model (Just (SSBool "b")) `shouldBe` Just (CBool False)
     describe "Evaluate for Either" $ do
-      prop "Evaluate for concrete Either should work" (concreteEvaluateOkSpec @(Either Integer Integer))
+      prop "Evaluate for concrete Either should work" (concreteEvaluateOkProp @(Either Integer Integer))
       it "Evaluate for Either should work" $ do
         let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
         evaluate False model (Left (SSBool "a") :: Either SBool SBool) `shouldBe` Left (CBool True)
@@ -133,7 +131,7 @@ spec = do
         evaluate False model (Right (SSBool "b") :: Either SBool SBool) `shouldBe` Right (SSBool "b")
         evaluate True model (Right (SSBool "b") :: Either SBool SBool) `shouldBe` Right (CBool False)
     describe "Evaluate for MaybeT" $ do
-      prop "Evaluate for concrete MaybeT should work" (concreteEvaluateOkSpec @(MaybeT Maybe Integer) . MaybeT)
+      prop "Evaluate for concrete MaybeT should work" (concreteEvaluateOkProp @(MaybeT Maybe Integer) . MaybeT)
       it "Evaluate for MaybeT should work" $ do
         let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
         evaluate False model (MaybeT Nothing :: MaybeT Maybe SBool) `shouldBe` MaybeT Nothing
@@ -145,7 +143,7 @@ spec = do
         evaluate False model (MaybeT $ Just $ Just $ SSBool "b") `shouldBe` MaybeT (Just (Just (SSBool "b")))
         evaluate True model (MaybeT $ Just $ Just $ SSBool "b") `shouldBe` MaybeT (Just (Just (CBool False)))
     describe "Evaluate for ExceptT" $ do
-      prop "Evaluate for concrete ExceptT should work" (concreteEvaluateOkSpec @(ExceptT Integer Maybe Integer) . ExceptT)
+      prop "Evaluate for concrete ExceptT should work" (concreteEvaluateOkProp @(ExceptT Integer Maybe Integer) . ExceptT)
       it "Evaluate for MaybeT should work" $ do
         let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
         evaluate False model (ExceptT Nothing :: ExceptT SBool Maybe SBool) `shouldBe` ExceptT Nothing
@@ -169,21 +167,21 @@ spec = do
         evaluate True model (ExceptT $ Just $ Right $ SSBool "b" :: ExceptT SBool Maybe SBool)
           `shouldBe` ExceptT (Just $ Right $ CBool False)
     describe "Evaluate for ()" $ do
-      prop "Evaluate for () should work" (concreteEvaluateOkSpec @())
+      prop "Evaluate for () should work" (concreteEvaluateOkProp @())
     describe "Evaluate for (,)" $ do
-      prop "Evaluate for concrete (,) should work" (concreteEvaluateOkSpec @(Integer, Integer))
+      prop "Evaluate for concrete (,) should work" (concreteEvaluateOkProp @(Integer, Integer))
       it "Evaluate for (,) should work" $ do
         let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
         evaluate False model (SSBool "a", SSBool "b") `shouldBe` (CBool True, SSBool "b")
         evaluate True model (SSBool "a", SSBool "b") `shouldBe` (CBool True, CBool False)
     describe "Evaluate for (,,)" $ do
-      prop "Evaluate for concrete (,,) should work" (concreteEvaluateOkSpec @(Integer, Integer, Integer))
+      prop "Evaluate for concrete (,,) should work" (concreteEvaluateOkProp @(Integer, Integer, Integer))
       it "Evaluate for (,,) should work" $ do
         let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
         evaluate False model (SSBool "a", SSBool "b", SSBool "c") `shouldBe` (CBool True, SSBool "b", SSBool "c")
         evaluate True model (SSBool "a", SSBool "b", SSBool "c") `shouldBe` (CBool True, CBool False, CBool False)
     describe "Evaluate for (,,,)" $ do
-      prop "Evaluate for concrete (,,,) should work" (concreteEvaluateOkSpec @(Integer, Integer, Integer, Integer))
+      prop "Evaluate for concrete (,,,) should work" (concreteEvaluateOkProp @(Integer, Integer, Integer, Integer))
       it "Evaluate for (,,,) should work" $ do
         let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
         evaluate False model (SSBool "a", SSBool "b", SSBool "c", SSBool "d")
@@ -193,7 +191,7 @@ spec = do
     describe "Evaluate for (,,,,)" $ do
       prop
         "Evaluate for concrete (,,,,) should work"
-        (concreteEvaluateOkSpec @(Integer, Integer, Integer, Integer, Integer))
+        (concreteEvaluateOkProp @(Integer, Integer, Integer, Integer, Integer))
       it "Evaluate for (,,,,) should work" $ do
         let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
         evaluate False model (SSBool "a", SSBool "b", SSBool "c", SSBool "d", SSBool "e")
@@ -203,7 +201,7 @@ spec = do
     describe "Evaluate for (,,,,,)" $ do
       prop
         "Evaluate for concrete (,,,,,) should work"
-        (concreteEvaluateOkSpec @(Integer, Integer, Integer, Integer, Integer, Integer))
+        (concreteEvaluateOkProp @(Integer, Integer, Integer, Integer, Integer, Integer))
       it "Evaluate for (,,,,,) should work" $ do
         let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
         evaluate False model (SSBool "a", SSBool "b", SSBool "c", SSBool "d", SSBool "e", SSBool "f")
@@ -213,7 +211,7 @@ spec = do
     describe "Evaluate for (,,,,,,)" $ do
       prop
         "Evaluate for concrete (,,,,,,) should work"
-        (concreteEvaluateOkSpec @(Integer, Integer, Integer, Integer, Integer, Integer, Integer))
+        (concreteEvaluateOkProp @(Integer, Integer, Integer, Integer, Integer, Integer, Integer))
       it "Evaluate for (,,,,,,) should work" $ do
         let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
         evaluate
@@ -229,7 +227,7 @@ spec = do
     describe "Evaluate for (,,,,,,,)" $ do
       prop
         "Evaluate for concrete (,,,,,,,) should work"
-        (concreteEvaluateOkSpec @(Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer))
+        (concreteEvaluateOkProp @(Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer))
       it "Evaluate for (,,,,,,,) should work" $ do
         let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
         evaluate
@@ -253,8 +251,8 @@ spec = do
       prop
         "Evaluate for concrete Sum should work"
         ( \(x :: Either (Maybe Integer) (Maybe Integer)) -> case x of
-            Left val -> concreteEvaluateOkSpec @(Sum Maybe Maybe Integer) $ InL val
-            Right val -> concreteEvaluateOkSpec @(Sum Maybe Maybe Integer) $ InR val
+            Left val -> concreteEvaluateOkProp @(Sum Maybe Maybe Integer) $ InL val
+            Right val -> concreteEvaluateOkProp @(Sum Maybe Maybe Integer) $ InR val
         )
       it "Evaluate for Sum should work" $ do
         let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
@@ -274,7 +272,7 @@ spec = do
         evaluate True model (InR (Just $ SSBool "b") :: Sum Maybe Maybe SBool) `shouldBe` InR (Just $ CBool False)
     describe "Evaluate for WriterT" $ do
       prop "Evaluate for concrete Lazy WriterT should work"
-        (\(x :: Either Integer (Integer, Integer)) -> concreteEvaluateOkSpec (WriterLazy.WriterT x))
+        (\(x :: Either Integer (Integer, Integer)) -> concreteEvaluateOkProp (WriterLazy.WriterT x))
       it "Evaluate for general Lazy WriteT should work" $ do
         let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
         evaluate False model (WriterLazy.WriterT $ Left $ SSBool "a" :: WriterLazy.WriterT SBool (Either SBool) SBool)
@@ -291,7 +289,7 @@ spec = do
         evaluate True model (WriterLazy.WriterT $ Right (SSBool "a", SSBool "b")  :: WriterLazy.WriterT SBool (Either SBool) SBool)
           `shouldBe` WriterLazy.WriterT (Right (CBool True, CBool False))
       prop "Evaluate for concrete Strict WriterT should work"
-        (\(x :: Either Integer (Integer, Integer)) -> concreteEvaluateOkSpec (WriterStrict.WriterT x))
+        (\(x :: Either Integer (Integer, Integer)) -> concreteEvaluateOkProp (WriterStrict.WriterT x))
       it "Evaluate for general Strict WriteT should work" $ do
         let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
         evaluate False model (WriterStrict.WriterT $ Left $ SSBool "a" :: WriterStrict.WriterT SBool (Either SBool) SBool)
@@ -309,7 +307,7 @@ spec = do
           `shouldBe` WriterStrict.WriterT (Right (CBool True, CBool False))
     describe "Evaluate for Identity" $ do
       prop "Evaluate for concrete Identity should work" $
-        (\(x :: Integer) -> concreteEvaluateOkSpec $ Identity x)
+        (\(x :: Integer) -> concreteEvaluateOkProp $ Identity x)
       it "Evaluate for general Identity should work" $ do
         let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
         evaluate False model (Identity $ SSBool "a") `shouldBe` Identity (CBool True)
@@ -318,7 +316,7 @@ spec = do
         evaluate True model (Identity $ SSBool "b") `shouldBe` Identity (CBool False)
     describe "Evaluate for IdentityT" $ do
       prop "Evaluate for concrete IdentityT should work"
-        (\(x :: Either Integer Integer) -> concreteEvaluateOkSpec $ IdentityT x)
+        (\(x :: Either Integer Integer) -> concreteEvaluateOkProp $ IdentityT x)
       it "Evaluate for general IdentityT should work" $ do
         let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
         evaluate False model (IdentityT $ Left $ SSBool "a" :: IdentityT (Either SBool) SBool)

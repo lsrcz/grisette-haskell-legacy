@@ -7,7 +7,8 @@
 module Grisette.Data.Class.ExtractSymbolicsSpec where
 import Test.Hspec
 import qualified Data.HashSet as S
-import Utils.SBool
+import Grisette.TestUtils.SBool
+import Grisette.TestUtils.ExtractSymbolics
 import Grisette.Data.Class.ExtractSymbolics
 import Control.Monad.Trans.Maybe
 import Control.Monad.Except
@@ -22,9 +23,6 @@ import Data.Int
 import Data.Word
 
 data A = A1 | A2 SBool | A3 SBool SBool deriving (Generic, Show, Eq) deriving (ExtractSymbolics (S.HashSet Symbol)) via (Default A)
-
-concreteExtractSymbolicsOkSpec :: (HasCallStack, ExtractSymbolics (S.HashSet Symbol) a) => (a, a) -> Expectation
-concreteExtractSymbolicsOkSpec x = extractSymbolics x `shouldBe` (S.empty :: S.HashSet Symbol)
 
 spec :: Spec
 spec = do
@@ -42,19 +40,19 @@ spec = do
       extractSymbolics (ITE (SSBool "a") (ISBool 1 "b") (SSBool "c")) `shouldBe`
         S.fromList [SSymbol "a", ISymbol 1 "b", SSymbol "c"]
       extractSymbolics (Not $ ISBool 1 "a") `shouldBe` S.singleton (ISymbol 1 "a")
-    prop "ExtractSymbolics for Bool" (concreteExtractSymbolicsOkSpec @Bool)
-    prop "ExtractSymbolics for Integer" (concreteExtractSymbolicsOkSpec @Integer)
-    prop "ExtractSymbolics for Char" (concreteExtractSymbolicsOkSpec @Char)
-    prop "ExtractSymbolics for Int" (concreteExtractSymbolicsOkSpec @Int)
-    prop "ExtractSymbolics for Int8" (concreteExtractSymbolicsOkSpec @Int8)
-    prop "ExtractSymbolics for Int16" (concreteExtractSymbolicsOkSpec @Int16)
-    prop "ExtractSymbolics for Int32" (concreteExtractSymbolicsOkSpec @Int32)
-    prop "ExtractSymbolics for Int64" (concreteExtractSymbolicsOkSpec @Int64)
-    prop "ExtractSymbolics for Word" (concreteExtractSymbolicsOkSpec @Word)
-    prop "ExtractSymbolics for Word8" (concreteExtractSymbolicsOkSpec @Word8)
-    prop "ExtractSymbolics for Word16" (concreteExtractSymbolicsOkSpec @Word16)
-    prop "ExtractSymbolics for Word32" (concreteExtractSymbolicsOkSpec @Word32)
-    prop "ExtractSymbolics for Word64" (concreteExtractSymbolicsOkSpec @Word64)
+    prop "ExtractSymbolics for Bool" (concreteExtractSymbolicsOkProp @Bool)
+    prop "ExtractSymbolics for Integer" (concreteExtractSymbolicsOkProp @Integer)
+    prop "ExtractSymbolics for Char" (concreteExtractSymbolicsOkProp @Char)
+    prop "ExtractSymbolics for Int" (concreteExtractSymbolicsOkProp @Int)
+    prop "ExtractSymbolics for Int8" (concreteExtractSymbolicsOkProp @Int8)
+    prop "ExtractSymbolics for Int16" (concreteExtractSymbolicsOkProp @Int16)
+    prop "ExtractSymbolics for Int32" (concreteExtractSymbolicsOkProp @Int32)
+    prop "ExtractSymbolics for Int64" (concreteExtractSymbolicsOkProp @Int64)
+    prop "ExtractSymbolics for Word" (concreteExtractSymbolicsOkProp @Word)
+    prop "ExtractSymbolics for Word8" (concreteExtractSymbolicsOkProp @Word8)
+    prop "ExtractSymbolics for Word16" (concreteExtractSymbolicsOkProp @Word16)
+    prop "ExtractSymbolics for Word32" (concreteExtractSymbolicsOkProp @Word32)
+    prop "ExtractSymbolics for Word64" (concreteExtractSymbolicsOkProp @Word64)
     it "ExtractSymbolics for List" $ do
       extractSymbolics ([] :: [SBool]) `shouldBe` (S.empty :: S.HashSet Symbol)
       extractSymbolics [SSBool "a"] `shouldBe` S.singleton (SSymbol "a")
@@ -83,7 +81,7 @@ spec = do
       extractSymbolics (WriterStrict.WriterT Nothing :: WriterStrict.WriterT SBool Maybe SBool) `shouldBe` (S.empty :: S.HashSet Symbol)
       extractSymbolics (WriterStrict.WriterT (Just (SSBool "a", SSBool "b")) :: WriterStrict.WriterT SBool Maybe SBool) `shouldBe`
         S.fromList [SSymbol "a", SSymbol "b"]
-    prop "ExtractSymbolics for ()" (concreteExtractSymbolicsOkSpec @())
+    prop "ExtractSymbolics for ()" (concreteExtractSymbolicsOkProp @())
     it "ExtractSymbolics for (,)" $ do
       extractSymbolics (SSBool "a", SSBool "b") `shouldBe` S.fromList [SSymbol "a", SSymbol "b"]
     it "ExtractSymbolics for ByteString" $ do

@@ -10,7 +10,8 @@ import Data.Functor.Sum
 import Grisette.Data.Class.ToSym
 import Test.Hspec
 import Test.Hspec.QuickCheck
-import Utils.SBool
+import Grisette.TestUtils.SBool
+import Grisette.TestUtils.ToSym
 import Control.Monad.Reader
 import qualified Control.Monad.State.Lazy as StateLazy
 import qualified Control.Monad.State.Strict as StateStrict
@@ -19,9 +20,6 @@ import qualified Control.Monad.Writer.Strict as WriterStrict
 import Control.Monad.Identity
 import Data.Int
 import Data.Word
-
-toSymForConcreteProp :: (HasCallStack, ToSym v v, Show v, Eq v) => v -> Expectation
-toSymForConcreteProp v = toSym v `shouldBe` v
 
 spec :: Spec
 spec = do
@@ -43,59 +41,59 @@ spec = do
               ]
         traverse_ (\v -> toSym v `shouldBe` v) sbools
     describe "ToSym for Bool" $ do
-      prop "ToSym for Bool to Bool should be id" $ toSymForConcreteProp @Bool
+      prop "ToSym for Bool to Bool should be id" $ toSymForConcreteOkProp @Bool
     describe "ToSym for Integer" $ do
-      prop "ToSym for Integer to Integer should be id" $ toSymForConcreteProp @Integer
+      prop "ToSym for Integer to Integer should be id" $ toSymForConcreteOkProp @Integer
     describe "ToSym for Char" $ do
-      prop "ToSym for Char to Char should be id" $ toSymForConcreteProp @Char
+      prop "ToSym for Char to Char should be id" $ toSymForConcreteOkProp @Char
 
     describe "ToSym for Int" $ do
-      prop "ToSym for Int to Int should be id" $ toSymForConcreteProp @Int
+      prop "ToSym for Int to Int should be id" $ toSymForConcreteOkProp @Int
     describe "ToSym for Int8" $ do
-      prop "ToSym for Int8 to Int8 should be id" $ toSymForConcreteProp @Int8
+      prop "ToSym for Int8 to Int8 should be id" $ toSymForConcreteOkProp @Int8
     describe "ToSym for Int16" $ do
-      prop "ToSym for Int16 to Int16 should be id" $ toSymForConcreteProp @Int16
+      prop "ToSym for Int16 to Int16 should be id" $ toSymForConcreteOkProp @Int16
     describe "ToSym for Int32" $ do
-      prop "ToSym for Int32 to Int32 should be id" $ toSymForConcreteProp @Int32
+      prop "ToSym for Int32 to Int32 should be id" $ toSymForConcreteOkProp @Int32
     describe "ToSym for Int64" $ do
-      prop "ToSym for Int64 to Int64 should be id" $ toSymForConcreteProp @Int64
+      prop "ToSym for Int64 to Int64 should be id" $ toSymForConcreteOkProp @Int64
     describe "ToSym for Word" $ do
-      prop "ToSym for Word to Word should be id" $ toSymForConcreteProp @Word
+      prop "ToSym for Word to Word should be id" $ toSymForConcreteOkProp @Word
     describe "ToSym for Word8" $ do
-      prop "ToSym for Word8 to Word8 should be id" $ toSymForConcreteProp @Word8
+      prop "ToSym for Word8 to Word8 should be id" $ toSymForConcreteOkProp @Word8
     describe "ToSym for Word16" $ do
-      prop "ToSym for Word16 to Word16 should be id" $ toSymForConcreteProp @Word16
+      prop "ToSym for Word16 to Word16 should be id" $ toSymForConcreteOkProp @Word16
     describe "ToSym for Word32" $ do
-      prop "ToSym for Word32 to Word32 should be id" $ toSymForConcreteProp @Word32
+      prop "ToSym for Word32 to Word32 should be id" $ toSymForConcreteOkProp @Word32
     describe "ToSym for Word64" $ do
-      prop "ToSym for Word64 to Word64 should be id" $ toSymForConcreteProp @Word64
+      prop "ToSym for Word64 to Word64 should be id" $ toSymForConcreteOkProp @Word64
 
     describe "ToSym for ()" $ do
-      prop "ToSym for () to () should be id" $ toSymForConcreteProp @()
+      prop "ToSym for () to () should be id" $ toSymForConcreteOkProp @()
     describe "ToSym for ByteString" $ do
       prop "ToSym for ByteString to ByteString should be id" $
-        \(v :: String) -> toSymForConcreteProp (C.pack v)
+        \(v :: String) -> toSymForConcreteOkProp (C.pack v)
     describe "ToSym for List" $ do
       prop "ToSym for concrete List to concrete List should be id" $
-        toSymForConcreteProp @[Integer]
+        toSymForConcreteOkProp @[Integer]
       it "ToSym for general List should work" $ do
         toSym ([] :: [Bool]) `shouldBe` ([] :: [SBool])
         toSym ([True, False] :: [Bool]) `shouldBe` ([CBool True, CBool False] :: [SBool])
     describe "ToSym for Maybe" $ do
       prop "ToSym for concrete Maybe to concrete Maybe should be id" $
-        toSymForConcreteProp @(Maybe Integer)
+        toSymForConcreteOkProp @(Maybe Integer)
       it "ToSym for general Maybe should work" $ do
         toSym (Nothing :: Maybe Bool) `shouldBe` (Nothing :: Maybe SBool)
         toSym (Just True :: Maybe Bool) `shouldBe` (Just $ CBool True :: Maybe SBool)
     describe "ToSym for Either" $ do
       prop "ToSym for concrete Either to concrete Either should be id" $
-        toSymForConcreteProp @(Either Integer Integer)
+        toSymForConcreteOkProp @(Either Integer Integer)
       it "ToSym for general Either should work" $ do
         toSym (Left True :: Either Bool Bool) `shouldBe` (Left $ CBool True :: Either SBool SBool)
         toSym (Right True :: Either Bool Bool) `shouldBe` (Right $ CBool True :: Either SBool SBool)
     describe "ToSym for MaybeT" $ do
       prop "ToSym for concrete MaybeT to concrete MaybeT should be id" $
-        \(v :: Maybe (Maybe Integer)) -> toSymForConcreteProp $ MaybeT v
+        \(v :: Maybe (Maybe Integer)) -> toSymForConcreteOkProp $ MaybeT v
       it "ToSym for general MaybeT should work" $ do
         toSym (MaybeT Nothing :: MaybeT Maybe Bool) `shouldBe` (MaybeT Nothing :: MaybeT Maybe SBool)
         toSym (MaybeT $ Just Nothing :: MaybeT Maybe Bool) `shouldBe` (MaybeT $ Just Nothing :: MaybeT Maybe SBool)
@@ -103,7 +101,7 @@ spec = do
           `shouldBe` (MaybeT $ Just $ Just $ CBool True :: MaybeT Maybe SBool)
     describe "ToSym for ExceptT" $ do
       prop "ToSym for concrete ExceptT to concrete ExceptT should be id" $
-        \(v :: Maybe (Either Integer Integer)) -> toSymForConcreteProp $ ExceptT v
+        \(v :: Maybe (Either Integer Integer)) -> toSymForConcreteOkProp $ ExceptT v
       it "ToSym for general ExceptT should work" $ do
         toSym (ExceptT Nothing :: ExceptT Bool Maybe Bool) `shouldBe` (ExceptT Nothing :: ExceptT SBool Maybe SBool)
         toSym (ExceptT $ Just $ Left True :: ExceptT Bool Maybe Bool)
@@ -112,47 +110,47 @@ spec = do
           `shouldBe` (ExceptT $ Just $ Right $ CBool False :: ExceptT SBool Maybe SBool)
     describe "ToSym for (,)" $ do
       prop "ToSym for concrete (,) to concrete (,) should be id" $
-        toSymForConcreteProp @(Integer, Integer)
+        toSymForConcreteOkProp @(Integer, Integer)
       it "ToSym for general (,) should work" $
         toSym (True, False) `shouldBe` (CBool True, CBool False)
     describe "ToSym for (,,)" $ do
       prop "ToSym for concrete (,,) to concrete (,,) should be id" $
-        toSymForConcreteProp @(Integer, Integer, Integer)
+        toSymForConcreteOkProp @(Integer, Integer, Integer)
       it "ToSym for general (,,) should work" $
         toSym (True, False, True) `shouldBe` (CBool True, CBool False, CBool True)
     describe "ToSym for (,,,)" $ do
       prop "ToSym for concrete (,,,) to concrete (,,,) should be id" $
-        toSymForConcreteProp @(Integer, Integer, Integer, Integer)
+        toSymForConcreteOkProp @(Integer, Integer, Integer, Integer)
       it "ToSym for general (,,,) should work" $
         toSym (True, False, True, False) `shouldBe` (CBool True, CBool False, CBool True, CBool False)
     describe "ToSym for (,,,,)" $ do
       prop "ToSym for concrete (,,,,) to concrete (,,,,) should be id" $
-        toSymForConcreteProp @(Integer, Integer, Integer, Integer, Integer)
+        toSymForConcreteOkProp @(Integer, Integer, Integer, Integer, Integer)
       it "ToSym for general (,,,,) should work" $
         toSym (True, False, True, False, True) `shouldBe` (CBool True, CBool False, CBool True, CBool False, CBool True)
     describe "ToSym for (,,,,,)" $ do
       prop "ToSym for concrete (,,,,,) to concrete (,,,,,) should be id" $
-        toSymForConcreteProp @(Integer, Integer, Integer, Integer, Integer, Integer)
+        toSymForConcreteOkProp @(Integer, Integer, Integer, Integer, Integer, Integer)
       it "ToSym for general (,,,,,) should work" $
         toSym (True, False, True, False, True, False)
           `shouldBe` (CBool True, CBool False, CBool True, CBool False, CBool True, CBool False)
     describe "ToSym for (,,,,,,)" $ do
       prop "ToSym for concrete (,,,,,,) to concrete (,,,,,,) should be id" $
-        toSymForConcreteProp @(Integer, Integer, Integer, Integer, Integer, Integer, Integer)
+        toSymForConcreteOkProp @(Integer, Integer, Integer, Integer, Integer, Integer, Integer)
       it "ToSym for general (,,,,,,) should work" $
         toSym (True, False, True, False, True, False, True)
           `shouldBe` (CBool True, CBool False, CBool True, CBool False, CBool True, CBool False, CBool True)
     describe "ToSym for (,,,,,,,)" $ do
       prop "ToSym for concrete (,,,,,,,) to concrete (,,,,,,,) should be id" $
-        toSymForConcreteProp @(Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer)
+        toSymForConcreteOkProp @(Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer)
       it "ToSym for general (,,,,,,,) should work" $
         toSym (True, False, True, False, True, False, True, False)
           `shouldBe` (CBool True, CBool False, CBool True, CBool False, CBool True, CBool False, CBool True, CBool False)
     describe "ToSym for Sum" $ do
       prop "ToSym for concrete Sum to concrete Sum should be id" $ \(x :: Either (Maybe Integer) (Either Integer Integer)) ->
         case x of
-          Left v -> toSymForConcreteProp @(Sum Maybe (Either Integer) Integer) (InL v)
-          Right v -> toSymForConcreteProp @(Sum Maybe (Either Integer) Integer) (InR v)
+          Left v -> toSymForConcreteOkProp @(Sum Maybe (Either Integer) Integer) (InL v)
+          Right v -> toSymForConcreteOkProp @(Sum Maybe (Either Integer) Integer) (InR v)
       it "ToSym for generic Sum should work" $ do
         toSym (InL $ Just True :: Sum Maybe (Either Bool) Bool)
           `shouldBe` (InL $ Just $ CBool True :: Sum Maybe (Either SBool) SBool)
@@ -208,13 +206,13 @@ spec = do
         (runReaderT (toSym st) x :: Either SBool SBool) == toSym (func f) x
     describe "ToSym for Identity" $ do
       prop "ToSym for concrete Identity to concrete Identity should be id" $
-        toSymForConcreteProp @(Identity Integer)
+        toSymForConcreteOkProp @(Identity Integer)
       it "ToSym for general Identity should work" $ do
         toSym (Identity True :: Identity Bool)
           `shouldBe` (Identity $ CBool True :: Identity SBool)
     describe "ToSym for IdentityT" $ do
       prop "ToSym for concrete IdentityT to concrete IdentityT should be id" $ \x ->
-        toSymForConcreteProp @(IdentityT Maybe Integer) (IdentityT x)
+        toSymForConcreteOkProp @(IdentityT Maybe Integer) (IdentityT x)
       it "ToSym for general IdentityT should work" $ do
         toSym (IdentityT (Just True) :: IdentityT Maybe Bool)
           `shouldBe` (IdentityT $ Just $ CBool True :: IdentityT Maybe SBool)

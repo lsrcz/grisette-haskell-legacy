@@ -9,7 +9,7 @@ import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.UnionOp
 import Grisette.Data.Foldable
 import Test.Hspec
-import Utils.SBool
+import Grisette.TestUtils.SBool
 
 spec :: Spec
 spec = do

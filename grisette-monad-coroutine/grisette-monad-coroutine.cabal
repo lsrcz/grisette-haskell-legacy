@@ -1,0 +1,76 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.34.4.
+--
+-- see: https://github.com/sol/hpack
+
+name:           grisette-monad-coroutine
+version:        0.1.0.0
+synopsis:       Support for monad-coroutine package with Grisette
+description:    Orphan instances and wrappers for monad-coroutine package with Grisette
+category:       Formal Methods, Theorem Provers, Symbolic Computation, SMT
+homepage:       https://github.com/lsrcz/grisette-haskell#readme
+bug-reports:    https://github.com/lsrcz/grisette-haskell/issues
+author:         Sirui Lu
+maintainer:     siruilu@uw.edu
+copyright:      2021 Sirui Lu
+license:        BSD3
+build-type:     Simple
+
+source-repository head
+  type: git
+  location: https://github.com/lsrcz/grisette-haskell
+
+flag fast
+  description: Compile with O2 optimization
+  manual: False
+  default: True
+
+library
+  exposed-modules:
+      Grisette.Lib.Control.Monad.Coroutine
+      Grisette.Lib.Control.Monad.Coroutine.SuspensionFunctors
+      Grisette.Lib.MonadCoroutine
+  other-modules:
+      Paths_grisette_monad_coroutine
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -ferror-spans
+  build-depends:
+      base >4.14 && <5
+    , grisette-core ==0.1.0.0
+    , monad-coroutine >=0.9.0.4
+    , mtl >=2.2.2
+    , transformers >=0.5.6.2
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
+  default-language: Haskell2010
+
+test-suite spec
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      Grisette.Lib.Control.Monad.Coroutine.SuspensionFunctorsSpec
+      Grisette.Lib.Control.Monad.CoroutineSpec
+      Spec
+      Paths_grisette_monad_coroutine
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -ferror-spans
+  build-depends:
+      base >4.14 && <5
+    , grisette-core
+    , grisette-monad-coroutine
+    , hspec ==2.*
+    , hspec-junit-formatter
+    , monad-coroutine >=0.9.0.4
+    , mtl >=2.2.2
+    , transformers >=0.5.6.2
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
+  default-language: Haskell2010
+  build-tool-depends: hspec-discover:hspec-discover == 2.*

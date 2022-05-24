@@ -29,6 +29,7 @@ module Grisette.Data.Class.Mergeable
     -- withMergeable,
     derivedMergeStrategy,
     wrapMergeStrategy,
+    wrapMergeStrategy2,
     DynamicOrderedIdx (..),
     StrategyList (..),
     buildStrategyList,
@@ -37,8 +38,6 @@ module Grisette.Data.Class.Mergeable
   )
 where
 
-import Control.Monad.Coroutine hiding (merge)
-import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Monad.Except
 import Control.Monad.Identity
 import Control.Monad.Reader
@@ -588,45 +587,6 @@ instance
 
 instance (SymBoolOp bool, Mergeable1 bool m, Mergeable bool e) => Mergeable1 bool (ExceptT e m) where
   liftMergeStrategy m = wrapMergeStrategy (liftMergeStrategy (liftMergeStrategy m)) ExceptT runExceptT
-
--- Coroutine
-instance
-  (SymBoolOp bool, Mergeable1 bool m, Mergeable bool a, Mergeable1 bool sus) =>
-  Mergeable bool (Coroutine sus m a)
-  where
-  mergeStrategy =
-    wrapMergeStrategy
-      (liftMergeStrategy (liftMergeStrategy2 mergeStrategy1 mergeStrategy))
-      Coroutine
-      (\(Coroutine v) -> v)
-
-instance (SymBoolOp bool, Mergeable1 bool m, Mergeable1 bool sus) => Mergeable1 bool (Coroutine sus m) where
-  liftMergeStrategy m =
-    wrapMergeStrategy
-      (liftMergeStrategy (liftMergeStrategy2 (liftMergeStrategy (liftMergeStrategy m)) m))
-      Coroutine
-      (\(Coroutine v) -> v)
-
-instance (SymBoolOp bool, Mergeable bool x, Mergeable bool y) => Mergeable bool (Yield x y) where
-  mergeStrategy = wrapMergeStrategy2 Yield (\(Yield x y) -> (x, y)) mergeStrategy mergeStrategy
-
-instance (SymBoolOp bool, Mergeable bool x) => Mergeable1 bool (Yield x) where
-  liftMergeStrategy = wrapMergeStrategy2 Yield (\(Yield x y) -> (x, y)) mergeStrategy
-
-instance (SymBoolOp bool, Mergeable bool x, Mergeable bool y) => Mergeable bool (Await x y) where
-  mergeStrategy = wrapMergeStrategy mergeStrategy Await (\(Await x) -> x)
-
-instance (SymBoolOp bool, Mergeable bool x) => Mergeable1 bool (Await x) where
-  liftMergeStrategy m = wrapMergeStrategy (liftMergeStrategy m) Await (\(Await x) -> x)
-
-instance
-  (SymBoolOp bool, Mergeable bool req, Mergeable bool res, Mergeable bool x) =>
-  Mergeable bool (Request req res x)
-  where
-  mergeStrategy = wrapMergeStrategy2 Request (\(Request x y) -> (x, y)) mergeStrategy mergeStrategy
-
-instance (SymBoolOp bool, Mergeable bool req, Mergeable bool res) => Mergeable1 bool (Request req res) where
-  liftMergeStrategy m = wrapMergeStrategy2 Request (\(Request x y) -> (x, y)) mergeStrategy (liftMergeStrategy m)
 
 -- state
 instance

@@ -46,6 +46,7 @@ module Grisette.Core
     MergeStrategy (..),
     derivedMergeStrategy,
     wrapMergeStrategy,
+    wrapMergeStrategy2,
     Mergeable (..),
     Mergeable1 (..),
     Mergeable2 (..),

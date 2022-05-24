@@ -8,7 +8,7 @@ import Grisette.Control.Monad.UnionMBase
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.UnionOp
 import Test.Hspec
-import Utils.SBool
+import Grisette.TestUtils.SBool
 import Control.Monad.Trans.Maybe
 
 spec :: Spec

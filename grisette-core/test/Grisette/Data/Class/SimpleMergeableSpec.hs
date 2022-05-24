@@ -8,11 +8,8 @@ import Grisette.Control.Monad.Union
 import Grisette.Control.Monad.UnionMBase
 import Grisette.Data.Class.SimpleMergeable
 import Test.Hspec
-import Utils.SBool
-import Control.Monad.Coroutine
-import Control.Monad.Coroutine.SuspensionFunctors
+import Grisette.TestUtils.SBool
 import Grisette.Data.Class.Bool
-import Grisette.Data.Class.UnionOp
 import Control.Monad.Reader
 import qualified Control.Monad.State.Lazy as StateLazy
 import qualified Control.Monad.State.Strict as StateStrict
@@ -139,30 +136,6 @@ spec = do
               )
       it "SimpleMergeable for ExceptT should work" $ do
         mrgIte (SSBool "a") l r `shouldBe` res
-    describe "SimpleMergeable for Coroutine" $ do
-      let a1 :: Coroutine (Yield SBool) (UnionMBase SBool) SBool =
-            Coroutine (mrgReturn (Left (Yield (SSBool "a") (Coroutine (mrgReturn (Right $ SSBool "b"))))))
-      let a2 :: Coroutine (Yield SBool) (UnionMBase SBool) SBool =
-            Coroutine (mrgReturn (Left (Yield (SSBool "c") (Coroutine (mrgReturn (Right $ SSBool "d"))))))
-      let Coroutine r = mrgIte (SSBool "e") a1 a2
-      let Coroutine r1 = mrgIte1 (SSBool "e") a1 a2
-      let Coroutine ru1 = mrgIf (SSBool "e") a1 a2
-      it "SimpleMergeable for ExceptT should work" $ do
-        case r of
-          SingleU (Left (Yield x (Coroutine (SingleU (Right y))))) -> do
-            x `shouldBe` ITE (SSBool "e") (SSBool "a") (SSBool "c")
-            y `shouldBe` ITE (SSBool "e") (SSBool "b") (SSBool "d")
-          _ -> expectationFailure "Bad shape"
-        case r1 of
-          SingleU (Left (Yield x (Coroutine (SingleU (Right y))))) -> do
-            x `shouldBe` ITE (SSBool "e") (SSBool "a") (SSBool "c")
-            y `shouldBe` ITE (SSBool "e") (SSBool "b") (SSBool "d")
-          _ -> expectationFailure "Bad shape"
-        case ru1 of
-          SingleU (Left (Yield x (Coroutine (SingleU (Right y))))) -> do
-            x `shouldBe` ITE (SSBool "e") (SSBool "a") (SSBool "c")
-            y `shouldBe` ITE (SSBool "e") (SSBool "b") (SSBool "d")
-          _ -> expectationFailure "Bad shape"
     describe "SimpleMergeable for StateT" $ do
       it "SimpleMergeable for lazy StateT should work" $ do
         let st1 :: StateLazy.StateT Integer (UnionMBase SBool) SBool =

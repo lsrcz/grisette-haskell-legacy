@@ -3,7 +3,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Utils.SBool where
+module Grisette.TestUtils.SBool where
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.PrimWrapper
 import qualified Data.HashSet as S

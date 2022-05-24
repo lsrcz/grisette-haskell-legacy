@@ -11,7 +11,6 @@ module Grisette.Data.Class.ExtractSymbolics
   )
 where
 
-import Control.Monad.Coroutine
 import Control.Monad.Except
 import qualified Control.Monad.Writer.Lazy as WriterLazy
 import qualified Control.Monad.Writer.Strict as WriterStrict
@@ -139,13 +138,6 @@ instance
   ExtractSymbolics symbolSet (ExceptT e m a)
   where
   extractSymbolics (ExceptT v) = extractSymbolics v
-
--- Coroutine
-instance
-  (Monoid symbolSet, ExtractSymbolics symbolSet (m (Either (sus (Coroutine sus m a)) a))) =>
-  ExtractSymbolics symbolSet (Coroutine sus m a)
-  where
-  extractSymbolics (Coroutine v) = extractSymbolics v
 
 -- Sum
 deriving via

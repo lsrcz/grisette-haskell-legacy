@@ -15,7 +15,6 @@ dependencies:
 - mtl >= 2.2.2
 - transformers >= 0.5.6.2
 - generic-deriving >= 1.14.1
-- monad-coroutine >= 0.9.0.4
 - constraints >= 0.11
 - bytestring >= 0.10.12
 - unordered-containers >= 0.2.11
@@ -28,6 +27,7 @@ dependencies:
 - hashtables >= 1.2.3.4
 - loch-th >= 0.2.2
 - th-compat >= 0.1.2
+- hspec == 2.*
 
 flags: {
   fast: {
@@ -51,8 +51,11 @@ library:
 
 tests:
   spec:
-    defaults: hspec/hspec@master
     main: Main.hs
+    source-dirs: test
     dependencies:
       - grisette-core
       - hspec-junit-formatter
+    verbatim:
+      build-tool-depends:
+          hspec-discover:hspec-discover == 2.*

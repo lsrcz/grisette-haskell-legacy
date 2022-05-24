@@ -4,13 +4,6 @@ module Grisette.Lib
     symFilter,
     symTake,
     symDrop,
-    mrgSuspend,
-    mrgYield,
-    mrgMapSuspension,
-    simpleTransducer,
-    mrgWeaveYieldTransducer,
-    (|->),
-    (|>>=),
   )
 where
 

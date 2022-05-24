@@ -32,6 +32,7 @@ resolver:
 packages:
   - grisette-symir
   - grisette-core
+  - grisette-monad-coroutine
   - grisette-lib
   - grisette-examples
   - grisette-benchmarks

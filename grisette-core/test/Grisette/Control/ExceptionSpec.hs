@@ -13,7 +13,7 @@ import Grisette.Data.Class.Evaluate
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
 import Test.Hspec
-import Utils.SBool
+import Grisette.TestUtils.SBool
 import Grisette.Data.Class.Error
 import Control.Exception hiding (evaluate)
 import Control.Monad.Except

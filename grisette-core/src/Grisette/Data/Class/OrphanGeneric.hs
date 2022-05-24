@@ -4,6 +4,7 @@
 
 module Grisette.Data.Class.OrphanGeneric () where
 
+{-
 import Control.Monad.Coroutine.SuspensionFunctors
 import GHC.Generics
 
@@ -18,3 +19,4 @@ deriving instance Generic1 (Yield x)
 deriving instance Generic1 (Await x)
 
 deriving instance Generic1 (Request req res)
+-}

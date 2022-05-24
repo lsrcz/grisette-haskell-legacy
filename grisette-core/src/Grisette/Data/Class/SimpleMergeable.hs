@@ -20,7 +20,6 @@ module Grisette.Data.Class.SimpleMergeable
   )
 where
 
-import Control.Monad.Coroutine hiding (merge)
 import Control.Monad.Except
 import Control.Monad.Identity
 import Control.Monad.Reader
@@ -255,27 +254,6 @@ instance
   where
   mergeWithStrategy s (ExceptT v) = ExceptT $ mergeWithStrategy (liftMergeStrategy s) v
   mrgIfWithStrategy s cond (ExceptT t) (ExceptT f) = ExceptT $ mrgIfWithStrategy (liftMergeStrategy s) cond t f
-
-instance
-  (SymBoolOp bool, UnionMergeable1 bool m, Mergeable bool a, Mergeable1 bool sus) =>
-  SimpleMergeable bool (Coroutine sus m a)
-  where
-  mrgIte = mrgIf
-
-instance
-  (SymBoolOp bool, UnionMergeable1 bool m, Mergeable1 bool sus) =>
-  SimpleMergeable1 bool (Coroutine sus m)
-  where
-  liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
-
-instance
-  (SymBoolOp bool, UnionMergeable1 bool m, Mergeable1 bool sus) =>
-  UnionMergeable1 bool (Coroutine sus m)
-  where
-  mergeWithStrategy s ((Coroutine v) :: Coroutine sus m a) =
-    Coroutine $ mergeWithStrategy (liftMergeStrategy2 (liftMergeStrategy (liftMergeStrategy s)) s) v
-  mrgIfWithStrategy s cond (Coroutine t) (Coroutine f) =
-    Coroutine $ mrgIfWithStrategy (liftMergeStrategy2 (liftMergeStrategy (liftMergeStrategy s)) s) cond t f
 
 instance
   (SymBoolOp bool, Mergeable bool s, Mergeable bool a, UnionMergeable1 bool m) =>
