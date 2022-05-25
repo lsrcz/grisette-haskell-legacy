@@ -58,7 +58,7 @@ library
       MemoTrie >=0.6.10
     , array >=0.5.4.0
     , base >4.14 && <5
-    , bv-sized >=1.0.3
+    , bv-sized >=1.0.3 && <=1.0.4
     , constraints >=0.11
     , deepseq >=1.4.4
     , grisette-core ==0.1.0.0
@@ -99,7 +99,7 @@ test-suite spec
       MemoTrie >=0.6.10
     , array >=0.5.4.0
     , base >4.14 && <5
-    , bv-sized >=1.0.3
+    , bv-sized >=1.0.3 && <=1.0.4
     , constraints >=0.11
     , deepseq >=1.4.4
     , grisette-core ==0.1.0.0
