@@ -36,11 +36,13 @@ library
       Bonsai.MatchSyntaxNoMemo
       Bonsai.Pattern
       Bonsai.SyntaxSpec
+      Transducer
   other-modules:
       Paths_grisette_benchmarks
   hs-source-dirs:
       utils
       bonsai-lib
+      coroutine-lib
   default-extensions:
       BangPatterns
       ConstraintKinds
