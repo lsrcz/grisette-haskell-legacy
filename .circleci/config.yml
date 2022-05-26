@@ -18,7 +18,7 @@ jobs:
       - restore_cache:
           name: Restore Cached Dependencies
           keys:
-            - dep-{{ checksum "stack.yaml" }}-{{ checksum ".circleci/config.yml" }}-{{ checksum "grisette-core/package.yaml" }}-{{ checksum "grisette-symir/package.yaml" }}-{{ checksum "grisette-backend-sbv/package.yaml" }}-{{ checksum "grisette-lib/package.yaml" }}-{{ checksum "grisette/package.yaml" }}-{{ checksum "grisette-scratch/package.yaml" }}-{{ checksum "grisette-examples/package.yaml" }}-{{ checksum "grisette-benchmarks/package.yaml" }}-{{ checksum "grisette-backend-direct/package.yaml" }}-{{ checksum "grisette-doctest/package.yaml" }}
+            - dep-{{ checksum "stack.yaml" }}-{{ checksum ".circleci/config.yml" }}-{{ checksum "grisette/package.yaml" }}-{{ checksum "grisette-backend-direct/package.yaml" }}-{{ checksum "grisette-backend-sbv/package.yaml" }}-{{ checksum "grisette-benchmarks/package.yaml" }}-{{ checksum "grisette-core/package.yaml" }}-{{ checksum "grisette-doctest/package.yaml" }}-{{ checksum "grisette-examples/package.yaml" }}-{{ checksum "grisette-lib/package.yaml" }}-{{ checksum "grisette-monad-coroutine/package.yaml" }}-{{ checksum "grisette-scratch/package.yaml" }}-{{ checksum "grisette-symir/package.yaml" }}-{{ checksum "grisette-tutorial/package.yaml" }}-{{ checksum "grisette-vector-sized/package.yaml" }}
             - dep-{{ checksum "stack.yaml" }}
       - run:
           name: Resolve/Update Dependencies
@@ -34,7 +34,7 @@ jobs:
           name: Run tests
           command: |
             stack --stack-yaml stack.yaml --no-terminal clean
-            stack --stack-yaml stack.yaml --no-terminal test --flag grisette-core:-fast --flag grisette-examples:-fast --flag grisette-lib:-fast --flag grisette:-fast --flag grisette-scratch:-fast --flag grisette-backend-sbv:-fast --flag grisette-symir:-fast --flag grisette-benchmarks:-fast --flag grisette-tutorial:-fast --flag grisette-backend-direct:-fast --coverage
+            stack --stack-yaml stack.yaml --no-terminal test
       - store_test_results:
           path: /tmp/reports
       - run:
@@ -43,7 +43,7 @@ jobs:
       - run:
           name: Build doc
           command: |
-            stack --stack-yaml stack.yaml --no-terminal haddock --flag grisette-core:-fast --flag grisette-examples:-fast --flag grisette-lib:-fast --flag grisette:-fast --flag grisette-scratch:-fast --flag grisette-backend-sbv:-fast --flag grisette-symir:-fast --flag grisette-benchmarks:-fast --flag grisette-tutorial:-fast --flag grisette-backend-direct:-fast
+            stack --stack-yaml stack.yaml --no-terminal haddock
             rm -rf /tmp/grisette-doc
             mkdir -p /tmp/grisette-doc
             cp -r $(stack path --stack-yaml stack.yaml --local-doc-root)/grisette-* /tmp/grisette-doc
@@ -54,21 +54,23 @@ jobs:
           command: stack --stack-yaml stack.yaml --no-terminal clean
       - save_cache:
           name: Cache Dependencies
-          key: dep-{{ checksum "stack.yaml" }}-{{ checksum ".circleci/config.yml" }}-{{ checksum "grisette-core/package.yaml" }}-{{ checksum "grisette-symir/package.yaml" }}-{{ checksum "grisette-backend-sbv/package.yaml" }}-{{ checksum "grisette-lib/package.yaml" }}-{{ checksum "grisette/package.yaml" }}-{{ checksum "grisette-scratch/package.yaml" }}-{{ checksum "grisette-examples/package.yaml" }}-{{ checksum "grisette-benchmarks/package.yaml" }}-{{ checksum "grisette-backend-direct/package.yaml" }}-{{ checksum "grisette-doctest/package.yaml" }}
+          key: dep-{{ checksum "stack.yaml" }}-{{ checksum ".circleci/config.yml" }}-{{ checksum "grisette/package.yaml" }}-{{ checksum "grisette-backend-direct/package.yaml" }}-{{ checksum "grisette-backend-sbv/package.yaml" }}-{{ checksum "grisette-benchmarks/package.yaml" }}-{{ checksum "grisette-core/package.yaml" }}-{{ checksum "grisette-doctest/package.yaml" }}-{{ checksum "grisette-examples/package.yaml" }}-{{ checksum "grisette-lib/package.yaml" }}-{{ checksum "grisette-monad-coroutine/package.yaml" }}-{{ checksum "grisette-scratch/package.yaml" }}-{{ checksum "grisette-symir/package.yaml" }}-{{ checksum "grisette-tutorial/package.yaml" }}-{{ checksum "grisette-vector-sized/package.yaml" }}
           paths:
             - "/root/.stack"
             - ".stack-work"
-            - "grisette-core/.stack-work"
-            - "grisette-symir/.stack-work"
-            - "grisette-backend-sbv/.stack-work"
-            - "grisette-backend-direct/.stack-work"
-            - "grisette-lib/.stack-work"
             - "grisette/.stack-work"
-            - "grisette-examples/.stack-work"
-            - "grisette-scratch/.stack-work"
+            - "grisette-backend-direct/.stack-work"
+            - "grisette-backend-sbv/.stack-work"
             - "grisette-benchmarks/.stack-work"
-            - "grisette-tutorial/.stack-work"
+            - "grisette-core/.stack-work"
             - "grisette-doctest/.stack-work"
+            - "grisette-examples/.stack-work"
+            - "grisette-lib/.stack-work"
+            - "grisette-monad-coroutine/.stack-work"
+            - "grisette-scratch/.stack-work"
+            - "grisette-symir/.stack-work"
+            - "grisette-tutorial/.stack-work"
+            - "grisette-vector-sized/.stack-work"
 
 workflows:
   all-tests:
