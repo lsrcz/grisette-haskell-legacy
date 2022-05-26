@@ -96,7 +96,6 @@ library
     , timeit >=0.9
     , transformers >=0.5.6.2
     , unordered-containers >=0.2.11
-    , vector-sized >=1.4.1
   if flag(fast)
     ghc-options: -O2
   else
@@ -164,7 +163,6 @@ executable bonsai-letpoly
     , timeit >=0.9
     , transformers >=0.5.6.2
     , unordered-containers >=0.2.11
-    , vector-sized >=1.4.1
   if flag(fast)
     ghc-options: -O2
   else
@@ -232,7 +230,6 @@ executable bonsai-letpoly-nomemo
     , timeit >=0.9
     , transformers >=0.5.6.2
     , unordered-containers >=0.2.11
-    , vector-sized >=1.4.1
   if flag(fast)
     ghc-options: -O2
   else
@@ -300,7 +297,6 @@ executable bonsai-nanoscala
     , timeit >=0.9
     , transformers >=0.5.6.2
     , unordered-containers >=0.2.11
-    , vector-sized >=1.4.1
   if flag(fast)
     ghc-options: -O2
   else
@@ -368,7 +364,6 @@ executable bonsai-nanoscala-nomemo
     , timeit >=0.9
     , transformers >=0.5.6.2
     , unordered-containers >=0.2.11
-    , vector-sized >=1.4.1
   if flag(fast)
     ghc-options: -O2
   else
@@ -436,7 +431,6 @@ executable bonsai-stlc
     , timeit >=0.9
     , transformers >=0.5.6.2
     , unordered-containers >=0.2.11
-    , vector-sized >=1.4.1
   if flag(fast)
     ghc-options: -O2
   else
@@ -504,7 +498,6 @@ executable bonsai-stlc-nomemo
     , timeit >=0.9
     , transformers >=0.5.6.2
     , unordered-containers >=0.2.11
-    , vector-sized >=1.4.1
   if flag(fast)
     ghc-options: -O2
   else
@@ -579,7 +572,6 @@ executable cosette
     , timeit >=0.9
     , transformers >=0.5.6.2
     , unordered-containers >=0.2.11
-    , vector-sized >=1.4.1
   if flag(fast)
     ghc-options: -O2
   else
@@ -654,7 +646,6 @@ executable cosette-optimized-merge
     , timeit >=0.9
     , transformers >=0.5.6.2
     , unordered-containers >=0.2.11
-    , vector-sized >=1.4.1
   if flag(fast)
     ghc-options: -O2
   else
@@ -728,7 +719,6 @@ executable ferrite
     , timeit >=0.9
     , transformers >=0.5.6.2
     , unordered-containers >=0.2.11
-    , vector-sized >=1.4.1
   if flag(fast)
     ghc-options: -O2
   else
@@ -795,7 +785,6 @@ executable fluidics
     , timeit >=0.9
     , transformers >=0.5.6.2
     , unordered-containers >=0.2.11
-    , vector-sized >=1.4.1
   if flag(fast)
     ghc-options: -O2
   else
@@ -867,7 +856,6 @@ executable ifcl
     , timeit >=0.9
     , transformers >=0.5.6.2
     , unordered-containers >=0.2.11
-    , vector-sized >=1.4.1
   if flag(fast)
     ghc-options: -O2
   else
@@ -934,7 +922,6 @@ executable regex
     , timeit >=0.9
     , transformers >=0.5.6.2
     , unordered-containers >=0.2.11
-    , vector-sized >=1.4.1
   if flag(fast)
     ghc-options: -O2
   else
@@ -1001,7 +988,6 @@ executable regex-nomemo
     , timeit >=0.9
     , transformers >=0.5.6.2
     , unordered-containers >=0.2.11
-    , vector-sized >=1.4.1
   if flag(fast)
     ghc-options: -O2
   else

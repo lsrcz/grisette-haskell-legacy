@@ -1,7 +1,6 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -51,12 +50,8 @@ import Data.Functor.Classes
 import Data.Functor.Sum
 import Data.Int
 import Data.Kind
-import Data.Parameterized
 import Data.Typeable
-import qualified Data.Vector.Generic as VGeneric
-import qualified Data.Vector.Generic.Sized as VSized
 import Data.Word
-import GHC.TypeLits
 import Generics.Deriving
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.OrphanGeneric ()
@@ -674,36 +669,6 @@ instance (SymBoolOp bool, Mergeable1 bool l, Mergeable1 bool r) => Mergeable1 bo
     InR _ -> True) (\case
       False -> wrapMergeStrategy (liftMergeStrategy m) InL (\(InL v) -> v)
       True -> wrapMergeStrategy (liftMergeStrategy m) InR (\(InR v) -> v))
-
--- Sized vector
-instance
-  ( SymBoolOp bool,
-    Mergeable bool t,
-    KnownNat m,
-    VGeneric.Vector v t,
-    VGeneric.Vector v (MergeStrategy bool t),
-    Typeable v,
-    Functor v,
-    Eq1 v,
-    Ord1 v,
-    Show1 v,
-    Foldable v
-  ) =>
-  Mergeable bool (VSized.Vector v m t)
-  where
-  mergeStrategy = case (isZeroOrGT1 (knownNat @m), mergeStrategy :: MergeStrategy bool t) of
-    (Left Refl, _) -> SimpleStrategy $ \_ v _ -> v
-    (Right LeqProof, SimpleStrategy m) -> SimpleStrategy $ \cond -> VSized.zipWith (m cond)
-    (Right LeqProof, OrderedStrategy _ _) ->
-      OrderedStrategy (buildStrategyList @bool mergeStrategy) $ \(StrategyList _ strategies) ->
-        let s :: VSized.Vector v m (MergeStrategy bool t) = unsafeCoerce strategies
-            allSimple = all (\case SimpleStrategy _ -> True; _ -> False) s
-         in if allSimple
-              then SimpleStrategy $ \cond l r ->
-                VSized.zipWith3 (\(SimpleStrategy f) l1 r1 -> f cond l1 r1 :: t) s l r ::
-                  VSized.Vector v m t
-              else NoStrategy
-    (Right LeqProof, NoStrategy) -> NoStrategy
 
 -- Ordering
 deriving via

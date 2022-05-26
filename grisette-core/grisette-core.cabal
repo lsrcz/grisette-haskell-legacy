@@ -86,13 +86,10 @@ library
     , hspec ==2.*
     , loch-th >=0.2.2
     , mtl >=2.2.2
-    , parameterized-utils >=2.1.4
     , template-haskell >=2.16
     , th-compat >=0.1.2
     , transformers >=0.5.6.2
     , unordered-containers >=0.2.11
-    , vector >=0.12.1.2
-    , vector-sized >=1.4.1
   if flag(fast)
     ghc-options: -O2
   else
@@ -141,13 +138,10 @@ test-suite spec
     , hspec-junit-formatter
     , loch-th >=0.2.2
     , mtl >=2.2.2
-    , parameterized-utils >=2.1.4
     , template-haskell >=2.16
     , th-compat >=0.1.2
     , transformers >=0.5.6.2
     , unordered-containers >=0.2.11
-    , vector >=0.12.1.2
-    , vector-sized >=1.4.1
   if flag(fast)
     ghc-options: -O2
   else

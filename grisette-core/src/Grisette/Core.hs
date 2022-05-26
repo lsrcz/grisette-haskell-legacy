@@ -52,6 +52,12 @@ module Grisette.Core
     Mergeable2 (..),
     mergeStrategy1,
     mergeStrategy2,
+    DynamicOrderedIdx (..),
+    StrategyList (..),
+    buildStrategyList,
+    resolveStrategy,
+    resolveStrategy',
+
     -- withMergeable,
     SimpleMergeable (..),
     SimpleMergeable1 (..),

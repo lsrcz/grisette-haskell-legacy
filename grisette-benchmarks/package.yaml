@@ -32,7 +32,6 @@ dependencies:
 - deepseq >= 1.4.4
 - Unique >= 0.4.7
 - bv-sized >= 1.0.3
-- vector-sized >= 1.4.1
 - parameterized-utils >= 2.1.4
 - either >= 5
 - hashtables >= 1.2.3.4

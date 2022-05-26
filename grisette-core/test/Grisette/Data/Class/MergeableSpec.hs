@@ -16,8 +16,6 @@ import qualified Control.Monad.Writer.Lazy as WriterLazy
 import qualified Control.Monad.Writer.Strict as WriterStrict
 import qualified Data.ByteString.Char8 as C
 import Data.Functor.Sum
-import qualified Data.Vector as V
-import qualified Data.Vector.Generic.Sized as VSized
 import Grisette.Control.Monad.Union
 import Grisette.Control.Monad.UnionMBase
 import Grisette.Data.Class.Bool
@@ -550,66 +548,3 @@ spec = do
           GT
           [DynamicOrderedIdx True, DynamicOrderedIdx True]
           [(SSBool "a", GT, GT, GT)]
-    describe "Mergeable for Sized Vector" $ do
-      it "Mergeable for Sized Vector with simple mergeable contents" $ do
-        testMergeableSimpleEquivClass
-          (VSized.cons (SSBool "a") (VSized.cons (SSBool "b") VSized.empty) :: VSized.Vector V.Vector 2 SBool)
-          []
-          [ ( SSBool "a",
-              VSized.cons (SSBool "b") (VSized.cons (SSBool "c") VSized.empty),
-              VSized.cons (SSBool "d") (VSized.cons (SSBool "e") VSized.empty),
-              VSized.cons
-                (ITE (SSBool "a") (SSBool "b") (SSBool "d"))
-                (VSized.cons (ITE (SSBool "a") (SSBool "c") (SSBool "e")) VSized.empty)
-            )
-          ]
-      it "BuildStrategyList should work for Sized Vector" $ do
-        case buildStrategyList @SBool @Integer mergeStrategy 
-          (VSized.cons 1 (VSized.cons 2 (VSized.cons 3 VSized.empty)) :: VSized.Vector V.Vector 3 Integer) of
-          StrategyList idxs _ -> do
-            idxs
-              `shouldBe` VSized.cons
-                [DynamicOrderedIdx (1 :: Integer)]
-                ( VSized.cons
-                    [DynamicOrderedIdx (2 :: Integer)]
-                    ( VSized.singleton
-                        [DynamicOrderedIdx (3 :: Integer)]
-                    )
-                )
-      prop "Mergeable for Sized Vector for ordered type should work" $ \(x, y, z) -> do
-        let v = VSized.cons x (VSized.cons y (VSized.cons z VSized.empty)) :: VSized.Vector V.Vector 3 Integer
-        testMergeableSimpleEquivClass
-          v
-          [DynamicOrderedIdx $ buildStrategyList @SBool mergeStrategy v]
-          [(SSBool "a", v, v, v)]
-      it "Mergeable for Sized Vector for complex ordered type should work" $ do
-        let v1 = VSized.cons Nothing (VSized.singleton Nothing) :: VSized.Vector V.Vector 2 (Maybe SBool)
-        let v2 = VSized.cons (Just $ SSBool "a") (VSized.singleton Nothing) :: VSized.Vector V.Vector 2 (Maybe SBool)
-        let v2' = VSized.cons (Just $ SSBool "b") (VSized.singleton Nothing) :: VSized.Vector V.Vector 2 (Maybe SBool)
-        let v3 = VSized.cons Nothing (VSized.singleton (Just $ SSBool "a")) :: VSized.Vector V.Vector 2 (Maybe SBool)
-        let v3' = VSized.cons Nothing (VSized.singleton (Just $ SSBool "b")) :: VSized.Vector V.Vector 2 (Maybe SBool)
-        let v4 = VSized.cons (Just $ SSBool "a") (VSized.singleton (Just $ SSBool "b")) :: VSized.Vector V.Vector 2 (Maybe SBool)
-        let v4' = VSized.cons (Just $ SSBool "c") (VSized.singleton (Just $ SSBool "d")) :: VSized.Vector V.Vector 2 (Maybe SBool)
-        testMergeableSimpleEquivClass
-          v1
-          [DynamicOrderedIdx $ buildStrategyList @SBool mergeStrategy v1]
-          [(SSBool "a", v1, v1, v1)]
-        testMergeableSimpleEquivClass
-          v2
-          [DynamicOrderedIdx $ buildStrategyList @SBool mergeStrategy v2]
-          [(SSBool "c", v2, v2', VSized.cons (Just $ ITE (SSBool "c") (SSBool "a") (SSBool "b")) (VSized.singleton Nothing))]
-        testMergeableSimpleEquivClass
-          v3
-          [DynamicOrderedIdx $ buildStrategyList @SBool mergeStrategy v3]
-          [(SSBool "c", v3, v3', VSized.cons Nothing (VSized.singleton (Just $ ITE (SSBool "c") (SSBool "a") (SSBool "b"))))]
-        testMergeableSimpleEquivClass
-          v4
-          [DynamicOrderedIdx $ buildStrategyList @SBool mergeStrategy v4]
-          [ ( SSBool "e",
-              v4,
-              v4',
-              VSized.cons
-                (Just $ ITE (SSBool "e") (SSBool "a") (SSBool "c"))
-                (VSized.singleton (Just $ ITE (SSBool "e") (SSBool "b") (SSBool "d")))
-            )
-          ]

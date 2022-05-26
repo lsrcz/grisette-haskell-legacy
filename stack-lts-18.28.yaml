@@ -33,6 +33,7 @@ packages:
   - grisette-symir
   - grisette-core
   - grisette-monad-coroutine
+  - grisette-vector-sized
   - grisette-lib
   - grisette-examples
   - grisette-benchmarks
