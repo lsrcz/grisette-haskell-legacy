@@ -6,7 +6,7 @@ jobs:
         type: string
     docker:
       - image: fpco/stack-build:lts
-    resource_class: medium
+    resource_class: large
     steps:
       - checkout
       - run:
