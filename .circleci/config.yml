@@ -34,7 +34,7 @@ jobs:
           name: Run tests
           command: |
             stack --stack-yaml stack.yaml --no-terminal clean
-            stack --stack-yaml stack.yaml --no-terminal test
+            stack --stack-yaml stack.yaml --no-terminal test --coverage
       - store_test_results:
           path: /tmp/reports
       - run:
