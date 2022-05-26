@@ -16,6 +16,9 @@ import qualified Control.Monad.State.Strict as StateStrict
 import qualified Control.Monad.Writer.Lazy as WriterLazy
 import qualified Control.Monad.Writer.Strict as WriterStrict
 import Control.Monad.Identity
+import Control.Monad.Cont
+import qualified Control.Monad.RWS.Lazy as RWSTLazy
+import qualified Control.Monad.RWS.Strict as RWSTStrict
 
 spec :: Spec
 spec = do
@@ -165,6 +168,77 @@ spec = do
         StateStrict.runStateT st31 3 `shouldBe` mrgIf (SSBool "c") (mrgReturn (SSBool "a", 5)) (mrgReturn (SSBool "b", 6))
         StateStrict.runStateT st3u1 2 `shouldBe` mrgReturn (ITE (SSBool "c") (SSBool "a") (SSBool "b"), 4)
         StateStrict.runStateT st3u1 3 `shouldBe` mrgIf (SSBool "c") (mrgReturn (SSBool "a", 5)) (mrgReturn (SSBool "b", 6))
+    describe "SimpleMergeable for ContT" $ do
+      it "SimpleMergeable for ContT should work" $ do
+        let c1 :: ContT (SBool, Integer) (UnionMBase SBool) (SBool, Integer) = ContT $ \f -> f (SSBool "a", 2)
+        let c2 :: ContT (SBool, Integer) (UnionMBase SBool) (SBool, Integer) = ContT $ \f -> f (SSBool "b", 3)
+        let c3 = mrgIte (SSBool "c") c1 c2
+        let c3u1 = mrgIf (SSBool "c") c1 c2
+        let r = mrgIf (SSBool "c")
+                  (mrgIf (SSBool "p") (mrgReturn (SSBool "a", 2)) (mrgReturn (Not $ SSBool "a", 3)))
+                  (mrgIf (SSBool "p") (mrgReturn (SSBool "b", 3)) (mrgReturn (Not $ SSBool "b", 4)))
+        let f = (\(a, x) -> mrgIf (SSBool "p") (mrgReturn (a, x)) (mrgReturn (nots a, x + 1))) 
+        runContT c3 f `shouldBe` r
+        runContT c3u1 f `shouldBe` r
+    describe "SimpleMergeable for RWST" $ do
+      it "SimpleMergeable for lazy RWST should work" $ do
+        let rws1 ::
+              RWSTLazy.RWST
+                (Integer, SBool)
+                (Integer, SBool)
+                (Integer, SBool)
+                (UnionMBase SBool)
+                (Integer, SBool) =
+                RWSTLazy.RWST $ \(ir, br) (is, bs) ->
+                  mrgReturn ((ir + is, br &&~ bs), (ir - is, br ||~ bs), (ir * is, bs &&~ br))
+        let rws2 ::
+              RWSTLazy.RWST
+                (Integer, SBool)
+                (Integer, SBool)
+                (Integer, SBool)
+                (UnionMBase SBool)
+                (Integer, SBool) =
+                RWSTLazy.RWST $ \(ir, br) (is, bs) ->
+                  mrgReturn ((ir + is, br ||~ bs), (ir - is, br &&~ bs), (ir * is, bs ||~ br))
+        let rws3 = mrgIte (SSBool "c") rws1 rws2
+        let rws3u1 = mrgIf (SSBool "c") rws1 rws2
+
+        let res1 :: UnionMBase SBool ((Integer, SBool), (Integer, SBool), (Integer, SBool)) =
+              mrgIf
+                (SSBool "c")
+                (mrgReturn ((1, And (SSBool "a") (SSBool "b")), (-1, Or (SSBool "a") (SSBool "b")), (0, And (SSBool "b") (SSBool "a"))))
+                (mrgReturn ((1, Or (SSBool "a") (SSBool "b")), (-1, And (SSBool "a") (SSBool "b")), (0, Or (SSBool "b") (SSBool "a"))))
+        RWSTLazy.runRWST rws3 (0, SSBool "a") (1, SSBool "b") `shouldBe` res1
+        RWSTLazy.runRWST rws3u1 (0, SSBool "a") (1, SSBool "b") `shouldBe` res1
+      it "SimpleMergeable for strict RWST should work" $ do
+        let rws1 ::
+              RWSTStrict.RWST
+                (Integer, SBool)
+                (Integer, SBool)
+                (Integer, SBool)
+                (UnionMBase SBool)
+                (Integer, SBool) =
+                RWSTStrict.RWST $ \(ir, br) (is, bs) ->
+                  mrgReturn ((ir + is, br &&~ bs), (ir - is, br ||~ bs), (ir * is, bs &&~ br))
+        let rws2 ::
+              RWSTStrict.RWST
+                (Integer, SBool)
+                (Integer, SBool)
+                (Integer, SBool)
+                (UnionMBase SBool)
+                (Integer, SBool) =
+                RWSTStrict.RWST $ \(ir, br) (is, bs) ->
+                  mrgReturn ((ir + is, br ||~ bs), (ir - is, br &&~ bs), (ir * is, bs ||~ br))
+        let rws3 = mrgIte (SSBool "c") rws1 rws2
+        let rws3u1 = mrgIf (SSBool "c") rws1 rws2
+
+        let res1 :: UnionMBase SBool ((Integer, SBool), (Integer, SBool), (Integer, SBool)) =
+              mrgIf
+                (SSBool "c")
+                (mrgReturn ((1, And (SSBool "a") (SSBool "b")), (-1, Or (SSBool "a") (SSBool "b")), (0, And (SSBool "b") (SSBool "a"))))
+                (mrgReturn ((1, Or (SSBool "a") (SSBool "b")), (-1, And (SSBool "a") (SSBool "b")), (0, Or (SSBool "b") (SSBool "a"))))
+        RWSTStrict.runRWST rws3 (0, SSBool "a") (1, SSBool "b") `shouldBe` res1
+        RWSTStrict.runRWST rws3u1 (0, SSBool "a") (1, SSBool "b") `shouldBe` res1
     describe "SimpleMergeable for WriterT" $ do
       it "SimpleMergeable for lazy WriterT should work" $ do
         let st1 :: WriterLazy.WriterT Integer (UnionMBase SBool) SBool =

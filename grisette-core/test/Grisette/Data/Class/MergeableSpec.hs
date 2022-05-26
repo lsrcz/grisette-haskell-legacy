@@ -6,8 +6,10 @@
 
 module Grisette.Data.Class.MergeableSpec where
 
+import Control.Monad.Cont
 import Control.Monad.Except
 import Control.Monad.Identity
+import qualified Control.Monad.RWS.Lazy as RWSTLazy
 import Control.Monad.Reader
 import qualified Control.Monad.State.Lazy as StateLazy
 import qualified Control.Monad.State.Strict as StateStrict
@@ -16,17 +18,18 @@ import qualified Control.Monad.Writer.Lazy as WriterLazy
 import qualified Control.Monad.Writer.Strict as WriterStrict
 import qualified Data.ByteString.Char8 as C
 import Data.Functor.Sum
+import Data.Int
+import Data.Word
 import Grisette.Control.Monad.Union
 import Grisette.Control.Monad.UnionMBase
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.SimpleMergeable
+import Grisette.TestUtils.Mergeable
+import Grisette.TestUtils.SBool
 import Test.Hspec
 import Test.Hspec.QuickCheck
-import Grisette.TestUtils.SBool
-import Grisette.TestUtils.Mergeable
-import Data.Int
-import Data.Word
+import qualified Control.Monad.RWS.Strict as RWSTStrict
 
 spec :: Spec
 spec = do
@@ -362,7 +365,8 @@ spec = do
           [(SSBool "a", MaybeT $ Just $ Just x, MaybeT $ Just $ Just x, MaybeT $ Just $ Just x)]
       it "Mergeable for MaybeT Maybe SBool should work" $ do
         let (idxsJ, SimpleStrategy fJ) =
-              resolveStrategy @SBool mergeStrategy 
+              resolveStrategy @SBool
+                mergeStrategy
                 (MaybeT (Just (Just (SSBool "a"))) :: MaybeT Maybe SBool)
         idxsJ `shouldBe` [DynamicOrderedIdx True, DynamicOrderedIdx True]
         fJ (SSBool "a") (MaybeT $ Just $ Just $ SSBool "b") (MaybeT $ Just $ Just $ SSBool "c")
@@ -383,13 +387,15 @@ spec = do
           [(SSBool "a", ExceptT $ Just $ Right x, ExceptT $ Just $ Right x, ExceptT $ Just $ Right x)]
       it "Mergeable for ExceptT SBool Maybe SBool should work" $ do
         let (idxsJL, SimpleStrategy fJL) =
-              resolveStrategy @SBool mergeStrategy 
+              resolveStrategy @SBool
+                mergeStrategy
                 (ExceptT (Just (Left (SSBool "a"))) :: ExceptT SBool Maybe SBool)
         idxsJL `shouldBe` [DynamicOrderedIdx True, DynamicOrderedIdx False]
         fJL (SSBool "a") (ExceptT $ Just $ Left $ SSBool "b") (ExceptT $ Just $ Left $ SSBool "c")
           `shouldBe` ExceptT (Just (Left (ITE (SSBool "a") (SSBool "b") (SSBool "c"))))
         let (idxsJR, SimpleStrategy fJR) =
-              resolveStrategy @SBool mergeStrategy 
+              resolveStrategy @SBool
+                mergeStrategy
                 (ExceptT (Just (Right (SSBool "a"))) :: ExceptT SBool Maybe SBool)
         idxsJR `shouldBe` [DynamicOrderedIdx True, DynamicOrderedIdx True]
         fJR (SSBool "a") (ExceptT $ Just $ Right $ SSBool "b") (ExceptT $ Just $ Right $ SSBool "c")
@@ -413,6 +419,94 @@ spec = do
         let st3 = s (SSBool "c") st1 st2
         StateStrict.runStateT st3 2 `shouldBe` mrgReturn (ITE (SSBool "c") (SSBool "a") (SSBool "b"), 4)
         StateStrict.runStateT st3 3 `shouldBe` mrgIf (SSBool "c") (mrgReturn (SSBool "a", 5)) (mrgReturn (SSBool "b", 6))
+    describe "Mergeable for ContT" $ do
+      it "Mergeable for ContT should work" $ do
+        let SimpleStrategy s = mergeStrategy :: MergeStrategy SBool (ContT (SBool, Integer) (UnionMBase SBool) (SBool, Integer))
+        let c1 :: ContT (SBool, Integer) (UnionMBase SBool) (SBool, Integer) = ContT $ \f -> f (SSBool "a", 2)
+        let c2 :: ContT (SBool, Integer) (UnionMBase SBool) (SBool, Integer) = ContT $ \f -> f (SSBool "b", 3)
+        let c3 = s (SSBool "c") c1 c2
+        runContT c3 (\(a, x) -> mrgIf (SSBool "p") (mrgReturn (a, x)) (mrgReturn (nots a, x + 1)))
+          `shouldBe` mrgIf
+            (SSBool "c")
+            (mrgIf (SSBool "p") (mrgReturn (SSBool "a", 2)) (mrgReturn (Not $ SSBool "a", 3)))
+            (mrgIf (SSBool "p") (mrgReturn (SSBool "b", 3)) (mrgReturn (Not $ SSBool "b", 4)))
+    describe "Mergeable for RWST" $ do
+      it "Mergeable for lazy RWST should work" $ do
+        let SimpleStrategy s =
+              mergeStrategy ::
+                MergeStrategy
+                  SBool
+                  ( RWSTLazy.RWST
+                      (Integer, SBool)
+                      (Integer, SBool)
+                      (Integer, SBool)
+                      (UnionMBase SBool)
+                      (Integer, SBool)
+                  )
+        let rws1 ::
+              RWSTLazy.RWST
+                (Integer, SBool)
+                (Integer, SBool)
+                (Integer, SBool)
+                (UnionMBase SBool)
+                (Integer, SBool) =
+                RWSTLazy.RWST $ \(ir, br) (is, bs) ->
+                  mrgReturn ((ir + is, br &&~ bs), (ir - is, br ||~ bs), (ir * is, bs &&~ br))
+        let rws2 ::
+              RWSTLazy.RWST
+                (Integer, SBool)
+                (Integer, SBool)
+                (Integer, SBool)
+                (UnionMBase SBool)
+                (Integer, SBool) =
+                RWSTLazy.RWST $ \(ir, br) (is, bs) ->
+                  mrgReturn ((ir + is, br ||~ bs), (ir - is, br &&~ bs), (ir * is, bs ||~ br))
+        let rws3 = s (SSBool "c") rws1 rws2
+
+        let res1 :: UnionMBase SBool ((Integer, SBool), (Integer, SBool), (Integer, SBool)) =
+              mrgIf
+                (SSBool "c")
+                (mrgReturn ((1, And (SSBool "a") (SSBool "b")), (-1, Or (SSBool "a") (SSBool "b")), (0, And (SSBool "b") (SSBool "a"))))
+                (mrgReturn ((1, Or (SSBool "a") (SSBool "b")), (-1, And (SSBool "a") (SSBool "b")), (0, Or (SSBool "b") (SSBool "a"))))
+        RWSTLazy.runRWST rws3 (0, SSBool "a") (1, SSBool "b") `shouldBe` res1
+      it "Mergeable for strict RWST should work" $ do
+        let SimpleStrategy s =
+              mergeStrategy ::
+                MergeStrategy
+                  SBool
+                  ( RWSTStrict.RWST
+                      (Integer, SBool)
+                      (Integer, SBool)
+                      (Integer, SBool)
+                      (UnionMBase SBool)
+                      (Integer, SBool)
+                  )
+        let rws1 ::
+              RWSTStrict.RWST
+                (Integer, SBool)
+                (Integer, SBool)
+                (Integer, SBool)
+                (UnionMBase SBool)
+                (Integer, SBool) =
+                RWSTStrict.RWST $ \(ir, br) (is, bs) ->
+                  mrgReturn ((ir + is, br &&~ bs), (ir - is, br ||~ bs), (ir * is, bs &&~ br))
+        let rws2 ::
+              RWSTStrict.RWST
+                (Integer, SBool)
+                (Integer, SBool)
+                (Integer, SBool)
+                (UnionMBase SBool)
+                (Integer, SBool) =
+                RWSTStrict.RWST $ \(ir, br) (is, bs) ->
+                  mrgReturn ((ir + is, br ||~ bs), (ir - is, br &&~ bs), (ir * is, bs ||~ br))
+        let rws3 = s (SSBool "c") rws1 rws2
+
+        let res1 :: UnionMBase SBool ((Integer, SBool), (Integer, SBool), (Integer, SBool)) =
+              mrgIf
+                (SSBool "c")
+                (mrgReturn ((1, And (SSBool "a") (SSBool "b")), (-1, Or (SSBool "a") (SSBool "b")), (0, And (SSBool "b") (SSBool "a"))))
+                (mrgReturn ((1, Or (SSBool "a") (SSBool "b")), (-1, And (SSBool "a") (SSBool "b")), (0, Or (SSBool "b") (SSBool "a"))))
+        RWSTStrict.runRWST rws3 (0, SSBool "a") (1, SSBool "b") `shouldBe` res1
     describe "Mergeable for WriterT" $ do
       it "Mergeable for lazy WriterT should work" $ do
         let SimpleStrategy s = mergeStrategy :: MergeStrategy SBool (WriterLazy.WriterT Integer (UnionMBase SBool) SBool)
@@ -533,7 +627,7 @@ spec = do
               InR $ Just $ ITE (SSBool "a") (SSBool "b") (SSBool "c")
             )
           ]
-    
+
     describe "Mergeable for Ordering" $ do
       it "Mergeable for Ordering should work" $ do
         testMergeableSimpleEquivClass

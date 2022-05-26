@@ -25,6 +25,8 @@ module Grisette.Data.Class.Mergeable
     mergeStrategy1,
     Mergeable2 (..),
     mergeStrategy2,
+    Mergeable3 (..),
+    mergeStrategy3,
     -- withMergeable,
     derivedMergeStrategy,
     wrapMergeStrategy,
@@ -37,8 +39,11 @@ module Grisette.Data.Class.Mergeable
   )
 where
 
+import Control.Monad.Cont
 import Control.Monad.Except
 import Control.Monad.Identity
+import qualified Control.Monad.RWS.Lazy as RWSLazy
+import qualified Control.Monad.RWS.Strict as RWSStrict
 import Control.Monad.Reader
 import qualified Control.Monad.State.Lazy as StateLazy
 import qualified Control.Monad.State.Strict as StateStrict
@@ -213,6 +218,12 @@ class Mergeable2 bool (u :: Type -> Type -> Type) where
 mergeStrategy2 :: (Mergeable bool a, Mergeable bool b, Mergeable2 bool u) => MergeStrategy bool (u a b)
 mergeStrategy2 = liftMergeStrategy2 mergeStrategy mergeStrategy
 
+class Mergeable3 bool (u :: Type -> Type -> Type -> Type) where
+  liftMergeStrategy3 :: MergeStrategy bool a -> MergeStrategy bool b -> MergeStrategy bool c -> MergeStrategy bool (u a b c)
+
+-- | Lift the root merge strategy through the binary type constructor.
+mergeStrategy3 :: (Mergeable bool a, Mergeable bool b, Mergeable bool c, Mergeable3 bool u) => MergeStrategy bool (u a b c)
+mergeStrategy3 = liftMergeStrategy3 mergeStrategy mergeStrategy mergeStrategy
 
 instance (Generic1 u, Mergeable1' bool (Rep1 u)) => Mergeable1 bool (Default1 u) where
   liftMergeStrategy = unsafeCoerce (derivedLiftMergeStrategy :: MergeStrategy bool a -> MergeStrategy bool (u a))
@@ -450,6 +461,17 @@ deriving via
   (Default1 ((,,) a b))
   instance
     (SymBoolOp bool, Mergeable bool a, Mergeable bool b) => Mergeable1 bool ((,,) a b)
+
+instance (SymBoolOp bool, Mergeable bool a) => Mergeable2 bool ((,,) a) where
+  liftMergeStrategy2 m1 m2 = liftMergeStrategy3 mergeStrategy m1 m2
+
+instance SymBoolOp bool => Mergeable3 bool (,,) where
+  liftMergeStrategy3 m1 m2 m3 =
+    wrapMergeStrategy2
+      (\a (b, c) -> (a, b, c))
+      (\(a, b, c) -> (a, (b, c)))
+      m1
+      (liftMergeStrategy2 m2 m3)
 
 -- (,,,)
 deriving via
@@ -720,3 +742,47 @@ instance (SymBoolOp bool, Mergeable1 bool m, Mergeable bool a) => Mergeable bool
 
 instance (SymBoolOp bool, Mergeable1 bool m) => Mergeable1 bool (IdentityT m) where
   liftMergeStrategy m = wrapMergeStrategy (liftMergeStrategy m) IdentityT runIdentityT
+
+-- ContT
+instance (SymBoolOp bool, Mergeable1 bool m, Mergeable bool r) => Mergeable bool (ContT r m a) where
+  mergeStrategy =
+    wrapMergeStrategy
+      (liftMergeStrategy mergeStrategy1)
+      ContT
+      (\(ContT v) -> v)
+
+instance (SymBoolOp bool, Mergeable1 bool m, Mergeable bool r) => Mergeable1 bool (ContT r m) where
+  liftMergeStrategy _ =
+    wrapMergeStrategy
+      (liftMergeStrategy mergeStrategy1)
+      ContT
+      (\(ContT v) -> v)
+
+-- RWS
+instance
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, Mergeable bool a, Mergeable1 bool m) =>
+  Mergeable bool (RWSLazy.RWST r w s m a)
+  where
+  mergeStrategy = wrapMergeStrategy (liftMergeStrategy (liftMergeStrategy mergeStrategy1)) RWSLazy.RWST (\(RWSLazy.RWST m) -> m)
+
+instance
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, Mergeable1 bool m) =>
+  Mergeable1 bool (RWSLazy.RWST r w s m) where
+  liftMergeStrategy m =
+    wrapMergeStrategy
+      (liftMergeStrategy (liftMergeStrategy (liftMergeStrategy (liftMergeStrategy3 m mergeStrategy mergeStrategy))))
+      RWSLazy.RWST (\(RWSLazy.RWST rws) -> rws)
+
+instance
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, Mergeable bool a, Mergeable1 bool m) =>
+  Mergeable bool (RWSStrict.RWST r w s m a)
+  where
+  mergeStrategy = wrapMergeStrategy (liftMergeStrategy (liftMergeStrategy mergeStrategy1)) RWSStrict.RWST (\(RWSStrict.RWST m) -> m)
+
+instance
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, Mergeable1 bool m) =>
+  Mergeable1 bool (RWSStrict.RWST r w s m) where
+  liftMergeStrategy m =
+    wrapMergeStrategy
+      (liftMergeStrategy (liftMergeStrategy (liftMergeStrategy (liftMergeStrategy3 m mergeStrategy mergeStrategy))))
+      RWSStrict.RWST (\(RWSStrict.RWST rws) -> rws)

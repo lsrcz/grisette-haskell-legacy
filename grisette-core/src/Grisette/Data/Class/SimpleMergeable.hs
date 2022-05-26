@@ -32,6 +32,9 @@ import GHC.Generics
 import Generics.Deriving
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
+import Control.Monad.Trans.Cont
+import qualified Control.Monad.RWS.Lazy as RWSLazy
+import qualified Control.Monad.RWS.Strict as RWSStrict
 
 -- | Auxiliary class for the generic derivation for the 'SimpleMergeable' class.
 class SimpleMergeable' bool f where
@@ -373,3 +376,56 @@ instance (SymBoolOp bool, UnionMergeable1 bool m) => UnionMergeable1 bool (Ident
   mergeWithStrategy ms (IdentityT f) =
     IdentityT $ mergeWithStrategy ms f
   mrgIfWithStrategy s cond (IdentityT l) (IdentityT r) = IdentityT $ mrgIfWithStrategy s cond l r
+
+instance (SymBoolOp bool, UnionMergeable1 bool m, Mergeable bool r) => SimpleMergeable bool (ContT r m a) where
+  mrgIte cond (ContT l) (ContT r) = ContT $ \c -> mrgIf cond (l c) (r c)
+
+instance (SymBoolOp bool, UnionMergeable1 bool m, Mergeable bool r) => SimpleMergeable1 bool (ContT r m) where
+  liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
+
+instance (SymBoolOp bool, UnionMergeable1 bool m, Mergeable bool r) => UnionMergeable1 bool (ContT r m) where
+  mergeWithStrategy _ (ContT f) = ContT $ \c -> merge (f c)
+  mrgIfWithStrategy _ cond (ContT l) (ContT r) = ContT $ \c -> mrgIf cond (l c) (r c)
+
+instance
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, Mergeable bool a, UnionMergeable1 bool m) =>
+  SimpleMergeable bool (RWSLazy.RWST r w s m a)
+  where
+  mrgIte = mrgIf
+
+instance
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, UnionMergeable1 bool m) =>
+  SimpleMergeable1 bool (RWSLazy.RWST r w s m)
+  where
+  liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
+
+instance
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, UnionMergeable1 bool m) =>
+  UnionMergeable1 bool (RWSLazy.RWST r w s m)
+  where
+  mergeWithStrategy ms (RWSLazy.RWST f) =
+    RWSLazy.RWST $ \r s -> mergeWithStrategy (liftMergeStrategy3 ms mergeStrategy mergeStrategy) $ f r s
+  mrgIfWithStrategy ms cond (RWSLazy.RWST t) (RWSLazy.RWST f) =
+    RWSLazy.RWST $ \r s -> mrgIfWithStrategy (liftMergeStrategy3 ms mergeStrategy mergeStrategy) cond (t r s) (f r s)
+
+instance
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, Mergeable bool a, UnionMergeable1 bool m) =>
+  SimpleMergeable bool (RWSStrict.RWST r w s m a)
+  where
+  mrgIte = mrgIf
+
+instance
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, UnionMergeable1 bool m) =>
+  SimpleMergeable1 bool (RWSStrict.RWST r w s m)
+  where
+  liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
+
+instance
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, UnionMergeable1 bool m) =>
+  UnionMergeable1 bool (RWSStrict.RWST r w s m)
+  where
+  mergeWithStrategy ms (RWSStrict.RWST f) =
+    RWSStrict.RWST $ \r s -> mergeWithStrategy (liftMergeStrategy3 ms mergeStrategy mergeStrategy) $ f r s
+  mrgIfWithStrategy ms cond (RWSStrict.RWST t) (RWSStrict.RWST f) =
+    RWSStrict.RWST $ \r s -> mrgIfWithStrategy (liftMergeStrategy3 ms mergeStrategy mergeStrategy) cond (t r s) (f r s)
+
