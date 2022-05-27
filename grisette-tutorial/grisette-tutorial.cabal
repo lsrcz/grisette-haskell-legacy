@@ -39,8 +39,7 @@ library
       src
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie >=0.6.10
-    , Unique >=0.4.7
+      Unique >=0.4.7
     , base >4.14 && <5
     , bv-sized >=1.0.3
     , bytestring >=0.10.12

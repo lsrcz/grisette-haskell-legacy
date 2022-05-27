@@ -30,7 +30,6 @@ import Data.Functor.Classes
 import qualified Data.HashMap.Lazy as HML
 import Data.Hashable
 import Data.IORef
-import Data.MemoTrie
 import Data.String
 import GHC.IO hiding (evaluate)
 import Grisette.Control.Monad
@@ -46,7 +45,6 @@ import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
 import Grisette.Data.Class.UnionOp
-import Grisette.Data.MemoUtils
 import Grisette.Data.UnionBase
 import Language.Haskell.TH.Syntax
 import Language.Haskell.TH.Syntax.Compat (unTypeSplice)
@@ -98,12 +96,6 @@ data UnionMBase bool a where
     MergeStrategy bool a ->
     UnionBase bool a ->
     UnionMBase bool a
-
-instance (SymBoolOp b, HasTrie b, HasTrie a, Mergeable b a) => HasTrie (UnionMBase b a) where
-  newtype (UnionMBase b a) :->: x = UnionMBaseTrie (UnionBase b a :->: x)
-  trie f = UnionMBaseTrie (trie (f . merge . freshUAny))
-  untrie (UnionMBaseTrie t) = untrie t . underlyingUnion
-  enumerate (UnionMBaseTrie t) = enum' (merge . freshUAny) t
 
 instance (NFData bool, NFData a) => NFData (UnionMBase bool a) where
   rnf = rnf1

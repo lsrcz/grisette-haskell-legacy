@@ -22,7 +22,6 @@ import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet as S
 import Data.Hashable
 import Data.List
-import Data.MemoTrie
 import Data.String
 import GHC.Generics
 import GHC.TypeLits
@@ -36,12 +35,6 @@ data Rule
 instance Show Rule where
   show (SymRule x) = C.unpack x
   show (PairRule l r) = "[" ++ show l ++ ", " ++ show r ++ "]"
-
-instance HasTrie Rule where
-  newtype Rule :->: x = RuleTrie {unRuleTrie :: Reg Rule :->: x}
-  trie = trieGeneric RuleTrie
-  untrie = untrieGeneric unRuleTrie
-  enumerate = enumerateGeneric unRuleTrie
 
 ruleTerminals :: S.HashSet B.ByteString -> Rule -> S.HashSet B.ByteString
 ruleTerminals s (SymRule n)

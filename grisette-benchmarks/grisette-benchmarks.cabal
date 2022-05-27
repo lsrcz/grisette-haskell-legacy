@@ -68,8 +68,7 @@ library
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie >=0.6.10
-    , Unique >=0.4.7
+      Unique >=0.4.7
     , base >4.14 && <5
     , bv-sized >=1.0.3
     , bytestring >=0.10.12
@@ -134,8 +133,7 @@ executable bonsai-letpoly
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie >=0.6.10
-    , Unique >=0.4.7
+      Unique >=0.4.7
     , base >4.14 && <5
     , bv-sized >=1.0.3
     , bytestring >=0.10.12
@@ -201,8 +199,7 @@ executable bonsai-letpoly-nomemo
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie >=0.6.10
-    , Unique >=0.4.7
+      Unique >=0.4.7
     , base >4.14 && <5
     , bv-sized >=1.0.3
     , bytestring >=0.10.12
@@ -268,8 +265,7 @@ executable bonsai-nanoscala
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie >=0.6.10
-    , Unique >=0.4.7
+      Unique >=0.4.7
     , base >4.14 && <5
     , bv-sized >=1.0.3
     , bytestring >=0.10.12
@@ -335,8 +331,7 @@ executable bonsai-nanoscala-nomemo
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie >=0.6.10
-    , Unique >=0.4.7
+      Unique >=0.4.7
     , base >4.14 && <5
     , bv-sized >=1.0.3
     , bytestring >=0.10.12
@@ -402,8 +397,7 @@ executable bonsai-stlc
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie >=0.6.10
-    , Unique >=0.4.7
+      Unique >=0.4.7
     , base >4.14 && <5
     , bv-sized >=1.0.3
     , bytestring >=0.10.12
@@ -469,8 +463,7 @@ executable bonsai-stlc-nomemo
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie >=0.6.10
-    , Unique >=0.4.7
+      Unique >=0.4.7
     , base >4.14 && <5
     , bv-sized >=1.0.3
     , bytestring >=0.10.12
@@ -543,8 +536,7 @@ executable cosette
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie >=0.6.10
-    , Unique >=0.4.7
+      Unique >=0.4.7
     , base >4.14 && <5
     , bv-sized >=1.0.3
     , bytestring >=0.10.12
@@ -617,8 +609,7 @@ executable cosette-optimized-merge
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie >=0.6.10
-    , Unique >=0.4.7
+      Unique >=0.4.7
     , base >4.14 && <5
     , bv-sized >=1.0.3
     , bytestring >=0.10.12
@@ -690,8 +681,7 @@ executable ferrite
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie >=0.6.10
-    , Unique >=0.4.7
+      Unique >=0.4.7
     , base >4.14 && <5
     , bv-sized >=1.0.3
     , bytestring >=0.10.12
@@ -756,8 +746,7 @@ executable fluidics
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie >=0.6.10
-    , Unique >=0.4.7
+      Unique >=0.4.7
     , base >4.14 && <5
     , bv-sized >=1.0.3
     , bytestring >=0.10.12
@@ -827,8 +816,7 @@ executable ifcl
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie >=0.6.10
-    , Unique >=0.4.7
+      Unique >=0.4.7
     , base >4.14 && <5
     , bv-sized >=1.0.3
     , bytestring >=0.10.12
@@ -893,8 +881,7 @@ executable regex
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie >=0.6.10
-    , Unique >=0.4.7
+      Unique >=0.4.7
     , base >4.14 && <5
     , bv-sized >=1.0.3
     , bytestring >=0.10.12
@@ -959,8 +946,7 @@ executable regex-nomemo
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie >=0.6.10
-    , Unique >=0.4.7
+      Unique >=0.4.7
     , base >4.14 && <5
     , bv-sized >=1.0.3
     , bytestring >=0.10.12

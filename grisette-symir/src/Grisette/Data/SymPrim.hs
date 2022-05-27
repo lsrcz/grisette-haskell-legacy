@@ -36,7 +36,6 @@ import Data.Bits
 import Data.HashSet as S
 import Data.Hashable
 import Data.Int
-import Data.MemoTrie
 import Data.Proxy
 import Data.String
 import Data.Word
@@ -58,7 +57,6 @@ import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
 import Grisette.Data.GeneralFunc
-import Grisette.Data.MemoUtils
 import Grisette.Data.Prim.BV
 import Grisette.Data.Prim.Bits
 import Grisette.Data.Prim.Bool
@@ -72,12 +70,6 @@ import Grisette.Data.TabularFunc
 import Language.Haskell.TH.Syntax
 
 newtype Sym a = Sym {underlyingTerm :: Term a} deriving (Lift, Generic)
-
-instance (SupportedPrim a) => HasTrie (Sym a) where
-  newtype Sym a :->: b = SymTrie (Term a :->: b)
-  trie f = SymTrie (trie (f . Sym))
-  untrie (SymTrie t) = untrie t . underlyingTerm
-  enumerate (SymTrie t) = enum' Sym t
 
 instance NFData (Sym a) where
   rnf (Sym t) = rnf t

@@ -75,8 +75,7 @@ library
       src
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie >=0.6.10
-    , base >4.14 && <5
+      base >4.14 && <5
     , bytestring >=0.10.12
     , constraints >=0.11
     , deepseq >=1.4.4
@@ -125,8 +124,7 @@ test-suite spec
       test
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie >=0.6.10
-    , base >4.14 && <5
+      base >4.14 && <5
     , bytestring >=0.10.12
     , constraints >=0.11
     , deepseq >=1.4.4

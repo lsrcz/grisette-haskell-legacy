@@ -35,8 +35,7 @@ library
       src
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie >=0.6.10
-    , Unique >=0.4.7
+      Unique >=0.4.7
     , array >=0.5.4.0
     , base >4.14 && <5
     , bv-sized >=1.0.3
@@ -76,7 +75,6 @@ test-suite spec
   ghc-options: -Wall -ferror-spans
   build-depends:
       Glob
-    , MemoTrie >=0.6.10
     , Unique >=0.4.7
     , array >=0.5.4.0
     , base >4.14 && <5

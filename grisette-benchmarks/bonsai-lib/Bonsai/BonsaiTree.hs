@@ -10,7 +10,6 @@ import Data.BitVector.Sized.Unsigned
 import qualified Data.ByteString as B
 import Data.Hashable
 import Data.Maybe
-import Data.MemoTrie
 import Generics.Deriving
 import GHC.TypeNats
 import Grisette
@@ -37,12 +36,6 @@ deriving via (Default (ConcBonsaiTree cleaf)) instance (ToCon leaf cleaf) => ToC
 deriving via (Default (BonsaiTree leaf)) instance
   (Mergeable SymBool leaf, ToSym cleaf leaf) =>
   ToSym (ConcBonsaiTree cleaf) (BonsaiTree leaf)
-
-instance (Mergeable SymBool leaf, HasTrie leaf) => HasTrie (BonsaiTree leaf) where
-  newtype BonsaiTree leaf :->: b = BonsaiTreeTrie {unBonsaiTreeTrie :: Reg (BonsaiTree leaf) :->: b}
-  trie = trieGeneric BonsaiTreeTrie
-  untrie = untrieGeneric unBonsaiTreeTrie
-  enumerate = enumerateGeneric unBonsaiTreeTrie
 
 $(makeUnionMWrapper "u" ''BonsaiTree)
 

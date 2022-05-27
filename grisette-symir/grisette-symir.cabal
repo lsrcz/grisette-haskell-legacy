@@ -55,8 +55,7 @@ library
       src
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie >=0.6.10
-    , array >=0.5.4.0
+      array >=0.5.4.0
     , base >4.14 && <5
     , bv-sized >=1.0.3 && <=1.0.4
     , constraints >=0.11
@@ -96,8 +95,7 @@ test-suite spec
       test
   ghc-options: -Wall -ferror-spans
   build-depends:
-      MemoTrie >=0.6.10
-    , array >=0.5.4.0
+      array >=0.5.4.0
     , base >4.14 && <5
     , bv-sized >=1.0.3 && <=1.0.4
     , constraints >=0.11

@@ -22,7 +22,6 @@ dependencies:
 - unordered-containers >= 0.2.11
 - template-haskell >= 2.16
 - deepseq >= 1.4.4
-- MemoTrie >= 0.6.10
 - vector-sized >= 1.4.1
 - vector >= 0.12.1.2
 - parameterized-utils >= 2.1.4

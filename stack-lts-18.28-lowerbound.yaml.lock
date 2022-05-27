@@ -75,13 +75,6 @@ packages:
   original:
     hackage: hashable-1.3.0.0
 - completed:
-    hackage: MemoTrie-0.6.10@sha256:e31ca1473059ee8256738869520e68cef374b179e9b1eec15b181cbfd599702d,1516
-    pantry-tree:
-      size: 274
-      sha256: b7d45a28c505bde6517d1a9c1e7fe567fc4c9df6ff4f7267b9b59a7b404b9932
-  original:
-    hackage: MemoTrie-0.6.10
-- completed:
     hackage: unordered-containers-0.2.11.0@sha256:ba70b8a9d7eebc2034bf92e5690b2dd71200e76aa9f3f93e0b6be3f27f244d18,4998
     pantry-tree:
       size: 1416

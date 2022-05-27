@@ -4,8 +4,7 @@
 {-# LANGUAGE TypeOperators #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 module Grisette.Data.MemoUtils
-  ( enum',
-    htmemo,
+  ( htmemo,
     htmemo2,
     htmemo3,
     htmup,
@@ -14,23 +13,9 @@ module Grisette.Data.MemoUtils
 where
 
 import Data.Hashable
-import Data.MemoTrie
-import Data.Bifunctor
-import qualified Data.ByteString as B
-import qualified Data.ByteString.Char8 as C
 import Data.HashTable.IO as H
 import System.IO.Unsafe
 import Data.Function (fix)
-
--- | Helper for creating 'enumerate' function for 'HasTrie' instances
-enum' :: (HasTrie a) => (a -> a') -> (a :->: b) -> [(a', b)]
-enum' f = (fmap . first) f . enumerate
-
-instance HasTrie B.ByteString where
-  newtype (B.ByteString :->: x) = ByteStringTrie (String :->: x)
-  trie f = ByteStringTrie $ trie (f . C.pack)
-  untrie (ByteStringTrie t) = untrie t . C.unpack
-  enumerate (ByteStringTrie t) = enum' C.pack t
 
 type HashTable k v = H.BasicHashTable k v
 

@@ -190,7 +190,6 @@ module Grisette.Core
     translateBy,
   
     -- * Memoization
-    enum',
     htmemo,
     htmemo2,
     htmemo3,
