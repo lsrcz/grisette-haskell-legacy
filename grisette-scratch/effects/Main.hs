@@ -35,7 +35,7 @@ import Instances ()
 -- We can use them with 'UnionM' monad in 'LiftC' as an effect carrier,
 -- and compose with other effect handlers nicely.
 
-v1 :: (SymBoolOp bool, Has (Error VerificationConditions) sig m, MonadUnion bool m) => m ()
+v1 :: (SymBoolOp bool, Has (Error VerificationConditions) sig m, UnionMergeable1 bool m) => m ()
 v1 = mrgIf (ssymb "a") (throwError AssertionViolation) (return ())
 
 v2 ::
@@ -43,7 +43,7 @@ v2 ::
     Has (Error VerificationConditions) sig m,
     Has (State SymBool) sig m,
     Has (State SymInteger) sig m,
-    MonadUnion bool m
+    UnionMergeable1 bool m
   ) =>
   m [bool]
 v2 = do
