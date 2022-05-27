@@ -50,7 +50,6 @@ import Data.Array
 import Data.BitVector.Sized
 import Data.BitVector.Sized.Signed as BVS
 import Data.BitVector.Sized.Unsigned as BVU
-import Data.Constraint
 import Data.Dynamic
 import Data.Function (on)
 import qualified Data.HashMap.Strict as M
@@ -60,6 +59,7 @@ import Data.IORef (atomicModifyIORef')
 import Data.Interned
 import Data.Interned.Internal
 import Data.Typeable
+import GHC.Exts (Constraint)
 import GHC.IO (unsafeDupablePerformIO)
 import GHC.TypeNats
 import Grisette.Data.Prim.Caches

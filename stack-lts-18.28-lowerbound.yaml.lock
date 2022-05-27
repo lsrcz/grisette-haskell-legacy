@@ -82,13 +82,6 @@ packages:
   original:
     hackage: unordered-containers-0.2.11.0
 - completed:
-    hackage: constraints-0.11@sha256:6eff02553c36752afb93dec22c74a522c51a6f64c14728f4a4509d1f59be1a0b,2290
-    pantry-tree:
-      size: 867
-      sha256: 2e7d438f1a675bd82015b7dcf491623cd405c9bf18f360abf1f4bc69af10675a
-  original:
-    hackage: constraints-0.11
-- completed:
     hackage: generic-deriving-1.14.1@sha256:72695b8478606f3a34d311c0310d983c664614643f59bfedeefd291a82b2c30c,6739
     pantry-tree:
       size: 2249

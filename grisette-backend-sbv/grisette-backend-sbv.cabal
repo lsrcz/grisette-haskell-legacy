@@ -41,7 +41,6 @@ library
   build-depends:
       base >4.14 && <5
     , bv-sized >=1.0.3
-    , constraints >=0.11
     , deepseq >=1.4.4
     , grisette-core ==0.1.0.0
     , grisette-symir ==0.1.0.0
@@ -74,7 +73,6 @@ test-suite spec
       QuickCheck
     , base >4.14 && <5
     , bv-sized >=1.0.3
-    , constraints >=0.11
     , deepseq >=1.4.4
     , grisette-backend-sbv
     , grisette-core ==0.1.0.0

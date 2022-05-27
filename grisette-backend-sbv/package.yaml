@@ -19,7 +19,6 @@ dependencies:
 - sbv >= 8.11
 - bv-sized >= 1.0.3
 - parameterized-utils >= 2.1.4
-- constraints >= 0.11
 - template-haskell >= 2.16
 - deepseq >= 1.4.4
 
