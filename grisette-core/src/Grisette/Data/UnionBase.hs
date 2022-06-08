@@ -52,7 +52,10 @@ instance NFData2 UnionBase where
 --
 -- Usually you should never directly try to build a 'Guard' with its constructor.
 guardWithLeftMost :: (SymBoolOp b) => Bool -> b -> UnionBase b a -> UnionBase b a -> UnionBase b a
-guardWithLeftMost inv cond t = Guard (leftMost t) inv cond t
+guardWithLeftMost _ (Conc c) t f
+  | c = t
+  | otherwise = f
+guardWithLeftMost inv cond t f = Guard (leftMost t) inv cond t f
 
 instance SymBoolOp bool => UnionOp bool (UnionBase bool) where
   single = Single
