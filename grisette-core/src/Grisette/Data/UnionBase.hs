@@ -57,6 +57,8 @@ guardWithLeftMost inv cond t = Guard (leftMost t) inv cond t
 instance SymBoolOp bool => UnionOp bool (UnionBase bool) where
   single = Single
   guard = guardWithLeftMost False
+
+instance SymBoolOp bool => UnionPrjOp bool (UnionBase bool) where
   singleView (Single a) = Just a
   singleView _ = Nothing
   guardView (Guard _ _ cond ifTrue ifFalse) = Just (cond, ifTrue, ifFalse)

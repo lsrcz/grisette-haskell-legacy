@@ -52,7 +52,7 @@ a >>=~ f = merge $ a >>= f
 -- >>> getSingle $ (guard (ssymb "a") (return $ ssymb "b") (return $ ssymb "c") :: UnionM SymBool)
 -- (ite a b c)
 
-getSingle :: forall bool u a. (SimpleMergeable bool a, UnionMergeable1 bool u, UnionOp bool u) => u a -> a
+getSingle :: forall bool u a. (SimpleMergeable bool a, UnionMergeable1 bool u, UnionPrjOp bool u) => u a -> a
 getSingle u = case merge u of
   SingleU x -> x
   _ -> error "Should not happen"

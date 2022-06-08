@@ -35,6 +35,7 @@ import Grisette.Data.Class.Mergeable
 import Control.Monad.Trans.Cont
 import qualified Control.Monad.RWS.Lazy as RWSLazy
 import qualified Control.Monad.RWS.Strict as RWSStrict
+import Grisette.Data.Class.UnionOp
 
 -- | Auxiliary class for the generic derivation for the 'SimpleMergeable' class.
 class SimpleMergeable' bool f where
@@ -85,7 +86,7 @@ mrgIte2 = liftMrgIte2 mrgIte mrgIte
 -- that are 'SimpleMergeable' when applied to any 'Mergeable' types.
 --
 -- Usually it is Union-like structures.
-class (SimpleMergeable1 bool u, Mergeable1 bool u) => UnionMergeable1 bool u | u -> bool where
+class (SimpleMergeable1 bool u, Mergeable1 bool u, UnionOp bool u) => UnionMergeable1 bool u | u -> bool where
   -- | Merge the contents with some merge strategy.
   --
   -- Be careful to call this directly in your code.
@@ -107,6 +108,10 @@ class (SimpleMergeable1 bool u, Mergeable1 bool u) => UnionMergeable1 bool u | u
   -- e.g., the merge strategy for the contained type is given with 'Mergeable1'.
   -- In other cases, 'mrgIf' is usually a better alternative.
   mrgIfWithStrategy :: MergeStrategy bool a -> bool -> u a -> u a -> u a
+  mrgIfWithStrategy s cond l r = mergeWithStrategy s $ Grisette.Data.Class.UnionOp.guard cond l r
+  
+  mrgSingleWithStrategy :: MergeStrategy bool a -> a -> u a
+  mrgSingleWithStrategy s = mergeWithStrategy s . single
 
 -- | Symbolic @if@ control flow with the result merged with the type's root merge strategy.
 --
@@ -301,19 +306,19 @@ instance
     StateStrict.StateT $ \v -> mrgIfWithStrategy (liftMergeStrategy2 s mergeStrategy) cond (t v) (f v)
 
 instance
-  (SymBoolOp bool, Mergeable bool s, Mergeable bool a, UnionMergeable1 bool m) =>
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool a, UnionMergeable1 bool m, Monoid s) =>
   SimpleMergeable bool (WriterLazy.WriterT s m a)
   where
   mrgIte = mrgIf
 
 instance
-  (SymBoolOp bool, Mergeable bool s, UnionMergeable1 bool m) =>
+  (SymBoolOp bool, Mergeable bool s, UnionMergeable1 bool m, Monoid s) =>
   SimpleMergeable1 bool (WriterLazy.WriterT s m)
   where
   liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
 
 instance
-  (SymBoolOp bool, Mergeable bool s, UnionMergeable1 bool m) =>
+  (SymBoolOp bool, Mergeable bool s, UnionMergeable1 bool m, Monoid s) =>
   UnionMergeable1 bool (WriterLazy.WriterT s m)
   where
   mergeWithStrategy ms (WriterLazy.WriterT f) = WriterLazy.WriterT $ mergeWithStrategy (liftMergeStrategy2 ms mergeStrategy) f
@@ -321,19 +326,19 @@ instance
     WriterLazy.WriterT $ mrgIfWithStrategy (liftMergeStrategy2 s mergeStrategy) cond t f
 
 instance
-  (SymBoolOp bool, Mergeable bool s, Mergeable bool a, UnionMergeable1 bool m) =>
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool a, UnionMergeable1 bool m, Monoid s) =>
   SimpleMergeable bool (WriterStrict.WriterT s m a)
   where
   mrgIte = mrgIf
 
 instance
-  (SymBoolOp bool, Mergeable bool s, UnionMergeable1 bool m) =>
+  (SymBoolOp bool, Mergeable bool s, UnionMergeable1 bool m, Monoid s) =>
   SimpleMergeable1 bool (WriterStrict.WriterT s m)
   where
   liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
 
 instance
-  (SymBoolOp bool, Mergeable bool s, UnionMergeable1 bool m) =>
+  (SymBoolOp bool, Mergeable bool s, UnionMergeable1 bool m, Monoid s) =>
   UnionMergeable1 bool (WriterStrict.WriterT s m)
   where
   mergeWithStrategy ms (WriterStrict.WriterT f) = WriterStrict.WriterT $ mergeWithStrategy (liftMergeStrategy2 ms mergeStrategy) f
@@ -388,19 +393,19 @@ instance (SymBoolOp bool, UnionMergeable1 bool m, Mergeable bool r) => UnionMerg
   mrgIfWithStrategy _ cond (ContT l) (ContT r) = ContT $ \c -> mrgIf cond (l c) (r c)
 
 instance
-  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, Mergeable bool a, UnionMergeable1 bool m) =>
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, Monoid w, Mergeable bool a, UnionMergeable1 bool m) =>
   SimpleMergeable bool (RWSLazy.RWST r w s m a)
   where
   mrgIte = mrgIf
 
 instance
-  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, UnionMergeable1 bool m) =>
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, Monoid w, UnionMergeable1 bool m) =>
   SimpleMergeable1 bool (RWSLazy.RWST r w s m)
   where
   liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
 
 instance
-  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, UnionMergeable1 bool m) =>
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, Monoid w, UnionMergeable1 bool m) =>
   UnionMergeable1 bool (RWSLazy.RWST r w s m)
   where
   mergeWithStrategy ms (RWSLazy.RWST f) =
@@ -409,19 +414,19 @@ instance
     RWSLazy.RWST $ \r s -> mrgIfWithStrategy (liftMergeStrategy3 ms mergeStrategy mergeStrategy) cond (t r s) (f r s)
 
 instance
-  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, Mergeable bool a, UnionMergeable1 bool m) =>
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, Monoid w, Mergeable bool a, UnionMergeable1 bool m) =>
   SimpleMergeable bool (RWSStrict.RWST r w s m a)
   where
   mrgIte = mrgIf
 
 instance
-  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, UnionMergeable1 bool m) =>
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, Monoid w, UnionMergeable1 bool m) =>
   SimpleMergeable1 bool (RWSStrict.RWST r w s m)
   where
   liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
 
 instance
-  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, UnionMergeable1 bool m) =>
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, Monoid w, UnionMergeable1 bool m) =>
   UnionMergeable1 bool (RWSStrict.RWST r w s m)
   where
   mergeWithStrategy ms (RWSStrict.RWST f) =

@@ -66,6 +66,7 @@ import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.SimpleMergeable
 import Language.Haskell.TH.Syntax hiding (lift)
+import Grisette.Data.Class.UnionOp
 
 -- $setup
 -- >>> import Grisette.Core
@@ -163,6 +164,14 @@ instance
   SimpleMergeable1 bool (GenSymFreshT m)
   where
   liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
+
+instance
+  (SymBoolOp bool, UnionOp bool m) =>
+  UnionOp bool (GenSymFreshT m)
+  where
+  single x = GenSymFreshT $ \_ i -> single (x, i)
+  guard cond (GenSymFreshT t) (GenSymFreshT f) =
+    GenSymFreshT $ \ident index -> Grisette.Data.Class.UnionOp.guard cond (t ident index) (f ident index)
 
 instance
   (SymBoolOp bool, UnionMergeable1 bool m) =>

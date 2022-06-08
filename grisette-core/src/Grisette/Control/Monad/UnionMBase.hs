@@ -136,6 +136,8 @@ instance SymBoolOp bool => UnionOp bool (UnionMBase bool) where
   guard cond (UAny _ a) (UAny _ b) = freshUAny $ guard cond a b
   guard cond (UMrg m a) (UAny _ b) = UMrg m $ guardWithStrategy m cond a b
   guard cond a (UMrg m b) = UMrg m $ guardWithStrategy m cond (underlyingUnion a) b
+
+instance SymBoolOp bool => UnionPrjOp bool (UnionMBase bool) where
   singleView = singleView . underlyingUnion
   guardView (UAny _ u) = case guardView u of
     Just (c, t, f) -> Just (c, freshUAny t, freshUAny f)

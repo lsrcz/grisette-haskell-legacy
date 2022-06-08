@@ -2,7 +2,7 @@
 
 module Main where
 
-import Control.Monad.Except
+import Control.Monad.Except hiding (guard)
 import Control.Monad.Trans.Except
 import Data.Functor.Classes
 import GHC.Generics
@@ -86,6 +86,10 @@ instance (SymBoolOp bool, UnionMergeable1 bool m, Mergeable bool e, Mergeable bo
 
 instance (SymBoolOp bool, UnionMergeable1 bool m, Mergeable bool e) => SimpleMergeable1 bool (ExceptT' e m) where
   liftMrgIte s = mrgIfWithStrategy (SimpleStrategy s)
+
+instance (SymBoolOp bool, UnionOp bool m) => UnionOp bool (ExceptT' e m) where
+  single x = ExceptT' $ single $ Either' $ Right x
+  guard cond (ExceptT' t) (ExceptT' f) = ExceptT' $ guard cond t f
 
 instance (SymBoolOp bool, UnionMergeable1 bool m, Mergeable bool e) => UnionMergeable1 bool (ExceptT' e m) where
   mergeWithStrategy s = ExceptT' . mergeWithStrategy (liftMergeStrategy s) . runExceptT'

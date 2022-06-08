@@ -10,7 +10,39 @@ module Instances where
 import Control.Carrier.Error.Either
 import Control.Carrier.Lift
 import Control.Carrier.State.Strict
+import qualified Control.Carrier.Error.Church as EC
 import Grisette
+
+instance (SymBoolOp bool, UnionMergeable1 bool m) =>
+  Mergeable bool (EC.ErrorC e m a) where
+    mergeStrategy = SimpleStrategy $ \cond (EC.ErrorC l) (EC.ErrorC r) ->
+      EC.ErrorC $ \ef af -> guard cond (l ef af) (r ef af)
+
+instance (SymBoolOp bool, UnionMergeable1 bool m) =>
+  Mergeable1 bool (EC.ErrorC e m) where
+    liftMergeStrategy _ = SimpleStrategy $ \cond (EC.ErrorC l) (EC.ErrorC r) ->
+      EC.ErrorC $ \ef af -> guard cond (l ef af) (r ef af)
+
+instance (SymBoolOp bool, UnionMergeable1 bool m) =>
+  SimpleMergeable bool (EC.ErrorC e m a) where
+  mrgIte bool (EC.ErrorC l) (EC.ErrorC r) = EC.ErrorC $ \ef af ->
+    guard bool (l ef af) (r ef af)
+
+instance (SymBoolOp bool, UnionMergeable1 bool m) =>
+  SimpleMergeable1 bool (EC.ErrorC e m) where
+  liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
+
+instance (SymBoolOp bool, UnionMergeable1 bool m) =>
+  UnionOp bool (EC.ErrorC e m) where
+    single a = EC.ErrorC $ \_ leaf -> leaf a
+    guard cond (EC.ErrorC l) (EC.ErrorC r) =
+      EC.ErrorC $ \ef af -> guard cond (l ef af) (r ef af)
+
+instance (SymBoolOp bool, UnionMergeable1 bool m) =>
+  UnionMergeable1 bool (EC.ErrorC e m) where
+    mergeWithStrategy _ = id
+    mrgIfWithStrategy _ cond (EC.ErrorC l) (EC.ErrorC r) = EC.ErrorC $
+      \ef af -> guard cond (l ef af) (r ef af)
 
 instance
   (SymBoolOp bool, Mergeable1 bool m, Mergeable bool e, Mergeable bool a) =>
@@ -32,6 +64,13 @@ instance
   SimpleMergeable1 bool (ErrorC e m)
   where
   liftMrgIte s = mrgIfWithStrategy (SimpleStrategy s)
+
+instance
+  (SymBoolOp bool, UnionOp bool m, Mergeable bool e, Functor m) =>
+  UnionOp bool (ErrorC e m)
+  where
+  single a = ErrorC $ single a
+  guard cond (ErrorC t) (ErrorC f) = ErrorC $ guard cond t f
 
 instance
   (SymBoolOp bool, UnionMergeable1 bool m, Mergeable bool e, Functor m) =>
@@ -65,6 +104,13 @@ instance
   liftMrgIte = mrgIfWithStrategy . SimpleStrategy
 
 instance
+  (SymBoolOp bool, Mergeable bool s, UnionOp bool m) =>
+  UnionOp bool (StateC s m)
+  where
+    single a = StateC $ \s -> single (s, a)
+    guard cond (StateC l) (StateC r) = StateC $ \s -> guard cond (l s) (r s)
+
+instance
   (SymBoolOp bool, Mergeable bool s, UnionMergeable1 bool m) =>
   UnionMergeable1 bool (StateC s m)
   where
@@ -82,6 +128,11 @@ instance (MonadUnion bool m, Mergeable bool a) => SimpleMergeable bool (LiftC m 
 
 instance (MonadUnion bool m) => SimpleMergeable1 bool (LiftC m) where
   liftMrgIte = mrgIfWithStrategy . SimpleStrategy
+
+
+instance (MonadUnion bool m) => UnionOp bool (LiftC m) where
+  single x = LiftC $ single x
+  guard cond (LiftC l) (LiftC r) = LiftC $ guard cond l r
 
 instance (MonadUnion bool m) => UnionMergeable1 bool (LiftC m) where
   mergeWithStrategy s (LiftC v) = LiftC $ mergeWithStrategy s v

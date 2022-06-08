@@ -54,6 +54,14 @@ instance
   liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
 
 instance
+  (SymBoolOp bool, UnionOp bool m) =>
+  UnionOp bool (Coroutine sus m)
+  where
+  single x = Coroutine $ single $ Right x
+  guard cond (Coroutine t) (Coroutine f) =
+    Coroutine $ guard cond t f
+
+instance
   (SymBoolOp bool, UnionMergeable1 bool m, Mergeable1 bool sus) =>
   UnionMergeable1 bool (Coroutine sus m)
   where

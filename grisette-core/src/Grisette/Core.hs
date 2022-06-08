@@ -36,6 +36,7 @@ module Grisette.Core
     UnionMBase,
     IsConcrete,
     UnionOp (..),
+    UnionPrjOp (..),
     pattern SingleU,
     pattern GuardU,
     makeUnionMWrapper,
@@ -213,10 +214,11 @@ module Grisette.Core
 
     -- * Type Class Derivation
     Default(..),
+    Default1(..),
   )
 where
 
-import Generics.Deriving (Default(..))
+import Generics.Deriving (Default(..), Default1(..))
 import Grisette.Control.Exception
 import Grisette.Control.Monad
 import Grisette.Control.Monad.Except

@@ -57,6 +57,7 @@ import Data.Int
 import Data.Kind
 import Data.Typeable
 import Data.Word
+import qualified Data.Monoid as Monoid
 import Generics.Deriving
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.OrphanGeneric ()
@@ -786,3 +787,10 @@ instance
     wrapMergeStrategy
       (liftMergeStrategy (liftMergeStrategy (liftMergeStrategy (liftMergeStrategy3 m mergeStrategy mergeStrategy))))
       RWSStrict.RWST (\(RWSStrict.RWST rws) -> rws)
+
+
+-- Data.Monoid module
+deriving via (Default (Monoid.Sum a))
+  instance (Mergeable bool a) => Mergeable bool (Monoid.Sum a)
+
+deriving via (Default1 Monoid.Sum) instance Mergeable1 bool Monoid.Sum
