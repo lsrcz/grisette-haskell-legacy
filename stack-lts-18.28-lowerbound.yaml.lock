@@ -26,12 +26,12 @@ packages:
   original:
     hackage: doctest-0.20.0@sha256:fd56edde124a92d42c42c74333f0ae74532329d15a6c63d578cbb51f4e7cfd34,7121
 - completed:
-    hackage: fused-effects-1.0.2.2@sha256:d5158904908e9234a19f7a249e2dcf9fe1d5b663d553bc4d393214b5c6c5340d,4941
+    hackage: fused-effects-1.1.0.0@sha256:29d03c73b585920c0999a18b73c9a0bf9e61e1fa58c5c2bed3f89423c8078f4a,5139
     pantry-tree:
-      size: 5638
-      sha256: 1b97cfe182bef614093733cdbff520b91b7d4eeeec9bad94df02c5b650917447
+      size: 6288
+      sha256: e427a329bd733f5096e37bfcf5a211bb2e8555b88b7e87ac43607d2f455e3f66
   original:
-    hackage: fused-effects-1.0.2.2
+    hackage: fused-effects-1.1.0.0
 - completed:
     hackage: bv-sized-1.0.3@sha256:0453825c28a5560603ad682ad43dc6699bd6d1aab5512a1351b8d4b7e75917e9,2099
     pantry-tree:

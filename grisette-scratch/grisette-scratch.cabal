@@ -36,7 +36,7 @@ library
   ghc-options: -Wall -ferror-spans
   build-depends:
       base >4.14 && <5
-    , fused-effects >=1.0.2.2
+    , fused-effects >=1.1.0.0
     , grisette ==0.1.0.0
     , grisette-core ==0.1.0.0
     , mtl >=2.2.2
@@ -57,7 +57,7 @@ executable angelic
   ghc-options: -Wall -ferror-spans
   build-depends:
       base >4.14 && <5
-    , fused-effects >=1.0.2.2
+    , fused-effects >=1.1.0.0
     , grisette ==0.1.0.0
     , grisette-core ==0.1.0.0
     , mtl >=2.2.2
@@ -78,7 +78,7 @@ executable cegis
   ghc-options: -Wall -ferror-spans
   build-depends:
       base >4.14 && <5
-    , fused-effects >=1.0.2.2
+    , fused-effects >=1.1.0.0
     , grisette ==0.1.0.0
     , grisette-core ==0.1.0.0
     , mtl >=2.2.2
@@ -100,7 +100,7 @@ executable effects
   ghc-options: -Wall -ferror-spans
   build-depends:
       base >4.14 && <5
-    , fused-effects >=1.0.2.2
+    , fused-effects >=1.1.0.0
     , grisette ==0.1.0.0
     , grisette-core ==0.1.0.0
     , mtl >=2.2.2
@@ -121,7 +121,7 @@ executable list-funcs
   ghc-options: -Wall -ferror-spans
   build-depends:
       base >4.14 && <5
-    , fused-effects >=1.0.2.2
+    , fused-effects >=1.1.0.0
     , grisette ==0.1.0.0
     , grisette-core ==0.1.0.0
     , mtl >=2.2.2
