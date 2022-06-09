@@ -26,8 +26,8 @@ instance (SymBoolOp bool, Mergeable bool a, Mergeable bool b, Mergeable bool c) 
 
 spec :: Spec
 spec = do
-  describe "guardWithLeftMost" $ do
-    it "guardWithLeftMost should maintain left most info" $ do
+  describe "ifWithLeftMost" $ do
+    it "ifWithLeftMost should maintain left most info" $ do
       ifWithLeftMost False (SSBool "a") (Single (1 :: Integer)) (Single 2)
         `shouldBe` If 1 False (SSBool "a") (Single 1) (Single 2)
       ifWithLeftMost

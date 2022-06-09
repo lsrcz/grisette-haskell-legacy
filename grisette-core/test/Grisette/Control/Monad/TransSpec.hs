@@ -1,6 +1,6 @@
 module Grisette.Control.Monad.TransSpec where
 
-import Control.Monad.Except hiding (guard)
+import Control.Monad.Except
 import Grisette.Control.Monad.Union
 import Grisette.Control.Monad.Trans
 import Grisette.Control.Monad.UnionMBase

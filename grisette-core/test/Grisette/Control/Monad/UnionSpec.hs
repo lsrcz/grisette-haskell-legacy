@@ -2,8 +2,8 @@
 
 module Grisette.Control.Monad.UnionSpec where
 
-import Control.Monad.Except hiding (guard)
-import Control.Monad.Identity hiding (guard)
+import Control.Monad.Except
+import Control.Monad.Identity
 import Control.Monad.Reader
 import qualified Control.Monad.Trans.State.Lazy as StateLazy
 import qualified Control.Monad.Trans.State.Strict as StateStrict

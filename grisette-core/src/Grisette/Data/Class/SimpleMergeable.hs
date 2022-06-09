@@ -478,7 +478,7 @@ class (UnionLike bool u) => UnionPrjOp bool (u :: Type -> Type) | u -> bool wher
   -- | Pattern match to extract single values.
   singleView :: u a -> Maybe a
 
-  -- | Pattern match to extract guard values.
+  -- | Pattern match to extract if values.
   ifView :: u a -> Maybe (bool, u a, u a)
 
   -- | The leftmost value in the union.

@@ -43,7 +43,7 @@ a >>=~ f = merge $ a >>= f
 
 -- | Extract the value from a union-like monad if the value has a simply mergeable type.
 --
--- 'Grisette.Data.Class.UnionOp.guard' will not merge the results.
+-- 'unionIf' will not merge the results.
 -- 'getSingle' will merge it and extract the single value.
 --
 -- >>> unionIf (ssymb "a") (return $ ssymb "b") (return $ ssymb "c") :: UnionM SymBool

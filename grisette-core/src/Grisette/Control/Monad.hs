@@ -13,7 +13,7 @@ module Grisette.Control.Monad
   )
 where
 
-import Control.Monad hiding (guard)
+import Control.Monad
 import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.SimpleMergeable

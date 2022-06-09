@@ -2,7 +2,7 @@
 
 module Main where
 
-import Control.Monad.Except hiding (guard)
+import Control.Monad.Except
 import Control.Monad.Trans.Except
 import Data.Functor.Classes
 import GHC.Generics
@@ -142,11 +142,11 @@ test3 = do
 
 main :: IO ()
 main = do
-  -- ExceptT (UMrg (Guard (ite a (! assert) (! assume)) (Guard a (Single (Left AssertViolation)) (Single (Left AssumeViolation))) (Single (Right (ite a x y)))))
+  -- ExceptT (UMrg (If (ite a (! assert) (! assume)) (If a (Single (Left AssertViolation)) (Single (Left AssumeViolation))) (Single (Right (ite a x y)))))
   print $ test @ExceptT
   -- UMrg (Single (&& (! (ite a (! assert) (! assume))) (ite a x y)))
   print $ mrgFmap (\case Left _ -> conc False; Right x -> x) $ runExceptT test
-  -- ExceptT' (UMrg (Guard (ite a assert assume) (Single (Right (ite a x y))) (Guard a (Single (Left AssertViolation)) (Single (Left AssumeViolation)))))
+  -- ExceptT' (UMrg (If (ite a assert assume) (Single (Right (ite a x y))) (If a (Single (Left AssertViolation)) (Single (Left AssumeViolation)))))
   print $ test @ExceptT'
   -- UMrg (Single (&& (ite a assert assume) (ite a x y)))
   print $ mrgFmap (\case (Either' (Left _)) -> conc False; (Either' (Right x)) -> x) $ runExceptT' test
