@@ -38,7 +38,7 @@ import Debug.Trace
 -- We can use them with 'UnionM' monad in 'LiftC' as an effect carrier,
 -- and compose with other effect handlers nicely.
 
-v1 :: (SymBoolOp bool, Has (Error VerificationConditions) sig m, UnionMergeable1 bool m) => m ()
+v1 :: (SymBoolOp bool, Has (Error VerificationConditions) sig m, UnionLike bool m) => m ()
 v1 = mrgIf (ssymb "a") (throwError AssertionViolation) (return ())
 
 v2 ::
@@ -46,7 +46,7 @@ v2 ::
     Has (Error VerificationConditions) sig m,
     Has (State SymBool) sig m,
     Has (State SymInteger) sig m,
-    UnionMergeable1 bool m
+    UnionLike bool m
   ) =>
   m [bool]
 v2 = do
@@ -60,7 +60,7 @@ v3 ::
     Has (Error VerificationConditions) sig m,
     Has (State SymBool) sig m,
     Has (State SymInteger) sig m,
-    UnionMergeable1 bool m
+    UnionLike bool m
   ) =>
   SymInteger -> m [bool]
 v3 v = trace "y" $ do
@@ -72,7 +72,7 @@ v3 v = trace "y" $ do
 
 v4 ::
   ( Has (Error VerificationConditions) sig m,
-    UnionMergeable1 SymBool m
+    UnionLike SymBool m
   ) =>
   SymInteger -> m SymInteger
 v4 v = trace "y" $ do
@@ -96,13 +96,13 @@ main = do
   print $ runM $ EC.runError (\_ -> mrgReturn (1 :: Integer)) (\_ -> mrgReturn 2)
     (v1 :: EC.ErrorC VerificationConditions (LiftC UnionM) ())
 
-  print "xxx"
+  putStrLn "xxx"
   print $ runM $ EC.runError (\x -> trace "r1" $ mrgReturn . Left $ x) (\x -> trace "r2" $ mrgReturn . Right $ x) $ runState (ssymb "x") $ runState (ssymb "y")
     (v3 1 >> v3 2 >> v3 3 :: StateC SymInteger (StateC SymBool (EC.ErrorC VerificationConditions (LiftC UnionM))) [SymBool])
-  print "yyy"
+  putStrLn "yyy"
   print $ runM $ runError $ runState (ssymb "x") $ runState (ssymb "y")
     (v3 1 >> v3 2 >> v3 3 :: StateC SymInteger (StateC SymBool (ErrorC VerificationConditions (LiftC UnionM))) [SymBool])
 
-  print "zzz"
+  putStrLn "zzz"
   print $ runM $ EC.runError (\x -> trace "r1" $ mrgReturn . Left $ x) (\x -> trace "r2" $ mrgReturn . Right $ x) $
     (v4 1 >>= v4 >>= v4 :: EC.ErrorC VerificationConditions (LiftC UnionM) SymInteger)

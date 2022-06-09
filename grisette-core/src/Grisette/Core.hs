@@ -35,10 +35,9 @@ module Grisette.Core
     -- * UnionM Monad
     UnionMBase,
     IsConcrete,
-    UnionOp (..),
     UnionPrjOp (..),
     pattern SingleU,
-    pattern GuardU,
+    pattern IfU,
     makeUnionMWrapper,
     makeUnionMWrapper',
     liftToMonadUnion,
@@ -67,7 +66,7 @@ module Grisette.Core
     mrgIte2,
     -- withSimpleMergeable,
     -- withSimpleMergeableU,
-    UnionMergeable1 (..),
+    UnionLike (..),
     mrgIf,
     merge,
     -- withUnionSimpleMergeable,
@@ -238,7 +237,6 @@ import Grisette.Data.Class.Evaluate
 import Grisette.Data.Class.GenSym
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
-import Grisette.Data.Class.UnionOp
 import Grisette.Data.FileLocation
 import Grisette.Data.MemoUtils
 import Grisette.TH

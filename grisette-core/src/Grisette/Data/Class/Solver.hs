@@ -62,8 +62,8 @@ import Grisette.Data.Class.ExtractSymbolics
 import Grisette.Data.Class.GenSym
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.PrimWrapper
-import Grisette.Data.Class.UnionOp
 import Language.Haskell.TH.Syntax
+import Grisette.Data.Class.SimpleMergeable
 
 class SolverErrorTranslation spec e | spec -> e where
   errorTranslation :: spec -> e -> Bool

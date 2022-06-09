@@ -52,7 +52,6 @@ library
       Grisette.Data.Class.SOrd
       Grisette.Data.Class.ToCon
       Grisette.Data.Class.ToSym
-      Grisette.Data.Class.UnionOp
       Grisette.Data.FileLocation
       Grisette.Data.Foldable
       Grisette.Data.MemoUtils

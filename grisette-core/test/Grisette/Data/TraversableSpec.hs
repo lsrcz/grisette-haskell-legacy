@@ -1,10 +1,9 @@
 module Grisette.Data.TraversableSpec where
 
-import Control.Monad.Except hiding (guard)
+import Control.Monad.Except
 import Grisette.Control.Monad.Union
 import Grisette.Control.Monad.UnionMBase
 import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.Class.UnionOp
 import Grisette.Data.Traversable
 import Test.Hspec
 import Grisette.TestUtils.SBool
@@ -15,7 +14,7 @@ spec = do
     it "mrgTraverse should work" $ do
       runExceptT
         ( mrgTraverse
-            (\(c, d, x, y, z) -> ExceptT $ guard c (return $ Left x) (guard d (return $ Right y) (return $ Right z)))
+            (\(c, d, x, y, z) -> ExceptT $ unionIf c (return $ Left x) (unionIf d (return $ Right y) (return $ Right z)))
             [(SSBool "a", SSBool "c", 3, 4, 5), (SSBool "b", SSBool "d", 2, 3, 6)] ::
             ExceptT Integer (UnionMBase SBool) [Integer]
         )
@@ -29,8 +28,8 @@ spec = do
     it "mrgSequenceA should work" $ do
       runExceptT
         ( mrgSequenceA
-            [ ExceptT $ guard (SSBool "a") (return $ Left 3) (guard (SSBool "c") (return $ Right 4) (return $ Right 5)),
-              ExceptT $ guard (SSBool "b") (return $ Left 2) (guard (SSBool "d") (return $ Right 3) (return $ Right 6))
+            [ ExceptT $ unionIf (SSBool "a") (return $ Left 3) (unionIf (SSBool "c") (return $ Right 4) (return $ Right 5)),
+              ExceptT $ unionIf (SSBool "b") (return $ Left 2) (unionIf (SSBool "d") (return $ Right 3) (return $ Right 6))
             ] ::
             ExceptT Integer (UnionMBase SBool) [Integer]
         )
@@ -44,7 +43,7 @@ spec = do
     it "mrgMapM should work" $ do
       runExceptT
         ( mrgMapM
-            (\(c, d, x, y, z) -> ExceptT $ guard c (return $ Left x) (guard d (return $ Right y) (return $ Right z)))
+            (\(c, d, x, y, z) -> ExceptT $ unionIf c (return $ Left x) (unionIf d (return $ Right y) (return $ Right z)))
             [(SSBool "a", SSBool "c", 3, 4, 5), (SSBool "b", SSBool "d", 2, 3, 6)] ::
             ExceptT Integer (UnionMBase SBool) [Integer]
         )
@@ -58,8 +57,8 @@ spec = do
     it "mrgSequence should work" $ do
       runExceptT
         ( mrgSequence
-            [ ExceptT $ guard (SSBool "a") (return $ Left 3) (guard (SSBool "c") (return $ Right 4) (return $ Right 5)),
-              ExceptT $ guard (SSBool "b") (return $ Left 2) (guard (SSBool "d") (return $ Right 3) (return $ Right 6))
+            [ ExceptT $ unionIf (SSBool "a") (return $ Left 3) (unionIf (SSBool "c") (return $ Right 4) (return $ Right 5)),
+              ExceptT $ unionIf (SSBool "b") (return $ Left 2) (unionIf (SSBool "d") (return $ Right 3) (return $ Right 6))
             ] ::
             ExceptT Integer (UnionMBase SBool) [Integer]
         )
@@ -74,7 +73,7 @@ spec = do
       runExceptT
         ( mrgFor
             [(SSBool "a", SSBool "c", 3, 4, 5), (SSBool "b", SSBool "d", 2, 3, 6)]
-            (\(c, d, x, y, z) -> ExceptT $ guard c (return $ Left x) (guard d (return $ Right y) (return $ Right z))) ::
+            (\(c, d, x, y, z) -> ExceptT $ unionIf c (return $ Left x) (unionIf d (return $ Right y) (return $ Right z))) ::
             ExceptT Integer (UnionMBase SBool) [Integer]
         )
         `shouldBe` runExceptT
@@ -88,7 +87,7 @@ spec = do
       runExceptT
         ( mrgForM
             [(SSBool "a", SSBool "c", 3, 4, 5), (SSBool "b", SSBool "d", 2, 3, 6)]
-            (\(c, d, x, y, z) -> ExceptT $ guard c (return $ Left x) (guard d (return $ Right y) (return $ Right z))) ::
+            (\(c, d, x, y, z) -> ExceptT $ unionIf c (return $ Left x) (unionIf d (return $ Right y) (return $ Right z))) ::
             ExceptT Integer (UnionMBase SBool) [Integer]
         )
         `shouldBe` runExceptT

@@ -42,33 +42,28 @@ instance (SymBoolOp bool, Mergeable1 bool m, Mergeable1 bool sus) => Mergeable1 
       (\(Coroutine v) -> v)
 
 instance
-  (SymBoolOp bool, UnionMergeable1 bool m, Mergeable bool a, Mergeable1 bool sus) =>
+  (SymBoolOp bool, UnionLike bool m, Mergeable bool a, Mergeable1 bool sus) =>
   SimpleMergeable bool (Coroutine sus m a)
   where
   mrgIte = mrgIf
 
 instance
-  (SymBoolOp bool, UnionMergeable1 bool m, Mergeable1 bool sus) =>
+  (SymBoolOp bool, UnionLike bool m, Mergeable1 bool sus) =>
   SimpleMergeable1 bool (Coroutine sus m)
   where
   liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
 
 instance
-  (SymBoolOp bool, UnionOp bool m) =>
-  UnionOp bool (Coroutine sus m)
-  where
-  single x = Coroutine $ single $ Right x
-  guard cond (Coroutine t) (Coroutine f) =
-    Coroutine $ guard cond t f
-
-instance
-  (SymBoolOp bool, UnionMergeable1 bool m, Mergeable1 bool sus) =>
-  UnionMergeable1 bool (Coroutine sus m)
+  (SymBoolOp bool, UnionLike bool m, Mergeable1 bool sus) =>
+  UnionLike bool (Coroutine sus m)
   where
   mergeWithStrategy s ((Coroutine v) :: Coroutine sus m a) =
     Coroutine $ mergeWithStrategy (liftCoroEitherMergeStrategy s) v
   mrgIfWithStrategy s cond (Coroutine t) (Coroutine f) =
     Coroutine $ mrgIfWithStrategy (liftCoroEitherMergeStrategy s) cond t f
+  single x = Coroutine $ single $ Right x
+  unionIf cond (Coroutine t) (Coroutine f) =
+    Coroutine $ unionIf cond t f
 
 instance
   (Monoid symbolSet, ExtractSymbolics symbolSet (m (Either (sus (Coroutine sus m a)) a))) =>

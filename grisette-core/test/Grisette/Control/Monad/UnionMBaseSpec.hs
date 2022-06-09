@@ -5,7 +5,7 @@
 
 module Grisette.Control.Monad.UnionMBaseSpec where
 
-import Control.Monad.Identity hiding (guard)
+import Control.Monad.Identity
 import qualified Data.ByteString as B
 import qualified Data.HashMap.Lazy as ML
 import qualified Data.HashMap.Strict as M
@@ -22,7 +22,6 @@ import Grisette.Data.Class.Evaluate
 import Grisette.Data.Class.GenSym
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
-import Grisette.Data.Class.UnionOp
 import Grisette.Data.UnionBase
 import Test.Hspec
 import Grisette.TestUtils.SBool
@@ -41,7 +40,7 @@ spec = do
       isMerged r `shouldBe` True
       underlyingUnion (underlyingUnion <$> r)
         `shouldBe` Single
-          ( Guard
+          ( If
               (Left $ ITE (SSBool "a") (SSBool "c") (SSBool "f"))
               True
               (ITE (SSBool "a") (SSBool "b") (SSBool "e"))
@@ -54,7 +53,7 @@ spec = do
       let r = mrgIf (SSBool "e") (mrgReturn $ Left $ SSBool "f") (mrgReturn $ Right $ SSBool "g")
       let res = mrgIte (SSBool "a") l r
       let ref =
-            Guard
+            If
               (Left $ ITE (SSBool "a") (SSBool "c") (SSBool "f"))
               True
               (ITE (SSBool "a") (SSBool "b") (SSBool "e"))
@@ -77,7 +76,7 @@ spec = do
   describe "Functor for UnionMBase" $ do
     it "fmap should work but would strip mergeable knowledge" $ do
       let x :: UnionMBase SBool Integer = (+ 1) <$> mrgIf (SSBool "a") (mrgReturn 1) (mrgReturn 2)
-      x `shouldBe` guard (SSBool "a") (return 2) (return 3)
+      x `shouldBe` unionIf (SSBool "a") (return 2) (return 3)
   describe "Applicative for UnionMBase" $ do
     it "pure should work but won't give us mergeable knowledge" $ do
       (pure 1 :: UnionMBase SBool Integer) `shouldBe` single 1
@@ -85,10 +84,10 @@ spec = do
       let f :: UnionMBase SBool (Integer -> Integer) = mrgIf (SSBool "a") (mrgReturn id) (mrgReturn (+ 1))
       let v :: UnionMBase SBool Integer = mrgIf (SSBool "b") (mrgReturn 1) (mrgReturn 3)
       f <*> v
-        `shouldBe` guard
+        `shouldBe` unionIf
           (SSBool "a")
-          (guard (SSBool "b") (single 1) (single 3))
-          (guard (SSBool "b") (single 2) (single 4))
+          (unionIf (SSBool "b") (single 1) (single 3))
+          (unionIf (SSBool "b") (single 2) (single 4))
   describe "Monad for UnionMBase" $ do
     it "return should work but won't give us mergeable knowledge" $ do
       (pure 1 :: UnionMBase SBool Integer) `shouldBe` single 1
@@ -105,25 +104,25 @@ spec = do
       let r1 :: UnionMBase SBool SBool = single (SSBool "a")
       isMerged r1 `shouldBe` False
       underlyingUnion r1 `shouldBe` Single (SSBool "a")
-    it "guard for UnionMBase should work when no merged" $ do
-      let r1 :: UnionMBase SBool SBool = guard (SSBool "a") (single $ SSBool "b") (single $ SSBool "c")
+    it "unionIf for UnionMBase should work when no merged" $ do
+      let r1 :: UnionMBase SBool SBool = unionIf (SSBool "a") (single $ SSBool "b") (single $ SSBool "c")
       isMerged r1 `shouldBe` False
-      underlyingUnion r1 `shouldBe` Guard (SSBool "b") False (SSBool "a") (Single $ SSBool "b") (Single $ SSBool "c")
-    it "guard for UnionMBase should propagate and merge the results when some branch merged" $ do
-      let r1 :: UnionMBase SBool SBool = guard (SSBool "a") (mrgReturn $ SSBool "b") (single $ SSBool "c")
+      underlyingUnion r1 `shouldBe` If (SSBool "b") False (SSBool "a") (Single $ SSBool "b") (Single $ SSBool "c")
+    it "unionIf for UnionMBase should propagate and merge the results when some branch merged" $ do
+      let r1 :: UnionMBase SBool SBool = unionIf (SSBool "a") (mrgReturn $ SSBool "b") (single $ SSBool "c")
       isMerged r1 `shouldBe` True
       underlyingUnion r1 `shouldBe` Single (ITE (SSBool "a") (SSBool "b") (SSBool "c"))
-      let r2 :: UnionMBase SBool SBool = guard (SSBool "a") (single $ SSBool "b") (mrgReturn $ SSBool "c")
+      let r2 :: UnionMBase SBool SBool = unionIf (SSBool "a") (single $ SSBool "b") (mrgReturn $ SSBool "c")
       isMerged r2 `shouldBe` True
       underlyingUnion r2 `shouldBe` Single (ITE (SSBool "a") (SSBool "b") (SSBool "c"))
-      let r3 :: UnionMBase SBool SBool = guard (SSBool "a") (mrgReturn $ SSBool "b") (mrgReturn $ SSBool "c")
+      let r3 :: UnionMBase SBool SBool = unionIf (SSBool "a") (mrgReturn $ SSBool "b") (mrgReturn $ SSBool "c")
       isMerged r3 `shouldBe` True
       underlyingUnion r3 `shouldBe` Single (ITE (SSBool "a") (SSBool "b") (SSBool "c"))
     it "singleView for UnionMBase should work" $ do
       singleView (single $ SSBool "a" :: UnionMBase SBool SBool) `shouldBe` Just (SSBool "a")
       singleView (mrgReturn $ SSBool "a" :: UnionMBase SBool SBool) `shouldBe` Just (SSBool "a")
       singleView
-        ( guard (SSBool "a") (single $ Left $ SSBool "b") (single $ Right $ SSBool "c") ::
+        ( unionIf (SSBool "a") (single $ Left $ SSBool "b") (single $ Right $ SSBool "c") ::
             UnionMBase SBool (Either SBool SBool)
         )
         `shouldBe` Nothing
@@ -133,46 +132,46 @@ spec = do
       case (mrgReturn $ SSBool "a" :: UnionMBase SBool SBool) of
         SingleU r -> r `shouldBe` SSBool "a"
         _ -> expectationFailure "SingleU match failed"
-      case ( guard (SSBool "a") (single $ Left $ SSBool "b") (single $ Right $ SSBool "c") ::
+      case ( unionIf (SSBool "a") (single $ Left $ SSBool "b") (single $ Right $ SSBool "c") ::
                UnionMBase SBool (Either SBool SBool)
            ) of
         SingleU _ -> expectationFailure "SingleU match failed"
         _ -> return ()
-    it "guardView for UnionMBase should work" $ do
+    it "ifView for UnionMBase should work" $ do
       let r1 :: UnionMBase SBool (Either SBool SBool) =
-            guard (SSBool "a") (single $ Left $ SSBool "b") (single $ Right $ SSBool "c")
+            unionIf (SSBool "a") (single $ Left $ SSBool "b") (single $ Right $ SSBool "c")
       let r2 :: UnionMBase SBool (Either SBool SBool) =
             mrgIf (SSBool "a") (mrgReturn $ Left $ SSBool "b") (mrgReturn $ Right $ SSBool "c")
-      guardView r1 `shouldBe` Just (SSBool "a", single $ Left $ SSBool "b", single $ Right $ SSBool "c")
-      guardView r2 `shouldBe` Just (SSBool "a", mrgReturn $ Left $ SSBool "b", mrgReturn $ Right $ SSBool "c")
-      guardView (single $ SSBool "a" :: UnionMBase SBool SBool) `shouldBe` Nothing
+      ifView r1 `shouldBe` Just (SSBool "a", single $ Left $ SSBool "b", single $ Right $ SSBool "c")
+      ifView r2 `shouldBe` Just (SSBool "a", mrgReturn $ Left $ SSBool "b", mrgReturn $ Right $ SSBool "c")
+      ifView (single $ SSBool "a" :: UnionMBase SBool SBool) `shouldBe` Nothing
       case r1 of
-        GuardU c l r -> do
+        IfU c l r -> do
           c `shouldBe` SSBool "a"
           l `shouldBe` single (Left $ SSBool "b")
           r `shouldBe` single (Right $ SSBool "c")
         _ -> expectationFailure "SingleU match failed"
       case r2 of
-        GuardU c l r -> do
+        IfU c l r -> do
           c `shouldBe` SSBool "a"
           l `shouldBe` mrgReturn (Left $ SSBool "b")
           r `shouldBe` mrgReturn (Right $ SSBool "c")
         _ -> expectationFailure "SingleU match failed"
       case single $ SSBool "a" :: UnionMBase SBool SBool of
-        GuardU {} -> expectationFailure "SingleU match failed"
+        IfU {} -> expectationFailure "SingleU match failed"
         _ -> return ()
     it "leftMost for UnionMBase should work" $ do
       leftMost (single $ SSBool "a" :: UnionMBase SBool SBool) `shouldBe` SSBool "a"
       leftMost (mrgReturn $ SSBool "a" :: UnionMBase SBool SBool) `shouldBe` SSBool "a"
       let r1 :: UnionMBase SBool (Either SBool SBool) =
-            guard (SSBool "a") (single $ Left $ SSBool "b") (single $ Right $ SSBool "c")
+            unionIf (SSBool "a") (single $ Left $ SSBool "b") (single $ Right $ SSBool "c")
       let r2 :: UnionMBase SBool (Either SBool SBool) =
             mrgIf (SSBool "a") (mrgReturn $ Left $ SSBool "b") (mrgReturn $ Right $ SSBool "c")
       leftMost r1 `shouldBe` Left (SSBool "b")
       leftMost r2 `shouldBe` Left (SSBool "b")
   describe "MonadUnion for UnionMBase" $ do
     it "merge for UnionMBase should work" $ do
-      let r1 :: UnionMBase SBool SBool = merge (guard (SSBool "a") (single $ SSBool "b") (single $ SSBool "c"))
+      let r1 :: UnionMBase SBool SBool = merge (unionIf (SSBool "a") (single $ SSBool "b") (single $ SSBool "c"))
       isMerged r1 `shouldBe` True
       underlyingUnion r1 `shouldBe` Single (ITE (SSBool "a") (SSBool "b") (SSBool "c"))
     it "mrgReturn for UnionMBase should work" $ do
@@ -187,7 +186,7 @@ spec = do
           `shouldBe` mrgReturn (SSBool "a")
       it "mrgIf should work" $ do
         (mrgIf (SSBool "a") (single $ SSBool "b") (single $ SSBool "c") :: UnionMBase SBool SBool)
-          `shouldBe` merge (guard (SSBool "a") (single $ SSBool "b") (single $ SSBool "c"))
+          `shouldBe` merge (unionIf (SSBool "a") (single $ SSBool "b") (single $ SSBool "c"))
   describe "SEq for UnionMBase" $ do
     it "SEq with Single/Single" $ do
       (mrgReturn $ SSBool "a" :: UnionMBase SBool SBool) ==~ mrgReturn (SSBool "b")
@@ -196,17 +195,17 @@ spec = do
           mrgIf (SSBool "a") (mrgReturn $ Left $ SSBool "b") (mrgReturn $ Right $ SSBool "c")
     let g2 :: UnionMBase SBool (Either SBool SBool) =
           mrgIf (SSBool "d") (mrgReturn $ Left $ SSBool "e") (mrgReturn $ Right $ SSBool "f")
-    it "SEq with Guard/Single" $ do
+    it "SEq with If/Single" $ do
       g1 ==~ mrgReturn (Left $ SSBool "d")
         `shouldBe` ITE (SSBool "a") (Equal (SSBool "b") (SSBool "d")) (CBool False)
       g1 ==~ mrgReturn (Right $ SSBool "d")
         `shouldBe` ITE (SSBool "a") (CBool False) (Equal (SSBool "c") (SSBool "d"))
-    it "SEq with Single/Guard" $ do
+    it "SEq with Single/If" $ do
       mrgReturn (Left $ SSBool "d") ==~ g1
         `shouldBe` ITE (SSBool "a") (Equal (SSBool "d") (SSBool "b")) (CBool False)
       mrgReturn (Right $ SSBool "d") ==~ g1
         `shouldBe` ITE (SSBool "a") (CBool False) (Equal (SSBool "d") (SSBool "c"))
-    it "SEq with Guard/Guard" $ do
+    it "SEq with If/If" $ do
       g1 ==~ g2
         `shouldBe` ITE
           (SSBool "a")
@@ -228,7 +227,7 @@ spec = do
           mrgIf (SSBool "a") (mrgReturn $ Left $ SSBool "b") (mrgReturn $ Right $ SSBool "c")
     let g2 :: UnionMBase SBool (Either SBool SBool) =
           mrgIf (SSBool "d") (mrgReturn $ Left $ SSBool "e") (mrgReturn $ Right $ SSBool "f")
-    it "SOrd with Guard/Single" $ do
+    it "SOrd with If/Single" $ do
       g1 <=~ mrgReturn (Left $ SSBool "d")
         `shouldBe` ITE (SSBool "a") (SSBool "b" <=~ SSBool "d") (CBool False)
       g1 <~ mrgReturn (Left $ SSBool "d")
@@ -256,7 +255,7 @@ spec = do
         `shouldBe` ( mrgIf (SSBool "a") (mrgReturn LT) (SSBool "c" `symCompare` SSBool "d") ::
                        UnionMBase SBool Ordering
                    )
-    it "SOrd with Single/Guard" $ do
+    it "SOrd with Single/If" $ do
       mrgReturn (Left $ SSBool "d") <=~ g1
         `shouldBe` ITE (SSBool "a") (SSBool "d" <=~ SSBool "b") (CBool True)
       mrgReturn (Left $ SSBool "d") <~ g1
@@ -284,7 +283,7 @@ spec = do
         `shouldBe` ( mrgIf (SSBool "a") (mrgReturn GT) (SSBool "d" `symCompare` SSBool "c") ::
                        UnionMBase SBool Ordering
                    )
-    it "SOrd with Guard/Guard" $ do
+    it "SOrd with If/If" $ do
       g1 <=~ g2
         `shouldBe` ITE
           (SSBool "a")

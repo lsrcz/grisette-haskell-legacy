@@ -4,7 +4,7 @@ module Grisette.Control.Monad.UnionSpec where
 
 import Control.Monad.Except hiding (guard)
 import Control.Monad.Identity hiding (guard)
-import Control.Monad.Reader hiding (guard)
+import Control.Monad.Reader
 import qualified Control.Monad.Trans.State.Lazy as StateLazy
 import qualified Control.Monad.Trans.State.Strict as StateStrict
 import Control.Monad.Trans.Maybe
@@ -13,7 +13,6 @@ import qualified Control.Monad.Trans.Writer.Strict as WriterStrict
 import Grisette.Control.Monad.Union
 import Grisette.Control.Monad.UnionMBase
 import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.Class.UnionOp
 import Test.Hspec
 import Grisette.TestUtils.SBool
 
@@ -21,13 +20,13 @@ spec :: Spec
 spec = do
   describe "getSingle" $ do
     it "getSingle should work" $ do
-      getSingle (guard (SSBool "a") (single $ SSBool "b") (single $ SSBool "c") :: UnionMBase SBool SBool)
+      getSingle (unionIf (SSBool "a") (single $ SSBool "b") (single $ SSBool "c") :: UnionMBase SBool SBool)
         `shouldBe` ITE (SSBool "a") (SSBool "b") (SSBool "c")
   describe "MonadUnion for MaybeT" $ do
     it "merge should work" $ do
       merge
         ( MaybeT
-            ( guard (SSBool "a") (single $ Just $ SSBool "b") (single $ Just $ SSBool "c") ::
+            ( unionIf (SSBool "a") (single $ Just $ SSBool "b") (single $ Just $ SSBool "c") ::
                 UnionMBase SBool (Maybe SBool)
             )
         )
@@ -45,7 +44,7 @@ spec = do
     it "merge should work" $ do
       merge
         ( ExceptT
-            ( guard (SSBool "a") (single $ Left $ SSBool "b") (single $ Left $ SSBool "c") ::
+            ( unionIf (SSBool "a") (single $ Left $ SSBool "b") (single $ Left $ SSBool "c") ::
                 UnionMBase SBool (Either SBool SBool)
             )
         )
@@ -63,7 +62,7 @@ spec = do
   describe "MonadUnion for StateT lazy" $ do
     it "merge should work" $ do
       let s :: StateLazy.StateT SBool (UnionMBase SBool) SBool =
-            merge $ StateLazy.StateT $ \(x :: SBool) -> guard (SSBool "a") (single (x, Not x)) (single (Not x, x))
+            merge $ StateLazy.StateT $ \(x :: SBool) -> unionIf (SSBool "a") (single (x, Not x)) (single (Not x, x))
       StateLazy.runStateT s (SSBool "b")
         `shouldBe` mrgReturn
           ( ITE (SSBool "a") (SSBool "b") (Not $ SSBool "b"),
@@ -86,7 +85,7 @@ spec = do
   describe "MonadUnion for StateT strict" $ do
     it "merge should work" $ do
       let s :: StateStrict.StateT SBool (UnionMBase SBool) SBool =
-            merge $ StateStrict.StateT $ \(x :: SBool) -> guard (SSBool "a") (single (x, Not x)) (single (Not x, x))
+            merge $ StateStrict.StateT $ \(x :: SBool) -> unionIf (SSBool "a") (single (x, Not x)) (single (Not x, x))
       StateStrict.runStateT s (SSBool "b")
         `shouldBe` mrgReturn
           ( ITE (SSBool "a") (SSBool "b") (Not $ SSBool "b"),
@@ -111,7 +110,7 @@ spec = do
       let s :: WriterLazy.WriterT [SBool] (UnionMBase SBool) SBool =
             merge $
               WriterLazy.WriterT $
-                guard
+                unionIf
                   (SSBool "a")
                   (single (SSBool "b", [SSBool "c"]))
                   (single (SSBool "d", [SSBool "e"]))
@@ -139,7 +138,7 @@ spec = do
       let s :: WriterStrict.WriterT [SBool] (UnionMBase SBool) SBool =
             merge $
               WriterStrict.WriterT $
-                guard
+                unionIf
                   (SSBool "a")
                   (single (SSBool "b", [SSBool "c"]))
                   (single (SSBool "d", [SSBool "e"]))
@@ -165,7 +164,7 @@ spec = do
   describe "MonadUnion for ReaderT" $ do
     it "merge should work" $ do
       let s :: ReaderT SBool (UnionMBase SBool) SBool =
-            merge $ ReaderT $ \(x :: SBool) -> guard (SSBool "a") (single x) (single $ Not x)
+            merge $ ReaderT $ \(x :: SBool) -> unionIf (SSBool "a") (single x) (single $ Not x)
       runReaderT s (SSBool "b")
         `shouldBe` mrgReturn
           (ITE (SSBool "a") (SSBool "b") (Not $ SSBool "b"))
@@ -186,7 +185,7 @@ spec = do
       let s :: IdentityT (UnionMBase SBool) SBool =
             merge $
               IdentityT $
-                guard
+                unionIf
                   (SSBool "a")
                   (single $ SSBool "b")
                   (single $ SSBool "c")
@@ -203,5 +202,5 @@ spec = do
       runIdentityT s `shouldBe` mrgReturn (ITE (SSBool "a") (SSBool "b") (SSBool "c"))
   describe ">>=~" $ do
     it ">>=~ should work" $ do
-      guard (SSBool "a") (single $ -1) (single 1) >>=~ (\x -> return $ x * x)
+      unionIf (SSBool "a") (single $ -1) (single 1) >>=~ (\x -> return $ x * x)
         `shouldBe` (mrgReturn 1 :: UnionMBase SBool Integer)

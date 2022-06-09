@@ -44,7 +44,6 @@ import Grisette.Data.Class.SOrd
 import Grisette.Data.Class.SimpleMergeable
 import Grisette.Data.Class.ToCon
 import Grisette.Data.Class.ToSym
-import Grisette.Data.Class.UnionOp
 import Grisette.Data.UnionBase
 import Language.Haskell.TH.Syntax
 import Language.Haskell.TH.Syntax.Compat (unTypeSplice)
@@ -74,15 +73,15 @@ import Grisette.Control.Monad.Union
 -- >>> return 1 :: UnionM Integer
 -- UAny (Single 1)
 --
--- 'guard' cannot resolve the 'Mergeable' constraint.
+-- 'unionIf' cannot resolve the 'Mergeable' constraint.
 --
--- >>> guard (ssymb "a") (return 1) (guard (ssymb "b") (return 1) (return 2)) :: UnionM Integer
--- UAny (Guard a (Single 1) (Guard b (Single 1) (Single 2)))
+-- >>> unionIf (ssymb "a") (return 1) (unionIf (ssymb "b") (return 1) (return 2)) :: UnionM Integer
+-- UAny (If a (Single 1) (If b (Single 1) (Single 2)))
 --
 -- The system can merge the final result if the 'Mergeable' knowledge is introduced by 'mrgReturn':
 --
--- >>> guard (ssymb "a") (return 1) (guard (ssymb "b") (return 1) (return 2)) >>= \x -> mrgReturn $ x + 1 :: UnionM Integer
--- UMrg (Guard (|| a b) (Single 2) (Single 3))
+-- >>> unionIf (ssymb "a") (return 1) (unionIf (ssymb "b") (return 1) (return 2)) >>= \x -> mrgReturn $ x + 1 :: UnionM Integer
+-- UMrg (If (|| a b) (Single 2) (Single 3))
 data UnionMBase bool a where
   -- | 'UnionMBase' with no 'Mergeable' knowledge.
   UAny ::
@@ -131,18 +130,12 @@ isMerged :: UnionMBase bool a -> Bool
 isMerged UAny {} = False
 isMerged UMrg {} = True
 
-instance SymBoolOp bool => UnionOp bool (UnionMBase bool) where
-  single v = (freshUAny . single) v
-  guard cond (UAny _ a) (UAny _ b) = freshUAny $ guard cond a b
-  guard cond (UMrg m a) (UAny _ b) = UMrg m $ guardWithStrategy m cond a b
-  guard cond a (UMrg m b) = UMrg m $ guardWithStrategy m cond (underlyingUnion a) b
-
 instance SymBoolOp bool => UnionPrjOp bool (UnionMBase bool) where
   singleView = singleView . underlyingUnion
-  guardView (UAny _ u) = case guardView u of
+  ifView (UAny _ u) = case ifView u of
     Just (c, t, f) -> Just (c, freshUAny t, freshUAny f)
     Nothing -> Nothing
-  guardView (UMrg m u) = case guardView u of
+  ifView (UMrg m u) = case ifView u of
     Just (c, t, f) -> Just (c, UMrg m t, UMrg m f)
     Nothing -> Nothing
   leftMost = leftMost . underlyingUnion
@@ -156,25 +149,25 @@ instance (SymBoolOp bool) => Applicative (UnionMBase bool) where
 
 bindUnion :: SymBoolOp bool => UnionBase bool a -> (a -> UnionMBase bool b) -> UnionMBase bool b
 bindUnion (Single a') f' = f' a'
-bindUnion (Guard _ _ cond ifTrue ifFalse) f' =
-  guard cond (bindUnion ifTrue f') (bindUnion ifFalse f')
+bindUnion (If _ _ cond ifTrue ifFalse) f' =
+  unionIf cond (bindUnion ifTrue f') (bindUnion ifFalse f')
 
 instance (SymBoolOp bool) => Monad (UnionMBase bool) where
   a >>= f = bindUnion (underlyingUnion a) f
 
 instance (SymBoolOp bool, Mergeable bool a) => Mergeable bool (UnionMBase bool a) where
-  mergeStrategy = SimpleStrategy $ \cond t f -> guard cond t f >>= mrgReturn @bool
+  mergeStrategy = SimpleStrategy $ \cond t f -> unionIf cond t f >>= mrgReturn @bool
 
 instance (SymBoolOp bool, Mergeable bool a) => SimpleMergeable bool (UnionMBase bool a) where
   mrgIte = mrgIf
 
 instance (SymBoolOp bool) => Mergeable1 bool (UnionMBase bool) where
-  liftMergeStrategy m = SimpleStrategy $ \cond t f -> guard cond t f >>= (UMrg m . Single)
+  liftMergeStrategy m = SimpleStrategy $ \cond t f -> unionIf cond t f >>= (UMrg m . Single)
 
 instance SymBoolOp bool => SimpleMergeable1 bool (UnionMBase bool) where
   liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
 
-instance SymBoolOp bool => UnionMergeable1 bool (UnionMBase bool) where
+instance SymBoolOp bool => UnionLike bool (UnionMBase bool) where
   mergeWithStrategy _ m@(UMrg _ _) = m
   mergeWithStrategy s (UAny ref u) = unsafeDupablePerformIO $
     atomicModifyIORef' ref $ \case
@@ -185,7 +178,11 @@ instance SymBoolOp bool => UnionMergeable1 bool (UnionMBase bool) where
   {-# NOINLINE mergeWithStrategy #-}
   mrgIfWithStrategy s (Conc c) l r = if c then mergeWithStrategy s l else mergeWithStrategy s r
   mrgIfWithStrategy s cond l r =
-    mergeWithStrategy s $ guard cond l r
+    mergeWithStrategy s $ unionIf cond l r
+  single v = (freshUAny . single) v
+  unionIf cond (UAny _ a) (UAny _ b) = freshUAny $ unionIf cond a b
+  unionIf cond (UMrg m a) (UAny _ b) = UMrg m $ ifWithStrategy m cond a b
+  unionIf cond a (UMrg m b) = UMrg m $ ifWithStrategy m cond (underlyingUnion a) b
 
 instance (SymBoolOp bool, SEq bool a) => SEq bool (UnionMBase bool a) where
   x ==~ y = getSingle $ do
@@ -198,7 +195,7 @@ liftToMonadUnion :: (SymBoolOp bool, Mergeable bool a, MonadUnion bool u) => Uni
 liftToMonadUnion u = go (underlyingUnion u)
   where
     go (Single v) = mrgReturn v
-    go (Guard _ _ c t f) = mrgIf c (go t) (go f)
+    go (If _ _ c t f) = mrgIf c (go t) (go f)
 
 instance (SymBoolOp bool, SOrd bool a) => SOrd bool (UnionMBase bool a) where
   x <=~ y = getSingle $ do
@@ -242,7 +239,7 @@ instance (SymBoolOp bool, Mergeable bool a, Evaluate model a, Evaluate model boo
     where
       go :: UnionBase bool a -> UnionMBase bool a
       go (Single v) = mrgReturn $ evaluate fillDefault model v
-      go (Guard _ _ cond t f) =
+      go (If _ _ cond t f) =
         mrgIf
           (evaluate fillDefault model cond)
           (go t)
@@ -255,7 +252,7 @@ instance
   extractSymbolics v = go $ underlyingUnion v
     where
       go (Single x) = extractSymbolics x
-      go (Guard _ _ cond t f) = extractSymbolics cond <> go t <> go f
+      go (If _ _ cond t f) = extractSymbolics cond <> go t <> go f
 
 instance (Hashable bool, Hashable a) => Hashable (UnionMBase bool a) where
   s `hashWithSalt` (UAny _ u) = s `hashWithSalt` (0 :: Int) `hashWithSalt` u
@@ -325,7 +322,7 @@ instance
 --
 -- >>> let f :: Integer -> UnionM Integer = \x -> mrgIf (ssymb "a") (mrgReturn $ x + 1) (mrgReturn $ x + 2)
 -- >>> f #~ (mrgIf (ssymb "b" :: SymBool) (mrgReturn 0) (mrgReturn 2))
--- UMrg (Guard (&& b a) (Single 1) (Guard b (Single 2) (Guard a (Single 3) (Single 4))))
+-- UMrg (If (&& b a) (Single 1) (If b (Single 2) (If a (Single 3) (Single 4))))
 (#~) ::
   (SymBoolOp bool, Function f, SimpleMergeable bool (Ret f)) =>
   f ->
@@ -341,14 +338,14 @@ instance (SymBoolOp bool, IsString a, Mergeable bool a) => IsString (UnionMBase 
 {-
 foldMapUnion :: (Monoid m) => (a -> m) -> UnionBase bool a -> m
 foldMapUnion f (Single v) = f v
-foldMapUnion f (Guard _ _ _ l r) = foldMapUnion f l <> foldMapUnion f r
+foldMapUnion f (If _ _ _ l r) = foldMapUnion f l <> foldMapUnion f r
 
 instance Foldable (UnionMBase bool) where
   foldMap f u = foldMapUnion f (underlyingUnion u)
 
 sequenceAUnion :: (Applicative m, SymBoolOp bool) => UnionBase bool (m a) -> m (UnionBase bool a)
 sequenceAUnion (Single v) = single <$> v
-sequenceAUnion (Guard _ _ cond l r) = guard cond <$> sequenceAUnion l <*> sequenceAUnion r
+sequenceAUnion (If _ _ cond l r) = unionIf cond <$> sequenceAUnion l <*> sequenceAUnion r
 
 instance (SymBoolOp bool) => Traversable (UnionMBase bool) where
   sequenceA u = freshUAny <$> sequenceAUnion (underlyingUnion u)
@@ -369,7 +366,7 @@ instance
   genSymFresh spec = go (underlyingUnion $ merge spec)
     where
       go (Single x) = genSymFresh x
-      go (Guard _ _ _ t f) = mrgIf <$> genSymSimpleFresh @bool () <*> go t <*> go f
+      go (If _ _ _ t f) = mrgIf <$> genSymSimpleFresh @bool () <*> go t <*> go f
 
 -- Concrete Key HashMaps
 -- | Tag for concrete types.

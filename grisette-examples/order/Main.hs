@@ -81,19 +81,17 @@ instance (SymBoolOp bool, Mergeable1 bool m, Mergeable bool e, Mergeable bool a)
 instance (SymBoolOp bool, Mergeable1 bool m, Mergeable bool e) => Mergeable1 bool (ExceptT' e m) where
   liftMergeStrategy m = wrapMergeStrategy (liftMergeStrategy (liftMergeStrategy m)) ExceptT' runExceptT'
 
-instance (SymBoolOp bool, UnionMergeable1 bool m, Mergeable bool e, Mergeable bool a) => SimpleMergeable bool (ExceptT' e m a) where
+instance (SymBoolOp bool, UnionLike bool m, Mergeable bool e, Mergeable bool a) => SimpleMergeable bool (ExceptT' e m a) where
   mrgIte = mrgIf
 
-instance (SymBoolOp bool, UnionMergeable1 bool m, Mergeable bool e) => SimpleMergeable1 bool (ExceptT' e m) where
+instance (SymBoolOp bool, UnionLike bool m, Mergeable bool e) => SimpleMergeable1 bool (ExceptT' e m) where
   liftMrgIte s = mrgIfWithStrategy (SimpleStrategy s)
 
-instance (SymBoolOp bool, UnionOp bool m) => UnionOp bool (ExceptT' e m) where
-  single x = ExceptT' $ single $ Either' $ Right x
-  guard cond (ExceptT' t) (ExceptT' f) = ExceptT' $ guard cond t f
-
-instance (SymBoolOp bool, UnionMergeable1 bool m, Mergeable bool e) => UnionMergeable1 bool (ExceptT' e m) where
+instance (SymBoolOp bool, UnionLike bool m, Mergeable bool e) => UnionLike bool (ExceptT' e m) where
   mergeWithStrategy s = ExceptT' . mergeWithStrategy (liftMergeStrategy s) . runExceptT'
   mrgIfWithStrategy s cond (ExceptT' t) (ExceptT' f) = ExceptT' $ mrgIfWithStrategy (liftMergeStrategy s) cond t f
+  single x = ExceptT' $ single $ Either' $ Right x
+  unionIf cond (ExceptT' t) (ExceptT' f) = ExceptT' $ unionIf cond t f
 
 assertWithError :: forall m b ex. (MonadError ex m, SymBoolOp b, MonadUnion b m) => ex -> b -> m ()
 assertWithError ex x = mrgIf x (return ()) (throwError ex)

@@ -4,7 +4,7 @@ import Control.Monad.Trans.Except
 import Grisette.Control.Monad.Except
 import Grisette.Control.Monad.Union
 import Grisette.Control.Monad.UnionMBase
-import Grisette.Data.Class.UnionOp
+import Grisette.Data.Class.SimpleMergeable
 import Test.Hspec
 import Grisette.TestUtils.SBool
 
@@ -15,7 +15,7 @@ spec = do
       runExceptT (mrgThrowError 1 :: ExceptT Integer (UnionMBase SBool) ())
         `shouldBe` mrgReturn (Left 1)
     it "mrgCatchError should work" $
-      ( ExceptT (guard (SSBool "a") (return $ Left (SSBool "b")) (return $ Right (SSBool "c"))) ::
+      ( ExceptT (unionIf (SSBool "a") (return $ Left (SSBool "b")) (return $ Right (SSBool "c"))) ::
           ExceptT SBool (UnionMBase SBool) SBool
       )
         `mrgCatchError` return

@@ -128,14 +128,14 @@ instance TransformError AssertionError AssertionError where
 -- Splitting the path and terminate one of them.
 --
 -- >>> symAssert (ssymb "a") :: ExceptT AssertionError UnionM ()
--- ExceptT (UMrg (Guard (! a) (Single (Left AssertionError)) (Single (Right ()))))
+-- ExceptT (UMrg (If (! a) (Single (Left AssertionError)) (Single (Right ()))))
 -- >>> do; symAssert (ssymb "a"); mrgReturn 1 :: ExceptT AssertionError UnionM Integer
--- ExceptT (UMrg (Guard (! a) (Single (Left AssertionError)) (Single (Right 1))))
+-- ExceptT (UMrg (If (! a) (Single (Left AssertionError)) (Single (Right 1))))
 --
 -- 'AssertionError' is compatible with 'VerificationConditions':
 --
 -- >>> symAssert (ssymb "a") :: ExceptT VerificationConditions UnionM ()
--- ExceptT (UMrg (Guard (! a) (Single (Left AssertionViolation)) (Single (Right ()))))
+-- ExceptT (UMrg (If (! a) (Single (Left AssertionViolation)) (Single (Right ()))))
 symAssert ::
   (TransformError AssertionError to, Mergeable bool to, MonadError to erm, SymBoolOp bool, MonadUnion bool erm) =>
   bool ->
@@ -149,7 +149,7 @@ symAssert = symFailIfNot AssertionError
 -- /Examples/:
 --
 -- >>> symAssume (ssymb "a") :: ExceptT VerificationConditions UnionM ()
--- ExceptT (UMrg (Guard (! a) (Single (Left AssumptionViolation)) (Single (Right ()))))
+-- ExceptT (UMrg (If (! a) (Single (Left AssumptionViolation)) (Single (Right ()))))
 symAssume ::
   (TransformError VerificationConditions to, Mergeable bool to, MonadError to erm, SymBoolOp bool, MonadUnion bool erm) =>
   bool ->

@@ -7,6 +7,9 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Grisette.Data.Class.SimpleMergeable
   ( SimpleMergeable (..),
@@ -14,9 +17,12 @@ module Grisette.Data.Class.SimpleMergeable
     mrgIte1,
     SimpleMergeable2 (..),
     mrgIte2,
-    UnionMergeable1 (..),
+    UnionLike (..),
     mrgIf,
     merge,
+    UnionPrjOp (..),
+    pattern SingleU,
+    pattern IfU,
   )
 where
 
@@ -35,7 +41,7 @@ import Grisette.Data.Class.Mergeable
 import Control.Monad.Trans.Cont
 import qualified Control.Monad.RWS.Lazy as RWSLazy
 import qualified Control.Monad.RWS.Strict as RWSStrict
-import Grisette.Data.Class.UnionOp
+import Data.Kind
 
 -- | Auxiliary class for the generic derivation for the 'SimpleMergeable' class.
 class SimpleMergeable' bool f where
@@ -86,7 +92,13 @@ mrgIte2 = liftMrgIte2 mrgIte mrgIte
 -- that are 'SimpleMergeable' when applied to any 'Mergeable' types.
 --
 -- Usually it is Union-like structures.
-class (SimpleMergeable1 bool u, Mergeable1 bool u, UnionOp bool u) => UnionMergeable1 bool u | u -> bool where
+class (SimpleMergeable1 bool u, Mergeable1 bool u) => UnionLike bool u | u -> bool where
+  -- | Wrap a single value in the union.
+  single :: a -> u a
+
+  -- | If-then-else on two union values.
+  unionIf :: bool -> u a -> u a -> u a
+
   -- | Merge the contents with some merge strategy.
   --
   -- Be careful to call this directly in your code.
@@ -108,7 +120,7 @@ class (SimpleMergeable1 bool u, Mergeable1 bool u, UnionOp bool u) => UnionMerge
   -- e.g., the merge strategy for the contained type is given with 'Mergeable1'.
   -- In other cases, 'mrgIf' is usually a better alternative.
   mrgIfWithStrategy :: MergeStrategy bool a -> bool -> u a -> u a -> u a
-  mrgIfWithStrategy s cond l r = mergeWithStrategy s $ Grisette.Data.Class.UnionOp.guard cond l r
+  mrgIfWithStrategy s cond l r = mergeWithStrategy s $ unionIf cond l r
   
   mrgSingleWithStrategy :: MergeStrategy bool a -> a -> u a
   mrgSingleWithStrategy s = mergeWithStrategy s . single
@@ -116,13 +128,13 @@ class (SimpleMergeable1 bool u, Mergeable1 bool u, UnionOp bool u) => UnionMerge
 -- | Symbolic @if@ control flow with the result merged with the type's root merge strategy.
 --
 -- | Equivalent to @mrgIfWithStrategy mergeStrategy@.
-mrgIf :: (UnionMergeable1 bool u, Mergeable bool a) => bool -> u a -> u a -> u a
+mrgIf :: (UnionLike bool u, Mergeable bool a) => bool -> u a -> u a -> u a
 mrgIf = mrgIfWithStrategy mergeStrategy
 
 -- | Merge the contents with the type's root merge strategy.
 --
 -- | Equivalent to @mergeWithStrategy mergeStrategy@.
-merge :: (UnionMergeable1 bool u, Mergeable bool a) => u a -> u a
+merge :: (UnionLike bool u, Mergeable bool a) => u a -> u a
 merge = mergeWithStrategy mergeStrategy
 
 instance (SymBoolOp bool) => SimpleMergeable bool () where
@@ -234,136 +246,154 @@ instance (SymBoolOp bool, SimpleMergeable bool b) => SimpleMergeable bool (a -> 
 instance (SymBoolOp bool) => SimpleMergeable1 bool ((->) a) where
   liftMrgIte ms cond t f = \v -> ms cond (t v) (f v)
 
-instance (SymBoolOp bool, UnionMergeable1 bool m, Mergeable bool a) => SimpleMergeable bool (MaybeT m a) where
+instance (SymBoolOp bool, UnionLike bool m, Mergeable bool a) => SimpleMergeable bool (MaybeT m a) where
   mrgIte = mrgIf
 
-instance (SymBoolOp bool, UnionMergeable1 bool m) => SimpleMergeable1 bool (MaybeT m) where
+instance (SymBoolOp bool, UnionLike bool m) => SimpleMergeable1 bool (MaybeT m) where
   liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
 
-instance (SymBoolOp bool, UnionMergeable1 bool m) => UnionMergeable1 bool (MaybeT m) where
+instance (SymBoolOp bool, UnionLike bool m) => UnionLike bool (MaybeT m) where
   mergeWithStrategy s (MaybeT v) = MaybeT $ mergeWithStrategy (liftMergeStrategy s) v
   mrgIfWithStrategy s cond (MaybeT t) (MaybeT f) = MaybeT $ mrgIfWithStrategy (liftMergeStrategy s) cond t f
+  single = MaybeT . single . return
+  unionIf cond (MaybeT l) (MaybeT r) = MaybeT $ unionIf cond l r
 
 instance
-  (SymBoolOp bool, UnionMergeable1 bool m, Mergeable bool e, Mergeable bool a) =>
+  (SymBoolOp bool, UnionLike bool m, Mergeable bool e, Mergeable bool a) =>
   SimpleMergeable bool (ExceptT e m a)
   where
   mrgIte = mrgIf
 
 instance
-  (SymBoolOp bool, UnionMergeable1 bool m, Mergeable bool e) =>
+  (SymBoolOp bool, UnionLike bool m, Mergeable bool e) =>
   SimpleMergeable1 bool (ExceptT e m)
   where
   liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
 
 instance
-  (SymBoolOp bool, UnionMergeable1 bool m, Mergeable bool e) =>
-  UnionMergeable1 bool (ExceptT e m)
+  (SymBoolOp bool, UnionLike bool m, Mergeable bool e) =>
+  UnionLike bool (ExceptT e m)
   where
   mergeWithStrategy s (ExceptT v) = ExceptT $ mergeWithStrategy (liftMergeStrategy s) v
   mrgIfWithStrategy s cond (ExceptT t) (ExceptT f) = ExceptT $ mrgIfWithStrategy (liftMergeStrategy s) cond t f
+  single = ExceptT . single . return
+  unionIf cond (ExceptT l) (ExceptT r) = ExceptT $ unionIf cond l r
 
 instance
-  (SymBoolOp bool, Mergeable bool s, Mergeable bool a, UnionMergeable1 bool m) =>
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool a, UnionLike bool m) =>
   SimpleMergeable bool (StateLazy.StateT s m a)
   where
   mrgIte = mrgIf
 
 instance
-  (SymBoolOp bool, Mergeable bool s, UnionMergeable1 bool m) =>
+  (SymBoolOp bool, Mergeable bool s, UnionLike bool m) =>
   SimpleMergeable1 bool (StateLazy.StateT s m)
   where
   liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
 
 instance
-  (SymBoolOp bool, Mergeable bool s, UnionMergeable1 bool m) =>
-  UnionMergeable1 bool (StateLazy.StateT s m)
+  (SymBoolOp bool, Mergeable bool s, UnionLike bool m) =>
+  UnionLike bool (StateLazy.StateT s m)
   where
   mergeWithStrategy ms (StateLazy.StateT f) =
     StateLazy.StateT $ \v -> mergeWithStrategy (liftMergeStrategy2 ms mergeStrategy) $ f v
   mrgIfWithStrategy s cond (StateLazy.StateT t) (StateLazy.StateT f) =
     StateLazy.StateT $ \v -> mrgIfWithStrategy (liftMergeStrategy2 s mergeStrategy) cond (t v) (f v)
+  single x = StateLazy.StateT $ \s -> single (x, s)
+  unionIf cond (StateLazy.StateT l) (StateLazy.StateT r) =
+    StateLazy.StateT $ \s -> unionIf cond (l s) (r s)
 
 instance
-  (SymBoolOp bool, Mergeable bool s, Mergeable bool a, UnionMergeable1 bool m) =>
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool a, UnionLike bool m) =>
   SimpleMergeable bool (StateStrict.StateT s m a)
   where
   mrgIte = mrgIf
 
 instance
-  (SymBoolOp bool, Mergeable bool s, UnionMergeable1 bool m) =>
+  (SymBoolOp bool, Mergeable bool s, UnionLike bool m) =>
   SimpleMergeable1 bool (StateStrict.StateT s m)
   where
   liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
 
 instance
-  (SymBoolOp bool, Mergeable bool s, UnionMergeable1 bool m) =>
-  UnionMergeable1 bool (StateStrict.StateT s m)
+  (SymBoolOp bool, Mergeable bool s, UnionLike bool m) =>
+  UnionLike bool (StateStrict.StateT s m)
   where
   mergeWithStrategy ms (StateStrict.StateT f) =
     StateStrict.StateT $ \v -> mergeWithStrategy (liftMergeStrategy2 ms mergeStrategy) $ f v
   mrgIfWithStrategy s cond (StateStrict.StateT t) (StateStrict.StateT f) =
     StateStrict.StateT $ \v -> mrgIfWithStrategy (liftMergeStrategy2 s mergeStrategy) cond (t v) (f v)
+  single x = StateStrict.StateT $ \s -> single (x, s)
+  unionIf cond (StateStrict.StateT l) (StateStrict.StateT r) =
+    StateStrict.StateT $ \s -> unionIf cond (l s) (r s)
 
 instance
-  (SymBoolOp bool, Mergeable bool s, Mergeable bool a, UnionMergeable1 bool m, Monoid s) =>
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool a, UnionLike bool m, Monoid s) =>
   SimpleMergeable bool (WriterLazy.WriterT s m a)
   where
   mrgIte = mrgIf
 
 instance
-  (SymBoolOp bool, Mergeable bool s, UnionMergeable1 bool m, Monoid s) =>
+  (SymBoolOp bool, Mergeable bool s, UnionLike bool m, Monoid s) =>
   SimpleMergeable1 bool (WriterLazy.WriterT s m)
   where
   liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
 
 instance
-  (SymBoolOp bool, Mergeable bool s, UnionMergeable1 bool m, Monoid s) =>
-  UnionMergeable1 bool (WriterLazy.WriterT s m)
+  (SymBoolOp bool, Mergeable bool s, UnionLike bool m, Monoid s) =>
+  UnionLike bool (WriterLazy.WriterT s m)
   where
   mergeWithStrategy ms (WriterLazy.WriterT f) = WriterLazy.WriterT $ mergeWithStrategy (liftMergeStrategy2 ms mergeStrategy) f
   mrgIfWithStrategy s cond (WriterLazy.WriterT t) (WriterLazy.WriterT f) =
     WriterLazy.WriterT $ mrgIfWithStrategy (liftMergeStrategy2 s mergeStrategy) cond t f
+  single x = WriterLazy.WriterT $ single (x, mempty)
+  unionIf cond (WriterLazy.WriterT l) (WriterLazy.WriterT r) =
+    WriterLazy.WriterT $ unionIf cond l r
 
 instance
-  (SymBoolOp bool, Mergeable bool s, Mergeable bool a, UnionMergeable1 bool m, Monoid s) =>
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool a, UnionLike bool m, Monoid s) =>
   SimpleMergeable bool (WriterStrict.WriterT s m a)
   where
   mrgIte = mrgIf
 
 instance
-  (SymBoolOp bool, Mergeable bool s, UnionMergeable1 bool m, Monoid s) =>
+  (SymBoolOp bool, Mergeable bool s, UnionLike bool m, Monoid s) =>
   SimpleMergeable1 bool (WriterStrict.WriterT s m)
   where
   liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
 
 instance
-  (SymBoolOp bool, Mergeable bool s, UnionMergeable1 bool m, Monoid s) =>
-  UnionMergeable1 bool (WriterStrict.WriterT s m)
+  (SymBoolOp bool, Mergeable bool s, UnionLike bool m, Monoid s) =>
+  UnionLike bool (WriterStrict.WriterT s m)
   where
   mergeWithStrategy ms (WriterStrict.WriterT f) = WriterStrict.WriterT $ mergeWithStrategy (liftMergeStrategy2 ms mergeStrategy) f
   mrgIfWithStrategy s cond (WriterStrict.WriterT t) (WriterStrict.WriterT f) =
     WriterStrict.WriterT $ mrgIfWithStrategy (liftMergeStrategy2 s mergeStrategy) cond t f
+  single x = WriterStrict.WriterT $ single (x, mempty)
+  unionIf cond (WriterStrict.WriterT l) (WriterStrict.WriterT r) =
+    WriterStrict.WriterT $ unionIf cond l r
 
 instance
-  (SymBoolOp bool, Mergeable bool a, UnionMergeable1 bool m) =>
+  (SymBoolOp bool, Mergeable bool a, UnionLike bool m) =>
   SimpleMergeable bool (ReaderT s m a)
   where
   mrgIte = mrgIf
 
 instance
-  (SymBoolOp bool, UnionMergeable1 bool m) =>
+  (SymBoolOp bool, UnionLike bool m) =>
   SimpleMergeable1 bool (ReaderT s m)
   where
   liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
 
 instance
-  (SymBoolOp bool, UnionMergeable1 bool m) =>
-  UnionMergeable1 bool (ReaderT s m)
+  (SymBoolOp bool, UnionLike bool m) =>
+  UnionLike bool (ReaderT s m)
   where
   mergeWithStrategy ms (ReaderT f) = ReaderT $ \v -> mergeWithStrategy ms $ f v
   mrgIfWithStrategy s cond (ReaderT t) (ReaderT f) =
     ReaderT $ \v -> mrgIfWithStrategy s cond (t v) (f v)
+  single x = ReaderT $ \_ -> single x
+  unionIf cond (ReaderT l) (ReaderT r) = ReaderT $ \s -> unionIf cond (l s) (r s)
 
 instance (SymBoolOp bool, SimpleMergeable bool a) => SimpleMergeable bool (Identity a) where
   mrgIte cond (Identity l) (Identity r) = Identity $ mrgIte cond l r
@@ -371,66 +401,99 @@ instance (SymBoolOp bool, SimpleMergeable bool a) => SimpleMergeable bool (Ident
 instance (SymBoolOp bool) => SimpleMergeable1 bool Identity where
   liftMrgIte mite cond (Identity l) (Identity r) = Identity $ mite cond l r
 
-instance (SymBoolOp bool, UnionMergeable1 bool m, Mergeable bool a) => SimpleMergeable bool (IdentityT m a) where
+instance (SymBoolOp bool, UnionLike bool m, Mergeable bool a) => SimpleMergeable bool (IdentityT m a) where
   mrgIte = mrgIf
 
-instance (SymBoolOp bool, UnionMergeable1 bool m) => SimpleMergeable1 bool (IdentityT m) where
+instance (SymBoolOp bool, UnionLike bool m) => SimpleMergeable1 bool (IdentityT m) where
   liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
 
-instance (SymBoolOp bool, UnionMergeable1 bool m) => UnionMergeable1 bool (IdentityT m) where
+instance (SymBoolOp bool, UnionLike bool m) => UnionLike bool (IdentityT m) where
   mergeWithStrategy ms (IdentityT f) =
     IdentityT $ mergeWithStrategy ms f
   mrgIfWithStrategy s cond (IdentityT l) (IdentityT r) = IdentityT $ mrgIfWithStrategy s cond l r
+  single x = IdentityT $ single x
+  unionIf cond (IdentityT l) (IdentityT r) = IdentityT $ unionIf cond l r
 
-instance (SymBoolOp bool, UnionMergeable1 bool m, Mergeable bool r) => SimpleMergeable bool (ContT r m a) where
+instance (SymBoolOp bool, UnionLike bool m, Mergeable bool r) => SimpleMergeable bool (ContT r m a) where
   mrgIte cond (ContT l) (ContT r) = ContT $ \c -> mrgIf cond (l c) (r c)
 
-instance (SymBoolOp bool, UnionMergeable1 bool m, Mergeable bool r) => SimpleMergeable1 bool (ContT r m) where
+instance (SymBoolOp bool, UnionLike bool m, Mergeable bool r) => SimpleMergeable1 bool (ContT r m) where
   liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
 
-instance (SymBoolOp bool, UnionMergeable1 bool m, Mergeable bool r) => UnionMergeable1 bool (ContT r m) where
+instance (SymBoolOp bool, UnionLike bool m, Mergeable bool r) => UnionLike bool (ContT r m) where
   mergeWithStrategy _ (ContT f) = ContT $ \c -> merge (f c)
   mrgIfWithStrategy _ cond (ContT l) (ContT r) = ContT $ \c -> mrgIf cond (l c) (r c)
+  single x = ContT $ \c -> c x
+  unionIf cond (ContT l) (ContT r) = ContT $ \c -> unionIf cond (l c) (r c)
 
 instance
-  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, Monoid w, Mergeable bool a, UnionMergeable1 bool m) =>
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, Monoid w, Mergeable bool a, UnionLike bool m) =>
   SimpleMergeable bool (RWSLazy.RWST r w s m a)
   where
   mrgIte = mrgIf
 
 instance
-  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, Monoid w, UnionMergeable1 bool m) =>
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, Monoid w, UnionLike bool m) =>
   SimpleMergeable1 bool (RWSLazy.RWST r w s m)
   where
   liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
 
 instance
-  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, Monoid w, UnionMergeable1 bool m) =>
-  UnionMergeable1 bool (RWSLazy.RWST r w s m)
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, Monoid w, UnionLike bool m) =>
+  UnionLike bool (RWSLazy.RWST r w s m)
   where
   mergeWithStrategy ms (RWSLazy.RWST f) =
     RWSLazy.RWST $ \r s -> mergeWithStrategy (liftMergeStrategy3 ms mergeStrategy mergeStrategy) $ f r s
   mrgIfWithStrategy ms cond (RWSLazy.RWST t) (RWSLazy.RWST f) =
     RWSLazy.RWST $ \r s -> mrgIfWithStrategy (liftMergeStrategy3 ms mergeStrategy mergeStrategy) cond (t r s) (f r s)
+  single x = RWSLazy.RWST $ \_ s -> single (x, s, mempty)
+  unionIf cond (RWSLazy.RWST t) (RWSLazy.RWST f) =
+    RWSLazy.RWST $ \r s -> unionIf cond (t r s) (f r s)
 
 instance
-  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, Monoid w, Mergeable bool a, UnionMergeable1 bool m) =>
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, Monoid w, Mergeable bool a, UnionLike bool m) =>
   SimpleMergeable bool (RWSStrict.RWST r w s m a)
   where
   mrgIte = mrgIf
 
 instance
-  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, Monoid w, UnionMergeable1 bool m) =>
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, Monoid w, UnionLike bool m) =>
   SimpleMergeable1 bool (RWSStrict.RWST r w s m)
   where
   liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
 
 instance
-  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, Monoid w, UnionMergeable1 bool m) =>
-  UnionMergeable1 bool (RWSStrict.RWST r w s m)
+  (SymBoolOp bool, Mergeable bool s, Mergeable bool w, Monoid w, UnionLike bool m) =>
+  UnionLike bool (RWSStrict.RWST r w s m)
   where
   mergeWithStrategy ms (RWSStrict.RWST f) =
     RWSStrict.RWST $ \r s -> mergeWithStrategy (liftMergeStrategy3 ms mergeStrategy mergeStrategy) $ f r s
   mrgIfWithStrategy ms cond (RWSStrict.RWST t) (RWSStrict.RWST f) =
     RWSStrict.RWST $ \r s -> mrgIfWithStrategy (liftMergeStrategy3 ms mergeStrategy mergeStrategy) cond (t r s) (f r s)
+  single x = RWSStrict.RWST $ \_ s -> single (x, s, mempty)
+  unionIf cond (RWSStrict.RWST t) (RWSStrict.RWST f) =
+    RWSStrict.RWST $ \r s -> unionIf cond (t r s) (f r s)
 
+class (UnionLike bool u) => UnionPrjOp bool (u :: Type -> Type) | u -> bool where
+  -- | Pattern match to extract single values.
+  singleView :: u a -> Maybe a
+
+  -- | Pattern match to extract guard values.
+  ifView :: u a -> Maybe (bool, u a, u a)
+
+  -- | The leftmost value in the union.
+  leftMost :: u a -> a
+
+-- | Pattern match to extract single values with 'singleView'.
+pattern SingleU :: UnionPrjOp bool u => a -> u a
+pattern SingleU x <-
+  (singleView -> Just x)
+  where
+    SingleU x = single x
+
+-- | Pattern match to extract guard values with 'guardView'
+pattern IfU :: UnionPrjOp bool u => bool -> u a -> u a -> u a
+pattern IfU c t f <-
+  (ifView -> Just (c, t, f))
+  where
+    IfU c t f = unionIf c t f

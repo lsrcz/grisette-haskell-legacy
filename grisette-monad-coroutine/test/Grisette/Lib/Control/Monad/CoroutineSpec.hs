@@ -16,7 +16,7 @@ spec = do
       let Coroutine v =
             merge
               ( Coroutine $
-                  guard
+                  unionIf
                     (SSBool "a")
                     (single $ Left $ Yield (SSBool "b") $ Coroutine $ single $ Right $ SSBool "c")
                     (single $ Left $ Yield (SSBool "d") $ Coroutine $ single $ Right $ SSBool "e") ::

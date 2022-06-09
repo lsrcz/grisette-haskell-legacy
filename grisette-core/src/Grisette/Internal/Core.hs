@@ -2,8 +2,8 @@
 
 module Grisette.Internal.Core
   ( UnionBase (..),
-    guardWithLeftMost,
-    guardWithStrategy,
+    ifWithLeftMost,
+    ifWithStrategy,
     fullReconstruct,
     UnionMBase (..),
     underlyingUnion,

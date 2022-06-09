@@ -193,12 +193,12 @@ module Grisette.Tutorial.Essentials.Essentials (
   -- 'SMaybe' is defined for symbolic optional values,
   -- and 'SEither' is defined for symbolic sums,
   -- we choose to represent such types directly by path-condition-guarded concrete values,
-  -- i.e., @(Guard path-cond1 value1 (Guard path-cond2 value2 value3))@.
-  -- The @Guard@ here has the if-then-else semantics,
+  -- i.e., @(If path-cond1 value1 (If path-cond2 value2 value3))@.
+  -- The @If@ here has the if-then-else semantics,
   -- which means,
   -- if @path-cond1@ is true under some assignment to the symbolic constants,
   -- then the value should be @value1@ with the assignment to the symbolic constants,
-  -- or we should look at the other branch @(Guard path-cond2 value2 value3)@.
+  -- or we should look at the other branch @(If path-cond2 value2 value3)@.
   --
   -- The values contained in the 'UnionM' will be merged when possible to mitigate
   -- the notorious path-explosion problem in symbolic compilation.
@@ -218,7 +218,7 @@ module Grisette.Tutorial.Essentials.Essentials (
   -- In Grisette, a symbolic list of symbolic booleans is represented with the type @UnionM [Sym Bool]@.
   -- The type wrapped in the 'UnionM', which is @[Sym Bool]@, is an concrete list for symbolic booleans.
   -- Wrapping this type with 'UnionM' enables the solver to choose from a set of lists.
-  -- For example, @(Guard a [b] [c,d])@ is a union of symbolic boolean lists that contains
+  -- For example, @(If a [b] [c,d])@ is a union of symbolic boolean lists that contains
   -- either one or two values.
   --
   -- The reason why our approach can support arbitrary type without defining their translations
@@ -227,8 +227,8 @@ module Grisette.Tutorial.Essentials.Essentials (
   -- we can apply the concrete functions from Haskell's standard library
   -- on them, and the complex types will be evaluated away.
   -- For example, to take the first element symbolically from
-  -- @(Guard a [b] [c,d])@, what we need is just to apply the 'head' function to each concrete list value,
-  -- and we will get @(Guard a b c)@. This will be merged to a single symbolic formula
+  -- @(If a [b] [c,d])@, what we need is just to apply the 'head' function to each concrete list value,
+  -- and we will get @(If a b c)@. This will be merged to a single symbolic formula
   -- @(ite a b c)@ (we will discuss the merging later), which is free of the list type,
   -- and can be easily translated to the constraint solver.
   --
@@ -326,7 +326,7 @@ module Grisette.Tutorial.Essentials.Essentials (
   -- The 'mrgIf' has the similar semantics as the @if@ statement, but works symbolically.
   -- Instead of being evaluated to a single value chosen from then or else branch,
   -- it will maintain all the two branches,
-  -- and place them under a 'Guard' with the path conditions.
+  -- and place them under a 'If' with the path conditions.
   -- The solver will be able to assign concrete constants to the symbolic constants
   -- in the path condition thus choose from one of the branches.
   -- In the following example, if @a@ is assigned to @True@,
@@ -335,7 +335,7 @@ module Grisette.Tutorial.Essentials.Essentials (
   --
   -- >>> -- if a then Nothing else Just b
   -- >>> mrgIf "a" (return Nothing) (return $ Just "b") :: UnionM (Maybe SymBool)
-  -- UMrg (Guard a (Single Nothing) (Single (Just b)))
+  -- UMrg (If a (Single Nothing) (Single (Just b)))
   --
   -- The bind function for 'UnionM' captures the semantics for sequential programs
   -- in multi-path execution.
@@ -354,7 +354,7 @@ module Grisette.Tutorial.Essentials.Essentials (
   --      v2 <- l2
   --      return $ v1 ++ v2
   -- :}
-  -- UAny (Guard a (Guard e (Single [b,f]) (Single [b,g,h])) (Guard e (Single [c,d,f]) (Single [c,d,g,h])))
+  -- UAny (If a (If e (Single [b,f]) (Single [b,g,h])) (If e (Single [c,d,f]) (Single [c,d,g,h])))
   --
   -- You can see the path condition is correctly maintained in the result,
   -- that is, when @a@ is true and @e@ is true, the result would be @[b,f]@, etc.
@@ -381,7 +381,7 @@ module Grisette.Tutorial.Essentials.Essentials (
   --      v2 <- l2
   --      return $ v1 ++ v2
   -- :}
-  -- UMrg (Guard (&& a e) (Single [b,f]) (Guard (|| a e) (Single [(ite a b c),(ite a g d),(ite a h f)]) (Single [c,d,g,h])))
+  -- UMrg (If (&& a e) (Single [b,f]) (If (|| a e) (Single [(ite a b c),(ite a g d),(ite a h f)]) (Single [c,d,g,h])))
   --
   -- However, it's easy to forget calling 'merge' every time when you write a do-block,
   -- and this may result in low efficiency in symbolic compilation.
@@ -424,7 +424,7 @@ module Grisette.Tutorial.Essentials.Essentials (
   --      v2 <- l2
   --      mrgReturn $ v1 ++ v2
   -- :}
-  -- UMrg (Guard (&& a e) (Single [b,f]) (Guard (|| a e) (Single [(ite a b c),(ite a g d),(ite a h f)]) (Single [c,d,g,h])))
+  -- UMrg (If (&& a e) (Single [b,f]) (If (|| a e) (Single [(ite a b c),(ite a g d),(ite a h f)]) (Single [c,d,g,h])))
   --
   -- One great property of the knowledge propagation approach is that
   -- if you stick to the @mrg@ prefixed version
@@ -436,7 +436,7 @@ module Grisette.Tutorial.Essentials.Essentials (
   --   do lst <- mrgIf "a" (mrgReturn []) (mrgReturn ["b"]) :: UnionM [SymBool]
   --      f "c" "d" lst
   -- :}
-  -- UMrg (Guard (&& a c) (Single []) (Guard (|| a c) (Single [(ite a d b)]) (Single [d,b])))
+  -- UMrg (If (&& a c) (Single []) (If (|| a c) (Single [(ite a d b)]) (Single [d,b])))
   
   -- ** Using monad transformers
   -- | The Grisette framework is extensible because it fit perfectly into
@@ -473,7 +473,7 @@ module Grisette.Tutorial.Essentials.Essentials (
   -- :}
   --
   -- >>> runStateT m 0
-  -- UMrg (Guard (! (|| a b)) (Single ((),0)) (Guard (! (&& a b)) (Single ((),1)) (Single ((),2))))
+  -- UMrg (If (! (|| a b)) (Single ((),0)) (If (! (&& a b)) (Single ((),1)) (Single ((),2))))
   --
   -- The program works as expected. If @a@ and @b@ are both false, then the final state would be 0.
   -- If they are both true, then the final state would be 2. Or the final state would be 1.
@@ -540,7 +540,7 @@ module Grisette.Tutorial.Essentials.Essentials (
   -- >>> assert cond = mrgIf cond (return ()) (throwError Assert)
   -- >>> assume cond = mrgIf cond (return ()) (throwError Assume)
   -- >>> assert "a" :: ExceptT Error UnionM ()
-  -- ExceptT (UMrg (Guard (! a) (Single (Left Assert)) (Single (Right ()))))
+  -- ExceptT (UMrg (If (! a) (Single (Left Assert)) (Single (Right ()))))
   --
   -- Then a function with verification builtin can be implemented as follows:
   --

@@ -6,7 +6,6 @@ import Grisette.Control.Monad
 import Grisette.Control.Monad.Union
 import Grisette.Control.Monad.UnionMBase
 import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.Class.UnionOp
 import Test.Hspec
 import Grisette.TestUtils.SBool
 import Control.Monad.Trans.Maybe
@@ -16,7 +15,7 @@ spec = do
   describe "mrgFoldM" $ do
     it "mrgFoldM should work" $ do
       ( mrgFoldM
-          (\acc (c, v) -> guard c (single $ acc + v) (single $ acc * v))
+          (\acc (c, v) -> unionIf c (single $ acc + v) (single $ acc * v))
           10
           [(SSBool "a", 2), (SSBool "b", 3)] ::
           UnionMBase SBool Integer
@@ -43,6 +42,6 @@ spec = do
         `shouldBe` mrgReturn 1
   describe ">>~" $ do
     it ">>~ should work" $ do
-      (guard (SSBool "a") (single $ -1) (single 1) :: UnionMBase SBool Integer)
-        >>~ guard (SSBool "a") (single $ -1) (single 1)
+      (unionIf (SSBool "a") (single $ -1) (single 1) :: UnionMBase SBool Integer)
+        >>~ unionIf (SSBool "a") (single $ -1) (single 1)
         `shouldBe` (mrgIf (SSBool "a") (mrgReturn $ -1) (mrgReturn 1) :: UnionMBase SBool Integer)

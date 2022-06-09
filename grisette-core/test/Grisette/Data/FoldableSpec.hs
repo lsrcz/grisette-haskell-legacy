@@ -1,12 +1,11 @@
 module Grisette.Data.FoldableSpec where
 
-import Control.Monad.Except hiding (guard)
+import Control.Monad.Except
 import Control.Monad.Trans.Maybe
 import Grisette.Control.Monad
 import Grisette.Control.Monad.Union
 import Grisette.Control.Monad.UnionMBase
 import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.Class.UnionOp
 import Grisette.Data.Foldable
 import Test.Hspec
 import Grisette.TestUtils.SBool
@@ -16,7 +15,7 @@ spec = do
   describe "mrgFoldlM" $ do
     it "mrgFoldlM should work" $ do
       ( mrgFoldlM
-          (\acc (c, v) -> guard c (single $ acc + v) (single $ acc * v))
+          (\acc (c, v) -> unionIf c (single $ acc + v) (single $ acc * v))
           10
           [(SSBool "a", 2), (SSBool "b", 3)] ::
           UnionMBase SBool Integer
@@ -28,7 +27,7 @@ spec = do
   describe "mrgFoldrM" $ do
     it "mrgFoldrM should work" $ do
       ( mrgFoldrM
-          (\(c, v) acc -> guard c (single $ acc + v) (single $ acc * v))
+          (\(c, v) acc -> unionIf c (single $ acc + v) (single $ acc * v))
           10
           [(SSBool "a", 2), (SSBool "b", 3)] ::
           UnionMBase SBool Integer
@@ -41,7 +40,7 @@ spec = do
     it "mrgTraverse_ should work" $ do
       runExceptT
         ( mrgTraverse_
-            (\(c, x) -> ExceptT $ guard c (return $ Left x) (return $ Right c))
+            (\(c, x) -> ExceptT $ unionIf c (return $ Left x) (return $ Right c))
             [(SSBool "a", 3), (SSBool "b", 2)] ::
             ExceptT Integer (UnionMBase SBool) ()
         )
@@ -56,7 +55,7 @@ spec = do
       runExceptT
         ( mrgFor_
             [(SSBool "a", 3), (SSBool "b", 2)]
-            (\(c, x) -> ExceptT $ guard c (return $ Left x) (return $ Right c)) ::
+            (\(c, x) -> ExceptT $ unionIf c (return $ Left x) (return $ Right c)) ::
             ExceptT Integer (UnionMBase SBool) ()
         )
         `shouldBe` runExceptT
@@ -69,7 +68,7 @@ spec = do
     it "mrgMapM_ should work" $ do
       runExceptT
         ( mrgMapM_
-            (\(c, x) -> ExceptT $ guard c (return $ Left x) (return $ Right c))
+            (\(c, x) -> ExceptT $ unionIf c (return $ Left x) (return $ Right c))
             [(SSBool "a", 3), (SSBool "b", 2)] ::
             ExceptT Integer (UnionMBase SBool) ()
         )
@@ -84,7 +83,7 @@ spec = do
       runExceptT
         ( mrgForM_
             [(SSBool "a", 3), (SSBool "b", 2)]
-            (\(c, x) -> ExceptT $ guard c (return $ Left x) (return $ Right c)) ::
+            (\(c, x) -> ExceptT $ unionIf c (return $ Left x) (return $ Right c)) ::
             ExceptT Integer (UnionMBase SBool) ()
         )
         `shouldBe` runExceptT

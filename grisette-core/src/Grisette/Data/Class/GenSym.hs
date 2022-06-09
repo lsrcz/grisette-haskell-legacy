@@ -66,7 +66,6 @@ import Grisette.Data.Class.Bool
 import Grisette.Data.Class.Mergeable
 import Grisette.Data.Class.SimpleMergeable
 import Language.Haskell.TH.Syntax hiding (lift)
-import Grisette.Data.Class.UnionOp
 
 -- $setup
 -- >>> import Grisette.Core
@@ -154,33 +153,28 @@ instance (SymBoolOp bool, Mergeable1 bool m) => Mergeable1 bool (GenSymFreshT m)
       runGenSymFreshT'
 
 instance
-  (SymBoolOp bool, UnionMergeable1 bool m, Mergeable bool a) =>
+  (SymBoolOp bool, UnionLike bool m, Mergeable bool a) =>
   SimpleMergeable bool (GenSymFreshT m a)
   where
   mrgIte = mrgIf
 
 instance
-  (SymBoolOp bool, UnionMergeable1 bool m) =>
+  (SymBoolOp bool, UnionLike bool m) =>
   SimpleMergeable1 bool (GenSymFreshT m)
   where
   liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
 
 instance
-  (SymBoolOp bool, UnionOp bool m) =>
-  UnionOp bool (GenSymFreshT m)
-  where
-  single x = GenSymFreshT $ \_ i -> single (x, i)
-  guard cond (GenSymFreshT t) (GenSymFreshT f) =
-    GenSymFreshT $ \ident index -> Grisette.Data.Class.UnionOp.guard cond (t ident index) (f ident index)
-
-instance
-  (SymBoolOp bool, UnionMergeable1 bool m) =>
-  UnionMergeable1 bool (GenSymFreshT m)
+  (SymBoolOp bool, UnionLike bool m) =>
+  UnionLike bool (GenSymFreshT m)
   where
   mergeWithStrategy s (GenSymFreshT f) =
     GenSymFreshT $ \ident index -> mergeWithStrategy (liftMergeStrategy2 s mergeStrategy) $ f ident index
   mrgIfWithStrategy s cond (GenSymFreshT t) (GenSymFreshT f) =
     GenSymFreshT $ \ident index -> mrgIfWithStrategy (liftMergeStrategy2 s mergeStrategy) cond (t ident index) (f ident index)
+  single x = GenSymFreshT $ \_ i -> single (x, i)
+  unionIf cond (GenSymFreshT t) (GenSymFreshT f) =
+    GenSymFreshT $ \ident index -> unionIf cond (t ident index) (f ident index)
 
 -- | Run the symbolic generation with the given identifier and 0 as the initial index.
 runGenSymFreshT :: (Monad m) => GenSymFreshT m a -> GenSymIdent -> m a
@@ -248,19 +242,19 @@ class (SymBoolOp bool, Mergeable bool a) => GenSym bool spec a where
   -- No specification is needed.
   --
   -- >>> runGenSymFresh (genSymFresh ()) "a" :: UnionM Bool
-  -- UMrg (Guard a@0 (Single False) (Single True))
+  -- UMrg (If a@0 (Single False) (Single True))
   --
   -- The following example generates @Maybe Bool@s.
   -- There are more than one symbolic primitives introduced, and their uniqueness is ensured.
   -- No specification is needed.
   --
   -- >>> runGenSymFresh (genSymFresh ()) "a" :: UnionM (Maybe Bool)
-  -- UMrg (Guard a@0 (Single Nothing) (Guard a@1 (Single (Just False)) (Single (Just True))))
+  -- UMrg (If a@0 (Single Nothing) (If a@1 (Single (Just False)) (Single (Just True))))
   --
   -- The following example generates lists of symbolic booleans with length 1 to 2.
   --
   -- >>> runGenSymFresh (genSymFresh (ListSpec 1 2 ())) "a" :: UnionM [SymBool]
-  -- UMrg (Guard a@2 (Single [a@1]) (Single [a@0,a@1]))
+  -- UMrg (If a@2 (Single [a@1]) (Single [a@0,a@1]))
   --
   -- When multiple symbolic variables are generated, the uniqueness can be ensured.
   --
@@ -508,7 +502,7 @@ derivedSameShapeGenSymSimpleFresh a = to <$> genSymSameShapeFresh @bool @(Rep a)
 -- The result will be wrapped in a union-like monad, and also a monad maintaining the 'GenSym' context.
 --
 -- >>> runGenSymFresh (choose [1,2,3]) "a" :: UnionM Integer
--- UMrg (Guard a@0 (Single 1) (Guard a@1 (Single 2) (Single 3)))
+-- UMrg (If a@0 (Single 1) (If a@1 (Single 2) (Single 3)))
 choose ::
   forall bool a m u.
   ( SymBoolOp bool,
@@ -562,7 +556,7 @@ simpleChoose [] = error "simpleChoose expects at least one value"
 -- >>> let a = runGenSymFresh (choose [1, 2]) "a" :: UnionM Integer
 -- >>> let b = runGenSymFresh (choose [2, 3]) "b" :: UnionM Integer
 -- >>> runGenSymFresh (chooseU [a, b]) "c" :: UnionM Integer
--- UMrg (Guard (&& c@0 a@0) (Single 1) (Guard (|| c@0 b@0) (Single 2) (Single 3)))
+-- UMrg (If (&& c@0 a@0) (Single 1) (If (|| c@0 b@0) (Single 2) (Single 3)))
 chooseU ::
   forall bool a m u.
   ( SymBoolOp bool,
@@ -627,7 +621,7 @@ instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSym bool () Bool wher
 -- | Specification for enum values with upper bound (exclusive). The result would chosen from [0 .. upperbound].
 --
 -- >>> runGenSymFresh (genSymFresh (EnumGenUpperBound @Integer 4)) "c" :: UnionM Integer
--- UMrg (Guard c@0 (Single 0) (Guard c@1 (Single 1) (Guard c@2 (Single 2) (Single 3))))
+-- UMrg (If c@0 (Single 0) (If c@1 (Single 1) (If c@2 (Single 2) (Single 3))))
 newtype EnumGenUpperBound a = EnumGenUpperBound a
 
 instance (SymBoolOp bool, GenSymSimple bool () bool, Enum v, Mergeable bool v) => GenSym bool (EnumGenUpperBound v) v where
@@ -636,7 +630,7 @@ instance (SymBoolOp bool, GenSymSimple bool () bool, Enum v, Mergeable bool v) =
 -- | Specification for numbers with lower bound (inclusive) and upper bound (exclusive)
 --
 -- >>> runGenSymFresh (genSymFresh (EnumGenBound @Integer 0 4)) "c" :: UnionM Integer
--- UMrg (Guard c@0 (Single 0) (Guard c@1 (Single 1) (Guard c@2 (Single 2) (Single 3))))
+-- UMrg (If c@0 (Single 0) (If c@1 (Single 1) (If c@2 (Single 2) (Single 3))))
 data EnumGenBound a = EnumGenBound a a
 
 instance (SymBoolOp bool, GenSymSimple bool () bool, Enum v, Mergeable bool v) => GenSym bool (EnumGenBound v) v where
@@ -706,7 +700,7 @@ instance
 -- | Specification for list generation.
 --
 -- >>> runGenSymFresh (genSymFresh (ListSpec 0 2 ())) "c" :: UnionM [SymBool]
--- UMrg (Guard c@2 (Single []) (Guard c@3 (Single [c@1]) (Single [c@0,c@1])))
+-- UMrg (If c@2 (Single []) (If c@3 (Single [c@1]) (Single [c@0,c@1])))
 data ListSpec spec = ListSpec
   { -- | The minimum length of the generated lists
     genListMinLength :: Integer,
