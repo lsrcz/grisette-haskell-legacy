@@ -18,7 +18,7 @@ jobs:
       - restore_cache:
           name: Restore Cached Dependencies
           keys:
-            - dep-{{ checksum "stack.yaml" }}-{{ checksum ".circleci/config.yml" }}-{{ checksum "grisette/package.yaml" }}-{{ checksum "grisette-backend-direct/package.yaml" }}-{{ checksum "grisette-backend-sbv/package.yaml" }}-{{ checksum "grisette-benchmarks/package.yaml" }}-{{ checksum "grisette-core/package.yaml" }}-{{ checksum "grisette-doctest/package.yaml" }}-{{ checksum "grisette-examples/package.yaml" }}-{{ checksum "grisette-lib/package.yaml" }}-{{ checksum "grisette-monad-coroutine/package.yaml" }}-{{ checksum "grisette-scratch/package.yaml" }}-{{ checksum "grisette-symir/package.yaml" }}-{{ checksum "grisette-tutorial/package.yaml" }}-{{ checksum "grisette-vector-sized/package.yaml" }}
+            - dep-{{ checksum "stack.yaml" }}-{{ checksum ".circleci/config.yml" }}-{{ checksum "grisette/package.yaml" }}-{{ checksum "grisette-backend-direct/package.yaml" }}-{{ checksum "grisette-backend-sbv/package.yaml" }}-{{ checksum "grisette-benchmarks/package.yaml" }}-{{ checksum "grisette-core/package.yaml" }}-{{ checksum "grisette-doctest/package.yaml" }}-{{ checksum "grisette-examples/package.yaml" }}-{{ checksum "grisette-lib/package.yaml" }}-{{ checksum "grisette-monad-coroutine/package.yaml" }}-{{ checksum "grisette-scratch/package.yaml" }}-{{ checksum "grisette-symir/package.yaml" }}-{{ checksum "grisette-tutorial/package.yaml" }}-{{ checksum "grisette-vector-sized/package.yaml" }}-{{ checksum "grisette-fused-effects/package.yaml" }}
             - dep-{{ checksum "stack.yaml" }}
       - run:
           name: Resolve/Update Dependencies
@@ -54,7 +54,7 @@ jobs:
           command: stack --stack-yaml stack.yaml --no-terminal clean
       - save_cache:
           name: Cache Dependencies
-          key: dep-{{ checksum "stack.yaml" }}-{{ checksum ".circleci/config.yml" }}-{{ checksum "grisette/package.yaml" }}-{{ checksum "grisette-backend-direct/package.yaml" }}-{{ checksum "grisette-backend-sbv/package.yaml" }}-{{ checksum "grisette-benchmarks/package.yaml" }}-{{ checksum "grisette-core/package.yaml" }}-{{ checksum "grisette-doctest/package.yaml" }}-{{ checksum "grisette-examples/package.yaml" }}-{{ checksum "grisette-lib/package.yaml" }}-{{ checksum "grisette-monad-coroutine/package.yaml" }}-{{ checksum "grisette-scratch/package.yaml" }}-{{ checksum "grisette-symir/package.yaml" }}-{{ checksum "grisette-tutorial/package.yaml" }}-{{ checksum "grisette-vector-sized/package.yaml" }}
+          key: dep-{{ checksum "stack.yaml" }}-{{ checksum ".circleci/config.yml" }}-{{ checksum "grisette/package.yaml" }}-{{ checksum "grisette-backend-direct/package.yaml" }}-{{ checksum "grisette-backend-sbv/package.yaml" }}-{{ checksum "grisette-benchmarks/package.yaml" }}-{{ checksum "grisette-core/package.yaml" }}-{{ checksum "grisette-doctest/package.yaml" }}-{{ checksum "grisette-examples/package.yaml" }}-{{ checksum "grisette-lib/package.yaml" }}-{{ checksum "grisette-monad-coroutine/package.yaml" }}-{{ checksum "grisette-scratch/package.yaml" }}-{{ checksum "grisette-symir/package.yaml" }}-{{ checksum "grisette-tutorial/package.yaml" }}-{{ checksum "grisette-vector-sized/package.yaml" }}-{{ checksum "grisette-fused-effects/package.yaml" }}
           paths:
             - "/root/.stack"
             - ".stack-work"
@@ -71,6 +71,7 @@ jobs:
             - "grisette-symir/.stack-work"
             - "grisette-tutorial/.stack-work"
             - "grisette-vector-sized/.stack-work"
+            - "grisette-fused-effects/.stack-work"
 
 workflows:
   all-tests:
