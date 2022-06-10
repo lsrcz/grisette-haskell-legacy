@@ -68,6 +68,7 @@ module Grisette.Core
     -- withSimpleMergeableU,
     UnionLike (..),
     mrgIf,
+    mrgSingle,
     merge,
     -- withUnionSimpleMergeable,
     -- withUnionSimpleMergeableU,

@@ -20,6 +20,7 @@ module Grisette.Data.Class.SimpleMergeable
     UnionLike (..),
     mrgIf,
     merge,
+    mrgSingle,
     UnionPrjOp (..),
     pattern SingleU,
     pattern IfU,
@@ -136,6 +137,12 @@ mrgIf = mrgIfWithStrategy mergeStrategy
 -- | Equivalent to @mergeWithStrategy mergeStrategy@.
 merge :: (UnionLike bool u, Mergeable bool a) => u a -> u a
 merge = mergeWithStrategy mergeStrategy
+
+-- | Wrap a single value in the type and propagate the type's root merge strategy.
+--
+-- | Equivalent to @mrgSingleWithStrategy mergeStrategy@.
+mrgSingle :: (UnionLike bool u, Mergeable bool a) => a -> u a
+mrgSingle = mrgSingleWithStrategy mergeStrategy
 
 instance (SymBoolOp bool) => SimpleMergeable bool () where
   mrgIte _ t _ = t
