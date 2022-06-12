@@ -41,21 +41,20 @@ import Data.String
 import Data.Word
 import GHC.Generics
 import GHC.TypeLits
-import Grisette.Control.Monad.Union
-import Grisette.Data.Class.BitVector
-import Grisette.Data.Class.Bool
-import Grisette.Data.Class.Error
-import Grisette.Data.Class.Evaluate
-import Grisette.Data.Class.ExtractSymbolics
-import Grisette.Data.Class.Function
-import Grisette.Data.Class.GenSym
-import Grisette.Data.Class.Integer
-import Grisette.Data.Class.Mergeable
-import Grisette.Data.Class.PrimWrapper
-import Grisette.Data.Class.SOrd
-import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.Class.ToCon
-import Grisette.Data.Class.ToSym
+import Grisette.Core.Data.Class.BitVector
+import Grisette.Core.Data.Class.Bool
+import Grisette.Core.Data.Class.Error
+import Grisette.Core.Data.Class.Evaluate
+import Grisette.Core.Data.Class.ExtractSymbolics
+import Grisette.Core.Data.Class.Function
+import Grisette.Core.Data.Class.GenSym
+import Grisette.Core.Data.Class.Integer
+import Grisette.Core.Data.Class.Mergeable
+import Grisette.Core.Data.Class.PrimWrapper
+import Grisette.Core.Data.Class.SOrd
+import Grisette.Core.Data.Class.SimpleMergeable
+import Grisette.Core.Data.Class.ToCon
+import Grisette.Core.Data.Class.ToSym
 import Grisette.Data.GeneralFunc
 import Grisette.Data.Prim.BV
 import Grisette.Data.Prim.Bits
@@ -68,6 +67,7 @@ import Grisette.Data.Prim.Num
 import Grisette.Data.Prim.TabularFunc
 import Grisette.Data.TabularFunc
 import Language.Haskell.TH.Syntax
+import Grisette.Lib.Control.Monad
 
 newtype Sym a = Sym {underlyingTerm :: Term a} deriving (Lift, Generic)
 

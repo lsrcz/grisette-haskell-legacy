@@ -4,7 +4,7 @@ module Grisette.Data.TabularFuncSpec where
 
 import Test.Hspec
 import Grisette.Data.TabularFunc
-import Grisette.Data.Class.Function
+import Grisette.Core.Data.Class.Function
 
 spec :: Spec
 spec = do

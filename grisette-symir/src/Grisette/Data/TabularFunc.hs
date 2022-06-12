@@ -14,7 +14,7 @@ where
 import Control.DeepSeq
 import Data.Hashable
 import GHC.Generics
-import Grisette.Data.Class.Function
+import Grisette.Core.Data.Class.Function
 import Grisette.Data.Prim.InternedTerm
 import Language.Haskell.TH.Syntax
 

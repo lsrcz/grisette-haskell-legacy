@@ -6,6 +6,7 @@ import Control.Carrier.Reader
 import Grisette.Core
 import Grisette.Lib.Control.Carrier.Lift ()
 import Grisette.Lib.Control.Carrier.Reader ()
+import Grisette.Lib.Control.Monad
 import Grisette.Lib.Control.Effect.Reader
 import Grisette.TestUtils.SBool
 import Test.Hspec

@@ -2,7 +2,7 @@
 
 module Grisette.TestUtils.SEq where
 
-import Grisette.Data.Class.Bool
+import Grisette.Core.Data.Class.Bool
 import Grisette.TestUtils.SBool
 import Test.Hspec
 

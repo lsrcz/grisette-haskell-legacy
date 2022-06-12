@@ -3,12 +3,12 @@
 
 module Grisette.TestUtils.SOrd where
 
-import Grisette.Control.Monad.Union
-import Grisette.Control.Monad.UnionMBase
-import Grisette.Data.Class.Bool
-import Grisette.Data.Class.SOrd
+import Grisette.Core.Control.Monad.UnionMBase
+import Grisette.Core.Data.Class.Bool
+import Grisette.Core.Data.Class.SOrd
 import Grisette.TestUtils.SBool
 import Test.Hspec
+import Grisette.Lib.Control.Monad
 
 concreteOrdOkProp :: (HasCallStack, SOrd SBool a, Ord a) => (a, a) -> Expectation
 concreteOrdOkProp (i, j) = do

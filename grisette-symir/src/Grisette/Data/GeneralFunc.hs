@@ -16,8 +16,8 @@ import Data.Hashable
 import Data.Proxy
 import Data.Typeable
 import GHC.Generics
-import Grisette.Data.Class.Function
-import Grisette.Data.MemoUtils
+import Grisette.Core.Data.Class.Function
+import Grisette.Core.Data.MemoUtils
 import Grisette.Data.Prim.InternedTerm
 import Language.Haskell.TH.Syntax
 import qualified Type.Reflection as R

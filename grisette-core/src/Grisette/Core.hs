@@ -74,11 +74,14 @@ module Grisette.Core
     -- withUnionSimpleMergeableU,
     MonadUnion,
     getSingle,
+    {-
     mrgReturnWithStrategy,
     mrgBindWithStrategy,
     mrgReturn,
     (>>=~),
+    -}
 
+{-
     -- * Wrapped Monadic Combinators with Mergeable Knowledge Propagaion
     mrgFoldM,
     (>>~),
@@ -105,6 +108,7 @@ module Grisette.Core
     mrgLift,
     mrgThrowError,
     mrgCatchError,
+    -}
     
     -- * Standard Errors
     -- | #errors#
@@ -219,31 +223,25 @@ module Grisette.Core
 where
 
 import Generics.Deriving (Default(..), Default1(..))
-import Grisette.Control.Exception
-import Grisette.Control.Monad
-import Grisette.Control.Monad.Except
-import Grisette.Control.Monad.Trans
-import Grisette.Control.Monad.UnionMBase
-import Grisette.Data.Class.Bool
-import Grisette.Data.Class.Error
-import Grisette.Data.Class.ExtractSymbolics
-import Grisette.Data.Class.Function
-import Grisette.Data.Class.Integer
-import Grisette.Data.Class.Mergeable
-import Grisette.Data.Class.OrphanGeneric ()
-import Grisette.Data.Class.PrimWrapper
-import Grisette.Data.Class.SOrd
-import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.Class.Evaluate
-import Grisette.Data.Class.GenSym
-import Grisette.Data.Class.ToCon
-import Grisette.Data.Class.ToSym
-import Grisette.Data.FileLocation
-import Grisette.Data.MemoUtils
-import Grisette.TH
-import Grisette.BuiltinUnionMWrappers
-import Grisette.Data.Class.BitVector
-import Grisette.Data.Class.Solver
-import Grisette.Control.Monad.Union
-import Grisette.Data.Foldable
-import Grisette.Data.Traversable
+import Grisette.Core.Control.Exception
+import Grisette.Core.Control.Monad.UnionMBase
+import Grisette.Core.Data.Class.Bool
+import Grisette.Core.Data.Class.Error
+import Grisette.Core.Data.Class.ExtractSymbolics
+import Grisette.Core.Data.Class.Function
+import Grisette.Core.Data.Class.Integer
+import Grisette.Core.Data.Class.Mergeable
+import Grisette.Core.Data.Class.PrimWrapper
+import Grisette.Core.Data.Class.SOrd
+import Grisette.Core.Data.Class.SimpleMergeable
+import Grisette.Core.Data.Class.Evaluate
+import Grisette.Core.Data.Class.GenSym
+import Grisette.Core.Data.Class.ToCon
+import Grisette.Core.Data.Class.ToSym
+import Grisette.Core.Data.FileLocation
+import Grisette.Core.Data.MemoUtils
+import Grisette.Core.TH
+import Grisette.Core.BuiltinUnionMWrappers
+import Grisette.Core.Data.Class.BitVector
+import Grisette.Core.Data.Class.Solver
+import Grisette.Core.Control.Monad.Union

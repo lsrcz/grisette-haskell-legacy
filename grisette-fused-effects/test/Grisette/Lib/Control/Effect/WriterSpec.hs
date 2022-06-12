@@ -7,6 +7,7 @@ import Grisette.Core
 import Grisette.Lib.Control.Carrier.Lift ()
 import Grisette.Lib.Control.Carrier.Writer.Strict ()
 import Grisette.Lib.Control.Effect.Writer
+import Grisette.Lib.Control.Monad
 import Grisette.TestUtils.SBool
 import Test.Hspec
 

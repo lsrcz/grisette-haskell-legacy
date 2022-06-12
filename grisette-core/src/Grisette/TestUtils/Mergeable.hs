@@ -3,7 +3,7 @@
 
 module Grisette.TestUtils.Mergeable where
 
-import Grisette.Data.Class.Mergeable
+import Grisette.Core.Data.Class.Mergeable
 import Grisette.TestUtils.SBool
 import Test.Hspec
 

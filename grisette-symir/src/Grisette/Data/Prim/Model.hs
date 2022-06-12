@@ -23,7 +23,7 @@ import qualified Data.HashSet as S
 import Data.Hashable
 import Data.Typeable
 import GHC.Generics
-import Grisette.Data.MemoUtils
+import Grisette.Core.Data.MemoUtils
 import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.InternedTerm
 import Grisette.Data.Prim.ModelValue

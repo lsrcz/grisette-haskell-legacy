@@ -4,24 +4,24 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Grisette.TestUtils.SBool where
-import Grisette.Data.Class.Bool
-import Grisette.Data.Class.PrimWrapper
+import Grisette.Core.Data.Class.Bool
+import Grisette.Core.Data.Class.PrimWrapper
 import qualified Data.HashSet as S
-import Grisette.Data.Class.ExtractSymbolics
+import Grisette.Core.Data.Class.ExtractSymbolics
 import Data.Hashable
-import Grisette.Data.Class.SOrd
-import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.Class.Mergeable
-import Grisette.Control.Monad.Union
-import Grisette.Data.Class.Evaluate
+import Grisette.Core.Data.Class.SOrd
+import Grisette.Core.Data.Class.SimpleMergeable
+import Grisette.Core.Data.Class.Mergeable
+import Grisette.Core.Data.Class.Evaluate
 import qualified Data.HashMap.Strict as M
-import Grisette.Data.Class.ToCon
-import Grisette.Data.Class.ToSym
-import Grisette.Data.Class.GenSym
+import Grisette.Core.Data.Class.ToCon
+import Grisette.Core.Data.Class.ToSym
+import Grisette.Core.Data.Class.GenSym
 import Control.Monad.State
 import Control.Monad.Reader
 import Data.Typeable
 import Data.String
+import Grisette.Lib.Control.Monad
 
 data SBool where
   CBool :: Bool -> SBool

@@ -10,7 +10,7 @@ import qualified Data.BitVector.Sized.Signed as BVS
 import Data.Foldable
 import qualified Data.SBV as SBV
 import Grisette.Data.SMT.Solving ()
-import Grisette.Data.Class.Solver
+import Grisette.Core.Data.Class.Solver
 import Grisette.Data.Prim.InternedTerm
 import Grisette.Data.SMT.Config
 import Grisette.Data.SymPrim

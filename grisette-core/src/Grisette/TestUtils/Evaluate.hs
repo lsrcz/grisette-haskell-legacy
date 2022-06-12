@@ -2,7 +2,7 @@
 module Grisette.TestUtils.Evaluate where
 
 import Test.Hspec
-import Grisette.Data.Class.Evaluate
+import Grisette.Core.Data.Class.Evaluate
 import qualified Data.HashMap.Strict as M
 import Grisette.TestUtils.SBool
 

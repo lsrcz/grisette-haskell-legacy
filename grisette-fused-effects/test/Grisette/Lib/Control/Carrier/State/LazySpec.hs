@@ -6,6 +6,7 @@ import Grisette.Core
 import Grisette.Lib.Control.Carrier.Lift ()
 import Grisette.Lib.Control.Carrier.State.Common
 import Grisette.Lib.Control.Carrier.State.Lazy
+import Grisette.Lib.Control.Monad
 import Grisette.TestUtils.SBool
 import Test.Hspec
 

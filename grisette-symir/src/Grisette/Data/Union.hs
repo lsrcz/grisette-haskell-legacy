@@ -4,6 +4,6 @@ module Grisette.Data.Union
 where
 
 import Grisette.Data.SymPrim
-import Grisette.Data.UnionBase
+import Grisette.Core.Data.UnionBase
 
 type Union = UnionBase SymBool

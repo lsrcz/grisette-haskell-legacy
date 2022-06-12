@@ -11,5 +11,5 @@ module Grisette.Internal.Core
   )
 where
 
-import Grisette.Control.Monad.UnionMBase
-import Grisette.Data.UnionBase
+import Grisette.Core.Control.Monad.UnionMBase
+import Grisette.Core.Data.UnionBase

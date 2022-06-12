@@ -3,7 +3,7 @@
 module Grisette.TestUtils.ExtractSymbolics where
 
 import qualified Data.HashSet as S
-import Grisette.Data.Class.ExtractSymbolics
+import Grisette.Core.Data.Class.ExtractSymbolics
 import Grisette.TestUtils.SBool
 import Test.Hspec
 

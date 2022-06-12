@@ -11,6 +11,7 @@ module Grisette.Lib.Control.Monad.Coroutine where
 
 import Control.Monad.Coroutine hiding (merge)
 import Grisette.Core
+import Grisette.Lib.Control.Monad
 
 liftCoroEitherMergeStrategy ::
   (SymBoolOp bool, Mergeable1 bool s, Mergeable1 bool m) =>

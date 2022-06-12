@@ -4,7 +4,7 @@ module Grisette.Lib.Control.Monad.Coroutine.SuspensionFunctorsSpec where
 import Test.Hspec
 import Control.Monad.Coroutine.SuspensionFunctors
 import Grisette.Lib.Control.Monad.Coroutine.SuspensionFunctors ()
-import Grisette.Data.Class.Mergeable
+import Grisette.Core.Data.Class.Mergeable
 import Grisette.TestUtils.SBool
 import Test.Hspec.QuickCheck
 import Grisette.TestUtils.Mergeable

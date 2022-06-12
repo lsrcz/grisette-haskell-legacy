@@ -19,18 +19,18 @@ import Data.Maybe
 import qualified Data.SBV as SBV
 import Data.SBV.Control (Query)
 import qualified Data.SBV.Control as SBVC
-import Grisette.Data.Class.Bool
-import Grisette.Data.Class.Evaluate
-import Grisette.Data.Class.ExtractSymbolics
-import Grisette.Data.Class.Solver
+import Grisette.Core.Data.Class.Bool
+import Grisette.Core.Data.Class.Evaluate
+import Grisette.Core.Data.Class.ExtractSymbolics
+import Grisette.Core.Data.Class.Solver
 import Grisette.Data.Prim.Bool
 import Grisette.Data.Prim.InternedTerm
 import Grisette.Data.Prim.Model as PM
 import Grisette.Data.SMT.Config
 import Grisette.Data.SMT.Lowering
 import Grisette.Data.SymPrim
-import Grisette.Control.Exception
-import Grisette.Data.Class.PrimWrapper
+import Grisette.Core.Control.Exception
+import Grisette.Core.Data.Class.PrimWrapper
 
 solveTermWith ::
   forall integerBitWidth.

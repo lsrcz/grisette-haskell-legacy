@@ -9,14 +9,14 @@ where
 
 import Control.Exception
 import Control.Monad.Except
-import Grisette.Data.Class.Bool
-import Grisette.Data.Class.Error
-import Grisette.Data.Class.Integer
-import Grisette.Data.Class.Mergeable
-import Grisette.Data.Class.SimpleMergeable
-import Grisette.Control.Monad
-import Grisette.Control.Monad.Union
-import Grisette.Data.Class.SOrd
+import Grisette.Core.Data.Class.Bool
+import Grisette.Core.Data.Class.Error
+import Grisette.Core.Data.Class.Integer
+import Grisette.Core.Data.Class.Mergeable
+import Grisette.Core.Data.Class.SimpleMergeable
+import Grisette.Lib.Control.Monad
+import Grisette.Core.Control.Monad.Union
+import Grisette.Core.Data.Class.SOrd
 
 (!!~) ::
   ( SymBoolOp bool,

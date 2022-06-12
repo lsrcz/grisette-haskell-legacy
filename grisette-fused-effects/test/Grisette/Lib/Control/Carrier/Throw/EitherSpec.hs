@@ -8,6 +8,7 @@ import Grisette.Core
 import Grisette.TestUtils.SBool
 import Test.Hspec
 import Grisette.Lib.Control.Carrier.Throw.Common
+import Grisette.Lib.Control.Monad
 
 type M a = ThrowC Int (LiftC (UnionMBase SBool)) a
 type R = M Int

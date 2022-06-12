@@ -28,36 +28,38 @@ flag fast
 
 library
   exposed-modules:
-      Grisette.BuiltinUnionMWrappers
-      Grisette.Control.Exception
-      Grisette.Control.Monad
-      Grisette.Control.Monad.Except
-      Grisette.Control.Monad.Trans
-      Grisette.Control.Monad.Union
-      Grisette.Control.Monad.UnionMBase
       Grisette.Core
-      Grisette.Data.Class.BitVector
-      Grisette.Data.Class.Bool
-      Grisette.Data.Class.Error
-      Grisette.Data.Class.Evaluate
-      Grisette.Data.Class.ExtractSymbolics
-      Grisette.Data.Class.Function
-      Grisette.Data.Class.GenSym
-      Grisette.Data.Class.Integer
-      Grisette.Data.Class.Mergeable
-      Grisette.Data.Class.OrphanGeneric
-      Grisette.Data.Class.PrimWrapper
-      Grisette.Data.Class.SimpleMergeable
-      Grisette.Data.Class.Solver
-      Grisette.Data.Class.SOrd
-      Grisette.Data.Class.ToCon
-      Grisette.Data.Class.ToSym
-      Grisette.Data.FileLocation
-      Grisette.Data.Foldable
-      Grisette.Data.MemoUtils
-      Grisette.Data.Traversable
-      Grisette.Data.UnionBase
+      Grisette.Core.BuiltinUnionMWrappers
+      Grisette.Core.Control.Exception
+      Grisette.Core.Control.Monad.Union
+      Grisette.Core.Control.Monad.UnionMBase
+      Grisette.Core.Data.Class.BitVector
+      Grisette.Core.Data.Class.Bool
+      Grisette.Core.Data.Class.Error
+      Grisette.Core.Data.Class.Evaluate
+      Grisette.Core.Data.Class.ExtractSymbolics
+      Grisette.Core.Data.Class.Function
+      Grisette.Core.Data.Class.GenSym
+      Grisette.Core.Data.Class.Integer
+      Grisette.Core.Data.Class.Mergeable
+      Grisette.Core.Data.Class.PrimWrapper
+      Grisette.Core.Data.Class.SimpleMergeable
+      Grisette.Core.Data.Class.Solver
+      Grisette.Core.Data.Class.SOrd
+      Grisette.Core.Data.Class.ToCon
+      Grisette.Core.Data.Class.ToSym
+      Grisette.Core.Data.FileLocation
+      Grisette.Core.Data.MemoUtils
+      Grisette.Core.Data.UnionBase
+      Grisette.Core.TH
       Grisette.Internal.Core
+      Grisette.Lib.Base
+      Grisette.Lib.Control.Monad
+      Grisette.Lib.Control.Monad.Except
+      Grisette.Lib.Control.Monad.Trans
+      Grisette.Lib.Data.Foldable
+      Grisette.Lib.Data.Traversable
+      Grisette.Lib.Mtl
       Grisette.TestUtils.Evaluate
       Grisette.TestUtils.ExtractSymbolics
       Grisette.TestUtils.Mergeable
@@ -66,7 +68,6 @@ library
       Grisette.TestUtils.SOrd
       Grisette.TestUtils.ToCon
       Grisette.TestUtils.ToSym
-      Grisette.TH
   other-modules:
       Paths_grisette_core
   hs-source-dirs:
@@ -96,25 +97,25 @@ test-suite spec
   type: exitcode-stdio-1.0
   main-is: Main.hs
   other-modules:
-      Grisette.Control.ExceptionSpec
-      Grisette.Control.Monad.ExceptSpec
-      Grisette.Control.Monad.TransSpec
-      Grisette.Control.Monad.UnionMBaseSpec
-      Grisette.Control.Monad.UnionSpec
-      Grisette.Control.MonadSpec
-      Grisette.Data.Class.BoolSpec
-      Grisette.Data.Class.EvaluateSpec
-      Grisette.Data.Class.ExtractSymbolicsSpec
-      Grisette.Data.Class.GenSymSpec
-      Grisette.Data.Class.MergeableSpec
-      Grisette.Data.Class.SEqSpec
-      Grisette.Data.Class.SimpleMergeableSpec
-      Grisette.Data.Class.SOrdSpec
-      Grisette.Data.Class.ToConSpec
-      Grisette.Data.Class.ToSymSpec
-      Grisette.Data.FoldableSpec
-      Grisette.Data.TraversableSpec
-      Grisette.Data.UnionBaseSpec
+      Grisette.Core.Control.ExceptionSpec
+      Grisette.Core.Control.Monad.UnionMBaseSpec
+      Grisette.Core.Control.Monad.UnionSpec
+      Grisette.Core.Data.Class.BoolSpec
+      Grisette.Core.Data.Class.EvaluateSpec
+      Grisette.Core.Data.Class.ExtractSymbolicsSpec
+      Grisette.Core.Data.Class.GenSymSpec
+      Grisette.Core.Data.Class.MergeableSpec
+      Grisette.Core.Data.Class.SEqSpec
+      Grisette.Core.Data.Class.SimpleMergeableSpec
+      Grisette.Core.Data.Class.SOrdSpec
+      Grisette.Core.Data.Class.ToConSpec
+      Grisette.Core.Data.Class.ToSymSpec
+      Grisette.Core.Data.UnionBaseSpec
+      Grisette.Lib.Control.Monad.ExceptSpec
+      Grisette.Lib.Control.Monad.TransSpec
+      Grisette.Lib.Control.MonadSpec
+      Grisette.Lib.Data.FoldableSpec
+      Grisette.Lib.Data.TraversableSpec
       Spec
       Paths_grisette_core
   hs-source-dirs:

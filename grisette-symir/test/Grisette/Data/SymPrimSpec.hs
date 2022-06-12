@@ -12,20 +12,19 @@ import qualified Data.BitVector.Sized.Unsigned as BVU
 import Data.Bits
 import qualified Data.HashSet as S
 import Data.Proxy
-import Grisette.Control.Monad.Union
 import Grisette.Control.Monad.UnionM
-import Grisette.Data.Class.BitVector
-import Grisette.Data.Class.Bool
-import Grisette.Data.Class.ExtractSymbolics
-import Grisette.Data.Class.Integer
-import Grisette.Data.Class.Mergeable
-import Grisette.Data.Class.PrimWrapper
-import Grisette.Data.Class.SOrd
-import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.Class.Evaluate
-import Grisette.Data.Class.GenSym
-import Grisette.Data.Class.ToCon
-import Grisette.Data.Class.ToSym
+import Grisette.Core.Data.Class.BitVector
+import Grisette.Core.Data.Class.Bool
+import Grisette.Core.Data.Class.ExtractSymbolics
+import Grisette.Core.Data.Class.Integer
+import Grisette.Core.Data.Class.Mergeable
+import Grisette.Core.Data.Class.PrimWrapper
+import Grisette.Core.Data.Class.SOrd
+import Grisette.Core.Data.Class.SimpleMergeable
+import Grisette.Core.Data.Class.Evaluate
+import Grisette.Core.Data.Class.GenSym
+import Grisette.Core.Data.Class.ToCon
+import Grisette.Core.Data.Class.ToSym
 import Grisette.Data.Prim.BV
 import Grisette.Data.Prim.Bits
 import Grisette.Data.Prim.Bool
@@ -36,7 +35,7 @@ import Grisette.Data.Prim.Num
 import Grisette.Data.SymPrim
 import Test.Hspec
 import Test.Hspec.QuickCheck
-import Grisette.Data.Class.Function
+import Grisette.Core.Data.Class.Function
 import Grisette.Data.Prim.TabularFunc
 import Grisette.Data.TabularFunc
 import Data.Int
@@ -104,11 +103,11 @@ spec = do
           ]
   describe "GenSym" $ do
     it "GenSym for SymPrim should work" $ do
-      (genSym () "a" :: UnionM (Sym Bool)) `shouldBe` mrgReturn (isymb 0 "a")
+      (genSym () "a" :: UnionM (Sym Bool)) `shouldBe` mrgSingle (isymb 0 "a")
       (genSymSimple @SymBool () "a" :: Sym Bool) `shouldBe` isymb 0 "a"
-      (genSym (ssymb "a" :: Sym Bool) "a" :: UnionM (Sym Bool)) `shouldBe` mrgReturn (isymb 0 "a")
+      (genSym (ssymb "a" :: Sym Bool) "a" :: UnionM (Sym Bool)) `shouldBe` mrgSingle (isymb 0 "a")
       (genSymSimple @SymBool (ssymb "a" :: Sym Bool) "a" :: Sym Bool) `shouldBe` isymb 0 "a"
-      (genSym () (nameWithInfo "a" True) :: UnionM (Sym Bool)) `shouldBe` mrgReturn (iinfosymb 0 "a" True)
+      (genSym () (nameWithInfo "a" True) :: UnionM (Sym Bool)) `shouldBe` mrgSingle (iinfosymb 0 "a" True)
       (genSymSimple @SymBool () (nameWithInfo "a" True) :: Sym Bool) `shouldBe` iinfosymb 0 "a" True
   describe "SEq" $ do
     it "SEq for SymPrim should work" $ do
@@ -147,7 +146,7 @@ spec = do
         divs (conc i :: Sym Integer) (conc j)
           `shouldBe` if j == 0
             then merge $ throwError () :: ExceptT () UnionM SymInteger
-            else mrgReturn $ conc $ i `div` j
+            else mrgSingle $ conc $ i `div` j
       it "divs should work when divided by zero" $ do
         divs (ssymb "a" :: Sym Integer) (conc 0)
           `shouldBe` (merge $ throwError () :: ExceptT () UnionM SymInteger)
@@ -156,14 +155,14 @@ spec = do
           `shouldBe` ( mrgIf
                          ((ssymb "b" :: Sym Integer) ==~ conc (0 :: Integer) :: SymBool)
                          (throwError ())
-                         (mrgReturn $ Sym $ divi (ssymbTerm "a") (ssymbTerm "b")) ::
+                         (mrgSingle $ Sym $ divi (ssymbTerm "a") (ssymbTerm "b")) ::
                          ExceptT () UnionM SymInteger
                      )
       prop "mods should work on concrete" $ \(i :: Integer, j :: Integer) ->
         mods (conc i :: Sym Integer) (conc j)
           `shouldBe` if j == 0
             then merge $ throwError () :: ExceptT () UnionM SymInteger
-            else mrgReturn $ conc $ i `mod` j
+            else mrgSingle $ conc $ i `mod` j
       it "mods should work when divided by zero" $ do
         mods (ssymb "a" :: Sym Integer) (conc 0)
           `shouldBe` (merge $ throwError () :: ExceptT () UnionM SymInteger)
@@ -172,7 +171,7 @@ spec = do
           `shouldBe` ( mrgIf
                          ((ssymb "b" :: Sym Integer) ==~ conc (0 :: Integer) :: SymBool)
                          (throwError ())
-                         (mrgReturn $ Sym $ modi (ssymbTerm "a") (ssymbTerm "b")) ::
+                         (mrgSingle $ Sym $ modi (ssymbTerm "a") (ssymbTerm "b")) ::
                          ExceptT () UnionM SymInteger
                      )
     describe "SOrd for Sym Integer" $ do
@@ -193,7 +192,7 @@ spec = do
         a >=~ b `shouldBe` Sym (geNum at bt)
         a >~ b `shouldBe` Sym (gtNum at bt)
         (a `symCompare` ssymb "b" :: UnionM Ordering)
-          `shouldBe` mrgIf (a <~ b) (mrgReturn LT) (mrgIf (a ==~ b) (mrgReturn EQ) (mrgReturn (GT)))
+          `shouldBe` mrgIf (a <~ b) (mrgSingle LT) (mrgIf (a ==~ b) (mrgSingle EQ) (mrgSingle (GT)))
   describe "Sym BV" $ do
     let au :: Sym (BVU.UnsignedBV 4) = ssymb "a"
     let bu :: Sym (BVU.UnsignedBV 4) = ssymb "b"
@@ -251,14 +250,14 @@ spec = do
         au >=~ bu `shouldBe` Sym (geNum aut but)
         au >~ bu `shouldBe` Sym (gtNum aut but)
         (au `symCompare` bu :: UnionM Ordering)
-          `shouldBe` mrgIf (au <~ bu) (mrgReturn LT) (mrgIf (au ==~ bu) (mrgReturn EQ) (mrgReturn GT))
+          `shouldBe` mrgIf (au <~ bu) (mrgSingle LT) (mrgIf (au ==~ bu) (mrgSingle EQ) (mrgSingle GT))
 
         as <=~ bs `shouldBe` Sym (leNum ast bst)
         as <~ bs `shouldBe` Sym (ltNum ast bst)
         as >=~ bs `shouldBe` Sym (geNum ast bst)
         as >~ bs `shouldBe` Sym (gtNum ast bst)
         (as `symCompare` bs :: UnionM Ordering)
-          `shouldBe` mrgIf (as <~ bs) (mrgReturn LT) (mrgIf (as ==~ bs) (mrgReturn EQ) (mrgReturn GT))
+          `shouldBe` mrgIf (as <~ bs) (mrgSingle LT) (mrgIf (as ==~ bs) (mrgSingle EQ) (mrgSingle GT))
     describe "Bits for Sym BV" $ do
       it ".&. for SymPrim should work" $ do
         au .&. bu `shouldBe` Sym (bitand aut but)

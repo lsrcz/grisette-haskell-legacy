@@ -5,13 +5,13 @@ module Grisette.Data.StringError
   )
 where
 
-import Grisette.Data.Class.Bool
-import Grisette.Data.Class.Error
-import Grisette.Data.Class.Integer
-import Grisette.Data.Class.Mergeable
-import Grisette.Data.Class.PrimWrapper
-import Grisette.Data.Class.ToCon
-import Grisette.Data.Class.ToSym
+import Grisette.Core.Data.Class.Bool
+import Grisette.Core.Data.Class.Error
+import Grisette.Core.Data.Class.Integer
+import Grisette.Core.Data.Class.Mergeable
+import Grisette.Core.Data.Class.PrimWrapper
+import Grisette.Core.Data.Class.ToCon
+import Grisette.Core.Data.Class.ToSym
 
 newtype StringError = StringError String deriving (Eq, Ord)
 

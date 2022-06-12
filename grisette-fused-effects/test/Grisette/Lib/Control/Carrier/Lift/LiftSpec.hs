@@ -6,6 +6,7 @@ import Grisette.TestUtils.SBool
 import Control.Carrier.Lift
 import Grisette.Lib.Control.Carrier.Lift
 import Grisette.Lib.Control.Carrier.Lift.Common
+import Grisette.Lib.Control.Monad
 
 type M a = LiftC (UnionMBase SBool) a
 type R = M Int

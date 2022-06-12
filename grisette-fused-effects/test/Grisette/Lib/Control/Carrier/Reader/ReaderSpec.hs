@@ -8,6 +8,7 @@ import Control.Carrier.Reader
 import Grisette.Lib.Control.Carrier.Reader.Common
 import Grisette.Lib.Control.Carrier.Reader
 import Grisette.Lib.Control.Carrier.Lift ()
+import Grisette.Lib.Control.Monad
 
 type M a = ReaderC Int (LiftC (UnionMBase SBool)) a
 type R = M Int

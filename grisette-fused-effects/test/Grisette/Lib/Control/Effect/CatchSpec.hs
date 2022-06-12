@@ -2,10 +2,11 @@ module Grisette.Lib.Control.Effect.CatchSpec where
 
 import Control.Carrier.Error.Either
 import Control.Carrier.Lift
-import Grisette.Core hiding (mrgCatchError)
+import Grisette.Core
 import Grisette.Lib.Control.Carrier.Error.Either ()
 import Grisette.Lib.Control.Carrier.Lift ()
 import Grisette.Lib.Control.Effect.Catch
+import Grisette.Lib.Control.Monad
 import Grisette.TestUtils.SBool
 import Test.Hspec
 

@@ -2,10 +2,11 @@ module Grisette.Lib.Control.Effect.ThrowSpec where
 
 import Control.Carrier.Error.Either
 import Control.Carrier.Lift
-import Grisette.Core hiding (mrgThrowError)
+import Grisette.Core
 import Grisette.Lib.Control.Carrier.Error.Either ()
 import Grisette.Lib.Control.Carrier.Lift ()
 import Grisette.Lib.Control.Effect.Throw
+import Grisette.Lib.Control.Monad
 import Grisette.TestUtils.SBool
 import Test.Hspec
 

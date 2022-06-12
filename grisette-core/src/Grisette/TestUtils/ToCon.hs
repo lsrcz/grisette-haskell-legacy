@@ -1,6 +1,6 @@
 module Grisette.TestUtils.ToCon where
 
-import Grisette.Data.Class.ToCon
+import Grisette.Core.Data.Class.ToCon
 import Test.Hspec
 
 toConForConcreteOkProp :: (HasCallStack, ToCon v v, Show v, Eq v) => v -> Expectation

@@ -9,17 +9,17 @@ import Control.Monad.Except
 import qualified Data.HashSet as S
 import Data.Proxy
 import qualified Data.SBV as SBV
-import Grisette.Control.Exception
+import Grisette.Core.Control.Exception
 import Grisette.Control.Monad.UnionM
-import Grisette.Data.Class.BitVector
-import Grisette.Data.Class.Bool
-import Grisette.Data.Class.Error
-import Grisette.Data.Class.ExtractSymbolics
-import Grisette.Data.Class.PrimWrapper
-import Grisette.Data.Class.SimpleMergeable
-import Grisette.Data.Class.SOrd
-import Grisette.Data.Class.Evaluate
-import Grisette.Data.Class.Solver
+import Grisette.Core.Data.Class.BitVector
+import Grisette.Core.Data.Class.Bool
+import Grisette.Core.Data.Class.Error
+import Grisette.Core.Data.Class.ExtractSymbolics
+import Grisette.Core.Data.Class.PrimWrapper
+import Grisette.Core.Data.Class.SimpleMergeable
+import Grisette.Core.Data.Class.SOrd
+import Grisette.Core.Data.Class.Evaluate
+import Grisette.Core.Data.Class.Solver
 import Grisette.Data.Prim.InternedTerm
 import Grisette.Data.SMT.Config
 import Grisette.Data.SMT.Solving

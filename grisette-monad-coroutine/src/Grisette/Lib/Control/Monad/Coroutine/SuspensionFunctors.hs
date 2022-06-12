@@ -7,6 +7,7 @@ import Control.Monad.Coroutine.SuspensionFunctors
 import Grisette.Core
 import Control.Monad.Coroutine
 import Grisette.Lib.Control.Monad.Coroutine
+import Grisette.Lib.Control.Monad
 
 instance (SymBoolOp bool, Mergeable bool x, Mergeable bool y) => Mergeable bool (Yield x y) where
   mergeStrategy = wrapMergeStrategy2 Yield (\(Yield x y) -> (x, y)) mergeStrategy mergeStrategy

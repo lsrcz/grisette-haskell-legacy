@@ -18,7 +18,7 @@ import Grisette.Data.Prim.InternedTerm
 import Grisette.Data.Prim.Helpers
 import Grisette.Data.GeneralFunc
 import Data.Typeable
-import Grisette.Data.Class.Function
+import Grisette.Core.Data.Class.Function
 
 generalFuncConcTermView :: forall a b c. (Typeable b, Typeable c) => Term a -> Maybe (b --> c)
 generalFuncConcTermView (ConcTerm _ b) = cast b

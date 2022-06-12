@@ -8,6 +8,7 @@ import Grisette.Core
 import Grisette.TestUtils.SBool
 import Test.Hspec
 import Grisette.Lib.Control.Carrier.Error.Common
+import Grisette.Lib.Control.Monad
 
 type M a = ErrorC Int (LiftC (UnionMBase SBool)) a
 type R = M Int
