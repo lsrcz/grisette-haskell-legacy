@@ -111,11 +111,11 @@ module Grisette.Internal.IR.SymPrim
   )
 where
 
-import Grisette.Data.Prim.BV
-import Grisette.Data.Prim.Bool
-import Grisette.Data.Prim.Helpers
-import Grisette.Data.Prim.Integer
-import Grisette.Data.Prim.InternedTerm
-import Grisette.Data.Prim.Num
-import Grisette.Data.Prim.TabularFunc
-import Grisette.Data.Union
+import Grisette.IR.SymPrim.Data.Prim.BV
+import Grisette.IR.SymPrim.Data.Prim.Bool
+import Grisette.IR.SymPrim.Data.Prim.Helpers
+import Grisette.IR.SymPrim.Data.Prim.Integer
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm
+import Grisette.IR.SymPrim.Data.Prim.Num
+import Grisette.IR.SymPrim.Data.Prim.TabularFunc
+import Grisette.IR.SymPrim.Data.Union

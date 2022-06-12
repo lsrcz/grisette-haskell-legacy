@@ -15,5 +15,5 @@ module Grisette.Backend.SBV
 where
 
 import qualified Data.SBV as SBV
-import Grisette.Data.SMT.Config
-import Grisette.Data.SMT.Solving
+import Grisette.Backend.SBV.Data.SMT.Config
+import Grisette.Backend.SBV.Data.SMT.Solving

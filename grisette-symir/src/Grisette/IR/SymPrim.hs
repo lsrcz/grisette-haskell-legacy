@@ -30,11 +30,11 @@ module Grisette.IR.SymPrim
   )
 where
 
-import Grisette.Control.Monad.UnionM
-import Grisette.Data.Prim.Model
-import Grisette.Data.SymPrim
-import Grisette.Data.TabularFunc
+import Grisette.IR.SymPrim.Control.Monad.UnionM
+import Grisette.IR.SymPrim.Data.Prim.Model
+import Grisette.IR.SymPrim.Data.SymPrim
+import Grisette.IR.SymPrim.Data.TabularFunc
 import Data.BitVector.Sized.Signed
 import Data.BitVector.Sized.Unsigned
-import Grisette.Data.GeneralFunc
-import Grisette.Data.Prim.InternedTerm
+import Grisette.IR.SymPrim.Data.GeneralFunc
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm

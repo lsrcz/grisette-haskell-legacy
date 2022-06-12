@@ -28,27 +28,27 @@ flag fast
 
 library
   exposed-modules:
-      Grisette.Control.Monad.UnionM
-      Grisette.Data.GeneralFunc
-      Grisette.Data.Prim.Bits
-      Grisette.Data.Prim.Bool
-      Grisette.Data.Prim.BV
-      Grisette.Data.Prim.Caches
-      Grisette.Data.Prim.GeneralFunc
-      Grisette.Data.Prim.Helpers
-      Grisette.Data.Prim.Integer
-      Grisette.Data.Prim.InternedTerm
-      Grisette.Data.Prim.Model
-      Grisette.Data.Prim.ModelValue
-      Grisette.Data.Prim.Num
-      Grisette.Data.Prim.Orphan
-      Grisette.Data.Prim.TabularFunc
-      Grisette.Data.Prim.Utils
-      Grisette.Data.SymPrim
-      Grisette.Data.TabularFunc
-      Grisette.Data.Union
       Grisette.Internal.IR.SymPrim
       Grisette.IR.SymPrim
+      Grisette.IR.SymPrim.Control.Monad.UnionM
+      Grisette.IR.SymPrim.Data.GeneralFunc
+      Grisette.IR.SymPrim.Data.Prim.Bits
+      Grisette.IR.SymPrim.Data.Prim.Bool
+      Grisette.IR.SymPrim.Data.Prim.BV
+      Grisette.IR.SymPrim.Data.Prim.Caches
+      Grisette.IR.SymPrim.Data.Prim.GeneralFunc
+      Grisette.IR.SymPrim.Data.Prim.Helpers
+      Grisette.IR.SymPrim.Data.Prim.Integer
+      Grisette.IR.SymPrim.Data.Prim.InternedTerm
+      Grisette.IR.SymPrim.Data.Prim.Model
+      Grisette.IR.SymPrim.Data.Prim.ModelValue
+      Grisette.IR.SymPrim.Data.Prim.Num
+      Grisette.IR.SymPrim.Data.Prim.Orphan
+      Grisette.IR.SymPrim.Data.Prim.TabularFunc
+      Grisette.IR.SymPrim.Data.Prim.Utils
+      Grisette.IR.SymPrim.Data.SymPrim
+      Grisette.IR.SymPrim.Data.TabularFunc
+      Grisette.IR.SymPrim.Data.Union
   other-modules:
       Paths_grisette_symir
   hs-source-dirs:
@@ -79,15 +79,15 @@ test-suite spec
   type: exitcode-stdio-1.0
   main-is: Main.hs
   other-modules:
-      Grisette.Data.Prim.BitsSpec
-      Grisette.Data.Prim.BoolSpec
-      Grisette.Data.Prim.BVSpec
-      Grisette.Data.Prim.IntegerSpec
-      Grisette.Data.Prim.ModelSpec
-      Grisette.Data.Prim.NumSpec
-      Grisette.Data.Prim.TabularFuncSpec
-      Grisette.Data.SymPrimSpec
-      Grisette.Data.TabularFuncSpec
+      Grisette.IR.SymPrim.Data.Prim.BitsSpec
+      Grisette.IR.SymPrim.Data.Prim.BoolSpec
+      Grisette.IR.SymPrim.Data.Prim.BVSpec
+      Grisette.IR.SymPrim.Data.Prim.IntegerSpec
+      Grisette.IR.SymPrim.Data.Prim.ModelSpec
+      Grisette.IR.SymPrim.Data.Prim.NumSpec
+      Grisette.IR.SymPrim.Data.Prim.TabularFuncSpec
+      Grisette.IR.SymPrim.Data.SymPrimSpec
+      Grisette.IR.SymPrim.Data.TabularFuncSpec
       Spec
       Paths_grisette_symir
   hs-source-dirs:
