@@ -9,8 +9,8 @@ import Control.Monad.Coroutine hiding (merge)
 import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Monad.State.Strict
 import Control.Monad.Trans.Maybe
-import Data.Bifunctor
 import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Char8 as C
 import Data.Hashable
 import Data.Maybe
 import GHC.Generics
@@ -18,13 +18,12 @@ import Grisette
 import Text.Regex.PCRE
 import Transducer
 import Utils.Timing
-import qualified Data.ByteString.Char8 as C
 
-type PattCoro = B.ByteString -> Integer -> Coroutine (Yield (UnionM Integer)) UnionM ()
+type PattCoro = B.ByteString -> Int -> Coroutine (Yield (UnionM Int)) UnionM ()
 
 primPatt :: Char -> PattCoro
 primPatt pattc str idx =
-  when (B.length str > fromInteger idx && C.index str (fromInteger idx) == pattc) $
+  when (B.length str > idx && C.index str idx == pattc) $
     yield $ mrgReturn $ idx + 1
 
 seqPatt :: PattCoro -> PattCoro -> PattCoro
@@ -35,29 +34,31 @@ altPatt :: PattCoro -> PattCoro -> PattCoro
 altPatt patt1 patt2 str idx = patt1 str idx >> patt2 str idx
 
 emptyPatt :: PattCoro
-emptyPatt str idx = when (B.length str >= fromInteger idx) $ yield $ mrgReturn idx
+emptyPatt str idx = when (B.length str >= idx) $ yield $ mrgReturn idx
 
 plusGreedyPatt :: PattCoro -> PattCoro
-plusGreedyPatt patt str idx = patt str idx |>>=
-  \i -> lift i >>= \i1 -> when (i1 /= idx) (plusGreedyPatt patt str i1) >> yield i
+plusGreedyPatt patt str idx =
+  patt str idx
+    |>>= (lift >=> \i1 -> when (i1 /= idx) (plusGreedyPatt patt str i1) >> yield (mrgReturn i1))
 
 plusLazyPatt :: PattCoro -> PattCoro
-plusLazyPatt patt str idx = patt str idx |>>=
-  \i -> lift i >>= \i1 -> yield i >> when (i1 /= idx) (plusLazyPatt patt str i1)
+plusLazyPatt patt str idx =
+  patt str idx
+    |>>= (lift >=> \i1 -> yield (mrgReturn i1) >> when (i1 /= idx) (plusLazyPatt patt str i1))
 
 plusPatt :: SymBool -> PattCoro -> PattCoro
 plusPatt greedy = mrgIte greedy plusGreedyPatt plusLazyPatt
 
-matchFirstWithStartImpl :: PattCoro -> B.ByteString -> Integer -> MaybeT UnionM Integer
+matchFirstWithStartImpl :: PattCoro -> B.ByteString -> Int -> MaybeT UnionM Int
 matchFirstWithStartImpl patt str startPos = case merge $ pogoStick (\(Yield idx _) -> return $ mrgLift idx) r1 of
   SingleU x -> x
   _ -> error "Should not happen"
   where
     r1 = (\_ -> MaybeT $ return Nothing) <$> patt str startPos
 
-matchFirstImpl :: PattCoro -> B.ByteString -> MaybeT UnionM (Integer, Integer)
+matchFirstImpl :: PattCoro -> B.ByteString -> MaybeT UnionM (Int, Int)
 matchFirstImpl patt str =
-  mrgMsum $ (\s -> (\t -> (s, t - s)) <$> matchFirstWithStartImpl patt str s) <$> [0 .. toInteger $ B.length str]
+  mrgMsum $ (\s -> (\t -> (s, t - s)) <$> matchFirstWithStartImpl patt str s) <$> [0 .. B.length str]
 
 data ConcPatt
   = ConcPrimPatt Char
@@ -91,13 +92,13 @@ toCoro = \case
 conformsFirst :: PattCoro -> B.ByteString -> B.ByteString -> SymBool
 conformsFirst patt reg str =
   let rp = matchFirstImpl patt str
-      rc = bimap toInteger toInteger <$> listToMaybe (getAllMatches (str =~ reg) :: [(Int, Int)])
+      rc = listToMaybe (getAllMatches (str =~ reg) :: [(Int, Int)])
       rc1 = MaybeT $ mrgReturn rc
    in rp ==~ rc1
 
 synthesisRegexCompiled :: GrisetteSMTConfig b -> UnionM Patt -> PattCoro -> B.ByteString -> [B.ByteString] -> IO (Maybe ConcPatt)
 synthesisRegexCompiled config patt coro reg strs =
-  let constraints = conformsFirst coro reg  <$> strs
+  let constraints = conformsFirst coro reg <$> strs
       constraint = foldr (&&~) (conc True) constraints
    in do
         _ <- timeItAll "evaluate" $ constraint `deepseq` return ()

@@ -9,8 +9,8 @@ import Control.Monad.Coroutine hiding (merge)
 import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Monad.State.Strict
 import Control.Monad.Trans.Maybe
-import Data.Bifunctor
-import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString as B
+import qualified Data.ByteString.Char8 as C
 import Data.Hashable
 import Data.Maybe
 import GHC.Generics
@@ -18,20 +18,19 @@ import Grisette
 import Text.Regex.PCRE
 import Transducer
 import Utils.Timing
-import qualified Data.ByteString.Char8 as C
 
 -- The type for a pattern coroutine.
 -- The first argument is the string to match.
 -- The second argument is start position to match the current pattern.
 -- The yielded values are the positions after the last matched character.
-type PattCoro = B.ByteString -> Integer -> Coroutine (Yield (UnionM Integer)) UnionM ()
+type PattCoro = B.ByteString -> Int -> Coroutine (Yield (UnionM Int)) UnionM ()
 
 -- Compiling the patterns.
 -- htmemo* are memoizer implementation bundled with Grisette.
 -- They are implemented with HashTables
 primPatt :: Char -> PattCoro
 primPatt pattc = htmemo2 $ \str idx ->
-  when (B.length str > fromInteger idx && C.index str (fromInteger idx) == pattc) $
+  when (B.length str > idx && C.index str idx == pattc) $
     yield $ mrgReturn $ idx + 1
 
 seqPatt :: PattCoro -> PattCoro -> PattCoro
@@ -42,15 +41,17 @@ altPatt :: PattCoro -> PattCoro -> PattCoro
 altPatt patt1 patt2 = htmemo2 $ \str idx -> patt1 str idx >> patt2 str idx
 
 emptyPatt :: PattCoro
-emptyPatt str idx = when (B.length str >= fromInteger idx) $ yield $ mrgReturn idx
+emptyPatt str idx = when (B.length str >= idx) $ yield $ mrgReturn idx
 
 plusGreedyPatt :: PattCoro -> PattCoro
-plusGreedyPatt patt = htmemo2 $ \str idx -> patt str idx |>>=
-  \i -> lift i >>= \i1 -> when (i1 /= idx) (plusGreedyPatt patt str i1) >> yield i
+plusGreedyPatt patt = htmemo2 $ \str idx ->
+  patt str idx
+    |>>= (lift >=> \i1 -> when (i1 /= idx) (plusGreedyPatt patt str i1) >> yield (mrgReturn i1))
 
 plusLazyPatt :: PattCoro -> PattCoro
-plusLazyPatt patt = htmemo2 $ \str idx -> patt str idx |>>=
-  \i -> lift i >>= \i1 -> yield i >> when (i1 /= idx) (plusLazyPatt patt str i1)
+plusLazyPatt patt = htmemo2 $ \str idx ->
+  patt str idx
+    |>>= (lift >=> \i1 -> yield (mrgReturn i1) >> when (i1 /= idx) (plusLazyPatt patt str i1))
 
 plusPatt :: SymBool -> PattCoro -> PattCoro
 plusPatt greedy = mrgIte greedy plusGreedyPatt plusLazyPatt
@@ -95,7 +96,7 @@ toCoro = htmemo $ \case
 
 -- Returns the first match that starts from a specific index.
 -- The return value is the index of the last unmatched character
-matchFirstWithStartImpl :: PattCoro -> B.ByteString -> Integer -> MaybeT UnionM Integer
+matchFirstWithStartImpl :: PattCoro -> B.ByteString -> Int -> MaybeT UnionM Int
 matchFirstWithStartImpl patt str startPos = case merge $ pogoStick (\(Yield idx _) -> return $ mrgLift idx) r1 of
   SingleU x -> x
   _ -> error "Should not happen"
@@ -104,22 +105,22 @@ matchFirstWithStartImpl patt str startPos = case merge $ pogoStick (\(Yield idx 
 
 -- Returns the first match that starts from any index.
 -- The return value is (the index of the first matched character, the length of the match)
-matchFirstImpl :: PattCoro -> B.ByteString -> MaybeT UnionM (Integer, Integer)
+matchFirstImpl :: PattCoro -> B.ByteString -> MaybeT UnionM (Int, Int)
 matchFirstImpl patt str =
-  mrgMsum $ (\s -> (\t -> (s, t - s)) <$> matchFirstWithStartImpl patt str s) <$> [0 .. toInteger $ B.length str]
+  mrgMsum $ (\s -> (\t -> (s, t - s)) <$> matchFirstWithStartImpl patt str s) <$> [0 .. B.length str]
 
 -- Check if the first match returned by the coroutine matcher is the same as the first match returned by 'regex-pcre' package.
 conformsFirst :: PattCoro -> B.ByteString -> B.ByteString -> SymBool
 conformsFirst patt reg str =
   let rp = matchFirstImpl patt str
-      rc = bimap toInteger toInteger <$> listToMaybe (getAllMatches (str =~ reg) :: [(Int, Int)])
+      rc = listToMaybe (getAllMatches (str =~ reg) :: [(Int, Int)])
       rc1 = MaybeT $ mrgReturn rc
    in rp ==~ rc1
 
 -- Synthesis a regex such that has the same semantics with a concrete regex on a set of strings.
 synthesisRegexCompiled :: GrisetteSMTConfig b -> UnionM Patt -> PattCoro -> B.ByteString -> [B.ByteString] -> IO (Maybe ConcPatt)
 synthesisRegexCompiled config patt coro reg strs =
-  let constraints = conformsFirst coro reg  <$> strs
+  let constraints = conformsFirst coro reg <$> strs
       constraint = foldr (&&~) (conc True) constraints
    in do
         _ <- timeItAll "evaluate" $ constraint `deepseq` return ()
@@ -131,7 +132,6 @@ synthesisRegexCompiled config patt coro reg strs =
 synthesisRegex :: GrisetteSMTConfig b -> UnionM Patt -> B.ByteString -> [B.ByteString] -> IO (Maybe ConcPatt)
 synthesisRegex config patt = synthesisRegexCompiled config patt (toCoroU patt)
 
-{-
 test1 :: PattCoro
 test1 = toCoro $ toSym $ ConcPrimPatt 'a'
 
@@ -195,9 +195,8 @@ str7 = "c"
 sk1 :: UnionM Patt
 sk1 =
   runGenSymFresh
-    (choose (PrimPatt 'a') [PrimPatt 'b'])
+    (choose [PrimPatt 'a', PrimPatt 'b'])
     "a"
-    -}
 
 -- Creating regex sketch using 'GenSymFresh' monad. (The monad used by 'SymGen' class in the paper, or 'GenSym' class in the current Grisette version)
 freshPrim :: GenSymFresh (UnionM Patt)
@@ -242,7 +241,7 @@ t = ['a', 'b', 'c', 'd']
 -- Generating a set of strings.
 genWords :: Int -> [Char] -> [B.ByteString]
 genWords 0 _ = [B.empty]
-genWords n alph = [B.cons ch w | w <- genWords (n - 1) alph, ch <- alph]
+genWords n alph = [C.cons ch w | w <- genWords (n - 1) alph, ch <- alph]
 
 genWordsUpTo :: Int -> [Char] -> [B.ByteString]
 genWordsUpTo n alph = concatMap (`genWords` alph) [0 .. n]
@@ -276,6 +275,7 @@ main = timeItAll "Overall" $ do
   print $ listToMaybe (getAllMatches (str7 =~ reg6) :: [(Int, Int)])
   print sk1
   -}
+
   res <- synthesisRegex (UnboundedReasoning z3 {transcript = Just "/tmp/a.smt2", timing = PrintTiming}) (mrgReturn sk) "[cd](a?b)+?" $ genWordsUpTo 5 "abcd"
   print res
   -- The synthesized regex
