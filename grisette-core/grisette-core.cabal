@@ -57,6 +57,7 @@ library
       Grisette.Lib.Control.Monad
       Grisette.Lib.Control.Monad.Except
       Grisette.Lib.Control.Monad.Trans
+      Grisette.Lib.Control.Monad.Trans.Cont
       Grisette.Lib.Data.Foldable
       Grisette.Lib.Data.Traversable
       Grisette.Lib.Mtl

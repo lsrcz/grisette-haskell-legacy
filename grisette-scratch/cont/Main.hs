@@ -9,6 +9,7 @@ import Control.Monad.Cont
 import Debug.Trace
 import GHC.Generics
 import Grisette
+import Grisette.Lib.Control.Monad.Trans.Cont
 
 a :: UnionM Integer
 a = mrgIf "a" 1 2
@@ -24,6 +25,7 @@ f1 x = mrgIf "b" (mrgReturn x) (mrgReturn $ x + 1)
 
 -- | >>> runContT (mrgIf (ssymb "a") (return 1) (return 1) >>= return) (\x -> mrgReturn x) :: UnionM Integer
 -- UMrg (Single 1)
+{-
 mrgResetT ::
   ( Monad m,
     UnionLike bool m,
@@ -32,6 +34,7 @@ mrgResetT ::
   ContT a m a ->
   ContT a1 m a
 mrgResetT m = lift $ runContT m mrgReturn
+-}
 
 newtype X = X Int
   deriving (Show, Eq, Generic)
