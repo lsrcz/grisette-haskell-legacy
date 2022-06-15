@@ -138,3 +138,11 @@ executables:
     source-dirs: regex-nomemo
     main: Main.hs
     dependencies: grisette-benchmarks
+  regex-delim:
+    source-dirs: regex-delim
+    main: Main.hs
+    dependencies: grisette-benchmarks
+  regex-delim-nomemo:
+    source-dirs: regex-delim-nomemo
+    main: Main.hs
+    dependencies: grisette-benchmarks
