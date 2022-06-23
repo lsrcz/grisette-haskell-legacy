@@ -146,6 +146,10 @@ executables:
     source-dirs: dpsynth
     main: Main.hs
     dependencies: grisette-examples
+  formula-optimization:
+    source-dirs: formula-optimization
+    main: Main.hs
+    dependencies: grisette-examples
 
 
 
