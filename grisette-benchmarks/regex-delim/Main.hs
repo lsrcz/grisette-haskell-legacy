@@ -14,6 +14,7 @@ import GHC.Generics
 import Grisette
 import Text.Regex.PCRE
 import Utils.Timing
+import Data.Function (fix)
 
 data Thread m a = Done | Resume a (m (Thread m a))
 
@@ -21,74 +22,67 @@ yield :: (Monad m) => a -> ContT (Thread m a) m ()
 yield x = shiftT (\k -> return $ Resume x (k ()))
 
 instance (Mergeable1 bool m, Mergeable bool a) => Mergeable bool (Thread m a) where
-  mergeStrategy = mergeStrategy1
-
-instance Mergeable1 bool m => Mergeable1 bool (Thread m) where
-  liftMergeStrategy ms =
+  mergeStrategy = 
     OrderedStrategy
       (\case Done -> False; Resume {} -> True)
       ( \case
           False -> SimpleStrategy $ \_ t _ -> t
-          True -> wrapMergeStrategy2 Resume (\(Resume l r) -> (l, r)) ms (liftMergeStrategy (liftMergeStrategy ms))
+          True -> wrapMergeStrategy2 Resume (\(Resume l r) -> (l, r)) mergeStrategy mergeStrategy1
       )
 
 type CoroBase a = ContT (Thread UnionM (UnionM Int)) UnionM a
 
-type Coro = CoroBase (Thread UnionM (UnionM Int))
+type CoroReset = CoroBase (Thread UnionM (UnionM Int))
 
-type PattCoro = B.ByteString -> Int -> Coro
+type Coro = CoroBase ()
 
-pipe :: Coro -> (UnionM Int -> CoroBase a) -> Coro
-pipe c f = do
-  let l = mrgEvalContT c
-  lift l >>= check
+type PattCoroReset = B.ByteString -> Int -> CoroReset
+
+pipe :: CoroReset -> (UnionM Int -> CoroBase a) -> Coro
+pipe c f = lift (mrgEvalContT c) >>= check
   where
-    check Done = return Done
+    check Done = return ()
     check (Resume x m) = f x >> (lift m >>= check)
 
-unlim :: Coro -> Coro
-unlim c = pipe c yield
+callCoro :: CoroReset -> Coro
+callCoro c = pipe c yield
 
-primPatt :: Char -> PattCoro
+delimitCoro :: Coro -> CoroReset
+delimitCoro = mrgResetT . (Done <$)
+
+primPatt :: Char -> PattCoroReset
 primPatt pattc = htmemo2 $ \str idx ->
-  mrgResetT $
-    if B.length str > idx && C.index str idx == pattc
-      then yield (mrgReturn $ idx + 1) >> return Done
-      else return Done
+  delimitCoro $
+    when (B.length str > idx && C.index str idx == pattc) $
+      yield (mrgReturn $ idx + 1)
 
-seqPatt :: PattCoro -> PattCoro -> PattCoro
-seqPatt patt1 patt2 = htmemo2 $ \str idx -> mrgResetT $ pipe (patt1 str idx) (lift >=> unlim . patt2 str)
+seqPatt :: PattCoroReset -> PattCoroReset -> PattCoroReset
+seqPatt patt1 patt2 = htmemo2 $ \str idx -> delimitCoro $ pipe (patt1 str idx) (lift >=> callCoro . patt2 str)
 
-altPatt :: PattCoro -> PattCoro -> PattCoro
-altPatt patt1 patt2 = htmemo2 $ \str idx -> mrgResetT $ unlim (patt1 str idx) >> unlim (patt2 str idx)
+altPatt :: PattCoroReset -> PattCoroReset -> PattCoroReset
+altPatt patt1 patt2 = htmemo2 $ \str idx -> delimitCoro $ callCoro (patt1 str idx) >> callCoro (patt2 str idx)
 
-emptyPatt :: PattCoro
+emptyPatt :: PattCoroReset
 emptyPatt = htmemo2 $ \str idx ->
-  mrgResetT $ when (B.length str >= idx) (yield $ mrgReturn idx) >> return Done
+  delimitCoro $ when (B.length str >= idx) (yield $ mrgReturn idx)
 
-plusGreedyPatt :: PattCoro -> PattCoro
-plusGreedyPatt patt = htmemo2 $ \str idx ->
-  mrgResetT $
-    pipe
-      (patt str idx)
-      ( \i -> do
-          i1 <- lift i
-          if i1 /= idx then unlim (plusGreedyPatt patt str i1) >> yield (mrgReturn i1) else yield (mrgReturn i1) -- ?
-      )
+plusPatt :: PattCoroReset -> SymBool -> PattCoroReset
+plusPatt patt = fix $ htmemo3 . \f greedy str idx ->
+  delimitCoro . pipe (patt str idx) $
+    ( \i -> do
+        i1 <- lift i
+        mrgIf
+          greedy
+          ( do
+              when (i1 /= idx) $ callCoro (f (conc True) str i1)
+              yield (mrgReturn i1)
+          )
+          ( do
+              yield (mrgReturn i1)
+              when (i1 /= idx) $ callCoro (f (conc False) str i1)
+          )
+    )
 
-plusLazyPatt :: PattCoro -> PattCoro
-plusLazyPatt patt = htmemo2 $ \str idx ->
-  mrgResetT $
-    pipe
-      (patt str idx)
-      ( \i -> do
-          i1 <- lift i
-          if i1 /= idx then yield (mrgReturn i1) >> unlim (plusLazyPatt patt str i1) else yield (mrgReturn i1) >> return Done -- ?
-      )
-
-plusPatt :: SymBool -> PattCoro -> PattCoro
-plusPatt greedy patt = htmemo2 $ \str idx ->
-  mrgResetT $ mrgIte greedy (plusGreedyPatt patt str idx) (plusLazyPatt patt str idx)
 
 -- The regex patterns. In the paper it is call Regex.
 -- PrimPatt 'a'        --> a
@@ -117,30 +111,30 @@ data Patt
   deriving (ToSym ConcPatt, Evaluate Model, Mergeable SymBool) via (Default Patt)
 
 -- Compiling a Patt to pattern coroutine
-toCoroU :: UnionM Patt -> PattCoro
+toCoroU :: UnionM Patt -> PattCoroReset
 toCoroU u = getSingle $ mrgFmap toCoro u
 
-toCoro :: Patt -> PattCoro
+toCoro :: Patt -> PattCoroReset
 toCoro = htmemo $ \case
   PrimPatt s -> primPatt s
   SeqPatt p1 p2 -> seqPatt (toCoroU p1) (toCoroU p2)
   AltPatt p1 p2 -> altPatt (toCoroU p1) (toCoroU p2)
-  PlusPatt subp greedy -> plusPatt greedy (toCoroU subp)
+  PlusPatt subp greedy -> plusPatt (toCoroU subp) greedy 
   EmptyPatt -> emptyPatt
 
-matchFirstWithStartImpl :: PattCoro -> B.ByteString -> Int -> MaybeT UnionM Int
+matchFirstWithStartImpl :: PattCoroReset -> B.ByteString -> Int -> MaybeT UnionM Int
 matchFirstWithStartImpl patt str startPos = MaybeT $ x >>= f
   where
     x = mrgEvalContT (patt str startPos)
     f Done = mrgReturn Nothing
     f (Resume a _) = mrgFmap Just a
 
-matchFirstImpl :: PattCoro -> B.ByteString -> MaybeT UnionM (Int, Int)
+matchFirstImpl :: PattCoroReset -> B.ByteString -> MaybeT UnionM (Int, Int)
 matchFirstImpl patt str =
   mrgMsum $ (\s -> (\t -> (s, t - s)) <$> matchFirstWithStartImpl patt str s) <$> [0 .. B.length str]
 
 -- Check if the first match returned by the coroutine matcher is the same as the first match returned by 'regex-pcre' package.
-conformsFirst :: PattCoro -> B.ByteString -> B.ByteString -> SymBool
+conformsFirst :: PattCoroReset -> B.ByteString -> B.ByteString -> SymBool
 conformsFirst patt reg str =
   let rp = matchFirstImpl patt str
       rc = listToMaybe (getAllMatches (str =~ reg) :: [(Int, Int)])
@@ -148,7 +142,7 @@ conformsFirst patt reg str =
    in rp ==~ rc1
 
 -- Synthesis a regex such that has the same semantics with a concrete regex on a set of strings.
-synthesisRegexCompiled :: GrisetteSMTConfig b -> UnionM Patt -> PattCoro -> B.ByteString -> [B.ByteString] -> IO (Maybe ConcPatt)
+synthesisRegexCompiled :: GrisetteSMTConfig b -> UnionM Patt -> PattCoroReset -> B.ByteString -> [B.ByteString] -> IO (Maybe ConcPatt)
 synthesisRegexCompiled config patt coro reg strs =
   let constraints = conformsFirst coro reg <$> strs
       constraint = foldr (&&~) (conc True) constraints
@@ -162,40 +156,40 @@ synthesisRegexCompiled config patt coro reg strs =
 synthesisRegex :: GrisetteSMTConfig b -> UnionM Patt -> B.ByteString -> [B.ByteString] -> IO (Maybe ConcPatt)
 synthesisRegex config patt = synthesisRegexCompiled config patt (toCoroU patt)
 
-test1 :: PattCoro
+test1 :: PattCoroReset
 test1 = toCoro $ toSym $ ConcPrimPatt 'a'
 
 reg1 :: B.ByteString
 reg1 = "a"
 
-test2 :: PattCoro
+test2 :: PattCoroReset
 test2 = toCoro $ toSym $ ConcSeqPatt (ConcPrimPatt 'a') (ConcPrimPatt 'b')
 
 reg2 :: B.ByteString
 reg2 = "ab"
 
-test3 :: PattCoro
+test3 :: PattCoroReset
 test3 = toCoro $ toSym $ ConcAltPatt (ConcPrimPatt 'a') (ConcPrimPatt 'b')
 
 reg3 :: B.ByteString
 reg3 = "a|b"
 
-test4 :: PattCoro
+test4 :: PattCoroReset
 test4 = toCoro $ toSym $ ConcPlusPatt (ConcAltPatt (ConcPrimPatt 'a') (ConcPrimPatt 'b')) True
 
 reg4 :: B.ByteString
 reg4 = "(a|b)+"
 
-test5 :: PattCoro
+test5 :: PattCoroReset
 test5 = toCoro $ toSym $ ConcPlusPatt (ConcAltPatt (ConcPrimPatt 'a') (ConcPrimPatt 'b')) False
 
 reg5 :: B.ByteString
 reg5 = "(a|b)+?"
 
-test6 :: PattCoro
+test6 :: PattCoroReset
 test6 = toCoro $ toSym $ ConcSeqPatt (ConcPlusPatt (ConcAltPatt (ConcPrimPatt 'a') (ConcPrimPatt 'b')) False) (ConcPrimPatt 'c')
 
-test7 :: PattCoro
+test7 :: PattCoroReset
 test7 = toCoro $ toSym $ ConcSeqPatt (ConcPlusPatt (ConcAltPatt ConcEmptyPatt (ConcPrimPatt 'a')) False) (ConcPrimPatt 'c')
 
 reg6 :: B.ByteString
@@ -278,7 +272,6 @@ genWordsUpTo n alph = concatMap (`genWords` alph) [0 .. n]
 
 main :: IO ()
 main = timeItAll "Overall" $ do
-  {-
   print $ matchFirstImpl test1 str1
   print $ listToMaybe (getAllMatches (str1 =~ reg1) :: [(Int, Int)])
   print $ matchFirstImpl test2 str1
@@ -304,7 +297,6 @@ main = timeItAll "Overall" $ do
   print $ matchFirstImpl test6 str7
   print $ listToMaybe (getAllMatches (str7 =~ reg6) :: [(Int, Int)])
   print sk1
-  -}
 
   res <- synthesisRegex (UnboundedReasoning z3 {transcript = Just "/tmp/a.smt2", timing = PrintTiming}) (mrgReturn sk) "[cd](a?b)+?" $ genWordsUpTo 5 "abcd"
   print res
