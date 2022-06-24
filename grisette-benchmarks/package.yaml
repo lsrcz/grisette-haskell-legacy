@@ -37,6 +37,7 @@ dependencies:
 - generic-deriving >= 1.14.1
 - text >= 1.2.4.1
 - th-compat >= 0.1.2
+- natural-transformation >= 0.3
 
 default-extensions:
 - BangPatterns

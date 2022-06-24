@@ -86,6 +86,7 @@ library
     , megaparsec >=8
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
+    , natural-transformation >=0.3
     , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
@@ -152,6 +153,7 @@ executable bonsai-letpoly
     , megaparsec >=8
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
+    , natural-transformation >=0.3
     , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
@@ -218,6 +220,7 @@ executable bonsai-letpoly-nomemo
     , megaparsec >=8
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
+    , natural-transformation >=0.3
     , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
@@ -284,6 +287,7 @@ executable bonsai-nanoscala
     , megaparsec >=8
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
+    , natural-transformation >=0.3
     , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
@@ -350,6 +354,7 @@ executable bonsai-nanoscala-nomemo
     , megaparsec >=8
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
+    , natural-transformation >=0.3
     , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
@@ -416,6 +421,7 @@ executable bonsai-stlc
     , megaparsec >=8
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
+    , natural-transformation >=0.3
     , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
@@ -482,6 +488,7 @@ executable bonsai-stlc-nomemo
     , megaparsec >=8
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
+    , natural-transformation >=0.3
     , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
@@ -555,6 +562,7 @@ executable cosette
     , megaparsec >=8
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
+    , natural-transformation >=0.3
     , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
@@ -628,6 +636,7 @@ executable cosette-optimized-merge
     , megaparsec >=8
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
+    , natural-transformation >=0.3
     , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
@@ -700,6 +709,7 @@ executable ferrite
     , megaparsec >=8
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
+    , natural-transformation >=0.3
     , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
@@ -765,6 +775,7 @@ executable fluidics
     , megaparsec >=8
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
+    , natural-transformation >=0.3
     , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
@@ -835,6 +846,7 @@ executable ifcl
     , megaparsec >=8
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
+    , natural-transformation >=0.3
     , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
@@ -900,6 +912,7 @@ executable regex
     , megaparsec >=8
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
+    , natural-transformation >=0.3
     , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
@@ -965,6 +978,7 @@ executable regex-delim
     , megaparsec >=8
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
+    , natural-transformation >=0.3
     , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
@@ -1030,6 +1044,7 @@ executable regex-delim-nomemo
     , megaparsec >=8
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
+    , natural-transformation >=0.3
     , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
@@ -1095,6 +1110,7 @@ executable regex-nomemo
     , megaparsec >=8
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
+    , natural-transformation >=0.3
     , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
