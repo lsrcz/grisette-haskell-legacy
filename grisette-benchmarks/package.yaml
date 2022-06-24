@@ -84,6 +84,7 @@ library:
     - utils
     - bonsai-lib
     - coroutine-lib
+    - regex-common
 
 executables:
   fluidics:

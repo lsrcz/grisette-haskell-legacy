@@ -37,12 +37,14 @@ library
       Bonsai.Pattern
       Bonsai.SyntaxSpec
       Transducer
+      Regex
   other-modules:
       Paths_grisette_benchmarks
   hs-source-dirs:
       utils
       bonsai-lib
       coroutine-lib
+      regex-common
   default-extensions:
       BangPatterns
       ConstraintKinds

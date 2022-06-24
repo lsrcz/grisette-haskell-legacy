@@ -11,13 +11,12 @@ import Control.Monad.State.Strict
 import Control.Monad.Trans.Maybe
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Char8 as C
-import Data.Hashable
 import Data.Maybe
-import GHC.Generics
 import Grisette
 import Text.Regex.PCRE
 import Transducer
 import Utils.Timing
+import Regex
 
 type PattCoro = B.ByteString -> Int -> Coroutine (Yield (UnionM Int)) UnionM ()
 
@@ -56,24 +55,6 @@ matchFirstWithStartImpl patt str startPos = case merge $ pogoStick (\(Yield idx 
 matchFirstImpl :: PattCoro -> B.ByteString -> MaybeT UnionM (Int, Int)
 matchFirstImpl patt str =
   mrgMsum $ (\s -> (\t -> (s, t - s)) <$> matchFirstWithStartImpl patt str s) <$> [0 .. B.length str]
-
-data ConcPatt
-  = ConcPrimPatt Char
-  | ConcSeqPatt ConcPatt ConcPatt
-  | ConcAltPatt ConcPatt ConcPatt
-  | ConcPlusPatt ConcPatt Bool
-  | ConcEmptyPatt
-  deriving (Show, Generic)
-  deriving (ToCon Patt) via (Default ConcPatt)
-
-data Patt
-  = PrimPatt Char
-  | SeqPatt (UnionM Patt) (UnionM Patt)
-  | AltPatt (UnionM Patt) (UnionM Patt)
-  | PlusPatt (UnionM Patt) SymBool
-  | EmptyPatt
-  deriving (Show, Generic, Eq, Hashable)
-  deriving (ToSym ConcPatt, Evaluate Model, Mergeable SymBool) via (Default Patt)
 
 toCoroU :: UnionM Patt -> PattCoro
 toCoroU u = getSingle $ mrgFmap toCoro u
@@ -174,50 +155,6 @@ sk1 =
     (choose (PrimPatt 'a') [PrimPatt 'b'])
     "a"
     -}
-
-freshPrim :: GenSymFresh (UnionM Patt)
-freshPrim = choose [PrimPatt 'd', PrimPatt 'c', PrimPatt 'b', PrimPatt 'a', EmptyPatt]
-
-binFreshPrim :: (UnionM Patt -> UnionM Patt -> GenSymFresh (UnionM Patt)) -> GenSymFresh (UnionM Patt)
-binFreshPrim f = do
-  f1 <- freshPrim
-  f2 <- freshPrim
-  f f1 f2
-
-seqOrAlt :: GenSymFresh (UnionM Patt)
-seqOrAlt = binFreshPrim (\l r -> choose [SeqPatt l r, AltPatt l r])
-
-sketchGen :: GenSymFresh Patt
-sketchGen = do
-  s1 <- seqOrAlt
-  f1 <- freshPrim
-  s2 <- choose [SeqPatt s1 f1, AltPatt s1 f1]
-  greedy <- genSymSimpleFresh @SymBool ()
-  let p = PlusPatt s2 greedy
-  s3 <- seqOrAlt
-  return $ SeqPatt s3 (mrgReturn p)
-
-sketch :: Patt
-sketch = runGenSymFresh sketchGen "a"
-
-ref :: Patt
-ref =
-  toSym $
-    ConcSeqPatt
-      (ConcAltPatt (ConcPrimPatt 'c') (ConcPrimPatt 'd'))
-      (ConcPlusPatt (ConcSeqPatt (ConcAltPatt ConcEmptyPatt (ConcPrimPatt 'a')) (ConcPrimPatt 'b')) False)
-
-{-
-t :: [Word8]
-t = ['a', 'b', 'c', 'd']
--}
-
-genWords :: Int -> [Char] -> [B.ByteString]
-genWords 0 _ = [B.empty]
-genWords n alph = [B.cons ch w | w <- genWords (n - 1) alph, ch <- alph]
-
-genWordsUpTo :: Int -> [Char] -> [B.ByteString]
-genWordsUpTo n alph = concatMap (`genWords` alph) [0 .. n]
 
 main :: IO ()
 main = timeItAll "Overall" $ do
