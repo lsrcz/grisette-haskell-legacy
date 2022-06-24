@@ -114,7 +114,7 @@ class (SimpleMergeable1 bool u, Mergeable1 bool u) => UnionLike bool u | u -> bo
   -- This function is to be called when the 'Mergeable' constraint can not be resolved,
   -- e.g., the merge strategy for the contained type is given with 'Mergeable1'.
   -- In other cases, 'merge' is usually a better alternative.
-  mergeWithStrategy :: MergeStrategy bool a -> u a -> u a
+  mergeWithStrategy :: MergingStrategy bool a -> u a -> u a
 
   -- | Symbolic @if@ control flow with the result merged with some merge strategy.
   --
@@ -125,29 +125,29 @@ class (SimpleMergeable1 bool u, Mergeable1 bool u) => UnionLike bool u | u -> bo
   -- This function to to be called when the 'Mergeable' constraint can not be resolved,
   -- e.g., the merge strategy for the contained type is given with 'Mergeable1'.
   -- In other cases, 'mrgIf' is usually a better alternative.
-  mrgIfWithStrategy :: MergeStrategy bool a -> bool -> u a -> u a -> u a
+  mrgIfWithStrategy :: MergingStrategy bool a -> bool -> u a -> u a -> u a
   mrgIfWithStrategy s cond l r = mergeWithStrategy s $ unionIf cond l r
   
-  mrgSingleWithStrategy :: MergeStrategy bool a -> a -> u a
+  mrgSingleWithStrategy :: MergingStrategy bool a -> a -> u a
   mrgSingleWithStrategy s = mergeWithStrategy s . single
 
 -- | Symbolic @if@ control flow with the result merged with the type's root merge strategy.
 --
--- | Equivalent to @mrgIfWithStrategy mergeStrategy@.
+-- | Equivalent to @mrgIfWithStrategy mergingStrategy@.
 mrgIf :: (UnionLike bool u, Mergeable bool a) => bool -> u a -> u a -> u a
-mrgIf = mrgIfWithStrategy mergeStrategy
+mrgIf = mrgIfWithStrategy mergingStrategy
 
 -- | Merge the contents with the type's root merge strategy.
 --
--- | Equivalent to @mergeWithStrategy mergeStrategy@.
+-- | Equivalent to @mergeWithStrategy mergingStrategy@.
 merge :: (UnionLike bool u, Mergeable bool a) => u a -> u a
-merge = mergeWithStrategy mergeStrategy
+merge = mergeWithStrategy mergingStrategy
 
 -- | Wrap a single value in the type and propagate the type's root merge strategy.
 --
--- | Equivalent to @mrgSingleWithStrategy mergeStrategy@.
+-- | Equivalent to @mrgSingleWithStrategy mergingStrategy@.
 mrgSingle :: (UnionLike bool u, Mergeable bool a) => a -> u a
-mrgSingle = mrgSingleWithStrategy mergeStrategy
+mrgSingle = mrgSingleWithStrategy mergingStrategy
 
 instance (SymBoolOp bool) => SimpleMergeable bool () where
   mrgIte _ t _ = t
@@ -265,8 +265,8 @@ instance (SymBoolOp bool, UnionLike bool m) => SimpleMergeable1 bool (MaybeT m) 
   liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
 
 instance (SymBoolOp bool, UnionLike bool m) => UnionLike bool (MaybeT m) where
-  mergeWithStrategy s (MaybeT v) = MaybeT $ mergeWithStrategy (liftMergeStrategy s) v
-  mrgIfWithStrategy s cond (MaybeT t) (MaybeT f) = MaybeT $ mrgIfWithStrategy (liftMergeStrategy s) cond t f
+  mergeWithStrategy s (MaybeT v) = MaybeT $ mergeWithStrategy (liftMergingStrategy s) v
+  mrgIfWithStrategy s cond (MaybeT t) (MaybeT f) = MaybeT $ mrgIfWithStrategy (liftMergingStrategy s) cond t f
   single = MaybeT . single . return
   unionIf cond (MaybeT l) (MaybeT r) = MaybeT $ unionIf cond l r
 
@@ -286,8 +286,8 @@ instance
   (SymBoolOp bool, UnionLike bool m, Mergeable bool e) =>
   UnionLike bool (ExceptT e m)
   where
-  mergeWithStrategy s (ExceptT v) = ExceptT $ mergeWithStrategy (liftMergeStrategy s) v
-  mrgIfWithStrategy s cond (ExceptT t) (ExceptT f) = ExceptT $ mrgIfWithStrategy (liftMergeStrategy s) cond t f
+  mergeWithStrategy s (ExceptT v) = ExceptT $ mergeWithStrategy (liftMergingStrategy s) v
+  mrgIfWithStrategy s cond (ExceptT t) (ExceptT f) = ExceptT $ mrgIfWithStrategy (liftMergingStrategy s) cond t f
   single = ExceptT . single . return
   unionIf cond (ExceptT l) (ExceptT r) = ExceptT $ unionIf cond l r
 
@@ -308,9 +308,9 @@ instance
   UnionLike bool (StateLazy.StateT s m)
   where
   mergeWithStrategy ms (StateLazy.StateT f) =
-    StateLazy.StateT $ \v -> mergeWithStrategy (liftMergeStrategy2 ms mergeStrategy) $ f v
+    StateLazy.StateT $ \v -> mergeWithStrategy (liftMergingStrategy2 ms mergingStrategy) $ f v
   mrgIfWithStrategy s cond (StateLazy.StateT t) (StateLazy.StateT f) =
-    StateLazy.StateT $ \v -> mrgIfWithStrategy (liftMergeStrategy2 s mergeStrategy) cond (t v) (f v)
+    StateLazy.StateT $ \v -> mrgIfWithStrategy (liftMergingStrategy2 s mergingStrategy) cond (t v) (f v)
   single x = StateLazy.StateT $ \s -> single (x, s)
   unionIf cond (StateLazy.StateT l) (StateLazy.StateT r) =
     StateLazy.StateT $ \s -> unionIf cond (l s) (r s)
@@ -332,9 +332,9 @@ instance
   UnionLike bool (StateStrict.StateT s m)
   where
   mergeWithStrategy ms (StateStrict.StateT f) =
-    StateStrict.StateT $ \v -> mergeWithStrategy (liftMergeStrategy2 ms mergeStrategy) $ f v
+    StateStrict.StateT $ \v -> mergeWithStrategy (liftMergingStrategy2 ms mergingStrategy) $ f v
   mrgIfWithStrategy s cond (StateStrict.StateT t) (StateStrict.StateT f) =
-    StateStrict.StateT $ \v -> mrgIfWithStrategy (liftMergeStrategy2 s mergeStrategy) cond (t v) (f v)
+    StateStrict.StateT $ \v -> mrgIfWithStrategy (liftMergingStrategy2 s mergingStrategy) cond (t v) (f v)
   single x = StateStrict.StateT $ \s -> single (x, s)
   unionIf cond (StateStrict.StateT l) (StateStrict.StateT r) =
     StateStrict.StateT $ \s -> unionIf cond (l s) (r s)
@@ -355,9 +355,9 @@ instance
   (SymBoolOp bool, Mergeable bool s, UnionLike bool m, Monoid s) =>
   UnionLike bool (WriterLazy.WriterT s m)
   where
-  mergeWithStrategy ms (WriterLazy.WriterT f) = WriterLazy.WriterT $ mergeWithStrategy (liftMergeStrategy2 ms mergeStrategy) f
+  mergeWithStrategy ms (WriterLazy.WriterT f) = WriterLazy.WriterT $ mergeWithStrategy (liftMergingStrategy2 ms mergingStrategy) f
   mrgIfWithStrategy s cond (WriterLazy.WriterT t) (WriterLazy.WriterT f) =
-    WriterLazy.WriterT $ mrgIfWithStrategy (liftMergeStrategy2 s mergeStrategy) cond t f
+    WriterLazy.WriterT $ mrgIfWithStrategy (liftMergingStrategy2 s mergingStrategy) cond t f
   single x = WriterLazy.WriterT $ single (x, mempty)
   unionIf cond (WriterLazy.WriterT l) (WriterLazy.WriterT r) =
     WriterLazy.WriterT $ unionIf cond l r
@@ -378,9 +378,9 @@ instance
   (SymBoolOp bool, Mergeable bool s, UnionLike bool m, Monoid s) =>
   UnionLike bool (WriterStrict.WriterT s m)
   where
-  mergeWithStrategy ms (WriterStrict.WriterT f) = WriterStrict.WriterT $ mergeWithStrategy (liftMergeStrategy2 ms mergeStrategy) f
+  mergeWithStrategy ms (WriterStrict.WriterT f) = WriterStrict.WriterT $ mergeWithStrategy (liftMergingStrategy2 ms mergingStrategy) f
   mrgIfWithStrategy s cond (WriterStrict.WriterT t) (WriterStrict.WriterT f) =
-    WriterStrict.WriterT $ mrgIfWithStrategy (liftMergeStrategy2 s mergeStrategy) cond t f
+    WriterStrict.WriterT $ mrgIfWithStrategy (liftMergingStrategy2 s mergingStrategy) cond t f
   single x = WriterStrict.WriterT $ single (x, mempty)
   unionIf cond (WriterStrict.WriterT l) (WriterStrict.WriterT r) =
     WriterStrict.WriterT $ unionIf cond l r
@@ -455,9 +455,9 @@ instance
   UnionLike bool (RWSLazy.RWST r w s m)
   where
   mergeWithStrategy ms (RWSLazy.RWST f) =
-    RWSLazy.RWST $ \r s -> mergeWithStrategy (liftMergeStrategy3 ms mergeStrategy mergeStrategy) $ f r s
+    RWSLazy.RWST $ \r s -> mergeWithStrategy (liftMergingStrategy3 ms mergingStrategy mergingStrategy) $ f r s
   mrgIfWithStrategy ms cond (RWSLazy.RWST t) (RWSLazy.RWST f) =
-    RWSLazy.RWST $ \r s -> mrgIfWithStrategy (liftMergeStrategy3 ms mergeStrategy mergeStrategy) cond (t r s) (f r s)
+    RWSLazy.RWST $ \r s -> mrgIfWithStrategy (liftMergingStrategy3 ms mergingStrategy mergingStrategy) cond (t r s) (f r s)
   single x = RWSLazy.RWST $ \_ s -> single (x, s, mempty)
   unionIf cond (RWSLazy.RWST t) (RWSLazy.RWST f) =
     RWSLazy.RWST $ \r s -> unionIf cond (t r s) (f r s)
@@ -479,9 +479,9 @@ instance
   UnionLike bool (RWSStrict.RWST r w s m)
   where
   mergeWithStrategy ms (RWSStrict.RWST f) =
-    RWSStrict.RWST $ \r s -> mergeWithStrategy (liftMergeStrategy3 ms mergeStrategy mergeStrategy) $ f r s
+    RWSStrict.RWST $ \r s -> mergeWithStrategy (liftMergingStrategy3 ms mergingStrategy mergingStrategy) $ f r s
   mrgIfWithStrategy ms cond (RWSStrict.RWST t) (RWSStrict.RWST f) =
-    RWSStrict.RWST $ \r s -> mrgIfWithStrategy (liftMergeStrategy3 ms mergeStrategy mergeStrategy) cond (t r s) (f r s)
+    RWSStrict.RWST $ \r s -> mrgIfWithStrategy (liftMergingStrategy3 ms mergingStrategy mergingStrategy) cond (t r s) (f r s)
   single x = RWSStrict.RWST $ \_ s -> single (x, s, mempty)
   unionIf cond (RWSStrict.RWST t) (RWSStrict.RWST f) =
     RWSStrict.RWST $ \r s -> unionIf cond (t r s) (f r s)

@@ -135,7 +135,7 @@ data AST val
   deriving (Show, Generic, Eq, Hashable)
 
 instance Mergeable SymBool val => Mergeable SymBool (AST val) where
-  mergeStrategy = OrderedStrategy (\case
+  mergingStrategy = SortedStrategy (\case
     Arg {} -> 0 :: Int
     Const {} -> 1
     Unary {} -> 2

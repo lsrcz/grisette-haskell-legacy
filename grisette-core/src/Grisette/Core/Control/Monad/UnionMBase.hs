@@ -91,7 +91,7 @@ data UnionMBase bool a where
     UnionMBase bool a
   -- | 'UnionMBase' with 'Mergeable' knowledge.
   UMrg ::
-    MergeStrategy bool a ->
+    MergingStrategy bool a ->
     UnionBase bool a ->
     UnionMBase bool a
 
@@ -155,13 +155,13 @@ instance (SymBoolOp bool) => Monad (UnionMBase bool) where
   a >>= f = bindUnion (underlyingUnion a) f
 
 instance (SymBoolOp bool, Mergeable bool a) => Mergeable bool (UnionMBase bool a) where
-  mergeStrategy = SimpleStrategy $ \cond t f -> unionIf cond t f >>= mrgSingle @bool
+  mergingStrategy = SimpleStrategy $ \cond t f -> unionIf cond t f >>= mrgSingle @bool
 
 instance (SymBoolOp bool, Mergeable bool a) => SimpleMergeable bool (UnionMBase bool a) where
   mrgIte = mrgIf
 
 instance (SymBoolOp bool) => Mergeable1 bool (UnionMBase bool) where
-  liftMergeStrategy m = SimpleStrategy $ \cond t f -> unionIf cond t f >>= (UMrg m . Single)
+  liftMergingStrategy m = SimpleStrategy $ \cond t f -> unionIf cond t f >>= (UMrg m . Single)
 
 instance SymBoolOp bool => SimpleMergeable1 bool (UnionMBase bool) where
   liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
@@ -378,7 +378,7 @@ instance IsConcrete Bool
 instance IsConcrete Integer
 
 instance (SymBoolOp bool, IsConcrete k, Mergeable bool t) => Mergeable bool (HML.HashMap k (UnionMBase bool (Maybe t))) where
-  mergeStrategy = SimpleStrategy mrgIte
+  mergingStrategy = SimpleStrategy mrgIte
 
 instance (SymBoolOp bool, IsConcrete k, Mergeable bool t) => SimpleMergeable bool (HML.HashMap k (UnionMBase bool (Maybe t))) where
   mrgIte cond l r =

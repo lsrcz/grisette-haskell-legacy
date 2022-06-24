@@ -65,7 +65,7 @@ instance Eq SBool where
   _ == _ = False
   
 instance Mergeable SBool SBool where
-  mergeStrategy = SimpleStrategy ites
+  mergingStrategy = SimpleStrategy ites
 
 instance SimpleMergeable SBool SBool where
   mrgIte = ites

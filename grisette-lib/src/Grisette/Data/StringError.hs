@@ -19,7 +19,7 @@ instance Show StringError where
   show (StringError str) = str
 
 instance (SymBoolOp bool) => Mergeable bool StringError where
-  mergeStrategy = OrderedStrategy (\(StringError s) -> s) (\_ -> SimpleStrategy $ \_ t _ -> t)
+  mergingStrategy = SortedStrategy (\(StringError s) -> s) (\_ -> SimpleStrategy $ \_ t _ -> t)
 
 instance (SymBoolOp bool) => SEq bool StringError where
   l ==~ r = conc $ l == r

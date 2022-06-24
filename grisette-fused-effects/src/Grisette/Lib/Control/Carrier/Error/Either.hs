@@ -12,10 +12,10 @@ instance
   (SymBoolOp bool, Mergeable1 bool m, Mergeable bool e, Mergeable bool a) =>
   Mergeable bool (ErrorC e m a)
   where
-  mergeStrategy = wrapMergeStrategy mergeStrategy ErrorC (\(ErrorC et) -> et)
+  mergingStrategy = wrapStrategy mergingStrategy ErrorC (\(ErrorC et) -> et)
 
 instance (SymBoolOp bool, Mergeable1 bool m, Mergeable bool e, Functor m) => Mergeable1 bool (ErrorC e m) where
-  liftMergeStrategy ms = wrapMergeStrategy (liftMergeStrategy ms) ErrorC (\(ErrorC et) -> et)
+  liftMergingStrategy ms = wrapStrategy (liftMergingStrategy ms) ErrorC (\(ErrorC et) -> et)
 
 instance
   (SymBoolOp bool, UnionLike bool m, Mergeable bool e, Mergeable bool a, Functor m) =>

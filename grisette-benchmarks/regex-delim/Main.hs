@@ -22,12 +22,12 @@ yield :: (Monad m) => a -> ContT (Thread m a) m ()
 yield x = shiftT (\k -> return $ Resume x (k ()))
 
 instance (Mergeable1 bool m, Mergeable bool a) => Mergeable bool (Thread m a) where
-  mergeStrategy = 
-    OrderedStrategy
+  mergingStrategy = 
+    SortedStrategy
       (\case Done -> False; Resume {} -> True)
       ( \case
           False -> SimpleStrategy $ \_ t _ -> t
-          True -> wrapMergeStrategy2 Resume (\(Resume l r) -> (l, r)) mergeStrategy mergeStrategy1
+          True -> product2Strategy Resume (\(Resume l r) -> (l, r)) mergingStrategy mergingStrategy1
       )
 
 type CoroBase a = ContT (Thread UnionM (UnionM Int)) UnionM a

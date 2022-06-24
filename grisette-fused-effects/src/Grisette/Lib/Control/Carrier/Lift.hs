@@ -7,10 +7,10 @@ import Grisette.Core
 import Control.Carrier.Lift
 
 instance (UnionLike bool m, Mergeable bool a) => Mergeable bool (LiftC m a) where
-  mergeStrategy = wrapMergeStrategy mergeStrategy1 LiftC (\(LiftC m) -> m)
+  mergingStrategy = wrapStrategy mergingStrategy1 LiftC (\(LiftC m) -> m)
 
 instance (UnionLike bool m) => Mergeable1 bool (LiftC m) where
-  liftMergeStrategy ms = wrapMergeStrategy (liftMergeStrategy ms) LiftC (\(LiftC m) -> m)
+  liftMergingStrategy ms = wrapStrategy (liftMergingStrategy ms) LiftC (\(LiftC m) -> m)
 
 instance (UnionLike bool m, Mergeable bool a) => SimpleMergeable bool (LiftC m a) where
   mrgIte = mrgIf

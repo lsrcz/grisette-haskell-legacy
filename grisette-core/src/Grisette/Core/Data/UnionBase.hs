@@ -65,10 +65,10 @@ instance SymBoolOp bool => UnionPrjOp bool (UnionBase bool) where
   leftMost (If a _ _ _ _) = a
 
 instance (SymBoolOp bool, Mergeable bool a) => Mergeable bool (UnionBase bool a) where
-  mergeStrategy = SimpleStrategy $ ifWithStrategy mergeStrategy
+  mergingStrategy = SimpleStrategy $ ifWithStrategy mergingStrategy
 
 instance (SymBoolOp bool) => Mergeable1 bool (UnionBase bool) where
-  liftMergeStrategy ms = SimpleStrategy $ ifWithStrategy ms
+  liftMergingStrategy ms = SimpleStrategy $ ifWithStrategy ms
 
 instance (SymBoolOp bool, Mergeable bool a) => SimpleMergeable bool (UnionBase bool a) where
   mrgIte = mrgIf
@@ -100,7 +100,7 @@ instance (Hashable b, Hashable a) => Hashable (UnionBase b a) where
   s `hashWithSalt` (If _ _ c l r) = s `hashWithSalt` (1 :: Int) `hashWithSalt` c `hashWithSalt` l `hashWithSalt` r
 
 -- | Fully reconstruct a 'UnionBase' to maintain the merged invariant.
-fullReconstruct :: (SymBoolOp bool) => MergeStrategy bool a -> UnionBase bool a -> UnionBase bool a
+fullReconstruct :: (SymBoolOp bool) => MergingStrategy bool a -> UnionBase bool a -> UnionBase bool a
 fullReconstruct strategy (If _ False cond t f) =
   ifWithStrategyInv strategy cond (fullReconstruct strategy t) (fullReconstruct strategy f)
 fullReconstruct _ u = u
@@ -110,7 +110,7 @@ fullReconstruct _ u = u
 -- The merged invariant will be maintained in the result.
 ifWithStrategy ::
   (SymBoolOp bool) =>
-  MergeStrategy bool a ->
+  MergingStrategy bool a ->
   bool ->
   UnionBase bool a ->
   UnionBase bool a ->
@@ -121,7 +121,7 @@ ifWithStrategy strategy cond t f = ifWithStrategyInv strategy cond t f
 
 ifWithStrategyInv ::
   (SymBoolOp bool) =>
-  MergeStrategy bool a ->
+  MergingStrategy bool a ->
   bool ->
   UnionBase bool a ->
   UnionBase bool a ->
@@ -136,7 +136,7 @@ ifWithStrategyInv strategy cond t (If _ True condFalse _ ff)
   | cond == condFalse = ifWithStrategyInv strategy cond t ff
   -- {| nots cond == condTrue || cond == nots condTrue = ifWithStrategyInv strategy cond t tf -- buggy here condTrue
 ifWithStrategyInv (SimpleStrategy m) cond (Single l) (Single r) = Single $ m cond l r
-ifWithStrategyInv strategy@(OrderedStrategy idxFun substrategy) cond ifTrue ifFalse = case (ifTrue, ifFalse) of
+ifWithStrategyInv strategy@(SortedStrategy idxFun substrategy) cond ifTrue ifFalse = case (ifTrue, ifFalse) of
   (Single _, Single _) -> ssIf cond ifTrue ifFalse
   (Single _, If {}) -> sgIf cond ifTrue ifFalse
   (If {}, Single _) -> gsIf cond ifTrue ifFalse

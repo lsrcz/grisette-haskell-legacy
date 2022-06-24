@@ -12,10 +12,10 @@ instance
   (SymBoolOp bool, Mergeable1 bool m, Mergeable bool a, Functor m) =>
   Mergeable bool (TraceC m a)
   where
-  mergeStrategy = wrapMergeStrategy mergeStrategy1 TraceC (\(TraceC et) -> et)
+  mergingStrategy = wrapStrategy mergingStrategy1 TraceC (\(TraceC et) -> et)
 
 instance (SymBoolOp bool, Mergeable1 bool m, Functor m) => Mergeable1 bool (TraceC m) where
-  liftMergeStrategy ms = wrapMergeStrategy (liftMergeStrategy ms) TraceC (\(TraceC et) -> et)
+  liftMergingStrategy ms = wrapStrategy (liftMergingStrategy ms) TraceC (\(TraceC et) -> et)
 
 instance
   (SymBoolOp bool, UnionLike bool m, Mergeable bool a, Functor m) =>

@@ -13,32 +13,32 @@ import Control.Monad.Coroutine hiding (merge)
 import Grisette.Core
 import Grisette.Lib.Control.Monad
 
-liftCoroEitherMergeStrategy ::
+liftCoroEitherMergingStrategy ::
   (SymBoolOp bool, Mergeable1 bool s, Mergeable1 bool m) =>
-  MergeStrategy bool x ->
-  MergeStrategy bool (Either (s (Coroutine s m x)) x)
-liftCoroEitherMergeStrategy ms =
-  liftMergeStrategy2 (liftMergeStrategy (liftMergeStrategy ms)) ms
+  MergingStrategy bool x ->
+  MergingStrategy bool (Either (s (Coroutine s m x)) x)
+liftCoroEitherMergingStrategy ms =
+  liftMergingStrategy2 (liftMergingStrategy (liftMergingStrategy ms)) ms
 
-coroEitherMergeStrategy ::
+coroEitherMergingStrategy ::
   (SymBoolOp bool, Mergeable1 bool s, Mergeable1 bool m, Mergeable bool x) =>
-  MergeStrategy bool (Either (s (Coroutine s m x)) x)
-coroEitherMergeStrategy = liftMergeStrategy2 mergeStrategy1 mergeStrategy
+  MergingStrategy bool (Either (s (Coroutine s m x)) x)
+coroEitherMergingStrategy = liftMergingStrategy2 mergingStrategy1 mergingStrategy
 
 instance
   (SymBoolOp bool, Mergeable1 bool m, Mergeable bool a, Mergeable1 bool sus) =>
   Mergeable bool (Coroutine sus m a)
   where
-  mergeStrategy =
-    wrapMergeStrategy
-      (liftMergeStrategy coroEitherMergeStrategy)
+  mergingStrategy =
+    wrapStrategy
+      (liftMergingStrategy coroEitherMergingStrategy)
       Coroutine
       (\(Coroutine v) -> v)
 
 instance (SymBoolOp bool, Mergeable1 bool m, Mergeable1 bool sus) => Mergeable1 bool (Coroutine sus m) where
-  liftMergeStrategy m =
-    wrapMergeStrategy
-      (liftMergeStrategy $ liftCoroEitherMergeStrategy m)
+  liftMergingStrategy m =
+    wrapStrategy
+      (liftMergingStrategy $ liftCoroEitherMergingStrategy m)
       Coroutine
       (\(Coroutine v) -> v)
 
@@ -59,9 +59,9 @@ instance
   UnionLike bool (Coroutine sus m)
   where
   mergeWithStrategy s ((Coroutine v) :: Coroutine sus m a) =
-    Coroutine $ mergeWithStrategy (liftCoroEitherMergeStrategy s) v
+    Coroutine $ mergeWithStrategy (liftCoroEitherMergingStrategy s) v
   mrgIfWithStrategy s cond (Coroutine t) (Coroutine f) =
-    Coroutine $ mrgIfWithStrategy (liftCoroEitherMergeStrategy s) cond t f
+    Coroutine $ mrgIfWithStrategy (liftCoroEitherMergingStrategy s) cond t f
   single x = Coroutine $ single $ Right x
   unionIf cond (Coroutine t) (Coroutine f) =
     Coroutine $ unionIf cond t f
@@ -80,7 +80,7 @@ mrgSuspend ::
 mrgSuspend s =
   Coroutine $
     mergeWithStrategy
-      coroEitherMergeStrategy
+      coroEitherMergingStrategy
       $ return (Left s)
 {-# INLINEABLE mrgSuspend #-}
 
@@ -95,7 +95,7 @@ mrgMapMonad f (Coroutine r) =
     { resume =
         f r >>= \x ->
           mergeWithStrategy
-            coroEitherMergeStrategy
+            coroEitherMergingStrategy
             $ return $ map' x
     }
   where
@@ -114,7 +114,7 @@ mrgMapSuspension f (Coroutine r) =
   Coroutine
     { resume =
         r >>= \x ->
-          mergeWithStrategy coroEitherMergeStrategy $ return $ map' x
+          mergeWithStrategy coroEitherMergingStrategy $ return $ map' x
     }
   where
     map' :: Either (s (Coroutine s m x)) x -> Either (s' (Coroutine s' m x)) x
@@ -131,17 +131,17 @@ mrgMapFirstSuspension ::
 mrgMapFirstSuspension f (Coroutine r) =
   Coroutine
     { resume =
-        r >>= \s -> mrgReturnWithStrategy coroEitherMergeStrategy $
+        r >>= \s -> mrgReturnWithStrategy coroEitherMergingStrategy $
           case s of
             Right x -> Right x
             Left x -> Left $ f x
     }
 
 instance Mergeable bool (Naught x) where
-  mergeStrategy = SimpleStrategy mrgIte
+  mergingStrategy = SimpleStrategy mrgIte
 
 instance Mergeable1 bool Naught where
-  liftMergeStrategy _ = SimpleStrategy mrgIte
+  liftMergingStrategy _ = SimpleStrategy mrgIte
 
 instance SimpleMergeable bool (Naught x) where
   mrgIte _ x _ = x
@@ -164,7 +164,7 @@ mrgBounce ::
   (s (Coroutine s m x) -> Coroutine s m x) ->
   Coroutine s m x ->
   Coroutine s m x
-mrgBounce f (Coroutine r) = Coroutine $ mergeWithStrategy coroEitherMergeStrategy $ do
+mrgBounce f (Coroutine r) = Coroutine $ mergeWithStrategy coroEitherMergingStrategy $ do
   r1 <- r
   case r1 of
     Left s -> resume $ f s

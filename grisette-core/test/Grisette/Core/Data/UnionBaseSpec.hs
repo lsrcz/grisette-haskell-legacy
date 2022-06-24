@@ -14,13 +14,13 @@ import Grisette.TestUtils.SBool
 data TripleSum a b c = TS1 a | TS2 b | TS3 c deriving (Show, Eq, Generic)
 
 instance (SymBoolOp bool, Mergeable bool a, Mergeable bool b, Mergeable bool c) => Mergeable bool (TripleSum a b c) where
-  mergeStrategy =
-    OrderedStrategy
+  mergingStrategy =
+    SortedStrategy
       (\case TS1 _ -> (0 :: Int); TS2 _ -> (1 :: Int); TS3 _ -> (2 :: Int))
       ( \case
-          0 -> wrapMergeStrategy mergeStrategy TS1 (\(TS1 x) -> x)
-          1 -> wrapMergeStrategy mergeStrategy TS2 (\(TS2 x) -> x)
-          2 -> wrapMergeStrategy mergeStrategy TS3 (\(TS3 x) -> x)
+          0 -> wrapStrategy mergingStrategy TS1 (\(TS1 x) -> x)
+          1 -> wrapStrategy mergingStrategy TS2 (\(TS2 x) -> x)
+          2 -> wrapStrategy mergingStrategy TS3 (\(TS3 x) -> x)
           _ -> error "Bad"
       )
 
@@ -43,54 +43,54 @@ spec = do
           (If 3 True (SSBool "c") (Single 3) (Single 4))
   describe "ifWithStrategy" $ do
     it "ifWithStrategy with concrete condition" $ do
-      ifWithStrategy mergeStrategy (CBool True) (Single (1 :: Integer)) (Single 2) `shouldBe` Single 1
-      ifWithStrategy mergeStrategy (CBool False) (Single (1 :: Integer)) (Single 2) `shouldBe` Single 2
+      ifWithStrategy mergingStrategy (CBool True) (Single (1 :: Integer)) (Single 2) `shouldBe` Single 1
+      ifWithStrategy mergingStrategy (CBool False) (Single (1 :: Integer)) (Single 2) `shouldBe` Single 2
     it "ifWithStrategy with condition equal to sub conditions" $ do
-      let a = ifWithStrategy mergeStrategy (SSBool "a") (Single (1 :: Integer)) (Single 2)
-      ifWithStrategy mergeStrategy (SSBool "a") a (Single 3)
+      let a = ifWithStrategy mergingStrategy (SSBool "a") (Single (1 :: Integer)) (Single 2)
+      ifWithStrategy mergingStrategy (SSBool "a") a (Single 3)
         `shouldBe` If 1 True (SSBool "a") (Single 1) (Single 3)
-      ifWithStrategy mergeStrategy (SSBool "a") (Single 0) a
+      ifWithStrategy mergingStrategy (SSBool "a") (Single 0) a
         `shouldBe` If 0 True (SSBool "a") (Single 0) (Single 2)
     it "ifWithStrategy with simple mergeables" $ do
-      ifWithStrategy mergeStrategy (SSBool "a") (Single (SSBool "b")) (Single (SSBool "c"))
+      ifWithStrategy mergingStrategy (SSBool "a") (Single (SSBool "b")) (Single (SSBool "c"))
         `shouldBe` Single (ITE (SSBool "a") (SSBool "b") (SSBool "c"))
     describe "ifWithStrategy with ordered mergeables" $ do
       describe "ifWithStrategy on Single/Single" $ do
         it "ifWithStrategy on Single/Single with idxt < idxf" $ do
-          ifWithStrategy mergeStrategy (SSBool "a") (Single (1 :: Integer)) (Single 2)
+          ifWithStrategy mergingStrategy (SSBool "a") (Single (1 :: Integer)) (Single 2)
             `shouldBe` If 1 True (SSBool "a") (Single 1) (Single 2)
-          ifWithStrategy mergeStrategy (SSBool "a") (Single Nothing) (Single (Just (2 :: Integer)))
+          ifWithStrategy mergingStrategy (SSBool "a") (Single Nothing) (Single (Just (2 :: Integer)))
             `shouldBe` If Nothing True (SSBool "a") (Single Nothing) (Single (Just 2))
         describe "ifWithStrategy on Single/Single with idxt == idxf" $ do
           it "ifWithStrategy on Single/Single with idxt == idxf as terminal" $ do
-            ifWithStrategy mergeStrategy (SSBool "a") (Single (1 :: Integer)) (Single 1)
+            ifWithStrategy mergingStrategy (SSBool "a") (Single (1 :: Integer)) (Single 1)
               `shouldBe` Single 1
-            ifWithStrategy mergeStrategy (SSBool "a") (Single (Just (SSBool "b"))) (Single (Just (SSBool "c")))
+            ifWithStrategy mergingStrategy (SSBool "a") (Single (Just (SSBool "b"))) (Single (Just (SSBool "c")))
               `shouldBe` Single (Just (ITE (SSBool "a") (SSBool "b") (SSBool "c")))
           it "ifWithStrategy on Single/Single with idxt == idxf but not terminal" $ do
-            ifWithStrategy mergeStrategy (SSBool "a") (Single (Just (1 :: Integer))) (Single (Just (2 :: Integer)))
+            ifWithStrategy mergingStrategy (SSBool "a") (Single (Just (1 :: Integer))) (Single (Just (2 :: Integer)))
               `shouldBe` If (Just 1) True (SSBool "a") (Single $ Just 1) (Single (Just 2))
             ifWithStrategy
-              mergeStrategy
+              mergingStrategy
               (SSBool "a")
               (Single $ Just $ Just $ SSBool "b")
               (Single $ Just $ Just $ SSBool "c")
               `shouldBe` Single (Just (Just (ITE (SSBool "a") (SSBool "b") (SSBool "c"))))
         it "ifWithStrategy on Single/Single with idxt > idxf" $ do
-          ifWithStrategy mergeStrategy (SSBool "a") (Single (2 :: Integer)) (Single 1)
+          ifWithStrategy mergingStrategy (SSBool "a") (Single (2 :: Integer)) (Single 1)
             `shouldBe` If 1 True (Not $ SSBool "a") (Single 1) (Single 2)
-          ifWithStrategy mergeStrategy (SSBool "a") (Single (Just (2 :: Integer))) (Single Nothing)
+          ifWithStrategy mergingStrategy (SSBool "a") (Single (Just (2 :: Integer))) (Single Nothing)
             `shouldBe` If Nothing True (Not $ SSBool "a") (Single Nothing) (Single (Just 2))
       describe "ifWithStrategy on Single/If" $ do
         describe "ifWithStrategy on Single/If degenerate to Single/Single when idxft == idxff" $ do
           it "ifWithStrategy on Single/If for degenerated case with idxt < idxf" $ do
             let x =
                   ifWithStrategy
-                    mergeStrategy
+                    mergingStrategy
                     (SSBool "a")
                     (Single (Just (1 :: Integer)))
                     (Single (Just (2 :: Integer)))
-            ifWithStrategy mergeStrategy (SSBool "b") (Single Nothing) x
+            ifWithStrategy mergingStrategy (SSBool "b") (Single Nothing) x
               `shouldBe` If
                 Nothing
                 True
@@ -100,29 +100,29 @@ spec = do
           it "ifWithStrategy on Single/If for degenerated case with idxt == idxf" $ do
             let x =
                   ifWithStrategy
-                    mergeStrategy
+                    mergingStrategy
                     (SSBool "a")
                     (Single (Just (1 :: Integer)))
                     (Single (Just (3 :: Integer)))
-            ifWithStrategy mergeStrategy (SSBool "b") (Single $ Just 0) x
+            ifWithStrategy mergingStrategy (SSBool "b") (Single $ Just 0) x
               `shouldBe` If
                 (Just 0)
                 True
                 (SSBool "b")
                 (Single $ Just 0)
                 (If (Just 1) True (SSBool "a") (Single $ Just 1) (Single (Just 3)))
-            ifWithStrategy mergeStrategy (SSBool "b") (Single $ Just 1) x
+            ifWithStrategy mergingStrategy (SSBool "b") (Single $ Just 1) x
               `shouldBe` If (Just 1) True (Or (SSBool "b") (SSBool "a")) (Single $ Just 1) (Single (Just 3))
-            ifWithStrategy mergeStrategy (SSBool "b") (Single $ Just 2) x
+            ifWithStrategy mergingStrategy (SSBool "b") (Single $ Just 2) x
               `shouldBe` If
                 (Just 1)
                 True
                 (And (Not (SSBool "b")) (SSBool "a"))
                 (Single $ Just 1)
                 (If (Just 2) True (SSBool "b") (Single $ Just 2) (Single $ Just 3))
-            ifWithStrategy mergeStrategy (SSBool "b") (Single $ Just 3) x
+            ifWithStrategy mergingStrategy (SSBool "b") (Single $ Just 3) x
               `shouldBe` If (Just 1) True (And (Not (SSBool "b")) (SSBool "a")) (Single $ Just 1) (Single (Just 3))
-            ifWithStrategy mergeStrategy (SSBool "b") (Single $ Just 4) x
+            ifWithStrategy mergingStrategy (SSBool "b") (Single $ Just 4) x
               `shouldBe` If
                 (Just 1)
                 True
@@ -132,11 +132,11 @@ spec = do
           it "ifWithStrategy on Single/If for degenerated case with idxt > idxf" $ do
             let x =
                   ifWithStrategy
-                    mergeStrategy
+                    mergingStrategy
                     (SSBool "a")
                     (Single (Left (1 :: Integer)))
                     (Single (Left (2 :: Integer)))
-            ifWithStrategy mergeStrategy (SSBool "b") (Single $ Right (1 :: Integer)) x
+            ifWithStrategy mergingStrategy (SSBool "b") (Single $ Right (1 :: Integer)) x
               `shouldBe` If
                 (Left 1)
                 True
@@ -146,20 +146,20 @@ spec = do
         it "ifWithStrategy on Single/If for idxt < idxft" $ do
           let x =
                 ifWithStrategy
-                  mergeStrategy
+                  mergingStrategy
                   (SSBool "a")
                   (Single (1 :: Integer))
                   (Single (3 :: Integer))
-          ifWithStrategy mergeStrategy (SSBool "b") (Single 0) x
+          ifWithStrategy mergingStrategy (SSBool "b") (Single 0) x
             `shouldBe` If 0 True (SSBool "b") (Single 0) (If 1 True (SSBool "a") (Single 1) (Single 3))
         it "ifWithStrategy on Single/If for idxt == idxft" $ do
           let x =
                 ifWithStrategy
-                  mergeStrategy
+                  mergingStrategy
                   (SSBool "a")
                   (Single $ Left (1 :: Integer))
                   (Single $ Right (3 :: Integer))
-          ifWithStrategy mergeStrategy (SSBool "b") (Single $ Left 0) x
+          ifWithStrategy mergingStrategy (SSBool "b") (Single $ Left 0) x
             `shouldBe` If
               (Left 0)
               True
@@ -169,11 +169,11 @@ spec = do
         it "ifWithStrategy on Single/If for idxt > idxft" $ do
           let x =
                 ifWithStrategy
-                  mergeStrategy
+                  mergingStrategy
                   (SSBool "a")
                   (Single $ Left (1 :: Integer))
                   (Single $ Right (3 :: Integer))
-          ifWithStrategy mergeStrategy (SSBool "b") (Single $ Right 0) x
+          ifWithStrategy mergingStrategy (SSBool "b") (Single $ Right 0) x
             `shouldBe` If
               (Left 1)
               True
@@ -185,11 +185,11 @@ spec = do
           it "ifWithStrategy on Single/If for degenerated case with idxt < idxf" $ do
             let x =
                   ifWithStrategy
-                    mergeStrategy
+                    mergingStrategy
                     (SSBool "a")
                     (Single (Left (1 :: Integer)))
                     (Single (Left (2 :: Integer)))
-            ifWithStrategy mergeStrategy (SSBool "b") x (Single $ Right (2 :: Integer))
+            ifWithStrategy mergingStrategy (SSBool "b") x (Single $ Right (2 :: Integer))
               `shouldBe` If
                 (Left 1)
                 True
@@ -199,29 +199,29 @@ spec = do
           it "ifWithStrategy on Single/If for degenerated case with idxt == idxf" $ do
             let x =
                   ifWithStrategy
-                    mergeStrategy
+                    mergingStrategy
                     (SSBool "a")
                     (Single (Just (1 :: Integer)))
                     (Single (Just (3 :: Integer)))
-            ifWithStrategy mergeStrategy (SSBool "b") x (Single $ Just 0)
+            ifWithStrategy mergingStrategy (SSBool "b") x (Single $ Just 0)
               `shouldBe` If
                 (Just 0)
                 True
                 (Not (SSBool "b"))
                 (Single $ Just 0)
                 (If (Just 1) True (SSBool "a") (Single $ Just 1) (Single (Just 3)))
-            ifWithStrategy mergeStrategy (SSBool "b") x (Single $ Just 1)
+            ifWithStrategy mergingStrategy (SSBool "b") x (Single $ Just 1)
               `shouldBe` If (Just 1) True (Or (Not $ SSBool "b") (SSBool "a")) (Single $ Just 1) (Single (Just 3))
-            ifWithStrategy mergeStrategy (SSBool "b") x (Single $ Just 2)
+            ifWithStrategy mergingStrategy (SSBool "b") x (Single $ Just 2)
               `shouldBe` If
                 (Just 1)
                 True
                 (And (SSBool "b") (SSBool "a"))
                 (Single $ Just 1)
                 (If (Just 2) True (Not $ SSBool "b") (Single $ Just 2) (Single $ Just 3))
-            ifWithStrategy mergeStrategy (SSBool "b") x (Single $ Just 3)
+            ifWithStrategy mergingStrategy (SSBool "b") x (Single $ Just 3)
               `shouldBe` If (Just 1) True (And (SSBool "b") (SSBool "a")) (Single $ Just 1) (Single (Just 3))
-            ifWithStrategy mergeStrategy (SSBool "b") x (Single $ Just 4)
+            ifWithStrategy mergingStrategy (SSBool "b") x (Single $ Just 4)
               `shouldBe` If
                 (Just 1)
                 True
@@ -231,11 +231,11 @@ spec = do
           it "ifWithStrategy on Single/If for degenerated case with idxt > idxf" $ do
             let x =
                   ifWithStrategy
-                    mergeStrategy
+                    mergingStrategy
                     (SSBool "a")
                     (Single (Right (1 :: Integer)))
                     (Single (Right (2 :: Integer)))
-            ifWithStrategy mergeStrategy (SSBool "b") x (Single $ Left (1 :: Integer))
+            ifWithStrategy mergingStrategy (SSBool "b") x (Single $ Left (1 :: Integer))
               `shouldBe` If
                 (Left 1)
                 True
@@ -245,11 +245,11 @@ spec = do
         it "ifWithStrategy on Single/If for idxtt < idxf" $ do
           let x =
                 ifWithStrategy
-                  mergeStrategy
+                  mergingStrategy
                   (SSBool "a")
                   (Single $ Left (1 :: Integer))
                   (Single $ Right (3 :: Integer))
-          ifWithStrategy mergeStrategy (SSBool "b") x (Single $ Right 0)
+          ifWithStrategy mergingStrategy (SSBool "b") x (Single $ Right 0)
             `shouldBe` If
               (Left 1)
               True
@@ -259,11 +259,11 @@ spec = do
         it "ifWithStrategy on Single/If for idxtt == idxf" $ do
           let x =
                 ifWithStrategy
-                  mergeStrategy
+                  mergingStrategy
                   (SSBool "a")
                   (Single $ Left (1 :: Integer))
                   (Single $ Right (3 :: Integer))
-          ifWithStrategy mergeStrategy (SSBool "b") x (Single $ Left 0)
+          ifWithStrategy mergingStrategy (SSBool "b") x (Single $ Left 0)
             `shouldBe` If
               (Left 0)
               True
@@ -273,17 +273,17 @@ spec = do
         it "ifWithStrategy on Single/If for idxtt > idxf" $ do
           let x =
                 ifWithStrategy
-                  mergeStrategy
+                  mergingStrategy
                   (SSBool "a")
                   (Single (1 :: Integer))
                   (Single (3 :: Integer))
-          ifWithStrategy mergeStrategy (SSBool "b") x (Single 0)
+          ifWithStrategy mergingStrategy (SSBool "b") x (Single 0)
             `shouldBe` If 0 True (Not $ SSBool "b") (Single 0) (If 1 True (SSBool "a") (Single 1) (Single 3))
       describe "ifWithStrategy on If/If" $ do
         it "ifWithStrategy on If/If degenerate to Single/If when idxtt == idxtf" $ do
-          let x = ifWithStrategy mergeStrategy (SSBool "a") (Single $ Left (1 :: Integer)) (Single $ Left (2 :: Integer))
-          let y = ifWithStrategy mergeStrategy (SSBool "b") (Single $ Left (1 :: Integer)) (Single $ Right (2 :: Integer))
-          ifWithStrategy mergeStrategy (SSBool "c") x y
+          let x = ifWithStrategy mergingStrategy (SSBool "a") (Single $ Left (1 :: Integer)) (Single $ Left (2 :: Integer))
+          let y = ifWithStrategy mergingStrategy (SSBool "b") (Single $ Left (1 :: Integer)) (Single $ Right (2 :: Integer))
+          ifWithStrategy mergingStrategy (SSBool "c") x y
             `shouldBe` If
               (Left 1)
               True
@@ -291,9 +291,9 @@ spec = do
               (If (Left 1) True (Or (Not (SSBool "c")) (SSBool "a")) (Single $ Left 1) (Single $ Left 2))
               (Single $ Right 2)
         it "ifWithStrategy on If/If degenerate to Single/If when idxff == idxft" $ do
-          let x = ifWithStrategy mergeStrategy (SSBool "a") (Single $ Left (1 :: Integer)) (Single $ Left (2 :: Integer))
-          let y = ifWithStrategy mergeStrategy (SSBool "b") (Single $ Left (1 :: Integer)) (Single $ Right (2 :: Integer))
-          ifWithStrategy mergeStrategy (SSBool "c") y x
+          let x = ifWithStrategy mergingStrategy (SSBool "a") (Single $ Left (1 :: Integer)) (Single $ Left (2 :: Integer))
+          let y = ifWithStrategy mergingStrategy (SSBool "b") (Single $ Left (1 :: Integer)) (Single $ Right (2 :: Integer))
+          ifWithStrategy mergingStrategy (SSBool "c") y x
             `shouldBe` If
               (Left 1)
               True
@@ -301,9 +301,9 @@ spec = do
               (If (Left 1) True (Or (SSBool "c") (SSBool "a")) (Single $ Left 1) (Single $ Left 2))
               (Single $ Right 2)
         it "ifWithStrategy on If/If non-degenerated case when idxtt < idxft" $ do
-          let x = ifWithStrategy mergeStrategy (SSBool "a") (Single $ TS1 (1 :: Integer)) (Single $ TS2 (2 :: Integer))
-          let y = ifWithStrategy mergeStrategy (SSBool "b") (Single $ TS2 (1 :: Integer)) (Single $ TS3 (2 :: Integer))
-          ifWithStrategy mergeStrategy (SSBool "c") x y
+          let x = ifWithStrategy mergingStrategy (SSBool "a") (Single $ TS1 (1 :: Integer)) (Single $ TS2 (2 :: Integer))
+          let y = ifWithStrategy mergingStrategy (SSBool "b") (Single $ TS2 (1 :: Integer)) (Single $ TS3 (2 :: Integer))
+          ifWithStrategy mergingStrategy (SSBool "c") x y
             `shouldBe` If
               (TS1 1)
               True
@@ -317,9 +317,9 @@ spec = do
                   (Single $ TS3 2)
               )
         it "ifWithStrategy on If/If non-degenerated case when idxtt == idxft" $ do
-          let x = ifWithStrategy mergeStrategy (SSBool "a") (Single $ TS1 (1 :: Integer)) (Single $ TS2 (2 :: Integer))
-          let y = ifWithStrategy mergeStrategy (SSBool "b") (Single $ TS1 (2 :: Integer)) (Single $ TS3 (2 :: Integer))
-          ifWithStrategy mergeStrategy (SSBool "c") x y
+          let x = ifWithStrategy mergingStrategy (SSBool "a") (Single $ TS1 (1 :: Integer)) (Single $ TS2 (2 :: Integer))
+          let y = ifWithStrategy mergingStrategy (SSBool "b") (Single $ TS1 (2 :: Integer)) (Single $ TS3 (2 :: Integer))
+          ifWithStrategy mergingStrategy (SSBool "c") x y
             `shouldBe` If
               (TS1 1)
               True
@@ -327,9 +327,9 @@ spec = do
               (If (TS1 1) True (SSBool "c") (Single $ TS1 1) (Single $ TS1 2))
               (If (TS2 2) True (SSBool "c") (Single $ TS2 2) (Single $ TS3 2))
         it "ifWithStrategy on If/If non-degenerated case when idxtt > idxft" $ do
-          let x = ifWithStrategy mergeStrategy (SSBool "a") (Single $ TS2 (1 :: Integer)) (Single $ TS3 (2 :: Integer))
-          let y = ifWithStrategy mergeStrategy (SSBool "b") (Single $ TS1 (1 :: Integer)) (Single $ TS2 (2 :: Integer))
-          ifWithStrategy mergeStrategy (SSBool "c") x y
+          let x = ifWithStrategy mergingStrategy (SSBool "a") (Single $ TS2 (1 :: Integer)) (Single $ TS3 (2 :: Integer))
+          let y = ifWithStrategy mergingStrategy (SSBool "b") (Single $ TS1 (1 :: Integer)) (Single $ TS2 (2 :: Integer))
+          ifWithStrategy mergingStrategy (SSBool "c") x y
             `shouldBe` If
               (TS1 1)
               True
@@ -345,7 +345,7 @@ spec = do
     it "ifWithStrategy should tolerate non-merged Ifs" $ do
       let x = If (Right 2) False (SSBool "a") (Single $ Right (2 :: Integer)) (Single $ Left (2 :: Integer))
       let y = If (Right 3) False (SSBool "b") (Single $ Right 3) (Single $ Left 1)
-      ifWithStrategy mergeStrategy (SSBool "c") x y
+      ifWithStrategy mergingStrategy (SSBool "c") x y
         `shouldBe` If
           (Left 1)
           True
@@ -357,7 +357,7 @@ spec = do
       let x = If (Right 2) False (SSBool "a") (Single $ Right (2 :: Integer)) (Single $ Left (2 :: Integer))
       let y = If (Right 3) False (SSBool "b") (Single $ Right 3) (Single $ Left 1)
       let z = If (Right 2) False (SSBool "c") x y
-      fullReconstruct mergeStrategy z
+      fullReconstruct mergingStrategy z
         `shouldBe` If
           (Left 1)
           True

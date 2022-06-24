@@ -50,7 +50,7 @@ data InodeOp
   deriving (Show, Eq)
 
 instance Mergeable SymBool InodeOp where
-  mergeStrategy = NoStrategy
+  mergingStrategy = NoStrategy
 
 $(makeUnionMWrapper "u" ''InodeOp)
 

@@ -219,7 +219,7 @@ data LetPolyValue
   deriving (Show, Eq, Generic, SEq SymBool, NFData, SymEval Model, Hashable)
 
 instance Mergeable SymBool LetPolyValue where
-  mergeStrategy =
+  mergingStrategy =
     OrderedStrategy
       ( \case
           LetPolyInt _ -> 0 :: Int
@@ -268,7 +268,7 @@ getRefEnv i (RefEnv l) = go l
       | otherwise = throwError BonsaiExecError
 
 instance Mergeable SymBool RefEnv where
-  mergeStrategy = SimpleStrategy mrgIte
+  mergingStrategy = SimpleStrategy mrgIte
 
 instance SimpleMergeable SymBool RefEnv where
   mrgIte cond (RefEnv t) (RefEnv f) = RefEnv $ go t f

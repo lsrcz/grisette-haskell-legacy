@@ -12,13 +12,13 @@ instance
   (SymBoolOp bool, Mergeable bool s, Mergeable bool a, Mergeable1 bool m) =>
   Mergeable bool (StateC s m a)
   where
-  mergeStrategy = wrapMergeStrategy (liftMergeStrategy mergeStrategy1) StateC (\(StateC f) -> f)
+  mergingStrategy = wrapStrategy (liftMergingStrategy mergingStrategy1) StateC (\(StateC f) -> f)
 
 instance
   (SymBoolOp bool, Mergeable bool s, Mergeable1 bool m) =>
   Mergeable1 bool (StateC s m)
   where
-  liftMergeStrategy s = wrapMergeStrategy (liftMergeStrategy (liftMergeStrategy (liftMergeStrategy s))) StateC (\(StateC f) -> f)
+  liftMergingStrategy s = wrapStrategy (liftMergingStrategy (liftMergingStrategy (liftMergingStrategy s))) StateC (\(StateC f) -> f)
 
 instance
   (SymBoolOp bool, Mergeable bool s, Mergeable bool a, UnionLike bool m) =>
@@ -36,9 +36,9 @@ instance
   (SymBoolOp bool, Mergeable bool s, UnionLike bool m) =>
   UnionLike bool (StateC s m)
   where
-  mergeWithStrategy ms (StateC f) = StateC $ mergeWithStrategy (liftMergeStrategy ms) . f
-  mrgIfWithStrategy s cond (StateC l) (StateC r) = StateC $ \v -> mrgIfWithStrategy (liftMergeStrategy s) cond (l v) (r v)
-  mrgSingleWithStrategy ms a = StateC $ \s -> mrgSingleWithStrategy (liftMergeStrategy ms) (s, a)
+  mergeWithStrategy ms (StateC f) = StateC $ mergeWithStrategy (liftMergingStrategy ms) . f
+  mrgIfWithStrategy s cond (StateC l) (StateC r) = StateC $ \v -> mrgIfWithStrategy (liftMergingStrategy s) cond (l v) (r v)
+  mrgSingleWithStrategy ms a = StateC $ \s -> mrgSingleWithStrategy (liftMergingStrategy ms) (s, a)
   single a = StateC $ \s -> single (s, a)
   unionIf cond (StateC l) (StateC r) = StateC $ \s -> unionIf cond (l s) (r s)
 

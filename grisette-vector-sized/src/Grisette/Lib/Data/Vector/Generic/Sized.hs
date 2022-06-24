@@ -25,7 +25,7 @@ instance
     Mergeable bool t,
     KnownNat m,
     VGeneric.Vector v t,
-    VGeneric.Vector v (MergeStrategy bool t),
+    VGeneric.Vector v (MergingStrategy bool t),
     Typeable v,
     Functor v,
     Eq1 v,
@@ -35,12 +35,12 @@ instance
   ) =>
   Mergeable bool (VSized.Vector v m t)
   where
-  mergeStrategy = case (isZeroOrGT1 (knownNat @m), mergeStrategy :: MergeStrategy bool t) of
+  mergingStrategy = case (isZeroOrGT1 (knownNat @m), mergingStrategy :: MergingStrategy bool t) of
     (Left Refl, _) -> SimpleStrategy $ \_ v _ -> v
     (Right LeqProof, SimpleStrategy m) -> SimpleStrategy $ \cond -> VSized.zipWith (m cond)
-    (Right LeqProof, OrderedStrategy _ _) ->
-      OrderedStrategy (buildStrategyList @bool mergeStrategy) $ \(StrategyList _ strategies) ->
-        let s :: VSized.Vector v m (MergeStrategy bool t) = unsafeCoerce strategies
+    (Right LeqProof, SortedStrategy _ _) ->
+      SortedStrategy (buildStrategyList @bool mergingStrategy) $ \(StrategyList _ strategies) ->
+        let s :: VSized.Vector v m (MergingStrategy bool t) = unsafeCoerce strategies
             allSimple = all (\case SimpleStrategy _ -> True; _ -> False) s
          in if allSimple
               then SimpleStrategy $ \cond l r ->
@@ -56,7 +56,7 @@ instance
   ) =>
   Mergeable bool (VSized.Vector v 0 t)
   where
-  mergeStrategy = SimpleStrategy $ \_ v _ -> v
+  mergingStrategy = SimpleStrategy $ \_ v _ -> v
 
 instance
   {-# OVERLAPPABLE #-}
@@ -64,7 +64,7 @@ instance
     SimpleMergeable bool t,
     KnownNat m,
     VGeneric.Vector v t,
-    VGeneric.Vector v (MergeStrategy bool t),
+    VGeneric.Vector v (MergingStrategy bool t),
     Typeable v,
     Functor v,
     Eq1 v,

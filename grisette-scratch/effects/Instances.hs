@@ -15,12 +15,12 @@ import Grisette
 
 instance (SymBoolOp bool, UnionLike bool m) =>
   Mergeable bool (EC.ErrorC e m a) where
-    mergeStrategy = SimpleStrategy $ \cond (EC.ErrorC l) (EC.ErrorC r) ->
+    mergingStrategy = SimpleStrategy $ \cond (EC.ErrorC l) (EC.ErrorC r) ->
       EC.ErrorC $ \ef af -> unionIf cond (l ef af) (r ef af)
 
 instance (SymBoolOp bool, UnionLike bool m) =>
   Mergeable1 bool (EC.ErrorC e m) where
-    liftMergeStrategy _ = SimpleStrategy $ \cond (EC.ErrorC l) (EC.ErrorC r) ->
+    liftMergingStrategy _ = SimpleStrategy $ \cond (EC.ErrorC l) (EC.ErrorC r) ->
       EC.ErrorC $ \ef af -> unionIf cond (l ef af) (r ef af)
 
 instance (SymBoolOp bool, UnionLike bool m) =>
@@ -45,10 +45,10 @@ instance
   (SymBoolOp bool, Mergeable1 bool m, Mergeable bool e, Mergeable bool a) =>
   Mergeable bool (ErrorC e m a)
   where
-  mergeStrategy = wrapMergeStrategy mergeStrategy ErrorC (\(ErrorC et) -> et)
+  mergingStrategy = wrapStrategy mergingStrategy ErrorC (\(ErrorC et) -> et)
 
 instance (SymBoolOp bool, Mergeable1 bool m, Mergeable bool e, Functor m) => Mergeable1 bool (ErrorC e m) where
-  liftMergeStrategy ms = wrapMergeStrategy (liftMergeStrategy ms) ErrorC (\(ErrorC et) -> et)
+  liftMergingStrategy ms = wrapStrategy (liftMergingStrategy ms) ErrorC (\(ErrorC et) -> et)
 
 instance
   (SymBoolOp bool, UnionLike bool m, Mergeable bool e, Mergeable bool a, Functor m) =>
@@ -75,13 +75,13 @@ instance
   (SymBoolOp bool, Mergeable bool s, Mergeable bool a, Mergeable1 bool m) =>
   Mergeable bool (StateC s m a)
   where
-  mergeStrategy = wrapMergeStrategy (liftMergeStrategy mergeStrategy1) StateC (\(StateC f) -> f)
+  mergingStrategy = wrapStrategy (liftMergingStrategy mergingStrategy1) StateC (\(StateC f) -> f)
 
 instance
   (SymBoolOp bool, Mergeable bool s, Mergeable1 bool m) =>
   Mergeable1 bool (StateC s m)
   where
-  liftMergeStrategy s = wrapMergeStrategy (liftMergeStrategy (liftMergeStrategy (liftMergeStrategy s))) StateC (\(StateC f) -> f)
+  liftMergingStrategy s = wrapStrategy (liftMergingStrategy (liftMergingStrategy (liftMergingStrategy s))) StateC (\(StateC f) -> f)
 
 instance
   (SymBoolOp bool, Mergeable bool s, Mergeable bool a, UnionLike bool m) =>
@@ -99,16 +99,16 @@ instance
   (SymBoolOp bool, Mergeable bool s, UnionLike bool m) =>
   UnionLike bool (StateC s m)
   where
-  mergeWithStrategy ms (StateC f) = StateC $ mergeWithStrategy (liftMergeStrategy ms) . f
-  mrgIfWithStrategy s cond (StateC l) (StateC r) = StateC $ \v -> mrgIfWithStrategy (liftMergeStrategy s) cond (l v) (r v)
+  mergeWithStrategy ms (StateC f) = StateC $ mergeWithStrategy (liftMergingStrategy ms) . f
+  mrgIfWithStrategy s cond (StateC l) (StateC r) = StateC $ \v -> mrgIfWithStrategy (liftMergingStrategy s) cond (l v) (r v)
   single a = StateC $ \s -> single (s, a)
   unionIf cond (StateC l) (StateC r) = StateC $ \s -> unionIf cond (l s) (r s)
 
 instance (MonadUnion bool m, Mergeable bool a) => Mergeable bool (LiftC m a) where
-  mergeStrategy = wrapMergeStrategy mergeStrategy1 LiftC (\(LiftC m) -> m)
+  mergingStrategy = wrapStrategy mergingStrategy1 LiftC (\(LiftC m) -> m)
 
 instance (MonadUnion bool m) => Mergeable1 bool (LiftC m) where
-  liftMergeStrategy ms = wrapMergeStrategy (liftMergeStrategy ms) LiftC (\(LiftC m) -> m)
+  liftMergingStrategy ms = wrapStrategy (liftMergingStrategy ms) LiftC (\(LiftC m) -> m)
 
 instance (MonadUnion bool m, Mergeable bool a) => SimpleMergeable bool (LiftC m a) where
   mrgIte = mrgIf

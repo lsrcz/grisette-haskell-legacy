@@ -25,11 +25,11 @@ import Grisette.Core.Control.Monad.Union
 import Grisette.Lib.Data.Foldable
 
 -- | 'return' with 'Mergeable' knowledge propagation.
-mrgReturnWithStrategy :: (MonadUnion bool u) => MergeStrategy bool a -> a -> u a
+mrgReturnWithStrategy :: (MonadUnion bool u) => MergingStrategy bool a -> a -> u a
 mrgReturnWithStrategy s = mergeWithStrategy s . return
 
 -- | '>>=' with 'Mergeable' knowledge propagation.
-mrgBindWithStrategy :: (MonadUnion bool u) => MergeStrategy bool b -> u a -> (a -> u b) -> u b
+mrgBindWithStrategy :: (MonadUnion bool u) => MergingStrategy bool b -> u a -> (a -> u b) -> u b
 mrgBindWithStrategy s a f = mergeWithStrategy s $ a >>= f
 
 -- | 'return' with 'Mergeable' knowledge propagation.

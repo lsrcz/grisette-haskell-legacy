@@ -80,7 +80,7 @@ newtype GenSymIndex = GenSymIndex Int
   deriving (Eq, Ord, Num) via Int
 
 instance (SymBoolOp bool) => Mergeable bool GenSymIndex where
-  mergeStrategy = SimpleStrategy $ \_ t f -> max t f
+  mergingStrategy = SimpleStrategy $ \_ t f -> max t f
 
 instance (SymBoolOp bool) => SimpleMergeable bool GenSymIndex where
   mrgIte _ t f = max t f
@@ -141,13 +141,13 @@ instance
   (SymBoolOp bool, Mergeable bool a, Mergeable1 bool m) =>
   Mergeable bool (GenSymFreshT m a)
   where
-  mergeStrategy =
-    wrapMergeStrategy (liftMergeStrategy (liftMergeStrategy mergeStrategy1)) GenSymFreshT runGenSymFreshT'
+  mergingStrategy =
+    wrapStrategy (liftMergingStrategy (liftMergingStrategy mergingStrategy1)) GenSymFreshT runGenSymFreshT'
 
 instance (SymBoolOp bool, Mergeable1 bool m) => Mergeable1 bool (GenSymFreshT m) where
-  liftMergeStrategy m =
-    wrapMergeStrategy
-      (liftMergeStrategy (liftMergeStrategy (liftMergeStrategy (liftMergeStrategy2 m mergeStrategy))))
+  liftMergingStrategy m =
+    wrapStrategy
+      (liftMergingStrategy (liftMergingStrategy (liftMergingStrategy (liftMergingStrategy2 m mergingStrategy))))
       GenSymFreshT
       runGenSymFreshT'
 
@@ -168,9 +168,9 @@ instance
   UnionLike bool (GenSymFreshT m)
   where
   mergeWithStrategy s (GenSymFreshT f) =
-    GenSymFreshT $ \ident index -> mergeWithStrategy (liftMergeStrategy2 s mergeStrategy) $ f ident index
+    GenSymFreshT $ \ident index -> mergeWithStrategy (liftMergingStrategy2 s mergingStrategy) $ f ident index
   mrgIfWithStrategy s cond (GenSymFreshT t) (GenSymFreshT f) =
-    GenSymFreshT $ \ident index -> mrgIfWithStrategy (liftMergeStrategy2 s mergeStrategy) cond (t ident index) (f ident index)
+    GenSymFreshT $ \ident index -> mrgIfWithStrategy (liftMergingStrategy2 s mergingStrategy) cond (t ident index) (f ident index)
   single x = GenSymFreshT $ \_ i -> single (x, i)
   unionIf cond (GenSymFreshT t) (GenSymFreshT f) =
     GenSymFreshT $ \ident index -> unionIf cond (t ident index) (f ident index)

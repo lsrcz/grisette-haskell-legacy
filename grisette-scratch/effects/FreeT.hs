@@ -28,40 +28,40 @@ instance
   (Mergeable1 bool f) =>
   Mergeable2 bool (FreeF f)
   where
-  liftMergeStrategy2 m1 m2 =
-    OrderedStrategy
+  liftMergingStrategy2 m1 m2 =
+    SortedStrategy
       ( \case
           Pure _ -> False
           Free _ -> True
       )
       ( \case
-          False -> wrapMergeStrategy m1 Pure (\(Pure a) -> a)
-          True -> wrapMergeStrategy (liftMergeStrategy m2) Free (\(Free a) -> a)
+          False -> wrapStrategy m1 Pure (\(Pure a) -> a)
+          True -> wrapStrategy (liftMergingStrategy m2) Free (\(Free a) -> a)
       )
 
 instance
   (Mergeable1 bool f, Mergeable bool a) =>
   Mergeable1 bool (FreeF f a)
   where
-  liftMergeStrategy m = liftMergeStrategy2 mergeStrategy m
+  liftMergingStrategy m = liftMergingStrategy2 mergingStrategy m
 
 instance
   (Mergeable1 bool f, Mergeable bool a, Mergeable bool b) =>
   Mergeable bool (FreeF f a b)
   where
-  mergeStrategy = mergeStrategy1
+  mergingStrategy = mergingStrategy1
 
 instance (Mergeable1 bool f, Mergeable1 bool m) => Mergeable1 bool (FreeT f m) where
-  liftMergeStrategy m = wrapMergeStrategy (liftMergeStrategy (liftMergeStrategy2 m (liftMergeStrategy m))) FreeT runFreeT
+  liftMergingStrategy m = wrapStrategy (liftMergingStrategy (liftMergingStrategy2 m (liftMergingStrategy m))) FreeT runFreeT
 
 instance (Mergeable1 bool f, Mergeable1 bool m, Mergeable bool a) => Mergeable bool (FreeT f m a) where
-  mergeStrategy = mergeStrategy1
+  mergingStrategy = mergingStrategy1
 
 instance (Mergeable1 bool f, UnionLike bool m) => SimpleMergeable1 bool (FreeT f m) where
   liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
 
 instance (Mergeable1 bool f, UnionLike bool m) => UnionLike bool (FreeT f m) where
-  mergeWithStrategy s (FreeT l) = FreeT $ mergeWithStrategy (liftMergeStrategy2 s $ liftMergeStrategy s) l
+  mergeWithStrategy s (FreeT l) = FreeT $ mergeWithStrategy (liftMergingStrategy2 s $ liftMergingStrategy s) l
   single = FreeT . single . Pure
   unionIf cond (FreeT l) (FreeT r) = FreeT $ unionIf cond l r
 
@@ -236,7 +236,7 @@ program4 = merge $ do
   mrgReturn $ a + b
 
 instance Mergeable bool a => Mergeable bool (Data.Semigroup.Max a) where
-  mergeStrategy = wrapMergeStrategy mergeStrategy Data.Semigroup.Max Data.Semigroup.getMax
+  mergingStrategy = wrapStrategy mergingStrategy Data.Semigroup.Max Data.Semigroup.getMax
 
 instance (SymBoolOp bool, Mergeable bool x, Semigroup x) => Semigroup (UnionMBase bool x) where
   a <> b = do

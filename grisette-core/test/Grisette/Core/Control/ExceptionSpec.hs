@@ -39,7 +39,7 @@ spec = do
     it "SimpleMergeable for AssertionError" $ do
       mrgIte (SSBool "a") AssertionError AssertionError `shouldBe` AssertionError
     it "Mergeable for AssertionError" $ do
-      let SimpleStrategy s = mergeStrategy :: MergeStrategy SBool AssertionError
+      let SimpleStrategy s = mergingStrategy :: MergingStrategy SBool AssertionError
       s (SSBool "a") AssertionError AssertionError `shouldBe` AssertionError
     it "Transform AssertionError to VerificationConditions" $ do
       transformError AssertionError `shouldBe` AssertionViolation

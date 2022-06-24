@@ -12,14 +12,14 @@ instance
   (SymBoolOp bool, UnionLike bool m) =>
   Mergeable bool (StateC e m a)
   where
-  mergeStrategy = SimpleStrategy $ \cond (StateC l) (StateC r) ->
+  mergingStrategy = SimpleStrategy $ \cond (StateC l) (StateC r) ->
     StateC $ \k s -> unionIf cond (l k s) (r k s)
 
 instance
   (SymBoolOp bool, UnionLike bool m) =>
   Mergeable1 bool (StateC e m)
   where
-  liftMergeStrategy _ = SimpleStrategy $ \cond (StateC l) (StateC r) ->
+  liftMergingStrategy _ = SimpleStrategy $ \cond (StateC l) (StateC r) ->
     StateC $ \k s -> unionIf cond (l k s) (r k s)
 
 instance

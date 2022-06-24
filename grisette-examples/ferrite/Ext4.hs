@@ -41,7 +41,7 @@ data Ext4Fs = Ext4Fs
   deriving (Show, Eq, Generic, ToSym ConcExt4Fs, SymEval Model)
 
 instance Mergeable SymBool Ext4Fs where
-  mergeStrategy = SimpleStrategy $ \cond (Ext4Fs bs1 na1 dir1 fds1 files1) (Ext4Fs _ _ dir2 fds2 files2) ->
+  mergingStrategy = SimpleStrategy $ \cond (Ext4Fs bs1 na1 dir1 fds1 files1) (Ext4Fs _ _ dir2 fds2 files2) ->
     -- assume bs1 == bs2
     -- assume na1 == na2
     -- assume length dir1 == length dir2

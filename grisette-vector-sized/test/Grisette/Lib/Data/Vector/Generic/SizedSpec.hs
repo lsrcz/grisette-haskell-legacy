@@ -36,23 +36,23 @@ spec = do
         ]
     it "BuildStrategyList should work for Sized Vector" $ do
       case buildStrategyList @SBool @Integer
-        mergeStrategy
+        mergingStrategy
         (VSized.cons 1 (VSized.cons 2 (VSized.cons 3 VSized.empty)) :: VSized.Vector V.Vector 3 Integer) of
         StrategyList idxs _ -> do
           idxs
             `shouldBe` VSized.cons
-              [DynamicOrderedIdx (1 :: Integer)]
+              [DynamicSortedIdx (1 :: Integer)]
               ( VSized.cons
-                  [DynamicOrderedIdx (2 :: Integer)]
+                  [DynamicSortedIdx (2 :: Integer)]
                   ( VSized.singleton
-                      [DynamicOrderedIdx (3 :: Integer)]
+                      [DynamicSortedIdx (3 :: Integer)]
                   )
               )
     prop "Mergeable for Sized Vector for ordered type should work" $ \(x, y, z) -> do
       let v = VSized.cons x (VSized.cons y (VSized.cons z VSized.empty)) :: VSized.Vector V.Vector 3 Integer
       testMergeableSimpleEquivClass
         v
-        [DynamicOrderedIdx $ buildStrategyList @SBool mergeStrategy v]
+        [DynamicSortedIdx $ buildStrategyList @SBool mergingStrategy v]
         [(SSBool "a", v, v, v)]
     it "Mergeable for Sized Vector for complex ordered type should work" $ do
       let v1 = VSized.cons Nothing (VSized.singleton Nothing) :: VSized.Vector V.Vector 2 (Maybe SBool)
@@ -64,19 +64,19 @@ spec = do
       let v4' = VSized.cons (Just $ SSBool "c") (VSized.singleton (Just $ SSBool "d")) :: VSized.Vector V.Vector 2 (Maybe SBool)
       testMergeableSimpleEquivClass
         v1
-        [DynamicOrderedIdx $ buildStrategyList @SBool mergeStrategy v1]
+        [DynamicSortedIdx $ buildStrategyList @SBool mergingStrategy v1]
         [(SSBool "a", v1, v1, v1)]
       testMergeableSimpleEquivClass
         v2
-        [DynamicOrderedIdx $ buildStrategyList @SBool mergeStrategy v2]
+        [DynamicSortedIdx $ buildStrategyList @SBool mergingStrategy v2]
         [(SSBool "c", v2, v2', VSized.cons (Just $ ITE (SSBool "c") (SSBool "a") (SSBool "b")) (VSized.singleton Nothing))]
       testMergeableSimpleEquivClass
         v3
-        [DynamicOrderedIdx $ buildStrategyList @SBool mergeStrategy v3]
+        [DynamicSortedIdx $ buildStrategyList @SBool mergingStrategy v3]
         [(SSBool "c", v3, v3', VSized.cons Nothing (VSized.singleton (Just $ ITE (SSBool "c") (SSBool "a") (SSBool "b"))))]
       testMergeableSimpleEquivClass
         v4
-        [DynamicOrderedIdx $ buildStrategyList @SBool mergeStrategy v4]
+        [DynamicSortedIdx $ buildStrategyList @SBool mergingStrategy v4]
         [ ( SSBool "e",
             v4,
             v4',

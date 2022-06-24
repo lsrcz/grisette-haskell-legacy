@@ -13,10 +13,10 @@ instance
   (SymBoolOp bool, UnionLike bool m) =>
   Mergeable bool (WriterC w m a)
   where
-  mergeStrategy = wrapMergeStrategy mergeStrategy WriterC (\(WriterC et) -> et)
+  mergingStrategy = wrapStrategy mergingStrategy WriterC (\(WriterC et) -> et)
 
 instance (SymBoolOp bool, UnionLike bool m) => Mergeable1 bool (WriterC w m) where
-  liftMergeStrategy ms = wrapMergeStrategy (liftMergeStrategy ms) WriterC (\(WriterC et) -> et)
+  liftMergingStrategy ms = wrapStrategy (liftMergingStrategy ms) WriterC (\(WriterC et) -> et)
 
 instance
   (SymBoolOp bool, UnionLike bool m) =>

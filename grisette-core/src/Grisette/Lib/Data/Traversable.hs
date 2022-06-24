@@ -26,7 +26,7 @@ mrgTraverse ::
   (a -> f b) ->
   t a ->
   f (t b)
-mrgTraverse f = mergeWithStrategy mergeStrategy1 . traverse (merge . f)
+mrgTraverse f = mergeWithStrategy mergingStrategy1 . traverse (merge . f)
 {-# INLINE mrgTraverse #-}
 
 -- | 'sequenceA' with 'Mergeable' knowledge propagation.

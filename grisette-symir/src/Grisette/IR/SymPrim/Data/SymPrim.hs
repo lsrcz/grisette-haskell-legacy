@@ -89,7 +89,7 @@ instance (SupportedPrim a) => ITEOp (Sym Bool) (Sym a) where
   ites (Sym c) (Sym t) (Sym f) = Sym $ iteterm c t f
 
 instance (SupportedPrim a) => Mergeable (Sym Bool) (Sym a) where
-  mergeStrategy = SimpleStrategy ites
+  mergingStrategy = SimpleStrategy ites
 
 instance (SupportedPrim a) => SimpleMergeable (Sym Bool) (Sym a) where
   mrgIte = ites

@@ -15,7 +15,7 @@ instance
   ) =>
   Mergeable bool (ReaderC r m a)
   where
-  mergeStrategy = mergeStrategy1
+  mergingStrategy = mergingStrategy1
 
 instance
   ( SymBoolOp bool,
@@ -23,8 +23,8 @@ instance
   ) =>
   Mergeable1 bool (ReaderC r m)
   where
-  liftMergeStrategy ms =
-    wrapMergeStrategy (liftMergeStrategy (liftMergeStrategy ms)) ReaderC (\(ReaderC rt) -> rt)
+  liftMergingStrategy ms =
+    wrapStrategy (liftMergingStrategy (liftMergingStrategy ms)) ReaderC (\(ReaderC rt) -> rt)
 
 instance
   ( SymBoolOp bool,

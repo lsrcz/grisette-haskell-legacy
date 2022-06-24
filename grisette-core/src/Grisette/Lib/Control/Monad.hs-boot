@@ -5,10 +5,10 @@ import Grisette.Core.Data.Class.Mergeable
 import Grisette.Core.Data.Class.Bool
 import Control.Monad
 
-mrgReturnWithStrategy :: (MonadUnion bool u) => MergeStrategy bool a -> a -> u a
+mrgReturnWithStrategy :: (MonadUnion bool u) => MergingStrategy bool a -> a -> u a
 
 -- | '>>=' with 'Mergeable' knowledge propagation.
-mrgBindWithStrategy :: (MonadUnion bool u) => MergeStrategy bool b -> u a -> (a -> u b) -> u b
+mrgBindWithStrategy :: (MonadUnion bool u) => MergingStrategy bool b -> u a -> (a -> u b) -> u b
 
 -- | 'return' with 'Mergeable' knowledge propagation.
 mrgReturn :: (MonadUnion bool u, Mergeable bool a) => a -> u a

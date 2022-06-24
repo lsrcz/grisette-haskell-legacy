@@ -23,7 +23,7 @@ data Table = Table
   deriving (Evaluate Model) via (Default Table)
 
 instance Mergeable SymBool Table where
-  mergeStrategy = SimpleStrategy $ mrgIte @SymBool
+  mergingStrategy = SimpleStrategy $ mrgIte @SymBool
 
 instance SimpleMergeable SymBool Table where
   mrgIte cond (Table name1 schema1 content1) (Table name2 schema2 content2)
