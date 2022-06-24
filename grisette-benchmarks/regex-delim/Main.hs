@@ -8,13 +8,13 @@ import Control.Monad.Trans.Cont
 import Control.Monad.Trans.Maybe
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C
+import Data.Function (fix)
 import Data.Hashable
 import Data.Maybe
 import GHC.Generics
 import Grisette
 import Text.Regex.PCRE
 import Utils.Timing
-import Data.Function (fix)
 
 data Thread m a = Done | Resume a (m (Thread m a))
 
@@ -22,7 +22,7 @@ yield :: (Monad m) => a -> ContT (Thread m a) m ()
 yield x = shiftT (\k -> return $ Resume x (k ()))
 
 instance (Mergeable1 bool m, Mergeable bool a) => Mergeable bool (Thread m a) where
-  mergingStrategy = 
+  mergingStrategy =
     SortedStrategy
       (\case Done -> False; Resume {} -> True)
       ( \case
@@ -38,7 +38,7 @@ type Coro = CoroBase ()
 
 type PattCoroReset = B.ByteString -> Int -> CoroReset
 
-pipe :: CoroReset -> (UnionM Int -> CoroBase a) -> Coro
+pipe :: CoroReset -> (UnionM Int -> Coro) -> Coro
 pipe c f = lift (mrgEvalContT c) >>= check
   where
     check Done = return ()
@@ -67,22 +67,15 @@ emptyPatt = htmemo2 $ \str idx ->
   delimitCoro $ when (B.length str >= idx) (yield $ mrgReturn idx)
 
 plusPatt :: PattCoroReset -> SymBool -> PattCoroReset
-plusPatt patt = fix $ htmemo3 . \f greedy str idx ->
-  delimitCoro . pipe (patt str idx) $
-    ( \i -> do
-        i1 <- lift i
-        mrgIf
-          greedy
-          ( do
-              when (i1 /= idx) $ callCoro (f (conc True) str i1)
-              yield (mrgReturn i1)
-          )
-          ( do
-              yield (mrgReturn i1)
-              when (i1 /= idx) $ callCoro (f (conc False) str i1)
-          )
-    )
-
+plusPatt patt =
+  fix $
+    htmemo3 . \f greedy str idx ->
+      delimitCoro . pipe (patt str idx) $
+        lift >=> \i1 ->
+          mrgIf
+            greedy
+            (when (i1 /= idx) (callCoro (f (conc True) str i1)) >> yield (mrgReturn i1))
+            (yield (mrgReturn i1) >> when (i1 /= idx) (callCoro (f (conc False) str i1)))
 
 -- The regex patterns. In the paper it is call Regex.
 -- PrimPatt 'a'        --> a
@@ -119,7 +112,7 @@ toCoro = htmemo $ \case
   PrimPatt s -> primPatt s
   SeqPatt p1 p2 -> seqPatt (toCoroU p1) (toCoroU p2)
   AltPatt p1 p2 -> altPatt (toCoroU p1) (toCoroU p2)
-  PlusPatt subp greedy -> plusPatt (toCoroU subp) greedy 
+  PlusPatt subp greedy -> plusPatt (toCoroU subp) greedy
   EmptyPatt -> emptyPatt
 
 matchFirstWithStartImpl :: PattCoroReset -> B.ByteString -> Int -> MaybeT UnionM Int
@@ -226,36 +219,34 @@ sk1 =
 freshPrim :: GenSymFresh (UnionM Patt)
 freshPrim = choose [PrimPatt 'd', PrimPatt 'c', PrimPatt 'b', PrimPatt 'a', EmptyPatt]
 
-binFreshPrim :: (UnionM Patt -> UnionM Patt -> Patt) -> GenSymFresh Patt
+binFreshPrim :: (UnionM Patt -> UnionM Patt -> GenSymFresh (UnionM Patt)) -> GenSymFresh (UnionM Patt)
 binFreshPrim f = do
   f1 <- freshPrim
-  f f1 <$> freshPrim
+  f2 <- freshPrim
+  f f1 f2
 
 seqOrAlt :: GenSymFresh (UnionM Patt)
-seqOrAlt = do
-  s <- binFreshPrim SeqPatt
-  a <- binFreshPrim AltPatt
-  choose [s, a]
+seqOrAlt = binFreshPrim (\l r -> choose [SeqPatt l r, AltPatt l r])
 
-sks :: GenSymFresh Patt
-sks = do
+sketchGen :: GenSymFresh Patt
+sketchGen = do
   s1 <- seqOrAlt
-  s2 <- seqOrAlt
   f1 <- freshPrim
-  b <- genSymSimpleFresh @SymBool ()
-  let s3 = SeqPatt s1 f1
-  let p = PlusPatt (mrgReturn s3) b
-  return $ SeqPatt s2 (mrgReturn p)
+  s2 <- choose [SeqPatt s1 f1, AltPatt s1 f1]
+  greedy <- genSymSimpleFresh @SymBool ()
+  let p = PlusPatt s2 greedy
+  s3 <- seqOrAlt
+  return $ SeqPatt s3 (mrgReturn p)
 
-sk :: Patt
-sk = runGenSymFresh sks "a"
+sketch :: Patt
+sketch = runGenSymFresh sketchGen "a"
 
 ref :: Patt
 ref =
   toSym $
     ConcSeqPatt
       (ConcAltPatt (ConcPrimPatt 'c') (ConcPrimPatt 'd'))
-      (ConcPlusPatt (ConcSeqPatt (ConcAltPatt ConcEmptyPatt (ConcPrimPatt 'a')) (ConcPrimPatt 'b')) True)
+      (ConcPlusPatt (ConcSeqPatt (ConcAltPatt ConcEmptyPatt (ConcPrimPatt 'a')) (ConcPrimPatt 'b')) False)
 
 {-
 t :: [Word8]
@@ -298,7 +289,7 @@ main = timeItAll "Overall" $ do
   print $ listToMaybe (getAllMatches (str7 =~ reg6) :: [(Int, Int)])
   print sk1
 
-  res <- synthesisRegex (UnboundedReasoning z3 {transcript = Just "/tmp/a.smt2", timing = PrintTiming}) (mrgReturn sk) "[cd](a?b)+?" $ genWordsUpTo 5 "abcd"
+  res <- synthesisRegex (UnboundedReasoning z3 {timing = PrintTiming}) (mrgReturn sketch) "[cd](a?b)+?" $ genWordsUpTo 5 "abcd"
   print res
   -- The synthesized regex
   -- Just (ConcSeqPatt (ConcAltPatt (ConcPrimPatt 'c') (ConcPrimPatt 'd')) (ConcPlusPatt (ConcSeqPatt (ConcAltPatt ConcEmptyPatt (ConcPrimPatt 'a')) (ConcPrimPatt 'b')) False))

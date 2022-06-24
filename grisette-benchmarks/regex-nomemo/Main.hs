@@ -36,18 +36,15 @@ altPatt patt1 patt2 str idx = patt1 str idx >> patt2 str idx
 emptyPatt :: PattCoro
 emptyPatt str idx = when (B.length str >= idx) $ yield $ mrgReturn idx
 
-plusGreedyPatt :: PattCoro -> PattCoro
-plusGreedyPatt patt str idx =
+plusPatt :: PattCoro -> SymBool -> PattCoro
+plusPatt patt greedy str idx =
   patt str idx
-    |>>= (lift >=> \i1 -> when (i1 /= idx) (plusGreedyPatt patt str i1) >> yield (mrgReturn i1))
-
-plusLazyPatt :: PattCoro -> PattCoro
-plusLazyPatt patt str idx =
-  patt str idx
-    |>>= (lift >=> \i1 -> yield (mrgReturn i1) >> when (i1 /= idx) (plusLazyPatt patt str i1))
-
-plusPatt :: SymBool -> PattCoro -> PattCoro
-plusPatt greedy = mrgIte greedy plusGreedyPatt plusLazyPatt
+    |>>= ( lift >=> \i1 ->
+             mrgIf
+               greedy
+               (when (i1 /= idx) (plusPatt patt (conc True) str i1) >> yield (mrgReturn i1))
+               (yield (mrgReturn i1) >> when (i1 /= idx) (plusPatt patt (conc False) str i1))
+         )
 
 matchFirstWithStartImpl :: PattCoro -> B.ByteString -> Int -> MaybeT UnionM Int
 matchFirstWithStartImpl patt str startPos = case merge $ pogoStick (\(Yield idx _) -> return $ mrgLift idx) r1 of
@@ -86,7 +83,7 @@ toCoro = \case
   PrimPatt s -> primPatt s
   SeqPatt p1 p2 -> seqPatt (toCoroU p1) (toCoroU p2)
   AltPatt p1 p2 -> altPatt (toCoroU p1) (toCoroU p2)
-  PlusPatt subp greedy -> plusPatt greedy (toCoroU subp)
+  PlusPatt subp greedy -> plusPatt (toCoroU subp) greedy
   EmptyPatt -> emptyPatt
 
 conformsFirst :: PattCoro -> B.ByteString -> B.ByteString -> SymBool
@@ -181,36 +178,34 @@ sk1 =
 freshPrim :: GenSymFresh (UnionM Patt)
 freshPrim = choose [PrimPatt 'd', PrimPatt 'c', PrimPatt 'b', PrimPatt 'a', EmptyPatt]
 
-binFreshPrim :: (UnionM Patt -> UnionM Patt -> Patt) -> GenSymFresh Patt
+binFreshPrim :: (UnionM Patt -> UnionM Patt -> GenSymFresh (UnionM Patt)) -> GenSymFresh (UnionM Patt)
 binFreshPrim f = do
   f1 <- freshPrim
-  f f1 <$> freshPrim
+  f2 <- freshPrim
+  f f1 f2
 
 seqOrAlt :: GenSymFresh (UnionM Patt)
-seqOrAlt = do
-  s <- binFreshPrim SeqPatt
-  a <- binFreshPrim AltPatt
-  choose [s, a]
+seqOrAlt = binFreshPrim (\l r -> choose [SeqPatt l r, AltPatt l r])
 
-sks :: GenSymFresh Patt
-sks = do
+sketchGen :: GenSymFresh Patt
+sketchGen = do
   s1 <- seqOrAlt
-  s2 <- seqOrAlt
   f1 <- freshPrim
-  b <- genSymSimpleFresh @SymBool ()
-  let s3 = SeqPatt s1 f1
-  let p = PlusPatt (mrgReturn s3) b
-  return $ SeqPatt s2 (mrgReturn p)
+  s2 <- choose [SeqPatt s1 f1, AltPatt s1 f1]
+  greedy <- genSymSimpleFresh @SymBool ()
+  let p = PlusPatt s2 greedy
+  s3 <- seqOrAlt
+  return $ SeqPatt s3 (mrgReturn p)
 
-sk :: Patt
-sk = runGenSymFresh sks "a"
+sketch :: Patt
+sketch = runGenSymFresh sketchGen "a"
 
-r :: Patt
-r =
+ref :: Patt
+ref =
   toSym $
     ConcSeqPatt
       (ConcAltPatt (ConcPrimPatt 'c') (ConcPrimPatt 'd'))
-      (ConcPlusPatt (ConcSeqPatt (ConcAltPatt ConcEmptyPatt (ConcPrimPatt 'a')) (ConcPrimPatt 'b')) True)
+      (ConcPlusPatt (ConcSeqPatt (ConcAltPatt ConcEmptyPatt (ConcPrimPatt 'a')) (ConcPrimPatt 'b')) False)
 
 {-
 t :: [Word8]
@@ -253,7 +248,7 @@ main = timeItAll "Overall" $ do
   print $ listToMaybe (getAllMatches (str7 =~ reg6) :: [(Int, Int)])
   print sk1
   -}
-  res <- synthesisRegex (UnboundedReasoning z3 {transcript = Just "/tmp/a.smt2", timing = PrintTiming}) (mrgReturn sk) "[cd](a?b)+?" $ genWordsUpTo 5 "abcd"
+  res <- synthesisRegex (UnboundedReasoning z3 {timing = PrintTiming}) (mrgReturn sketch) "[cd](a?b)+?" $ genWordsUpTo 5 "abcd"
   print res
-  print $ matchFirstImpl (toCoro r) "cabab"
+  print $ matchFirstImpl (toCoro ref) "cabab"
   print $ listToMaybe (getAllMatches (("cabab" :: B.ByteString) =~ ("[cd](a?b)+?" :: B.ByteString)) :: [(Int, Int)])
