@@ -7,6 +7,7 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Grisette.Backend.SBV.Data.SMT.Solving
   ( DefaultVerificationCondition (..),
@@ -31,6 +32,7 @@ import Grisette.Backend.SBV.Data.SMT.Lowering
 import Grisette.IR.SymPrim.Data.SymPrim
 import Grisette.Core.Control.Exception
 import Grisette.Core.Data.Class.PrimWrapper
+import Grisette.Core.Data.Class.SimpleMergeable
 
 solveTermWith ::
   forall integerBitWidth.
@@ -155,7 +157,8 @@ instance SymBoolOp bool => SolverTranslation DefaultVerificationCondition bool V
 instance CegisErrorTranslation DefaultVerificationCondition VerificationConditions where
   cegisErrorTranslation _ = id
 
-instance SymBoolOp bool => CegisTranslation DefaultVerificationCondition bool VerificationConditions () where
+instance (SymBoolOp bool, UnionPrjOp bool u, Functor u) =>
+  CegisTranslation DefaultVerificationCondition bool u VerificationConditions () where
   
 {-
 solveWith ::

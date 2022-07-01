@@ -22,7 +22,7 @@ data Synth = Synth
 instance CegisErrorTranslation Synth AssertionError where
   cegisErrorTranslation _ _ = AssertionViolation
 
-instance CegisTranslation Synth SymBool AssertionError () where
+instance CegisTranslation Synth SymBool UnionM AssertionError () where
 
 synth ::
   forall b conc fs.
@@ -49,6 +49,7 @@ synth config (Litmus fsBound make setupProc prog allowCond) =
       cost = syncCost progWithSyncs
       go sol currCost =
         let costConstraint = conc (currCost == fromIntegral (length progWithSyncs)) ||~ cost <~ currCost
+            synthCond :: ExceptT AssertionError UnionM ()
             synthCond = symFailIfNot AssertionError ((validOrdering fs prog1 order `implies` allowed) &&~ costConstraint)
          in do
               _ <- timeItAll "evaluate" $ (runExceptT synthCond) `deepseq` return ()

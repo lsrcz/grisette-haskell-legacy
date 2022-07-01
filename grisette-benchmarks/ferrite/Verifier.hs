@@ -40,6 +40,7 @@ verify config (Litmus _ make setupProc prog allowCond) =
       (verifFs, _) = runGenSymFresh (runStateT (interpretOrderOps prog1 order (mrgReturn $ (toSym newfs :: fs))) []) "crash"
       allowed = allowCond (toSym newfs) #~ verifFs
 
+      verifCond :: ExceptT AssertionError UnionM ()
       verifCond = symFailIfNot AssertionError (validOrdering fs prog1 order `implies` allowed)
    in do
         _ <- timeItAll "evaluate" $ (runExceptT verifCond) `deepseq` return ()

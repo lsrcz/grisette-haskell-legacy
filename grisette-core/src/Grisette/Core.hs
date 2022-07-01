@@ -171,7 +171,14 @@ module Grisette.Core
     CegisErrorTranslation (..),
     CegisTranslation (..),
     Solver (..),
-    SolveProblem
+    solveWithExcept,
+    solveArgWithExcept,
+    solveWithExceptMulti,
+    cegisWithExcept,
+    cegisForallByWithExcept,
+    cegisArgWithExcept,
+    cegisArgForallByWithExcept,
+    {-SolveProblem
       ( Formula,
         WithExcept,
         ArgFormula,
@@ -192,7 +199,7 @@ module Grisette.Core
     forallIn,
     argBy,
     forallBy,
-    translateBy,
+    translateBy,-}
   
     -- * Memoization
     htmemo,
