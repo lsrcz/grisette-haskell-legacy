@@ -55,6 +55,7 @@ applyHandler [a, b, c] (PatternHandler3 _ h) = h a b c
 applyHandler [a, b, c, d] (PatternHandler4 _ h) = h a b c d
 applyHandler [a, b, c, d, e] (PatternHandler5 _ h) = h a b c d e
 applyHandler _ _ = undefined
+{-# INLINE applyHandler #-}
 
 class GetPatternHandler n m e f t | n m e t -> f where
   (==>) :: Pattern m n -> f -> PatternHandler m e t

@@ -1,6 +1,6 @@
 {-# LANGUAGE StandaloneDeriving #-}
 
-module Bonsai.Match where
+module Bonsai.Match (bonsaiMatchCustomError) where
 
 import Bonsai.BonsaiTree
 import Control.Monad.Except
@@ -35,6 +35,7 @@ bonsaiMatchCustomError e handlers tree =
         )
         (throwError PrivateMatchError)
         handlers
+{-# INLINE bonsaiMatchCustomError #-}
 
 bonsaiMatchHandler ::
   (SEq SymBool m, Mergeable SymBool m, Mergeable SymBool e, Mergeable SymBool t) =>
@@ -59,6 +60,7 @@ bonsaiMatchHandler h@(PatternHandler4 p _) tree = do
 bonsaiMatchHandler h@(PatternHandler5 p _) tree = do
   b <- bonsaiMatchPattern p tree
   merge $ withExceptT transformError $ applyHandler b h
+{-# INLINE bonsaiMatchHandler #-}
 
 bonsaiMatchPattern ::
   (SEq SymBool m, Mergeable SymBool m, Mergeable SymBool e) =>
@@ -73,3 +75,4 @@ bonsaiMatchPattern (PairPattern leftp rightp) (BonsaiNode left right) = do
   mrgReturn $ l ++ r
 bonsaiMatchPattern PlaceHolder t = mrgReturn [mrgReturn t]
 bonsaiMatchPattern _ _ = throwError PrivateMatchError
+{-# INLINE bonsaiMatchPattern #-}

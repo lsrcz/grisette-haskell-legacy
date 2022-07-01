@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module STLC where
+module STLC (stlcSyntax, STLCTree, ConcSTLCTree, execStlc) where
 
 import Bonsai.BonsaiTree
 import Control.DeepSeq
@@ -50,46 +50,8 @@ stlcLiteral s = literal $ fromJust $ toSym $ terminalToBV stlcSyntax s
 simpleNode :: B.ByteString -> STLCTree
 simpleNode = unsafeLeaf stlcSyntax
 
-oneNode :: STLCTree
-oneNode = simpleNode "one"
-
-nilNode :: STLCTree
-nilNode = simpleNode "nil"
-
 pairNode :: STLCTree -> STLCTree -> STLCTree
 pairNode l r = BonsaiNode (mrgReturn l) (mrgReturn r)
-
-callNode :: STLCTree -> STLCTree -> STLCTree
-callNode l r = pairNode (simpleNode "call") $ pairNode l r
-
-lambdaNode :: B.ByteString -> STLCTree -> STLCTree -> STLCTree
-lambdaNode nm ty =
-  pairNode
-    ( pairNode
-        (simpleNode "lambda")
-        ( pairNode
-            (simpleNode nm)
-            ty
-        )
-    )
-
-uopNode :: B.ByteString -> STLCTree -> STLCTree
-uopNode nm = callNode (simpleNode nm)
-
-bopNode :: B.ByteString -> STLCTree -> STLCTree -> STLCTree
-bopNode nm l = callNode (callNode (unsafeLeaf stlcSyntax nm) l)
-
-consNode :: STLCTree -> STLCTree -> STLCTree
-consNode = bopNode "cons"
-
-hdNode :: STLCTree -> STLCTree
-hdNode = uopNode "hd"
-
-tlNode :: STLCTree -> STLCTree
-tlNode = uopNode "tl"
-
-plusNode :: STLCTree -> STLCTree -> STLCTree
-plusNode = bopNode "+"
 
 intTy :: STLCTree
 intTy = simpleNode "int"
@@ -100,7 +62,7 @@ listOfIntTy = pairNode (simpleNode "listof") intTy
 arrowTy :: STLCTree -> STLCTree -> STLCTree
 arrowTy arg res = pairNode (simpleNode "arrow") (pairNode arg res)
 
-arrowTyU :: UnionM (STLCTree) -> UnionM STLCTree -> STLCTree
+arrowTyU :: UnionM STLCTree -> UnionM STLCTree -> STLCTree
 arrowTyU arg res = pairNode (simpleNode "arrow") (BonsaiNode arg res)
 
 availableNames :: [STLCTree]
@@ -109,15 +71,7 @@ availableNames = [simpleNode "a", simpleNode "b", simpleNode "c"]
 isAvailableNameNode :: STLCTree -> SymBool
 isAvailableNameNode node = foldl (\acc v -> node ==~ v ||~ acc) (conc False) availableNames
 
-asLeaf :: BonsaiError -> STLCTree -> ExceptT BonsaiError UnionM (STLCTree)
-asLeaf _ x@(BonsaiLeaf _) = mrgReturn x
-asLeaf e _ = throwError e
-
-asNode :: BonsaiError -> STLCTree -> ExceptT BonsaiError UnionM (STLCTree)
-asNode _ x@(BonsaiNode _ _) = mrgReturn x
-asNode e _ = throwError e
-
-typer' :: STLCTree -> Env 14 (STLCTree) -> ExceptT BonsaiError UnionM (UnionM STLCTree)
+typer' :: STLCTree -> Env 14 STLCTree -> ExceptT BonsaiError UnionM (UnionM STLCTree)
 typer' = htmemo2 $ \tree env {-trace (show tree) $ trace (show env) $-} ->
   bonsaiMatchCustomError
     BonsaiTypeError
@@ -170,7 +124,7 @@ data STLCValue
   | STLCList (UnionM [SymInteger])
   | STLCBuiltin (SymUnsignedBV 14)
   | STLCPartiallyAppliedBuiltin (SymUnsignedBV 14) (UnionM STLCValue)
-  | STLCLambda (SymUnsignedBV 14) (UnionM (STLCTree)) (Env 14 STLCValue)
+  | STLCLambda (SymUnsignedBV 14) (UnionM STLCTree) (Env 14 STLCValue)
   deriving (Show, Eq, Generic, NFData, Hashable)
   deriving (Mergeable SymBool) via (Default STLCValue)
 

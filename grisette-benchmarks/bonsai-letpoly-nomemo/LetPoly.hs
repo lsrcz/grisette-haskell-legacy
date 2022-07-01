@@ -1,22 +1,22 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module LetPoly where
+module LetPoly (letPolySyntax, execLetPoly, LetPolyTree, ConcLetPolyTree) where
 
 import Bonsai.BonsaiTree
-import Control.DeepSeq
-import Control.Monad.Except
-import Data.BitVector.Sized.Unsigned
-import qualified Data.ByteString as B
-import Data.Maybe
 import Bonsai.Env
-import GHC.Generics
-import Grisette
 import Bonsai.Match
 import Bonsai.MatchSyntaxNoMemo
 import Bonsai.Pattern
 import Bonsai.SyntaxSpec
+import Control.DeepSeq
+import Control.Monad.Except
+import Data.BitVector.Sized.Unsigned
+import qualified Data.ByteString as B
 import Data.Hashable
+import Data.Maybe
+import GHC.Generics
+import Grisette
 
 type LetPolyWidth = 19
 
@@ -57,52 +57,14 @@ letPolyLiteral s = literal $ fromJust $ toSym $ terminalToBV letPolySyntax s
 simpleNode :: B.ByteString -> LetPolyTree
 simpleNode = unsafeLeaf letPolySyntax
 
-pairNode :: LetPolyTree -> LetPolyTree -> LetPolyTree
-pairNode l r = BonsaiNode (mrgReturn l) (mrgReturn r)
-
-letTerm :: B.ByteString -> LetPolyTree -> LetPolyTree -> LetPolyTree
-letTerm nm t1 = pairNode (pairNode (pairNode (simpleNode "let") (simpleNode nm)) t1)
-
-callTerm :: LetPolyTree -> LetPolyTree -> LetPolyTree
-callTerm l r = pairNode (simpleNode "call") $ pairNode l r
-
-trueTerm :: LetPolyTree
-trueTerm = simpleNode "true"
-
-oneTerm :: LetPolyTree
-oneTerm = simpleNode "one"
-
-assignTerm :: LetPolyTree -> LetPolyTree -> LetPolyTree -> LetPolyTree
-assignTerm ref t1 = pairNode (pairNode (pairNode (simpleNode ":=") ref) t1)
-
-lambdaTerm :: B.ByteString -> LetPolyTree -> LetPolyTree -> LetPolyTree
-lambdaTerm nm t1 t2 =
-  pairNode (pairNode (simpleNode "lambda") (simpleNode nm)) $
-    pairNode t1 t2
-
-opTerm :: B.ByteString -> LetPolyTree -> LetPolyTree
-opTerm op = pairNode (simpleNode op)
-
-nameTerm :: B.ByteString -> LetPolyTree
-nameTerm = simpleNode
-
 intTy :: LetPolyTree
 intTy = simpleNode "int"
 
 boolTy :: LetPolyTree
 boolTy = simpleNode "bool"
 
-anyTy :: LetPolyTree
-anyTy = simpleNode "any"
-
-refTy :: LetPolyTree -> LetPolyTree
-refTy = pairNode (simpleNode "ref")
-
 refTyU :: UnionM LetPolyTree -> LetPolyTree
 refTyU = BonsaiNode (mrgReturn $ simpleNode "ref")
-
-arrowTy :: LetPolyTree -> LetPolyTree -> LetPolyTree
-arrowTy = pairNode
 
 arrowTyU :: UnionM LetPolyTree -> UnionM LetPolyTree -> LetPolyTree
 arrowTyU = BonsaiNode
@@ -118,7 +80,7 @@ tyMatch ::
 tyMatch = bonsaiMatchCustomError BonsaiTypeError
 
 typeCompatible :: LetPolyTree -> LetPolyTree -> ExceptT BonsaiError UnionM ()
-typeCompatible current expect =
+typeCompatible current =
   tyMatch
     [ letPolyLiteral "int" ==> (tyassert $! current ==~ intTy),
       letPolyLiteral "bool" ==> (tyassert $! current ==~ boolTy),
@@ -138,7 +100,6 @@ typeCompatible current expect =
           ]
           current
     ]
-    expect
 
 isValidName :: BonsaiError -> SymUnsignedBV LetPolyWidth -> ExceptT BonsaiError UnionM ()
 isValidName err sym =
@@ -347,13 +308,12 @@ evalMatch ::
 evalMatch = bonsaiMatchCustomError BonsaiExecError
 
 simpleEval' :: EvalType
-simpleEval' named ref tree =
+simpleEval' named ref =
   evalMatch
     (simpleEvalList simpleEval' named ref)
-    tree
 
 eval' :: EvalType
-eval' named ref tree =
+eval' named ref =
   evalMatch
     ( [ ((letPolyLiteral "let" *= placeHolder) *= placeHolder) *= placeHolder ==> \nm v1 v2 -> do
           n <- extractName BonsaiExecError nm
@@ -374,7 +334,6 @@ eval' named ref tree =
       ]
         ++ simpleEvalList eval' named ref
     )
-    tree
 
 eval :: LetPolyTree -> ExceptT BonsaiError UnionM (UnionM LetPolyValue)
 eval tree = do

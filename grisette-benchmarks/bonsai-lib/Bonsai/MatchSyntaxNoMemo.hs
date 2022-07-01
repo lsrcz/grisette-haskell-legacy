@@ -17,6 +17,7 @@ matchSyntax ::
 matchSyntax stx fR tree sym = case getRules stx sym of
   Nothing -> conc False
   Just rus -> foldl (\acc rule -> acc ||~ fR rule tree) (conc False) rus
+{-# INLINE matchSyntax #-}
 
 matchRule ::
   (KnownNat n, 1 <= n) =>
@@ -33,3 +34,4 @@ matchRule stx fS fR rule tree = case (tree, rule) of
       &&~ getSingle (fR second <$> right)
   (BonsaiLeaf sym, SymRule sym1) -> Just sym ==~ (conc <$> terminalToBV stx sym1)
   _ -> conc False
+{-# INLINE matchRule #-}

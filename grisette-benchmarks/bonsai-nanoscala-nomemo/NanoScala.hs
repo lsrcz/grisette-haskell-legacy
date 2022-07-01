@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell #-}
 
-module NanoScala where
+module NanoScala (DotTree, ConcDotTree, dotSyntax, execDot) where
 
 import Bonsai.BonsaiTree
 import Control.Monad.Except
@@ -118,14 +117,8 @@ dotFind kind nm tb =
         ]
         tb
 
-dotMake :: B.ByteString -> SymUnsignedBV DotBitWidth -> DotResult -> DotResult
-dotMake kind nm tr = BonsaiNode (uBonsaiNode (uBonsaiLeaf $ uRight kind) (uBonsaiLeaf $ uLeft nm)) (mrgReturn tr)
-
 dotMakeU :: B.ByteString -> SymUnsignedBV DotBitWidth -> UnionM DotResult -> UnionM DotResult
 dotMakeU kind nm = uBonsaiNode (uBonsaiNode (uBonsaiLeaf $ uRight kind) (uBonsaiLeaf $ uLeft nm))
-
-dotJoin :: DotResult -> DotResult -> DotResult
-dotJoin l r = BonsaiNode (uBonsaiLeaf $ uLeft andBV) (uBonsaiNode (mrgReturn l) (mrgReturn r))
 
 dotJoinU :: UnionM DotResult -> UnionM DotResult -> UnionM DotResult
 dotJoinU l r = uBonsaiNode (uBonsaiLeaf $ uLeft andBV) (uBonsaiNode l r)

@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module LetPoly where
+module LetPoly (letPolySyntax, execLetPoly, LetPolyTree, ConcLetPolyTree) where
 
 import Bonsai.BonsaiTree
 import Control.DeepSeq
@@ -57,52 +57,14 @@ letPolyLiteral s = literal $ fromJust $ toSym $ terminalToBV letPolySyntax s
 simpleNode :: B.ByteString -> LetPolyTree
 simpleNode = unsafeLeaf letPolySyntax
 
-pairNode :: LetPolyTree -> LetPolyTree -> LetPolyTree
-pairNode l r = BonsaiNode (mrgReturn l) (mrgReturn r)
-
-letTerm :: B.ByteString -> LetPolyTree -> LetPolyTree -> LetPolyTree
-letTerm nm t1 = pairNode (pairNode (pairNode (simpleNode "let") (simpleNode nm)) t1)
-
-callTerm :: LetPolyTree -> LetPolyTree -> LetPolyTree
-callTerm l r = pairNode (simpleNode "call") $ pairNode l r
-
-trueTerm :: LetPolyTree
-trueTerm = simpleNode "true"
-
-oneTerm :: LetPolyTree
-oneTerm = simpleNode "one"
-
-assignTerm :: LetPolyTree -> LetPolyTree -> LetPolyTree -> LetPolyTree
-assignTerm ref t1 = pairNode (pairNode (pairNode (simpleNode ":=") ref) t1)
-
-lambdaTerm :: B.ByteString -> LetPolyTree -> LetPolyTree -> LetPolyTree
-lambdaTerm nm t1 t2 =
-  pairNode (pairNode (simpleNode "lambda") (simpleNode nm)) $
-    pairNode t1 t2
-
-opTerm :: B.ByteString -> LetPolyTree -> LetPolyTree
-opTerm op = pairNode (simpleNode op)
-
-nameTerm :: B.ByteString -> LetPolyTree
-nameTerm = simpleNode
-
 intTy :: LetPolyTree
 intTy = simpleNode "int"
 
 boolTy :: LetPolyTree
 boolTy = simpleNode "bool"
 
-anyTy :: LetPolyTree
-anyTy = simpleNode "any"
-
-refTy :: LetPolyTree -> LetPolyTree
-refTy = pairNode (simpleNode "ref")
-
 refTyU :: UnionM LetPolyTree -> LetPolyTree
 refTyU = BonsaiNode (mrgReturn $ simpleNode "ref")
-
-arrowTy :: LetPolyTree -> LetPolyTree -> LetPolyTree
-arrowTy = pairNode
 
 arrowTyU :: UnionM LetPolyTree -> UnionM LetPolyTree -> LetPolyTree
 arrowTyU = BonsaiNode
