@@ -18,7 +18,7 @@ rm ::
   m a
 rm cond f1 f2 = ms cond (r f1) (r f2)
   where
-    SimpleStrategy ms = mergeStrategy :: MergeStrategy bool (m a)
+    SimpleStrategy ms = mergingStrategy :: MergingStrategy bool (m a)
 
 rm1 ::
   forall sig m bool a.
@@ -29,7 +29,7 @@ rm1 ::
   m a
 rm1 cond f1 f2 = ms cond (r f1) (r f2)
   where
-    SimpleStrategy ms = mergeStrategy1 :: MergeStrategy bool (m a)
+    SimpleStrategy ms = mergingStrategy1 :: MergingStrategy bool (m a)
 
 rs ::
   forall sig m bool a.

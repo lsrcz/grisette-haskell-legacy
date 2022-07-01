@@ -30,13 +30,13 @@ spec = do
           )
         ]
     it "Mergeable for Await SBool SBool should work" $ do
-      let SimpleStrategy s = mergingStrategy :: MergeStrategy SBool (Await SBool SBool)
+      let SimpleStrategy s = mergingStrategy :: MergingStrategy SBool (Await SBool SBool)
       let a1 = Await Not
       let a2 = Await (And (SSBool "a"))
       let Await a3 = s (SSBool "b") a1 a2
       a3 (SSBool "c") `shouldBe` ITE (SSBool "b") (Not (SSBool "c")) (And (SSBool "a") (SSBool "c"))
     it "Mergeable for Request SBool SBool SBool should work" $ do
-      let SimpleStrategy s = mergingStrategy :: MergeStrategy SBool (Request SBool SBool SBool)
+      let SimpleStrategy s = mergingStrategy :: MergingStrategy SBool (Request SBool SBool SBool)
       let a1 = Request (SSBool "a") Not
       let a2 = Request (SSBool "b") (And (SSBool "c"))
       let Request v3 a3 = s (SSBool "d") a1 a2

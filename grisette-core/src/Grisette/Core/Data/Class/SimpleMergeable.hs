@@ -531,7 +531,7 @@ getSingle u = case merge u of
 -- | Helper for applying functions on 'UnionPrjOp' and 'SimpleMergeable'.
 --
 -- >>> let f :: Integer -> UnionM Integer = \x -> mrgIf (ssymb "a") (mrgSingle $ x + 1) (mrgSingle $ x + 2)
--- >>> f #~ (mrgIf (ssymb "b" :: SymBool) (mrgSingle 0) (mrgSingle 2))
+-- >>> f #~ (mrgIf (ssymb "b" :: SymBool) (mrgSingle 0) (mrgSingle 2) :: UnionM Integer)
 -- UMrg (If (&& b a) (Single 1) (If b (Single 2) (If a (Single 3) (Single 4))))
 (#~) ::
   (SymBoolOp bool, Function f, SimpleMergeable bool (Ret f), UnionPrjOp bool u, Functor u) =>

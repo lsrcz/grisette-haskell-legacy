@@ -65,7 +65,7 @@ spec = do
         `shouldBe` Sym (iteterm (ssymbTerm "a") (ssymbTerm "b") (ssymbTerm "c"))
   describe "Mergeable for SymPrim" $ do
     it "Mergeable should work" $ do
-      let SimpleStrategy s = mergeStrategy :: MergeStrategy (Sym Bool) (Sym Integer)
+      let SimpleStrategy s = mergingStrategy :: MergingStrategy (Sym Bool) (Sym Integer)
       s (ssymb "a") (ssymb "b") (ssymb "c")
         `shouldBe` ites (ssymb "a" :: Sym Bool) (ssymb "b" :: Sym Integer) (ssymb "c")
   describe "SimpleMergeable for SymPrim" $ do

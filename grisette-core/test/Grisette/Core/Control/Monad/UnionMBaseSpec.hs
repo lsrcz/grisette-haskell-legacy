@@ -444,7 +444,7 @@ spec = do
       func # (1 :: Integer) `shouldBe` mrgIf (SSBool "a") (mrgSingle 2) (mrgSingle 3)
     it "Helper for applying on UnionMBase" $ do
       let func (x :: Integer) = mrgIf (SSBool "a") (mrgSingle $ x + 1) (mrgSingle $ x + 3)
-      (func #~ mrgIf (SSBool "b") (mrgSingle 0) (mrgSingle 1))
+      (func #~ (mrgIf (SSBool "b") (mrgSingle 0) (mrgSingle 1) :: UnionMBase SBool Integer))
         `shouldBe` ( mrgIf
                        (SSBool "b")
                        (mrgIf (SSBool "a") (mrgSingle 1) (mrgSingle 3))

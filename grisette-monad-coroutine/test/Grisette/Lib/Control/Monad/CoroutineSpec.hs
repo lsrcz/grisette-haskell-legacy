@@ -46,7 +46,7 @@ spec = do
         _ -> expectationFailure "Failed to merge Coroutine"
   describe "Mergeable for Coroutine" $ do
     it "Mergeable for Coroutine should work" $ do
-      let SimpleStrategy s = mergingStrategy :: MergeStrategy SBool (Coroutine (Yield SBool) (UnionMBase SBool) SBool)
+      let SimpleStrategy s = mergingStrategy :: MergingStrategy SBool (Coroutine (Yield SBool) (UnionMBase SBool) SBool)
       let a1 :: Coroutine (Yield SBool) (UnionMBase SBool) SBool =
             Coroutine (mrgReturn (Left (Yield (SSBool "a") (Coroutine (mrgReturn (Right $ SSBool "b"))))))
       let a2 :: Coroutine (Yield SBool) (UnionMBase SBool) SBool =

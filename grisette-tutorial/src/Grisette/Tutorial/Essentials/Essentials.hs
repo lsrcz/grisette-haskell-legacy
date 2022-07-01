@@ -613,9 +613,9 @@ module Grisette.Tutorial.Essentials.Essentials (
   --
   -- We can verify our claim with the solvers:
   --
-  -- >>> solveWithExcept ViolatesAssertions (UnboundedReasoning z3) program1
+  -- >>> solveWithExcept ViolatesAssertions (UnboundedReasoning z3) (program1 :: ExceptT VerificationConditions UnionM ())
   -- Left Unsat
-  -- >>> solveWithExcept ViolatesAssertions (UnboundedReasoning z3) program2
+  -- >>> solveWithExcept ViolatesAssertions (UnboundedReasoning z3) (program2 :: ExceptT VerificationConditions UnionM ())
   -- Right (Model (fromList [(a :: Integer,2 :: Integer)]))
   --
   -- Grisette has more flexible ways for expressing solver queries,
