@@ -4,6 +4,8 @@ SKIP_N_TIMES=0
 RUN_N_TIMES=1
 
 declare -A STACK_KEYS
+STACK_KEYS[regex-delim-nomemo]=regex-delim-nomemo
+STACK_KEYS[regex-delim]=regex-delim
 STACK_KEYS[regex-nomemo]=regex-nomemo
 STACK_KEYS[regex]=regex
 STACK_KEYS[letpoly-nomemo]=bonsai-letpoly-nomemo
@@ -17,6 +19,7 @@ STACK_KEYS[ifcl]=ifcl
 STACK_KEYS[ferrite]=ferrite
 TO_RUN=()
 RUN_ALL=NO
+UNORDERED=NO
 
 exists(){
   if [ "$2" != in ]; then
@@ -29,6 +32,10 @@ exists(){
 
 while [[ $# -gt 0 ]]; do
     case $1 in
+    -u | --unordered)
+        UNORDERED=YES
+        shift
+        ;;
     -s | --skip)
         SKIP_N_TIMES=$2
         if [[ ! $SKIP_N_TIMES =~ ^(0|[1-9][0-9]*)$ ]]; then
@@ -95,6 +102,9 @@ echo $COLUMNS
 for ((i=0;i<TO_RUN_NUM;i++)); do
     SUBJECT=${TO_RUN[$i]}
     STACK_KEY=${STACK_KEYS[$SUBJECT]}
+    if [[ "$UNORDERED" == "YES" ]]; then
+        STACK_KEY="$STACK_KEY-unordered"
+    fi
     TERM_RESULT=$("$PARENT_PATH/runsinglebench.sh" -t $STACK_KEY 2>/dev/null)
     TERM_COUNT=$(echo "$TERM_RESULT" | sed -nE 's/.*Term count ([[:digit:]]+)$/\1/p')
     TIME_RESULT=$("$PARENT_PATH/runsinglebench.sh" -s ${SKIP_N_TIMES} -n ${RUN_N_TIMES} $STACK_KEY 2>/dev/null)

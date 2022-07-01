@@ -115,8 +115,8 @@ executables:
     main: Main.hs
     dependencies:
       - grisette-unordered
-  bonsai-letpoly-unordered-nomemo:
-    source-dirs: bonsai-letpoly-unordered-nomemo
+  bonsai-letpoly-nomemo-unordered:
+    source-dirs: bonsai-letpoly-nomemo-unordered
     main: Main.hs
     dependencies:
       - grisette-unordered
@@ -125,8 +125,8 @@ executables:
     main: Main.hs
     dependencies:
       - grisette-unordered
-  bonsai-stlc-unordered-nomemo:
-    source-dirs: bonsai-stlc-unordered-nomemo
+  bonsai-stlc-nomemo-unordered:
+    source-dirs: bonsai-stlc-nomemo-unordered
     main: Main.hs
     dependencies:
       - grisette-unordered
@@ -135,8 +135,8 @@ executables:
     main: Main.hs
     dependencies:
       - grisette-unordered
-  bonsai-nanoscala-unordered-nomemo:
-    source-dirs: bonsai-nanoscala-unordered-nomemo
+  bonsai-nanoscala-nomemo-unordered:
+    source-dirs: bonsai-nanoscala-nomemo-unordered
     main: Main.hs
     dependencies:
       - grisette-unordered
@@ -150,13 +150,13 @@ executables:
     main: Main.hs
     dependencies:
       - grisette-unordered
-  regex-unordered-nomemo:
-    source-dirs: regex-unordered-nomemo
+  regex-nomemo-unordered:
+    source-dirs: regex-nomemo-unordered
     main: Main.hs
     dependencies:
       - grisette-unordered
-  regex-delim-unordered-nomemo:
-    source-dirs: regex-delim-unordered-nomemo
+  regex-delim-nomemo-unordered:
+    source-dirs: regex-delim-nomemo-unordered
     main: Main.hs
     dependencies:
       - grisette-unordered
