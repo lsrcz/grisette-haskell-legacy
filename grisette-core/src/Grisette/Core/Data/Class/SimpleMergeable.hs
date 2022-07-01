@@ -10,6 +10,7 @@
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Grisette.Core.Data.Class.SimpleMergeable
   ( SimpleMergeable (..),
@@ -25,6 +26,7 @@ module Grisette.Core.Data.Class.SimpleMergeable
     pattern SingleU,
     pattern IfU,
     getSingle,
+    (#~),
   )
 where
 
@@ -44,6 +46,7 @@ import Control.Monad.Trans.Cont
 import qualified Control.Monad.RWS.Lazy as RWSLazy
 import qualified Control.Monad.RWS.Strict as RWSStrict
 import Data.Kind
+import Grisette.Core.Data.Class.Function
 
 -- $setup
 -- >>> import Grisette.Core
@@ -524,3 +527,17 @@ getSingle :: forall bool u a. (SimpleMergeable bool a, UnionLike bool u, UnionPr
 getSingle u = case merge u of
   SingleU x -> x
   _ -> error "Should not happen"
+
+-- | Helper for applying functions on 'UnionPrjOp' and 'SimpleMergeable'.
+--
+-- >>> let f :: Integer -> UnionM Integer = \x -> mrgIf (ssymb "a") (mrgSingle $ x + 1) (mrgSingle $ x + 2)
+-- >>> f #~ (mrgIf (ssymb "b" :: SymBool) (mrgSingle 0) (mrgSingle 2))
+-- UMrg (If (&& b a) (Single 1) (If b (Single 2) (If a (Single 3) (Single 4))))
+(#~) ::
+  (SymBoolOp bool, Function f, SimpleMergeable bool (Ret f), UnionPrjOp bool u, Functor u) =>
+  f ->
+  u (Arg f) ->
+  Ret f
+(#~) f u = getSingle $ fmap (f #) u
+
+infixl 9 #~

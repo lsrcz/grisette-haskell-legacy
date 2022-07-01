@@ -316,21 +316,6 @@ instance
   f # a = do
     f1 <- f
     mrgSingle $ f1 # a
-
--- | Helper for applying functions on 'UnionMBase'.
---
--- >>> let f :: Integer -> UnionM Integer = \x -> mrgIf (ssymb "a") (mrgSingle $ x + 1) (mrgSingle $ x + 2)
--- >>> f #~ (mrgIf (ssymb "b" :: SymBool) (mrgSingle 0) (mrgSingle 2))
--- UMrg (If (&& b a) (Single 1) (If b (Single 2) (If a (Single 3) (Single 4))))
-(#~) ::
-  (SymBoolOp bool, Function f, SimpleMergeable bool (Ret f)) =>
-  f ->
-  UnionMBase bool (Arg f) ->
-  Ret f
-(#~) f u = getSingle $ fmap (f #) u
-
-infixl 9 #~
-
 instance (SymBoolOp bool, IsString a, Mergeable bool a) => IsString (UnionMBase bool a) where
   fromString = mrgSingle . fromString
 
