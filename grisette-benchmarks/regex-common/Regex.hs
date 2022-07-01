@@ -44,10 +44,7 @@ freshPrim :: GenSymFresh (UnionM Patt)
 freshPrim = choose [PrimPatt 'd', PrimPatt 'c', PrimPatt 'b', PrimPatt 'a', EmptyPatt]
 
 binFreshPrim :: (UnionM Patt -> UnionM Patt -> GenSymFresh (UnionM Patt)) -> GenSymFresh (UnionM Patt)
-binFreshPrim f = do
-  f1 <- freshPrim
-  f2 <- freshPrim
-  f f1 f2
+binFreshPrim f = freshPrim >>= \p1 -> freshPrim >>= \p2 -> f p1 p2
 
 seqOrAlt :: GenSymFresh (UnionM Patt)
 seqOrAlt = binFreshPrim (\l r -> choose [SeqPatt l r, AltPatt l r])
@@ -212,7 +209,7 @@ regexMain tag = do
   let config = UnboundedReasoning z3 {timing = PrintTiming}
   test tag
 
-  res <- synthesisRegex tag config (mrgReturn sketch) "[cd](a?b)+?" $ genWordsUpTo 5 "abcd"
+  res <- synthesisRegex tag config (mrgReturn sketch) "[cd](a?b)*?(a?b)" $ genWordsUpTo 5 "abcd"
   print res
   -- The synthesized regex
   -- Just (ConcSeqPatt (ConcAltPatt (ConcPrimPatt 'c') (ConcPrimPatt 'd')) (ConcPlusPatt (ConcSeqPatt (ConcAltPatt ConcEmptyPatt (ConcPrimPatt 'a')) (ConcPrimPatt 'b')) False))
