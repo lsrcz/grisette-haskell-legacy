@@ -55,20 +55,26 @@ ifWithLeftMost _ (Conc c) t f
   | c = t
   | otherwise = f
 ifWithLeftMost inv cond t f = If (leftMost t) inv cond t f
+{-# INLINE ifWithLeftMost #-}
 
 instance SymBoolOp bool => UnionPrjOp bool (UnionBase bool) where
   singleView (Single a) = Just a
   singleView _ = Nothing
+  {-# INLINE singleView #-}
   ifView (If _ _ cond ifTrue ifFalse) = Just (cond, ifTrue, ifFalse)
   ifView _ = Nothing
+  {-# INLINE ifView #-}
   leftMost (Single a) = a
   leftMost (If a _ _ _ _) = a
+  {-# INLINE leftMost #-}
 
 instance (SymBoolOp bool, Mergeable bool a) => Mergeable bool (UnionBase bool a) where
   mergingStrategy = SimpleStrategy $ ifWithStrategy mergingStrategy
+  {-# INLINE mergingStrategy #-}
 
 instance (SymBoolOp bool) => Mergeable1 bool (UnionBase bool) where
   liftMergingStrategy ms = SimpleStrategy $ ifWithStrategy ms
+  {-# INLINE liftMergingStrategy #-}
 
 instance (SymBoolOp bool, Mergeable bool a) => SimpleMergeable bool (UnionBase bool a) where
   mrgIte = mrgIf
@@ -79,10 +85,15 @@ instance (SymBoolOp bool) => SimpleMergeable1 bool (UnionBase bool) where
 
 instance (SymBoolOp bool) => UnionLike bool (UnionBase bool) where
   mergeWithStrategy = fullReconstruct
+  {-# INLINE mergeWithStrategy #-}
   single = Single
+  {-# INLINE single #-}
   unionIf = ifWithLeftMost False
+  {-# INLINE unionIf #-}
   mrgIfWithStrategy = ifWithStrategy
+  {-# INLINE mrgIfWithStrategy #-}
   mrgSingleWithStrategy _ = Single
+  {-# INLINE mrgSingleWithStrategy #-}
 
 instance (Show b) => Show1 (UnionBase b) where
   liftShowsPrec sp _ i (Single a) = showsUnaryWith sp "Single" i a
@@ -104,6 +115,7 @@ fullReconstruct :: (SymBoolOp bool) => MergingStrategy bool a -> UnionBase bool 
 fullReconstruct strategy (If _ False cond t f) =
   ifWithStrategyInv strategy cond (fullReconstruct strategy t) (fullReconstruct strategy f)
 fullReconstruct _ u = u
+{-# INLINE fullReconstruct #-}
 
 -- | Use a specific strategy to build a 'If' value.
 --
@@ -118,6 +130,7 @@ ifWithStrategy ::
 ifWithStrategy strategy cond t@(If _ False _ _ _) f = ifWithStrategy strategy cond (fullReconstruct strategy t) f
 ifWithStrategy strategy cond t f@(If _ False _ _ _) = ifWithStrategy strategy cond t (fullReconstruct strategy f)
 ifWithStrategy strategy cond t f = ifWithStrategyInv strategy cond t f
+{-# INLINE ifWithStrategy #-}
 
 ifWithStrategyInv ::
   (SymBoolOp bool) =>

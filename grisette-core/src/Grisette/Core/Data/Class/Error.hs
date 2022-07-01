@@ -21,12 +21,15 @@ class TransformError from to where
 
 instance {-# OVERLAPPABLE #-} TransformError a a where
   transformError = id
+  {-# INLINE transformError #-}
 
 instance {-# OVERLAPS #-} TransformError a () where
   transformError _ = ()
+  {-# INLINE transformError #-}
 
 instance {-# OVERLAPPING #-} TransformError () () where
   transformError _ = ()
+  {-# INLINE transformError #-}
 
 -- | Used within a monadic multi path computation to begin exception processing.
 --
@@ -42,6 +45,7 @@ symThrowTransformableError ::
   from ->
   erm a
 symThrowTransformableError = merge . throwError . transformError
+{-# INLINE symThrowTransformableError #-}
 
 -- | Used within a monadic multi path computation for exception processing.
 --
@@ -57,3 +61,4 @@ symFailIfNot ::
   bool ->
   erm ()
 symFailIfNot err cond = mrgIf cond (return ()) (symThrowTransformableError err)
+{-# INLINE symFailIfNot #-}

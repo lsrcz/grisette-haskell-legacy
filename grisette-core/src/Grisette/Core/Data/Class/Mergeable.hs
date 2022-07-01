@@ -71,11 +71,13 @@ instance Eq DynamicSortedIdx where
   (DynamicSortedIdx (a :: a)) == (DynamicSortedIdx (b :: b)) = case eqT @a @b of
     Just Refl -> a == b
     _ -> False
+  {-# INLINE (==) #-}
 
 instance Ord DynamicSortedIdx where
   compare (DynamicSortedIdx (a :: a)) (DynamicSortedIdx (b :: b)) = case eqT @a @b of
     Just Refl -> compare a b
     _ -> error "This Ord is incomplete"
+  {-# INLINE compare #-}
 
 instance Show DynamicSortedIdx where
   show (DynamicSortedIdx a) = show a
@@ -83,6 +85,7 @@ instance Show DynamicSortedIdx where
 -- Resolves the indices and the terminal merge strategy for a value of some 'Mergeable' type.
 resolveStrategy :: forall bool x. MergingStrategy bool x -> x -> ([DynamicSortedIdx], MergingStrategy bool x)
 resolveStrategy s x = resolveStrategy' x s
+{-# INLINE resolveStrategy #-}
 
 -- Resolves the indices and the terminal merge strategy for a value given a merge strategy for its type.
 resolveStrategy' :: forall bool x. x -> MergingStrategy bool x -> ([DynamicSortedIdx], MergingStrategy bool x)
@@ -95,6 +98,7 @@ resolveStrategy' x = go
         idx = idxFun x
         ss = subStrategy idx
     go s = ([], s)
+{-# INLINE resolveStrategy' #-}
 
 -- | Merge strategy types.
 --
@@ -209,6 +213,7 @@ class Mergeable1 bool (u :: Type -> Type) where
 -- | Lift the root merge strategy through the unary type constructor.
 mergingStrategy1 :: (Mergeable bool a, Mergeable1 bool u) => MergingStrategy bool (u a)
 mergingStrategy1 = liftMergingStrategy mergingStrategy
+{-# INLINE mergingStrategy1 #-}
 
 -- | Lifting of the 'Mergeable' class to binary type constructors.
 class Mergeable2 bool (u :: Type -> Type -> Type) where
@@ -217,6 +222,7 @@ class Mergeable2 bool (u :: Type -> Type -> Type) where
 -- | Lift the root merge strategy through the binary type constructor.
 mergingStrategy2 :: (Mergeable bool a, Mergeable bool b, Mergeable2 bool u) => MergingStrategy bool (u a b)
 mergingStrategy2 = liftMergingStrategy2 mergingStrategy mergingStrategy
+{-# INLINE mergingStrategy2 #-}
 
 class Mergeable3 bool (u :: Type -> Type -> Type -> Type) where
   liftMergingStrategy3 :: MergingStrategy bool a -> MergingStrategy bool b -> MergingStrategy bool c -> MergingStrategy bool (u a b c)
@@ -224,6 +230,7 @@ class Mergeable3 bool (u :: Type -> Type -> Type -> Type) where
 -- | Lift the root merge strategy through the binary type constructor.
 mergingStrategy3 :: (Mergeable bool a, Mergeable bool b, Mergeable bool c, Mergeable3 bool u) => MergingStrategy bool (u a b c)
 mergingStrategy3 = liftMergingStrategy3 mergingStrategy mergingStrategy mergingStrategy
+{-# INLINE mergingStrategy3 #-}
 
 instance (Generic1 u, Mergeable1' bool (Rep1 u)) => Mergeable1 bool (Default1 u) where
   liftMergingStrategy = unsafeCoerce (derivedLiftMergingStrategy :: MergingStrategy bool a -> MergingStrategy bool (u a))
@@ -234,21 +241,27 @@ class Mergeable1' bool (u :: Type -> Type) where
 
 instance Mergeable1' bool U1 where
   liftMergingStrategy' _ = SimpleStrategy (\_ t _ -> t)
+  {-# INLINE liftMergingStrategy' #-}
 
 instance Mergeable1' bool V1 where
   liftMergingStrategy' _ = SimpleStrategy (\_ t _ -> t)
+  {-# INLINE liftMergingStrategy' #-}
 
 instance Mergeable1' bool Par1 where
   liftMergingStrategy' m = wrapStrategy m Par1 unPar1
+  {-# INLINE liftMergingStrategy' #-}
 
 instance Mergeable1 bool f => Mergeable1' bool (Rec1 f) where
   liftMergingStrategy' m = wrapStrategy (liftMergingStrategy m) Rec1 unRec1
+  {-# INLINE liftMergingStrategy' #-}
 
 instance Mergeable bool c => Mergeable1' bool (K1 i c) where
   liftMergingStrategy' _ = wrapStrategy mergingStrategy K1 unK1
+  {-# INLINE liftMergingStrategy' #-}
 
 instance Mergeable1' bool a => Mergeable1' bool (M1 i c a) where
   liftMergingStrategy' m = wrapStrategy (liftMergingStrategy' m) M1 unM1
+  {-# INLINE liftMergingStrategy' #-}
 
 instance (Mergeable1' bool a, Mergeable1' bool b) => Mergeable1' bool (a :+: b) where
   liftMergingStrategy' m =
@@ -262,13 +275,16 @@ instance (Mergeable1' bool a, Mergeable1' bool b) => Mergeable1' bool (a :+: b) 
             then wrapStrategy (liftMergingStrategy' m) L1 (\(L1 v) -> v)
             else wrapStrategy (liftMergingStrategy' m) R1 (\(R1 v) -> v)
       )
+  {-# INLINE liftMergingStrategy' #-}
 
 instance (Mergeable1' bool a, Mergeable1' bool b) => Mergeable1' bool (a :*: b) where
   liftMergingStrategy' m = product2Strategy (:*:) (\(a :*: b) -> (a, b)) (liftMergingStrategy' m) (liftMergingStrategy' m)
+  {-# INLINE liftMergingStrategy' #-}
 
 -- | Generic derivation for the 'Mergeable' class.
 derivedLiftMergingStrategy :: (Generic1 u, Mergeable1' bool (Rep1 u)) => MergingStrategy bool a -> MergingStrategy bool (u a)
 derivedLiftMergingStrategy m = wrapStrategy (liftMergingStrategy' m) to1 from1
+{-# INLINE derivedLiftMergingStrategy #-}
 
 {-
 -- | Resolves the 'Mergeable' constraint through a 'Mergeable1' type constructor.
@@ -340,7 +356,8 @@ instance (Mergeable' bool a, Mergeable' bool b) => Mergeable' bool (a :*: b) whe
 instance (SymBoolOp bool) => Mergeable bool type where \
   mergingStrategy = \
     let sub = SimpleStrategy $ \_ t _ -> t \
-     in SortedStrategy id $ const sub
+     in SortedStrategy id $ const sub; \
+  {-# INLINE mergingStrategy #-}
 
 CONCRETE_ORD_MERGABLE (Bool)
 CONCRETE_ORD_MERGABLE (Integer)
@@ -376,6 +393,7 @@ instance (SymBoolOp bool) => Mergeable2 bool Either where
           False -> wrapStrategy m1 Left (\(Left v) -> v)
           True -> wrapStrategy m2 Right (\(Right v) -> v)
       )
+  {-# INLINE liftMergingStrategy2 #-}
 
 -- Maybe
 deriving via (Default (Maybe a)) instance (SymBoolOp bool, Mergeable bool a) => Mergeable bool (Maybe a)
@@ -402,12 +420,15 @@ buildStrategyList s l = StrategyList idxs strategies
     r = resolveStrategy @bool s <$> l
     idxs = fst <$> r
     strategies = snd <$> r
+{-# INLINE buildStrategyList #-}
 
 instance Eq1 container => Eq (StrategyList container) where
   (StrategyList idxs1 _) == (StrategyList idxs2 _) = eq1 idxs1 idxs2
+  {-# INLINE (==) #-}
 
 instance Ord1 container => Ord (StrategyList container) where
   compare (StrategyList idxs1 _) (StrategyList idxs2 _) = compare1 idxs1 idxs2
+  {-# INLINE compare #-}
 
 instance Show1 container => Show (StrategyList container) where
   showsPrec i (StrategyList idxs1 _) = showsPrec1 i idxs1
@@ -427,6 +448,7 @@ instance (SymBoolOp bool, Mergeable bool a) => Mergeable bool [a] where
          in if allSimple
               then SimpleStrategy $ \cond l r -> (\(SimpleStrategy f, l1, r1) -> f cond l1 r1) <$> zip3 s l r
               else NoStrategy
+  {-# INLINE mergingStrategy #-}
 
 instance (SymBoolOp bool) => Mergeable1 bool [] where
   liftMergingStrategy (ms :: MergingStrategy bool a) = case ms of
@@ -442,6 +464,7 @@ instance (SymBoolOp bool) => Mergeable1 bool [] where
          in if allSimple
               then SimpleStrategy $ \cond l r -> (\(SimpleStrategy f, l1, r1) -> f cond l1 r1) <$> zip3 s l r
               else NoStrategy
+  {-# INLINE liftMergingStrategy #-}
 
 -- (,)
 deriving via (Default (a, b)) instance (SymBoolOp bool, Mergeable bool a, Mergeable bool b) => Mergeable bool (a, b)
@@ -450,6 +473,7 @@ deriving via (Default1 ((,) a)) instance (SymBoolOp bool, Mergeable bool a) => M
 
 instance SymBoolOp bool => Mergeable2 bool (,) where
   liftMergingStrategy2 m1 m2 = product2Strategy (,) id m1 m2
+  {-# INLINE liftMergingStrategy2 #-}
 
 -- (,,)
 deriving via
@@ -464,6 +488,7 @@ deriving via
 
 instance (SymBoolOp bool, Mergeable bool a) => Mergeable2 bool ((,,) a) where
   liftMergingStrategy2 m1 m2 = liftMergingStrategy3 mergingStrategy m1 m2
+  {-# INLINE liftMergingStrategy2 #-}
 
 instance SymBoolOp bool => Mergeable3 bool (,,) where
   liftMergingStrategy3 m1 m2 m3 =
@@ -472,6 +497,7 @@ instance SymBoolOp bool => Mergeable3 bool (,,) where
       (\(a, b, c) -> (a, (b, c)))
       m1
       (liftMergingStrategy2 m2 m3)
+  {-# INLINE liftMergingStrategy3 #-}
 
 -- (,,,)
 deriving via
@@ -582,18 +608,22 @@ instance (SymBoolOp bool, Mergeable bool b) => Mergeable bool (a -> b) where
   mergingStrategy = case mergingStrategy @bool @b of
     SimpleStrategy m -> SimpleStrategy $ \cond t f v -> m cond (t v) (f v)
     _ -> NoStrategy
+  {-# INLINE mergingStrategy #-}
 
 instance (SymBoolOp bool) => Mergeable1 bool ((->) a) where
   liftMergingStrategy ms = case ms of
     SimpleStrategy m -> SimpleStrategy $ \cond t f v -> m cond (t v) (f v)
     _ -> NoStrategy
+  {-# INLINE liftMergingStrategy #-}
 
 -- MaybeT
 instance (SymBoolOp bool, Mergeable1 bool m, Mergeable bool a) => Mergeable bool (MaybeT m a) where
   mergingStrategy = wrapStrategy mergingStrategy1 MaybeT runMaybeT
+  {-# INLINE mergingStrategy #-}
 
 instance (SymBoolOp bool, Mergeable1 bool m) => Mergeable1 bool (MaybeT m) where
   liftMergingStrategy m = wrapStrategy (liftMergingStrategy (liftMergingStrategy m)) MaybeT runMaybeT
+  {-# INLINE liftMergingStrategy #-}
 
 -- ExceptT
 instance
@@ -601,9 +631,11 @@ instance
   Mergeable bool (ExceptT e m a)
   where
   mergingStrategy = wrapStrategy mergingStrategy1 ExceptT runExceptT
+  {-# INLINE mergingStrategy #-}
 
 instance (SymBoolOp bool, Mergeable1 bool m, Mergeable bool e) => Mergeable1 bool (ExceptT e m) where
   liftMergingStrategy m = wrapStrategy (liftMergingStrategy (liftMergingStrategy m)) ExceptT runExceptT
+  {-# INLINE liftMergingStrategy #-}
 
 -- state
 instance
@@ -611,6 +643,7 @@ instance
   Mergeable bool (StateLazy.StateT s m a)
   where
   mergingStrategy = wrapStrategy (liftMergingStrategy mergingStrategy1) StateLazy.StateT StateLazy.runStateT
+  {-# INLINE mergingStrategy #-}
 
 instance (SymBoolOp bool, Mergeable bool s, Mergeable1 bool m) => Mergeable1 bool (StateLazy.StateT s m) where
   liftMergingStrategy m =
@@ -618,6 +651,7 @@ instance (SymBoolOp bool, Mergeable bool s, Mergeable1 bool m) => Mergeable1 boo
       (liftMergingStrategy (liftMergingStrategy (liftMergingStrategy2 m mergingStrategy)))
       StateLazy.StateT
       StateLazy.runStateT
+  {-# INLINE liftMergingStrategy #-}
 
 instance
   (SymBoolOp bool, Mergeable bool s, Mergeable bool a, Mergeable1 bool m) =>
@@ -625,6 +659,7 @@ instance
   where
   mergingStrategy =
     wrapStrategy (liftMergingStrategy mergingStrategy1) StateStrict.StateT StateStrict.runStateT
+  {-# INLINE mergingStrategy #-}
 
 instance (SymBoolOp bool, Mergeable bool s, Mergeable1 bool m) => Mergeable1 bool (StateStrict.StateT s m) where
   liftMergingStrategy m =
@@ -632,6 +667,7 @@ instance (SymBoolOp bool, Mergeable bool s, Mergeable1 bool m) => Mergeable1 boo
       (liftMergingStrategy (liftMergingStrategy (liftMergingStrategy2 m mergingStrategy)))
       StateStrict.StateT
       StateStrict.runStateT
+  {-# INLINE liftMergingStrategy #-}
 
 -- writer
 instance
@@ -639,6 +675,7 @@ instance
   Mergeable bool (WriterLazy.WriterT s m a)
   where
   mergingStrategy = wrapStrategy (liftMergingStrategy mergingStrategy1) WriterLazy.WriterT WriterLazy.runWriterT
+  {-# INLINE mergingStrategy #-}
 
 instance (SymBoolOp bool, Mergeable bool s, Mergeable1 bool m) => Mergeable1 bool (WriterLazy.WriterT s m) where
   liftMergingStrategy m =
@@ -646,12 +683,14 @@ instance (SymBoolOp bool, Mergeable bool s, Mergeable1 bool m) => Mergeable1 boo
       (liftMergingStrategy (liftMergingStrategy2 m mergingStrategy))
       WriterLazy.WriterT
       WriterLazy.runWriterT
+  {-# INLINE liftMergingStrategy #-}
 
 instance
   (SymBoolOp bool, Mergeable bool s, Mergeable bool a, Mergeable1 bool m) =>
   Mergeable bool (WriterStrict.WriterT s m a)
   where
   mergingStrategy = wrapStrategy (liftMergingStrategy mergingStrategy1) WriterStrict.WriterT WriterStrict.runWriterT
+  {-# INLINE mergingStrategy #-}
 
 instance (SymBoolOp bool, Mergeable bool s, Mergeable1 bool m) => Mergeable1 bool (WriterStrict.WriterT s m) where
   liftMergingStrategy m =
@@ -659,6 +698,7 @@ instance (SymBoolOp bool, Mergeable bool s, Mergeable1 bool m) => Mergeable1 boo
       (liftMergingStrategy (liftMergingStrategy2 m mergingStrategy))
       WriterStrict.WriterT
       WriterStrict.runWriterT
+  {-# INLINE liftMergingStrategy #-}
 
 -- reader
 instance
@@ -666,6 +706,7 @@ instance
   Mergeable bool (ReaderT s m a)
   where
   mergingStrategy = wrapStrategy (liftMergingStrategy mergingStrategy1) ReaderT runReaderT
+  {-# INLINE mergingStrategy #-}
 
 instance (SymBoolOp bool, Mergeable1 bool m) => Mergeable1 bool (ReaderT s m) where
   liftMergingStrategy m =
@@ -673,6 +714,7 @@ instance (SymBoolOp bool, Mergeable1 bool m) => Mergeable1 bool (ReaderT s m) wh
       (liftMergingStrategy (liftMergingStrategy m))
       ReaderT
       runReaderT
+  {-# INLINE liftMergingStrategy #-}
 
 -- Sum
 instance
@@ -684,6 +726,7 @@ instance
     InR _ -> True) (\case
       False -> wrapStrategy mergingStrategy1 InL (\(InL v) -> v)
       True -> wrapStrategy mergingStrategy1 InR (\(InR v) -> v))
+  {-# INLINE mergingStrategy #-}
 
 instance (SymBoolOp bool, Mergeable1 bool l, Mergeable1 bool r) => Mergeable1 bool (Sum l r) where
   liftMergingStrategy m = SortedStrategy (\case
@@ -691,6 +734,7 @@ instance (SymBoolOp bool, Mergeable1 bool l, Mergeable1 bool r) => Mergeable1 bo
     InR _ -> True) (\case
       False -> wrapStrategy (liftMergingStrategy m) InL (\(InL v) -> v)
       True -> wrapStrategy (liftMergingStrategy m) InR (\(InR v) -> v))
+  {-# INLINE liftMergingStrategy #-}
 
 -- Ordering
 deriving via
@@ -732,16 +776,20 @@ deriving via
 -- Identity
 instance (SymBoolOp bool, Mergeable bool a) => Mergeable bool (Identity a) where
   mergingStrategy = wrapStrategy mergingStrategy Identity runIdentity
+  {-# INLINE mergingStrategy #-}
 
 instance SymBoolOp bool => Mergeable1 bool Identity where
   liftMergingStrategy m = wrapStrategy m Identity runIdentity
+  {-# INLINE liftMergingStrategy #-}
 
 -- IdentityT
 instance (SymBoolOp bool, Mergeable1 bool m, Mergeable bool a) => Mergeable bool (IdentityT m a) where
   mergingStrategy = wrapStrategy mergingStrategy1 IdentityT runIdentityT
+  {-# INLINE mergingStrategy #-}
 
 instance (SymBoolOp bool, Mergeable1 bool m) => Mergeable1 bool (IdentityT m) where
   liftMergingStrategy m = wrapStrategy (liftMergingStrategy m) IdentityT runIdentityT
+  {-# INLINE liftMergingStrategy #-}
 
 -- ContT
 instance (SymBoolOp bool, Mergeable1 bool m, Mergeable bool r) => Mergeable bool (ContT r m a) where
@@ -750,6 +798,7 @@ instance (SymBoolOp bool, Mergeable1 bool m, Mergeable bool r) => Mergeable bool
       (liftMergingStrategy mergingStrategy1)
       ContT
       (\(ContT v) -> v)
+  {-# INLINE mergingStrategy #-}
 
 instance (SymBoolOp bool, Mergeable1 bool m, Mergeable bool r) => Mergeable1 bool (ContT r m) where
   liftMergingStrategy _ =
@@ -757,6 +806,7 @@ instance (SymBoolOp bool, Mergeable1 bool m, Mergeable bool r) => Mergeable1 boo
       (liftMergingStrategy mergingStrategy1)
       ContT
       (\(ContT v) -> v)
+  {-# INLINE liftMergingStrategy #-}
 
 -- RWS
 instance
@@ -764,6 +814,7 @@ instance
   Mergeable bool (RWSLazy.RWST r w s m a)
   where
   mergingStrategy = wrapStrategy (liftMergingStrategy (liftMergingStrategy mergingStrategy1)) RWSLazy.RWST (\(RWSLazy.RWST m) -> m)
+  {-# INLINE mergingStrategy #-}
 
 instance
   (SymBoolOp bool, Mergeable bool s, Mergeable bool w, Mergeable1 bool m) =>
@@ -772,12 +823,14 @@ instance
     wrapStrategy
       (liftMergingStrategy (liftMergingStrategy (liftMergingStrategy (liftMergingStrategy3 m mergingStrategy mergingStrategy))))
       RWSLazy.RWST (\(RWSLazy.RWST rws) -> rws)
+  {-# INLINE liftMergingStrategy #-}
 
 instance
   (SymBoolOp bool, Mergeable bool s, Mergeable bool w, Mergeable bool a, Mergeable1 bool m) =>
   Mergeable bool (RWSStrict.RWST r w s m a)
   where
   mergingStrategy = wrapStrategy (liftMergingStrategy (liftMergingStrategy mergingStrategy1)) RWSStrict.RWST (\(RWSStrict.RWST m) -> m)
+  {-# INLINE mergingStrategy #-}
 
 instance
   (SymBoolOp bool, Mergeable bool s, Mergeable bool w, Mergeable1 bool m) =>
@@ -786,6 +839,7 @@ instance
     wrapStrategy
       (liftMergingStrategy (liftMergingStrategy (liftMergingStrategy (liftMergingStrategy3 m mergingStrategy mergingStrategy))))
       RWSStrict.RWST (\(RWSStrict.RWST rws) -> rws)
+  {-# INLINE liftMergingStrategy #-}
 
 
 -- Data.Monoid module

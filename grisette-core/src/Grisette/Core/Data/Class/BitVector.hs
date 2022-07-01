@@ -90,3 +90,4 @@ bvextract ::
   bv1 ->
   bv2
 bvextract _ _ = bvselect (Proxy @j) (Proxy @(i - j + 1))
+{-# INLINE bvextract #-}

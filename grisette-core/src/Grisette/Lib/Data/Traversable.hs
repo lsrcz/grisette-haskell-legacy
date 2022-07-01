@@ -80,6 +80,7 @@ mrgFor ::
   (a -> m b) ->
   m (t b)
 mrgFor = flip mrgTraverse
+{-# INLINE mrgFor #-}
 
 -- | 'forM' with 'Mergeable' knowledge propagation.
 mrgForM ::
@@ -92,3 +93,4 @@ mrgForM ::
   (a -> m b) ->
   m (t b)
 mrgForM = flip mrgMapM
+{-# INLINE mrgForM #-}

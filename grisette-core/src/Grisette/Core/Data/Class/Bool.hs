@@ -39,23 +39,29 @@ class (SymBoolOp bool) => SEq' bool f where
 
 instance (SymBoolOp bool) => SEq' bool U1 where
   _ ==~~ _ = conc True
+  {-# INLINE (==~~) #-}
 
 instance (SymBoolOp bool) => SEq' bool V1 where
   _ ==~~ _ = conc True
+  {-# INLINE (==~~) #-}
 
 instance (SymBoolOp bool, SEq bool c) => SEq' bool (K1 i c) where
   (K1 a) ==~~ (K1 b) = a ==~ b
+  {-# INLINE (==~~) #-}
 
 instance (SymBoolOp bool, SEq' bool a) => SEq' bool (M1 i c a) where
   (M1 a) ==~~ (M1 b) = a ==~~ b
+  {-# INLINE (==~~) #-}
 
 instance (SymBoolOp bool, SEq' bool a, SEq' bool b) => SEq' bool (a :+: b) where
   (L1 a) ==~~ (L1 b) = a ==~~ b
   (R1 a) ==~~ (R1 b) = a ==~~ b
   _ ==~~ _ = conc False
+  {-# INLINE (==~~) #-}
 
 instance (SymBoolOp bool, SEq' bool a, SEq' bool b) => SEq' bool (a :*: b) where
   (a1 :*: b1) ==~~ (a2 :*: b2) = (a1 ==~~ a2) &&~ (b1 ==~~ b2)
+  {-# INLINE (==~~) #-}
 
 -- | Symbolic Equality. Note that we can't use Haskell's 'Eq' class since symbolic comparison won't necessarily return
 -- a concrete 'Bool' value.
@@ -64,35 +70,45 @@ instance (SymBoolOp bool, SEq' bool a, SEq' bool b) => SEq' bool (a :*: b) where
 class (SymBoolOp bool) => SEq bool a where
   (==~) :: a -> a -> bool
   a ==~ b = nots $ a /=~ b
+  {-# INLINE (==~) #-}
   infix 4 ==~
 
   (/=~) :: a -> a -> bool
   a /=~ b = nots $ a ==~ b
+  {-# INLINE (/=~) #-}
   infix 4 /=~
   {-# MINIMAL (==~) | (/=~) #-}
 
 instance (Generic a, SymBoolOp bool, SEq' bool (Rep a)) => SEq bool (Default a) where
   Default l ==~ Default r = from l ==~~ from r
+  {-# INLINE (==~) #-}
 
 -- | Logical operators for symbolic booleans. 
 class LogicalOp b where
   (||~) :: b -> b -> b
   a ||~ b = nots $ nots a &&~ nots b
+  {-# INLINE (||~) #-}
   infixr 2 ||~
   (&&~) :: b -> b -> b
   a &&~ b = nots $ nots a ||~ nots b
+  {-# INLINE (&&~) #-}
   infixr 3 &&~
   nots :: b -> b
   xors :: b -> b -> b
   a `xors` b = (a &&~ nots b) ||~ (nots a &&~ b)
+  {-# INLINE xors #-}
   implies :: b -> b -> b
   a `implies` b = nots a ||~ b
+  {-# INLINE implies #-}
   {-# MINIMAL (||~), nots | (&&~), nots #-}
 
 instance LogicalOp Bool where
   (||~) = (||)
+  {-# INLINE (||~) #-}
   (&&~) = (&&)
+  {-# INLINE (&&~) #-}
   nots = not
+  {-# INLINE nots #-}
 
 -- | ITE operator for symbolic primitives, including symbolic boolean, integer, etc.
 class ITEOp b v where
@@ -103,7 +119,8 @@ class (SimpleMergeable b b, SEq b b, Eq b, LogicalOp b, PrimWrapper b Bool, ITEO
 
 #define CONCRETE_SEQ(type) \
 instance (SymBoolOp bool) => SEq bool type where \
-  l ==~ r = conc $ l == r
+  l ==~ r = conc $ l == r; \
+  {-# INLINE (==~) #-}
 
 CONCRETE_SEQ(Bool)
 CONCRETE_SEQ(Integer)
@@ -132,14 +149,17 @@ deriving via (Default (Either e a)) instance (SymBoolOp bool, SEq bool e, SEq bo
 -- ExceptT
 instance (SymBoolOp bool, SEq bool (m (Either e a))) => SEq bool (ExceptT e m a) where
   (ExceptT a) ==~ (ExceptT b) = a ==~ b
+  {-# INLINE (==~) #-}
 
 -- MaybeT
 instance (SymBoolOp bool, SEq bool (m (Maybe a))) => SEq bool (MaybeT m a) where
   (MaybeT a) ==~ (MaybeT b) = a ==~ b
+  {-# INLINE (==~) #-}
 
 -- ()
 instance (SymBoolOp bool) => SEq bool () where
   _ ==~ _ = conc True
+  {-# INLINE (==~) #-}
 
 -- (,)
 deriving via (Default (a, b)) instance (SymBoolOp bool, SEq bool a, SEq bool b) => SEq bool (a, b)
@@ -191,14 +211,18 @@ deriving via
 -- Writer
 instance (SymBoolOp bool, SEq bool (m (a, s))) => SEq bool (WriterLazy.WriterT s m a) where
   (WriterLazy.WriterT l) ==~ (WriterLazy.WriterT r) = l ==~ r
+  {-# INLINE (==~) #-}
 
 instance (SymBoolOp bool, SEq bool (m (a, s))) => SEq bool (WriterStrict.WriterT s m a) where
   (WriterStrict.WriterT l) ==~ (WriterStrict.WriterT r) = l ==~ r
+  {-# INLINE (==~) #-}
 
 -- Identity
 instance (SymBoolOp bool, SEq bool a) => SEq bool (Identity a) where
   (Identity l) ==~ (Identity r) = l ==~ r
+  {-# INLINE (==~) #-}
 
 -- IdentityT
 instance (SymBoolOp bool, SEq bool (m a)) => SEq bool (IdentityT m a) where
   (IdentityT l) ==~ (IdentityT r) = l ==~ r
+  {-# INLINE (==~) #-}

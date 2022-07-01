@@ -18,3 +18,4 @@ mrgLift ::
   m a ->
   t m a
 mrgLift v = merge $ lift v
+{-# INLINE mrgLift #-}

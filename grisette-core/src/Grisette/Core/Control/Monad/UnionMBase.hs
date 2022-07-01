@@ -124,47 +124,61 @@ instance (Show b) => Show1 (UnionMBase b) where
 underlyingUnion :: UnionMBase bool a -> UnionBase bool a
 underlyingUnion (UAny _ a) = a
 underlyingUnion (UMrg _ a) = a
+{-# INLINE underlyingUnion #-}
 
 isMerged :: UnionMBase bool a -> Bool
 isMerged UAny {} = False
 isMerged UMrg {} = True
+{-# INLINE isMerged #-}
 
 instance SymBoolOp bool => UnionPrjOp bool (UnionMBase bool) where
   singleView = singleView . underlyingUnion
+  {-# INLINE singleView #-}
   ifView (UAny _ u) = case ifView u of
     Just (c, t, f) -> Just (c, freshUAny t, freshUAny f)
     Nothing -> Nothing
   ifView (UMrg m u) = case ifView u of
     Just (c, t, f) -> Just (c, UMrg m t, UMrg m f)
     Nothing -> Nothing
+  {-# INLINE ifView #-}
   leftMost = leftMost . underlyingUnion
+  {-# INLINE leftMost #-}
 
 instance (SymBoolOp bool) => Functor (UnionMBase bool) where
   fmap f fa = fa >>= return . f
+  {-# INLINE fmap #-}
 
 instance (SymBoolOp bool) => Applicative (UnionMBase bool) where
   pure = single
+  {-# INLINE pure #-}
   f <*> a = f >>= (\xf -> a >>= (return . xf))
+  {-# INLINE (<*>) #-}
 
 bindUnion :: SymBoolOp bool => UnionBase bool a -> (a -> UnionMBase bool b) -> UnionMBase bool b
 bindUnion (Single a') f' = f' a'
 bindUnion (If _ _ cond ifTrue ifFalse) f' =
   unionIf cond (bindUnion ifTrue f') (bindUnion ifFalse f')
+{-# INLINE bindUnion #-}
 
 instance (SymBoolOp bool) => Monad (UnionMBase bool) where
   a >>= f = bindUnion (underlyingUnion a) f
+  {-# INLINE (>>=) #-}
 
 instance (SymBoolOp bool, Mergeable bool a) => Mergeable bool (UnionMBase bool a) where
   mergingStrategy = SimpleStrategy $ \cond t f -> unionIf cond t f >>= mrgSingle @bool
+  {-# INLINE mergingStrategy #-}
 
 instance (SymBoolOp bool, Mergeable bool a) => SimpleMergeable bool (UnionMBase bool a) where
   mrgIte = mrgIf
+  {-# INLINE mrgIte #-}
 
 instance (SymBoolOp bool) => Mergeable1 bool (UnionMBase bool) where
   liftMergingStrategy m = SimpleStrategy $ \cond t f -> unionIf cond t f >>= (UMrg m . Single)
+  {-# INLINE liftMergingStrategy #-}
 
 instance SymBoolOp bool => SimpleMergeable1 bool (UnionMBase bool) where
   liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
+  {-# INLINE liftMrgIte #-}
 
 instance SymBoolOp bool => UnionLike bool (UnionMBase bool) where
   mergeWithStrategy _ m@(UMrg _ _) = m
@@ -178,10 +192,13 @@ instance SymBoolOp bool => UnionLike bool (UnionMBase bool) where
   mrgIfWithStrategy s (Conc c) l r = if c then mergeWithStrategy s l else mergeWithStrategy s r
   mrgIfWithStrategy s cond l r =
     mergeWithStrategy s $ unionIf cond l r
+  {-# INLINE mrgIfWithStrategy #-}
   single v = (freshUAny . single) v
+  {-# INLINE single #-}
   unionIf cond (UAny _ a) (UAny _ b) = freshUAny $ unionIf cond a b
   unionIf cond (UMrg m a) (UAny _ b) = UMrg m $ ifWithStrategy m cond a b
   unionIf cond a (UMrg m b) = UMrg m $ ifWithStrategy m cond (underlyingUnion a) b
+  {-# INLINE unionIf #-}
 
 instance (SymBoolOp bool, SEq bool a) => SEq bool (UnionMBase bool a) where
   x ==~ y = getSingle $ do
@@ -300,12 +317,19 @@ instance (SymBoolOp bool, LogicalOp a, Mergeable bool a) => LogicalOp (UnionMBas
 
 instance (SymBoolOp bool, PrimWrapper t c, Mergeable bool t) => PrimWrapper (UnionMBase bool t) c where
   conc = mrgSingle . conc
+  {-# INLINE conc #-}
   ssymb = mrgSingle . ssymb
+  {-# INLINE ssymb #-}
   isymb i s = mrgSingle $ isymb i s
+  {-# INLINE isymb #-}
   sinfosymb s info = mrgSingle $ sinfosymb s info
+  {-# INLINE sinfosymb #-}
   iinfosymb i s info = mrgSingle $ iinfosymb i s info
-  concView (SingleU (Conc b)) = Just b
-  concView _ = Nothing
+  {-# INLINE iinfosymb #-}
+  concView v = do
+    c <- singleView v
+    concView c
+  {-# INLINE concView #-}
 
 instance
   (SymBoolOp bool, Function f, Mergeable bool f, Mergeable bool a, Ret f ~ a) =>

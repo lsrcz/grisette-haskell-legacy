@@ -13,6 +13,7 @@ import Grisette.Core.Control.Monad.Union
 -- | 'throwError' with 'Mergeable' knowledge propagation.
 mrgThrowError :: (SymBoolOp bool, MonadError e m, MonadUnion bool m, Mergeable bool a) => e -> m a
 mrgThrowError = merge . throwError
+{-# INLINE mrgThrowError #-}
 
 -- | 'catchError' with 'Mergeable' knowledge propagation.
 mrgCatchError ::
@@ -21,3 +22,4 @@ mrgCatchError ::
   (e -> m a) ->
   m a
 mrgCatchError v handler = merge $ v `catchError` (merge . handler)
+{-# INLINE mrgCatchError #-}
