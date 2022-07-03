@@ -11,6 +11,7 @@ import Grisette
 import Language.Haskell.TH.Syntax.Compat
 import Syntax
 import Table
+import Grisette.Unordered.UUnionM
 
 moveQuotesOut :: [SpliceQ e] -> SpliceQ [e]
 moveQuotesOut [] = [||[]||]
@@ -49,7 +50,7 @@ denoteSql qs@(QuerySelect cols q f) =
       ||]
 denoteSql q = liftSplice $ fail $ "I don't know how to handle the sql query " ++ show q
 
-denoteFilter :: Filter -> M.HashMap Table.Name Int -> SpliceQ ([UnionM (Maybe SymInteger)] -> SymBool)
+denoteFilter :: Filter -> M.HashMap Table.Name Int -> SpliceQ ([UUnionM (Maybe SymInteger)] -> SymBool)
 denoteFilter FilterTrue _ = [||const $ conc True||]
 denoteFilter FilterFalse _ = [||const $ conc False||]
 denoteFilter (FilterNot f) indexMap = [||nots . $$(denoteFilter f indexMap)||]
@@ -66,7 +67,7 @@ denoteFilter (FilterBinOp FBinNEq v1 v2) indexMap =
 denoteValue ::
   Val ->
   M.HashMap Table.Name Int ->
-  SpliceQ ([UnionM (Maybe SymInteger)] -> UnionM (Maybe SymInteger))
+  SpliceQ ([UUnionM (Maybe SymInteger)] -> UUnionM (Maybe SymInteger))
 denoteValue (ValConst i) _ = [||const $ mrgReturn i||]
 denoteValue (ValColumnRef s) indexMap =
   case M.lookup s indexMap of

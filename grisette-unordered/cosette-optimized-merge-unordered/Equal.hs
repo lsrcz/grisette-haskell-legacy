@@ -7,14 +7,15 @@ import Grisette
 import Language.Haskell.TH.Syntax.Compat
 import Syntax
 import Table
+import Grisette.Unordered.UUnionM
 
-getMultiplicity :: [UnionM (Maybe SymInteger)] -> RawTable -> SymInteger
+getMultiplicity :: [UUnionM (Maybe SymInteger)] -> RawTable -> SymInteger
 getMultiplicity r = foldr (\(r1, p1) t -> mrgIte @SymBool (r1 ==~ r) p1 0 + t) 0
 
 tableSum :: RawTable -> RawTable
 tableSum t = (\(r, _) -> (r, getMultiplicity r t)) <$> t
 
-elementContain :: ([UnionM (Maybe SymInteger)], SymInteger) -> RawTable -> SymBool
+elementContain :: ([UUnionM (Maybe SymInteger)], SymInteger) -> RawTable -> SymBool
 elementContain r = foldr (\r1 a -> a ||~ r ==~ r1) (conc False)
 
 contain :: RawTable -> RawTable -> SymBool

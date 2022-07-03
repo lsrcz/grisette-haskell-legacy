@@ -4,6 +4,7 @@ import Data.Bifunctor
 import qualified Data.ByteString as B
 import Grisette
 import Table
+import Grisette.Unordered.UUnionM
 
 xproduct :: Table -> Table -> Name -> Table
 xproduct a@(Table _ _ ca) b@(Table _ _ cb) nm = Table nm (schemaJoin a b) (xproductRaw ca cb)
@@ -81,14 +82,14 @@ tableDiff tbl1 tbl2 = filter0 $ cal <$> t1
           multr = mrgIte @SymBool (mult1 >~ 0) mult1 0
        in (ele, multr)
 
-getRowCount' :: [UnionM (Maybe SymInteger)] -> RawTable -> SymInteger
+getRowCount' :: [UUnionM (Maybe SymInteger)] -> RawTable -> SymInteger
 getRowCount' row tbl = sum $ (\(ele, mult) -> mrgIte @SymBool (ele ==~ row) mult 0) <$> tbl
 
 addingNullRows :: RawTable -> RawTable -> Int -> Int -> RawTable
 addingNullRows content1 content12 schemaSize1 schemaSize2 =
   unionAllRaw content12 ((\(ele, mult) -> (ele ++ nullCols, mult)) <$> extraRows)
   where
-    nullCols :: [UnionM (Maybe SymInteger)]
+    nullCols :: [UUnionM (Maybe SymInteger)]
     nullCols = [mrgReturn Nothing | _ <- [0 .. schemaSize2 -1]]
     diffKeys :: RawTable
     diffKeys =

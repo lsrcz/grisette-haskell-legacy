@@ -7,12 +7,13 @@ import GHC.Generics
 import Grisette
 import Instances.TH.Lift ()
 import qualified Language.Haskell.TH.Syntax as THSyntax
+import Grisette.Unordered.UUnionM
 
 type Name = B.ByteString
 
 type Schema = [Name]
 
-type RawTable = [([UnionM (Maybe SymInteger)], SymInteger)]
+type RawTable = [([UUnionM (Maybe SymInteger)], SymInteger)]
 
 data Table = Table
   { tableName :: Name,
