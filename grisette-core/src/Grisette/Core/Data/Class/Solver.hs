@@ -53,6 +53,7 @@ module Grisette.Core.Data.Class.Solver
     cegisForallByWithExcept,
     cegisArgWithExcept,
     cegisArgForallByWithExcept,
+    MonadErrorTrans (..),
   )
 where
 

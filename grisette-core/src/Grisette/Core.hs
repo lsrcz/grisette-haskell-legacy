@@ -178,6 +178,7 @@ module Grisette.Core
     cegisForallByWithExcept,
     cegisArgWithExcept,
     cegisArgForallByWithExcept,
+    MonadErrorTrans (..),
     {-SolveProblem
       ( Formula,
         WithExcept,
