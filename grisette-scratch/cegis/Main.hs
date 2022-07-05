@@ -58,5 +58,5 @@ main = do
   print (cexs, evaluate False mo input2)
   Right (cexs1, mo1) <- cegisWithExcept X (UnboundedReasoning z3) (ssymb "a" :: Sym Bool) m1
   print (cexs1, evaluate False mo1 m)
-  Right (cexs2, mo2) <- cegisWithExcept Y (UnboundedReasoning z3) (ssymb "a" :: Sym Bool) (lift m)
+  Right (cexs2, mo2) <- cegisWithExcept Y (UnboundedReasoning z3) (ssymb "a" :: Sym Bool) (lift m :: ExceptT VerificationConditions UnionM Integer)
   print (cexs2, evaluate False mo2 m)
