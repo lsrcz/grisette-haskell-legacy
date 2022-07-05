@@ -22,7 +22,7 @@ data Synth = Synth
 instance CegisErrorTranslation Synth AssertionError where
   cegisErrorTranslation _ _ = AssertionViolation
 
-instance CegisTranslation Synth SymBool UnionM AssertionError () where
+instance CegisTranslation Synth SymBool AssertionError () where
 
 synth ::
   forall b conc fs.

@@ -13,14 +13,14 @@ data X = X
 instance CegisErrorTranslation X VerificationConditions where
   cegisErrorTranslation _ = id
 
-instance CegisTranslation X SymBool UnionM VerificationConditions () where
+instance CegisTranslation X SymBool VerificationConditions () where
 
 data Y = Y
 
 instance CegisErrorTranslation Y VerificationConditions where
   cegisErrorTranslation _ = id
 
-instance CegisTranslation Y SymBool UnionM VerificationConditions Integer where
+instance CegisTranslation Y SymBool VerificationConditions Integer where
   cegisValueTranslation _ i = do
     symFailIfNot AssumptionViolation (conc $ i >= 2)
     symFailIfNot AssertionViolation (conc $ odd i)

@@ -80,9 +80,9 @@ class (SymBoolOp bool, SolverErrorTranslation spec e) => SolverTranslation spec 
 class CegisErrorTranslation spec e | spec -> e where
   cegisErrorTranslation :: spec -> e -> VerificationConditions
 
-class (SymBoolOp bool, UnionPrjOp bool u, CegisErrorTranslation spec e) => CegisTranslation spec bool u e v | spec u -> bool e v where
-  cegisValueTranslation :: spec -> v -> ExceptT VerificationConditions u ()
-  default cegisValueTranslation :: (v ~ ()) => spec -> v -> ExceptT VerificationConditions u ()
+class (SymBoolOp bool, CegisErrorTranslation spec e) => CegisTranslation spec bool e v | spec -> e v where
+  cegisValueTranslation :: (MonadError VerificationConditions u, UnionLike bool u) => spec -> v -> u ()
+  default cegisValueTranslation :: (MonadError VerificationConditions u, UnionLike bool u, v ~ ()) => spec -> v -> u ()
   cegisValueTranslation _ = mrgSingle
 
 translateExceptT :: (SolverTranslation spec bool e v, UnionPrjOp bool u, Functor u) => spec -> ExceptT e u v -> bool
@@ -94,7 +94,7 @@ translateExceptT p (ExceptT u) =
     )
       <$> u
 
-translateCegis :: forall spec bool u e v. (CegisTranslation spec bool u e v, UnionPrjOp bool u, Functor u) => spec -> ExceptT e u v -> (bool, bool)
+translateCegis :: forall spec bool u e v. (CegisTranslation spec bool e v, UnionPrjOp bool u, Monad u) => spec -> ExceptT e u v -> (bool, bool)
 translateCegis p (ExceptT u) =
   getSingle $
     ( \case
@@ -251,12 +251,12 @@ solveWithExceptMulti ::
 solveWithExceptMulti spec config n e = solveFormulaMulti config n (translateExceptT spec e)
 
 cegisWithExcept ::
-  ( CegisTranslation spec bool u err v,
+  ( CegisTranslation spec bool err v,
     ExtractSymbolics symbolSet forallArgs,
     Evaluate model forallArgs,
     Solver config bool symbolSet failure model,
     UnionPrjOp bool u,
-    Functor u
+    Monad u
   ) =>
   spec ->
   config ->
@@ -269,7 +269,7 @@ cegisWithExcept p config foralls e =
 
 cegisForallByWithExcept ::
   forall config bool u spec err v symbolSet a forallSpec model failure.
-  ( CegisTranslation spec bool u err v,
+  ( CegisTranslation spec bool err v,
     ExtractSymbolics symbolSet a,
     ExtractSymbolics symbolSet bool,
     GenSym bool forallSpec a,
@@ -278,7 +278,7 @@ cegisForallByWithExcept ::
     Evaluate model a,
     Solver config bool symbolSet failure model,
     UnionPrjOp bool u,
-    Functor u
+    Monad u
   ) =>
   spec ->
   config ->
@@ -295,7 +295,7 @@ cegisForallByWithExcept p config forallSpec f =
 
 cegisArgWithExcept ::
   forall config bool u spec err v symbolSet forallArgs model failure argSpec arg.
-  ( CegisTranslation spec bool u err v,
+  ( CegisTranslation spec bool err v,
     ExtractSymbolics symbolSet forallArgs,
     GenSym bool argSpec arg,
     Mergeable bool v,
@@ -304,7 +304,7 @@ cegisArgWithExcept ::
     Evaluate model forallArgs,
     Solver config bool symbolSet failure model,
     UnionPrjOp bool u,
-    Functor u
+    Monad u
   ) =>
   spec ->
   config ->
@@ -331,7 +331,7 @@ cegisArgWithExcept p config foralls argSpec f =
 
 cegisArgForallByWithExcept ::
   forall config bool u spec err v symbolSet forallArg forallSpec argSpec arg model failure.
-  ( CegisTranslation spec bool u err v,
+  ( CegisTranslation spec bool err v,
     ExtractSymbolics symbolSet forallArg,
     ExtractSymbolics symbolSet bool,
     GenSym bool forallSpec forallArg,
@@ -342,7 +342,7 @@ cegisArgForallByWithExcept ::
     Evaluate model forallArg,
     Solver config bool symbolSet failure model,
     UnionPrjOp bool u,
-    Functor u
+    Monad u
   ) =>
   spec ->
   config ->
