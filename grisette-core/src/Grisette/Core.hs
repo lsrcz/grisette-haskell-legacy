@@ -121,6 +121,9 @@ module Grisette.Core
     symFailIfNot,
     symThrowTransformableError,
 
+
+    CBMCExceptT(..),
+
     -- * Symbolic Generation
     -- ** Symbolic Generation Context
     GenSymIndex (..),
@@ -253,3 +256,4 @@ import Grisette.Core.BuiltinUnionMWrappers
 import Grisette.Core.Data.Class.BitVector
 import Grisette.Core.Data.Class.Solver
 import Grisette.Core.Control.Monad.Union
+import Grisette.Core.Control.Monad.CBMCExcept

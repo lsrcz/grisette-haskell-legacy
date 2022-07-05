@@ -87,12 +87,12 @@ class (SymBoolOp bool, CegisErrorTranslation spec e) => CegisTranslation spec bo
   cegisValueTranslation _ = mrgSingle
 
 class MonadErrorTrans e t where
-  unwrapMonadErrorTrans :: (t u v) -> u (Either e v)
+  unwrapMonadErrorTrans :: (Monad u) => t u v -> u (Either e v)
 
 instance MonadErrorTrans e (ExceptT e) where
   unwrapMonadErrorTrans = runExceptT
 
-translateSolve :: (SolverTranslation spec bool e v, UnionPrjOp bool u, Functor u, MonadErrorTrans e t) => spec -> t u v -> bool
+translateSolve :: (SolverTranslation spec bool e v, UnionPrjOp bool u, Monad u, MonadErrorTrans e t) => spec -> t u v -> bool
 translateSolve p t =
   getSingle $
     ( \case
@@ -225,7 +225,7 @@ solveWithExcept ::
   ( SolverTranslation spec bool err v,
     Solver config bool symbolSet failure model,
     UnionPrjOp bool u,
-    Functor u,
+    Monad u,
     MonadErrorTrans err t
   ) =>
   spec ->
@@ -241,7 +241,7 @@ solveArgWithExcept ::
     ExtractSymbolics symbolSet arg,
     Solver config bool symbolSet failure model,
     UnionPrjOp bool u,
-    Functor u,
+    Monad u,
     MonadErrorTrans err t
   ) =>
   spec ->
@@ -255,7 +255,7 @@ solveWithExceptMulti ::
   ( SolverTranslation spec bool err v,
     Solver config bool symbolSet failure model,
     UnionPrjOp bool u,
-    Functor u,
+    Monad u,
     MonadErrorTrans err t
   ) =>
   spec ->
