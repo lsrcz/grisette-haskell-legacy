@@ -70,7 +70,8 @@ library
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
+      QuickCheck >=2.13.2
+    , Unique >=0.4.7
     , base >4.14 && <5
     , bv-sized >=1.0.3
     , bytestring >=0.10.12
@@ -136,7 +137,8 @@ executable bonsai-letpoly
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
+      QuickCheck >=2.13.2
+    , Unique >=0.4.7
     , base >4.14 && <5
     , bv-sized >=1.0.3
     , bytestring >=0.10.12
@@ -203,7 +205,8 @@ executable bonsai-letpoly-nomemo
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
+      QuickCheck >=2.13.2
+    , Unique >=0.4.7
     , base >4.14 && <5
     , bv-sized >=1.0.3
     , bytestring >=0.10.12
@@ -270,7 +273,8 @@ executable bonsai-nanoscala
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
+      QuickCheck >=2.13.2
+    , Unique >=0.4.7
     , base >4.14 && <5
     , bv-sized >=1.0.3
     , bytestring >=0.10.12
@@ -337,7 +341,8 @@ executable bonsai-nanoscala-nomemo
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
+      QuickCheck >=2.13.2
+    , Unique >=0.4.7
     , base >4.14 && <5
     , bv-sized >=1.0.3
     , bytestring >=0.10.12
@@ -404,7 +409,8 @@ executable bonsai-stlc
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
+      QuickCheck >=2.13.2
+    , Unique >=0.4.7
     , base >4.14 && <5
     , bv-sized >=1.0.3
     , bytestring >=0.10.12
@@ -471,7 +477,8 @@ executable bonsai-stlc-nomemo
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
+      QuickCheck >=2.13.2
+    , Unique >=0.4.7
     , base >4.14 && <5
     , bv-sized >=1.0.3
     , bytestring >=0.10.12
@@ -545,7 +552,8 @@ executable cosette
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
+      QuickCheck >=2.13.2
+    , Unique >=0.4.7
     , base >4.14 && <5
     , bv-sized >=1.0.3
     , bytestring >=0.10.12
@@ -619,7 +627,8 @@ executable cosette-optimized-merge
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
+      QuickCheck >=2.13.2
+    , Unique >=0.4.7
     , base >4.14 && <5
     , bv-sized >=1.0.3
     , bytestring >=0.10.12
@@ -692,7 +701,8 @@ executable ferrite
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
+      QuickCheck >=2.13.2
+    , Unique >=0.4.7
     , base >4.14 && <5
     , bv-sized >=1.0.3
     , bytestring >=0.10.12
@@ -758,7 +768,8 @@ executable fluidics
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
+      QuickCheck >=2.13.2
+    , Unique >=0.4.7
     , base >4.14 && <5
     , bv-sized >=1.0.3
     , bytestring >=0.10.12
@@ -829,7 +840,79 @@ executable ifcl
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
+      QuickCheck >=2.13.2
+    , Unique >=0.4.7
+    , base >4.14 && <5
+    , bv-sized >=1.0.3
+    , bytestring >=0.10.12
+    , clock >=0.7.1
+    , deepseq >=1.4.4
+    , either >=5
+    , formatting >=6.3.1
+    , generic-deriving >=1.14.1
+    , grisette ==0.1.0.0
+    , grisette-benchmarks
+    , grisette-monad-coroutine ==0.1.0.0
+    , hashable >=1.3
+    , hashtables >=1.2.3.4
+    , megaparsec >=8
+    , monad-coroutine >=0.9.0.4
+    , mtl >=2.2.2
+    , natural-transformation >=0.3
+    , parameterized-utils >=2.1.4
+    , parser-combinators >=1
+    , regex-base >=0.94
+    , regex-pcre-builtin >=0.95.1.1.8.44
+    , template-haskell >=2.16
+    , text >=1.2.4.1
+    , th-compat >=0.1.2
+    , th-lift-instances >=0.1.16
+    , timeit >=0.9
+    , transformers >=0.5.6.2
+    , unordered-containers >=0.2.11
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
+  default-language: Haskell2010
+
+executable microsem
+  main-is: Main.hs
+  other-modules:
+      Ordered
+      Prog
+      SymBool
+      Unordered
+      Paths_grisette_benchmarks
+  hs-source-dirs:
+      microsem
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      DerivingVia
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+  ghc-options: -Wall -ferror-spans
+  build-depends:
+      QuickCheck >=2.13.2
+    , Unique >=0.4.7
     , base >4.14 && <5
     , bv-sized >=1.0.3
     , bytestring >=0.10.12
@@ -895,7 +978,8 @@ executable regex
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
+      QuickCheck >=2.13.2
+    , Unique >=0.4.7
     , base >4.14 && <5
     , bv-sized >=1.0.3
     , bytestring >=0.10.12
@@ -961,7 +1045,8 @@ executable regex-delim
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
+      QuickCheck >=2.13.2
+    , Unique >=0.4.7
     , base >4.14 && <5
     , bv-sized >=1.0.3
     , bytestring >=0.10.12
@@ -1027,7 +1112,8 @@ executable regex-delim-nomemo
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
+      QuickCheck >=2.13.2
+    , Unique >=0.4.7
     , base >4.14 && <5
     , bv-sized >=1.0.3
     , bytestring >=0.10.12
@@ -1093,7 +1179,8 @@ executable regex-nomemo
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
+      QuickCheck >=2.13.2
+    , Unique >=0.4.7
     , base >4.14 && <5
     , bv-sized >=1.0.3
     , bytestring >=0.10.12

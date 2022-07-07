@@ -38,6 +38,7 @@ dependencies:
 - text >= 1.2.4.1
 - th-compat >= 0.1.2
 - natural-transformation >= 0.3
+- QuickCheck >= 2.13.2
 
 default-extensions:
 - BangPatterns
@@ -146,5 +147,9 @@ executables:
     dependencies: grisette-benchmarks
   regex-delim-nomemo:
     source-dirs: regex-delim-nomemo
+    main: Main.hs
+    dependencies: grisette-benchmarks
+  microsem:
+    source-dirs: microsem
     main: Main.hs
     dependencies: grisette-benchmarks
