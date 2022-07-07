@@ -1,0 +1,582 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.34.4.
+--
+-- see: https://github.com/sol/hpack
+
+name:           grisette-cbmcencoding
+version:        0.1.0.0
+synopsis:       Benchmark set for Grisette
+description:    Example symbolic DSLs for benchmarking purpose
+category:       Formal Methods, Theorem Provers, Symbolic Computation, SMT
+homepage:       https://github.com/lsrcz/grisette-haskell#readme
+bug-reports:    https://github.com/lsrcz/grisette-haskell/issues
+author:         Sirui Lu
+maintainer:     siruilu@uw.edu
+copyright:      2021 Sirui Lu
+license:        BSD3
+build-type:     Simple
+
+source-repository head
+  type: git
+  location: https://github.com/lsrcz/grisette-haskell
+
+flag fast
+  description: Compile with O2 optimization
+  manual: False
+  default: True
+
+library
+  exposed-modules:
+      Utils.Timing
+      Bonsai.BonsaiTree
+      Bonsai.Env
+      Bonsai.Match
+      Bonsai.MatchSyntax
+      Bonsai.MatchSyntaxNoMemo
+      Bonsai.Pattern
+      Bonsai.SyntaxSpec
+  other-modules:
+      Paths_grisette_cbmcencoding
+  hs-source-dirs:
+      utils
+      bonsai-lib
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      DerivingVia
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+  ghc-options: -Wall -ferror-spans
+  build-depends:
+      QuickCheck >=2.13.2
+    , Unique >=0.4.7
+    , base >4.14 && <5
+    , bv-sized >=1.0.3
+    , bytestring >=0.10.12
+    , clock >=0.7.1
+    , deepseq >=1.4.4
+    , either >=5
+    , formatting >=6.3.1
+    , generic-deriving >=1.14.1
+    , grisette ==0.1.0.0
+    , grisette-monad-coroutine ==0.1.0.0
+    , hashable >=1.3
+    , hashtables >=1.2.3.4
+    , megaparsec >=8
+    , monad-coroutine >=0.9.0.4
+    , mtl >=2.2.2
+    , natural-transformation >=0.3
+    , parameterized-utils >=2.1.4
+    , parser-combinators >=1
+    , regex-base >=0.94
+    , regex-pcre-builtin >=0.95.1.1.8.44
+    , template-haskell >=2.16
+    , text >=1.2.4.1
+    , th-compat >=0.1.2
+    , th-lift-instances >=0.1.16
+    , timeit >=0.9
+    , transformers >=0.5.6.2
+    , unordered-containers >=0.2.11
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
+  default-language: Haskell2010
+
+executable bonsai-letpoly-cbmc
+  main-is: Main.hs
+  other-modules:
+      LetPoly
+      Paths_grisette_cbmcencoding
+  hs-source-dirs:
+      bonsai-letpoly-cbmc
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      DerivingVia
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+  ghc-options: -Wall -ferror-spans
+  build-depends:
+      QuickCheck >=2.13.2
+    , Unique >=0.4.7
+    , base >4.14 && <5
+    , bv-sized >=1.0.3
+    , bytestring >=0.10.12
+    , clock >=0.7.1
+    , deepseq >=1.4.4
+    , either >=5
+    , formatting >=6.3.1
+    , generic-deriving >=1.14.1
+    , grisette ==0.1.0.0
+    , grisette-cbmcencoding
+    , grisette-monad-coroutine ==0.1.0.0
+    , hashable >=1.3
+    , hashtables >=1.2.3.4
+    , megaparsec >=8
+    , monad-coroutine >=0.9.0.4
+    , mtl >=2.2.2
+    , natural-transformation >=0.3
+    , parameterized-utils >=2.1.4
+    , parser-combinators >=1
+    , regex-base >=0.94
+    , regex-pcre-builtin >=0.95.1.1.8.44
+    , template-haskell >=2.16
+    , text >=1.2.4.1
+    , th-compat >=0.1.2
+    , th-lift-instances >=0.1.16
+    , timeit >=0.9
+    , transformers >=0.5.6.2
+    , unordered-containers >=0.2.11
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
+  default-language: Haskell2010
+
+executable bonsai-letpoly-nomemo-cbmc
+  main-is: Main.hs
+  other-modules:
+      LetPoly
+      Paths_grisette_cbmcencoding
+  hs-source-dirs:
+      bonsai-letpoly-nomemo-cbmc
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      DerivingVia
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+  ghc-options: -Wall -ferror-spans
+  build-depends:
+      QuickCheck >=2.13.2
+    , Unique >=0.4.7
+    , base >4.14 && <5
+    , bv-sized >=1.0.3
+    , bytestring >=0.10.12
+    , clock >=0.7.1
+    , deepseq >=1.4.4
+    , either >=5
+    , formatting >=6.3.1
+    , generic-deriving >=1.14.1
+    , grisette ==0.1.0.0
+    , grisette-cbmcencoding
+    , grisette-monad-coroutine ==0.1.0.0
+    , hashable >=1.3
+    , hashtables >=1.2.3.4
+    , megaparsec >=8
+    , monad-coroutine >=0.9.0.4
+    , mtl >=2.2.2
+    , natural-transformation >=0.3
+    , parameterized-utils >=2.1.4
+    , parser-combinators >=1
+    , regex-base >=0.94
+    , regex-pcre-builtin >=0.95.1.1.8.44
+    , template-haskell >=2.16
+    , text >=1.2.4.1
+    , th-compat >=0.1.2
+    , th-lift-instances >=0.1.16
+    , timeit >=0.9
+    , transformers >=0.5.6.2
+    , unordered-containers >=0.2.11
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
+  default-language: Haskell2010
+
+executable bonsai-nanoscala-cbmc
+  main-is: Main.hs
+  other-modules:
+      NanoScala
+      Paths_grisette_cbmcencoding
+  hs-source-dirs:
+      bonsai-nanoscala-cbmc
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      DerivingVia
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+  ghc-options: -Wall -ferror-spans
+  build-depends:
+      QuickCheck >=2.13.2
+    , Unique >=0.4.7
+    , base >4.14 && <5
+    , bv-sized >=1.0.3
+    , bytestring >=0.10.12
+    , clock >=0.7.1
+    , deepseq >=1.4.4
+    , either >=5
+    , formatting >=6.3.1
+    , generic-deriving >=1.14.1
+    , grisette ==0.1.0.0
+    , grisette-cbmcencoding
+    , grisette-monad-coroutine ==0.1.0.0
+    , hashable >=1.3
+    , hashtables >=1.2.3.4
+    , megaparsec >=8
+    , monad-coroutine >=0.9.0.4
+    , mtl >=2.2.2
+    , natural-transformation >=0.3
+    , parameterized-utils >=2.1.4
+    , parser-combinators >=1
+    , regex-base >=0.94
+    , regex-pcre-builtin >=0.95.1.1.8.44
+    , template-haskell >=2.16
+    , text >=1.2.4.1
+    , th-compat >=0.1.2
+    , th-lift-instances >=0.1.16
+    , timeit >=0.9
+    , transformers >=0.5.6.2
+    , unordered-containers >=0.2.11
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
+  default-language: Haskell2010
+
+executable bonsai-nanoscala-nomemo-cbmc
+  main-is: Main.hs
+  other-modules:
+      NanoScala
+      Paths_grisette_cbmcencoding
+  hs-source-dirs:
+      bonsai-nanoscala-nomemo-cbmc
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      DerivingVia
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+  ghc-options: -Wall -ferror-spans
+  build-depends:
+      QuickCheck >=2.13.2
+    , Unique >=0.4.7
+    , base >4.14 && <5
+    , bv-sized >=1.0.3
+    , bytestring >=0.10.12
+    , clock >=0.7.1
+    , deepseq >=1.4.4
+    , either >=5
+    , formatting >=6.3.1
+    , generic-deriving >=1.14.1
+    , grisette ==0.1.0.0
+    , grisette-cbmcencoding
+    , grisette-monad-coroutine ==0.1.0.0
+    , hashable >=1.3
+    , hashtables >=1.2.3.4
+    , megaparsec >=8
+    , monad-coroutine >=0.9.0.4
+    , mtl >=2.2.2
+    , natural-transformation >=0.3
+    , parameterized-utils >=2.1.4
+    , parser-combinators >=1
+    , regex-base >=0.94
+    , regex-pcre-builtin >=0.95.1.1.8.44
+    , template-haskell >=2.16
+    , text >=1.2.4.1
+    , th-compat >=0.1.2
+    , th-lift-instances >=0.1.16
+    , timeit >=0.9
+    , transformers >=0.5.6.2
+    , unordered-containers >=0.2.11
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
+  default-language: Haskell2010
+
+executable bonsai-stlc-cbmc
+  main-is: Main.hs
+  other-modules:
+      STLC
+      Paths_grisette_cbmcencoding
+  hs-source-dirs:
+      bonsai-stlc-cbmc
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      DerivingVia
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+  ghc-options: -Wall -ferror-spans
+  build-depends:
+      QuickCheck >=2.13.2
+    , Unique >=0.4.7
+    , base >4.14 && <5
+    , bv-sized >=1.0.3
+    , bytestring >=0.10.12
+    , clock >=0.7.1
+    , deepseq >=1.4.4
+    , either >=5
+    , formatting >=6.3.1
+    , generic-deriving >=1.14.1
+    , grisette ==0.1.0.0
+    , grisette-cbmcencoding
+    , grisette-monad-coroutine ==0.1.0.0
+    , hashable >=1.3
+    , hashtables >=1.2.3.4
+    , megaparsec >=8
+    , monad-coroutine >=0.9.0.4
+    , mtl >=2.2.2
+    , natural-transformation >=0.3
+    , parameterized-utils >=2.1.4
+    , parser-combinators >=1
+    , regex-base >=0.94
+    , regex-pcre-builtin >=0.95.1.1.8.44
+    , template-haskell >=2.16
+    , text >=1.2.4.1
+    , th-compat >=0.1.2
+    , th-lift-instances >=0.1.16
+    , timeit >=0.9
+    , transformers >=0.5.6.2
+    , unordered-containers >=0.2.11
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
+  default-language: Haskell2010
+
+executable bonsai-stlc-nomemo-cbmc
+  main-is: Main.hs
+  other-modules:
+      STLC
+      Paths_grisette_cbmcencoding
+  hs-source-dirs:
+      bonsai-stlc-nomemo-cbmc
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      DerivingVia
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+  ghc-options: -Wall -ferror-spans
+  build-depends:
+      QuickCheck >=2.13.2
+    , Unique >=0.4.7
+    , base >4.14 && <5
+    , bv-sized >=1.0.3
+    , bytestring >=0.10.12
+    , clock >=0.7.1
+    , deepseq >=1.4.4
+    , either >=5
+    , formatting >=6.3.1
+    , generic-deriving >=1.14.1
+    , grisette ==0.1.0.0
+    , grisette-cbmcencoding
+    , grisette-monad-coroutine ==0.1.0.0
+    , hashable >=1.3
+    , hashtables >=1.2.3.4
+    , megaparsec >=8
+    , monad-coroutine >=0.9.0.4
+    , mtl >=2.2.2
+    , natural-transformation >=0.3
+    , parameterized-utils >=2.1.4
+    , parser-combinators >=1
+    , regex-base >=0.94
+    , regex-pcre-builtin >=0.95.1.1.8.44
+    , template-haskell >=2.16
+    , text >=1.2.4.1
+    , th-compat >=0.1.2
+    , th-lift-instances >=0.1.16
+    , timeit >=0.9
+    , transformers >=0.5.6.2
+    , unordered-containers >=0.2.11
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
+  default-language: Haskell2010
+
+executable ifcl-cbmc
+  main-is: Main.hs
+  other-modules:
+      IFCLInterpreter
+      Indistinguishable
+      Instructions
+      Machine
+      Value
+      Paths_grisette_cbmcencoding
+  hs-source-dirs:
+      ifcl-cbmc
+  default-extensions:
+      BangPatterns
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveLift
+      DerivingStrategies
+      DerivingVia
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+  ghc-options: -Wall -ferror-spans
+  build-depends:
+      QuickCheck >=2.13.2
+    , Unique >=0.4.7
+    , base >4.14 && <5
+    , bv-sized >=1.0.3
+    , bytestring >=0.10.12
+    , clock >=0.7.1
+    , deepseq >=1.4.4
+    , either >=5
+    , formatting >=6.3.1
+    , generic-deriving >=1.14.1
+    , grisette ==0.1.0.0
+    , grisette-cbmcencoding
+    , grisette-monad-coroutine ==0.1.0.0
+    , hashable >=1.3
+    , hashtables >=1.2.3.4
+    , megaparsec >=8
+    , monad-coroutine >=0.9.0.4
+    , mtl >=2.2.2
+    , natural-transformation >=0.3
+    , parameterized-utils >=2.1.4
+    , parser-combinators >=1
+    , regex-base >=0.94
+    , regex-pcre-builtin >=0.95.1.1.8.44
+    , template-haskell >=2.16
+    , text >=1.2.4.1
+    , th-compat >=0.1.2
+    , th-lift-instances >=0.1.16
+    , timeit >=0.9
+    , transformers >=0.5.6.2
+    , unordered-containers >=0.2.11
+  if flag(fast)
+    ghc-options: -O2
+  else
+    ghc-options: -O0
+  default-language: Haskell2010

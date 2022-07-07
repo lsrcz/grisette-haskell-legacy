@@ -122,7 +122,11 @@ module Grisette.Core
     symThrowTransformableError,
 
 
+    CBMCEither (..),
     CBMCExceptT(..),
+    cbmcExcept,
+    mapCBMCExceptT,
+    withCBMCExceptT,
 
     -- * Symbolic Generation
     -- ** Symbolic Generation Context

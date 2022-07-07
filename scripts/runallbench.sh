@@ -8,14 +8,17 @@ STACK_KEYS[regex-delim-nomemo]=regex-delim-nomemo
 STACK_KEYS[regex-delim]=regex-delim
 STACK_KEYS[regex-nomemo]=regex-nomemo
 STACK_KEYS[regex]=regex
+STACK_KEYS[cosette-1]=cosette-optimized-merge
 STACK_KEYS[letpoly-nomemo]=bonsai-letpoly-nomemo
 STACK_KEYS[nanoscala-nomemo]=bonsai-nanoscala-nomemo
-STACK_KEYS[cosette-1]=cosette-optimized-merge
 STACK_KEYS[letpoly]=bonsai-letpoly
 STACK_KEYS[nanoscala]=bonsai-nanoscala
+STACK_KEYS[letpoly-cbmc]=bonsai-letpoly-cbmc
+STACK_KEYS[nanoscala-cbmc]=bonsai-nanoscala-cbmc
 STACK_KEYS[cosette]=cosette
 STACK_KEYS[fluidics]=fluidics
 STACK_KEYS[ifcl]=ifcl
+STACK_KEYS[ifcl-cbmc]=ifcl-cbmc
 STACK_KEYS[ferrite]=ferrite
 TO_RUN=()
 RUN_ALL=NO
@@ -86,7 +89,14 @@ PARENT_PATH=$(
 if [[ "$RUN_ALL" = "YES" ]]; then
     TO_RUN=()
     for i in ${!STACK_KEYS[@]}; do
-        TO_RUN+=("$i")
+        if [[ "$UNORDERED" = "YES" ]]; then
+            # if i ends in -cbmc, then skip it
+            if [[ ! "$i" = *-cbmc ]]; then
+                TO_RUN+=("$i")
+            fi
+        else
+            TO_RUN+=("$i")
+        fi
     done
 fi
 

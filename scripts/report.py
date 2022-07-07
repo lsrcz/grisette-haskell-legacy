@@ -103,12 +103,12 @@ def basic_comparison(org, meg, r3, r4):
     epi = [r'  \hline', r'\end{tabular}']
 
     tabular = Tabular(pre, epi, 22)
-    tabular.add_row(['', 'T', 'E', 'PE', 'S', 'Tm'] *
+    tabular.add_row(['', 'T', 'E', 'L', 'S', 'Tm'] *
                     2 + ['', 'T', 'E', 'S', 'Tm'] * 2)
     tabular.add_hline()
 
     for project in ['ferrite', 'ifcl', 'fluidics', 'cosette', 'nanoscala', 'letpoly', 'cosette-1', 'regex-delim', 'regex']:
-        if project == 'cosette-1' or project == 'regex':
+        if project == 'cosette-1' or project == 'regex-delim':
             tabular.add_hline()
 
         new_row = ['  \\textsc{{{}}}'.format(projectname[project])]
@@ -126,7 +126,7 @@ def basic_comparison(org, meg, r3, r4):
             else:
                 new_row.append('')
             if tabname in ['org', 'meg']:
-                for column in ['total', 'eval', 'pureeval', 'solv', 'term']:
+                for column in ['total', 'eval', 'lower', 'solv', 'term']:
                     new_row.append(format_number(
                         tab_map[tabname][project][column]))
             else:
@@ -136,6 +136,35 @@ def basic_comparison(org, meg, r3, r4):
         if project.startswith('regex'):
             new_row += [''] * 10
 
+        tabular.add_row(new_row)
+    tabular.normalize()
+    return tabular
+
+
+def error_encoding(org):
+    pre = [r'\begin{tabular}{lrrrrrrrrrrr}',
+           r'  \hline',
+           r'  \multirow{2}{*}{Benchmark}&\multicolumn{5}{c}{\textsc{Grisette}}&&\multicolumn{5}{c}{\textsc{Grisette} (CBMC error encoding)}\\'
+           r'  \cline{2-6}\cline{8-12}',
+           ]
+    epi = [r'  \hline', r'\end{tabular}']
+
+    tabular = Tabular(pre, epi, 12)
+    tabular.add_row(['', 'Total', 'Eval', 'Lower', 'Solve', 'Term'] * 2)
+    tabular.add_hline()
+
+    for project in ['ifcl', 'nanoscala', 'letpoly']:
+        new_row = ['  \\textsc{{{}}}'.format(projectname[project])]
+
+        start = True
+        for suffix in ['', '-cbmc']:
+            if start:
+                start = False
+            else:
+                new_row.append('')
+            for column in ['total', 'eval', 'lower', 'solv', 'term']:
+                new_row.append(format_number(
+                    org[project + suffix][column]))
         tabular.add_row(new_row)
     tabular.normalize()
     return tabular
@@ -202,21 +231,23 @@ def memo_summary(org):
            r'  \cline{2-5}\cline{7-10}\cline{12-13}']
     epi = [r'  \hline', r'\end{tabular}']
     tabular = Tabular(pre, epi, 13)
-    tabular.add_row(['','Total','Eval','Lower','Solv'] * 2 + ['', 'Total', 'Eval'])
+    tabular.add_row(['', 'Total', 'Eval', 'Lower', 'Solv']
+                    * 2 + ['', 'Total', 'Eval'])
     tabular.add_hline()
-    
+
     for project in ['nanoscala', 'letpoly', 'regex-delim', 'regex']:
         row = ['  \\textsc{{{}}}'.format(projectname[project])]
         for m in ['-nomemo', '']:
             for t in ['total', 'eval', 'lower', 'solv']:
                 row.append(format_number(org[project + m][t]))
             row.append('')
-        row.append(format_number(org[project + '-nomemo']['total'] / org[project]['total']) + 'x')
-        row.append(format_number(org[project + '-nomemo']['eval'] / org[project]['eval']) + 'x')
+        row.append(format_number(
+            org[project + '-nomemo']['total'] / org[project]['total']) + 'x')
+        row.append(format_number(
+            org[project + '-nomemo']['eval'] / org[project]['eval']) + 'x')
         tabular.add_row(row)
     tabular.normalize()
     return tabular
-
 
 
 def main():
@@ -226,7 +257,12 @@ def main():
                         help='rerun benchmarks')
     parser.add_argument('--r3', type=str, required=True, help='Rosette 3 CSV')
     parser.add_argument('--r4', type=str, required=True, help='Rosette 4 CSV')
+    parser.add_argument('--skip', type=int, default=0,
+                        help='Skip first N executions')
+    parser.add_argument('--ntimes', type=int, default=1,
+                        help='Skip first N executions')
     args = parser.parse_args()
+    print(args)
 
     dirname, _ = os.path.split(os.path.abspath(__file__))
     orgCsvPath = os.path.join(dirname, 'org.csv')
@@ -238,9 +274,9 @@ def main():
             meg = csvfile.read()
     else:
         orgProc = subprocess.Popen(" ".join([os.path.join(
-            dirname, 'runallbench.sh'), "all"]), shell=True, stdout=subprocess.PIPE)
+            dirname, 'runallbench.sh'), "--skip", str(args.skip), "--ntimes", str(args.ntimes), "all"]), shell=True, stdout=subprocess.PIPE)
         megProc = subprocess.Popen(" ".join([os.path.join(
-            dirname, 'runallbench.sh'), "-u", "all"]), shell=True, stdout=subprocess.PIPE)
+            dirname, 'runallbench.sh'), "--skip", str(args.skip), "--ntimes", str(args.ntimes), "-u", "all"]), shell=True, stdout=subprocess.PIPE)
         org = orgProc.stdout.read().decode('utf-8')
         with open(orgCsvPath, 'w') as f:
             f.write(org)
@@ -261,6 +297,7 @@ def main():
 
     print(basic_comparison(orgDict, megDict, r3Dict, r4Dict))
     print(summary(orgDict, megDict, r3Dict, r4Dict))
+    print(error_encoding(orgDict))
     print(memo_summary(orgDict))
 
     # printBasicComparison(orgDict, megDict)

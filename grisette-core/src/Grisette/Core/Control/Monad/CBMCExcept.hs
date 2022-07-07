@@ -8,9 +8,11 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE DeriveLift #-}
 
 module Grisette.Core.Control.Monad.CBMCExcept
-  ( CBMCExceptT (..),
+  ( CBMCEither (..),
+    CBMCExceptT (..),
     cbmcExcept,
     mapCBMCExceptT,
     withCBMCExceptT,
@@ -39,10 +41,13 @@ import Grisette.Core.Data.Class.Solver
 import Grisette.Core.Data.Class.ToCon
 import Grisette.Core.Data.Class.ToSym
 import Unsafe.Coerce
+import Data.Hashable
+import Control.DeepSeq
+import Language.Haskell.TH.Syntax (Lift)
 
 newtype CBMCEither a b = CBMCEither (Either a b)
-  deriving newtype (Eq, Eq1, Ord, Ord1, Read, Read1, Show, Show1, Functor, Applicative, Monad)
-  deriving stock (Generic)
+  deriving newtype (Eq, Eq1, Ord, Ord1, Read, Read1, Show, Show1, Functor, Applicative, Monad, Hashable, NFData)
+  deriving stock (Generic, Lift)
 
 deriving newtype instance (SymBoolOp bool, SEq bool e, SEq bool a) => SEq bool (CBMCEither e a)
 
@@ -144,10 +149,10 @@ cbmcExcept :: (Monad m) => Either e a -> CBMCExceptT e m a
 cbmcExcept m = CBMCExceptT (return $ CBMCEither m)
 
 mapCBMCExceptT :: (m (Either e a) -> n (Either e' b)) -> CBMCExceptT e m a -> CBMCExceptT e' n b
-mapCBMCExceptT f m = CBMCExceptT $ unsafeCoerce $ f (unsafeCoerce $ runCBMCExceptT m)
+mapCBMCExceptT f m = CBMCExceptT $ (unsafeCoerce . f . unsafeCoerce) (runCBMCExceptT m)
 
-withCBMCExceptT :: (m (Either e a) -> n (Either e' b)) -> CBMCExceptT e m a -> CBMCExceptT e' n b
-withCBMCExceptT f m = CBMCExceptT $ unsafeCoerce $ f (unsafeCoerce $ runCBMCExceptT m)
+withCBMCExceptT :: Functor m => (e -> e') -> CBMCExceptT e m a -> CBMCExceptT e' m a
+withCBMCExceptT f = mapCBMCExceptT $ fmap $ either (Left . f) Right
 
 newtype CBMCExceptT e m a = CBMCExceptT {runCBMCExceptT :: m (CBMCEither e a)} deriving stock (Generic, Generic1)
 
