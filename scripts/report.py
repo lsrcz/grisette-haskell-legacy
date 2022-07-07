@@ -8,7 +8,7 @@ import io
 import argparse
 
 
-projectname = {'nanoscala': 'NanoScala',
+projectname = {'nanoscala': 'DOT',
                'letpoly': 'LetPoly',
                'regex': 'Regex',
                'ferrite': 'Ferrite',
