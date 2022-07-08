@@ -64,6 +64,14 @@ The `runallbench.sh` can be used to execute all the benchmarks.
 benchmarks with MEG semantics.
 The scripts requires the solvers to be accessible through `scripts/solvers/z3` or `scripts/solvers/boolector`.
 
+## Run the Benchmarks
+
+The repo is managed with The project is managed with [Stack](https://docs.haskellstack.org/en/stable/README/).
+You can install Grisette with `stack install`.
+
+This is not required, as you can always run the benchmarks with `stack run <benchmark-executable-name>`.
+In this case, please make sure that a recent `z3` or `boolector` (depending on the benchmark) is accessible via the `PATH`.
+
 ## The benchmarks
 - [`grisette-benchmarks/bonsai*`](grisette-benchmarks/bonsai-lib/). Bonsai is a data structure specialized for efficient type system verification with symbolic evaluation.
 The adoption of Bonsai trees allows more efficient reasoning for type systems, and allows to find the bugs in real world type systems,
@@ -84,14 +92,5 @@ You can run the delimited continuation version by `stack run regex-delim`, and t
 
 
 The no memoization versions have the suffix `-nomemo`. The CBMC versions have the suffix `-cbmc`. The MEG versions have the suffix `-unordered`.
-
-
-## Run the Benchmarks
-
-The repo is managed with The project is managed with [Stack](https://docs.haskellstack.org/en/stable/README/).
-You can install Grisette with `stack install`.
-
-This is not required, as you can always run the benchmarks with `stack run <benchmark-executable-name>`.
-In this case, please make sure that a recent `z3` or `boolector` (depending on the benchmark) is accessible via the `PATH`.
 
 
