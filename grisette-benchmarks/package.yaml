@@ -144,7 +144,3 @@ executables:
     source-dirs: regex-delim-nomemo
     main: Main.hs
     dependencies: grisette-benchmarks
-  microsem:
-    source-dirs: microsem
-    main: Main.hs
-    dependencies: grisette-benchmarks
