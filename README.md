@@ -65,8 +65,6 @@ benchmarks with MEG semantics.
 
 ## The benchmarks
 - [`grisette-benchmarks/bonsai*`](grisette-benchmarks/bonsai-lib/). Bonsai is a data structure specialized for efficient type system verification with symbolic evaluation.
-The type system verification methodology in that paper is similar to the one described in the example in section 3.1,
-but with the AST trees replaced with a novel Bonsai tree, which is more efficient in all-path symbolic execution with merging scenario.
 The adoption of Bonsai trees allows more efficient reasoning for type systems, and allows to find the bugs in real world type systems,
 e.g. NanoScala (DOT type system, which is known to be unsound when null references are included) and LetPoly (let-polymorphism with mutable references and higher-order functions, which represents a historical bug in ML).
 You can execute them with `stack run bonsai-nanoscala` or `stack run bonsai-letpoly`.
