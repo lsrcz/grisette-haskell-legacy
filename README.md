@@ -62,6 +62,7 @@ The `runallbench.sh` can be used to execute all the benchmarks.
 `./scripts/runallbench.sh -n 5 all` runs all the benchmarks with ORG semantics (including CBMC error encoding benchmarks) for 5 times and take the average metrics.
 `./scripts/runallbench.sh -u -n 5 all` runs all
 benchmarks with MEG semantics.
+The scripts requires the solvers to be accessible through `scripts/solvers/z3` or `scripts/solvers/boolector`.
 
 ## The benchmarks
 - [`grisette-benchmarks/bonsai*`](grisette-benchmarks/bonsai-lib/). Bonsai is a data structure specialized for efficient type system verification with symbolic evaluation.
