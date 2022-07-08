@@ -56,7 +56,7 @@ Other folders contains the files used during our development, may be obsolete.
 
 ### `scripts`
 Contains the scripts used for our evaluation.
-The `report.py` won't work without results for Rosette benchmarks, which is not anonymized at this time and packed in this repo.
+The `report.py` won't work without results for Rosette benchmarks, which is not packed in this repo.
 
 The `runallbench.sh` can be used to execute all the benchmarks.
 `./scripts/runallbench.sh -n 5 all` runs all the benchmarks with ORG semantics (including CBMC error encoding benchmarks) for 5 times and take the average metrics.
