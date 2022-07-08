@@ -3,11 +3,6 @@ version: 0.1.0.0
 synopsis: Example code for Grisette
 description: Example symbolic DSLs
 category: Formal Methods, Theorem Provers, Symbolic Computation, SMT
-author: "Sirui Lu"
-maintainer: siruilu@uw.edu
-license: BSD3
-github: lsrcz/grisette-haskell
-copyright: "2021 Sirui Lu"
 
 dependencies:
 - base > 4.14 && < 5
@@ -123,12 +118,6 @@ executables:
     main: Main.hs
   tutorial:
     source-dirs: tutorial
-    main: Main.hs
-  expr-icfp2022:
-    source-dirs: expr-icfp2022
-    main: Main.hs
-  assert-assume-icfp2022:
-    source-dirs: assert-assume-icfp2022
     main: Main.hs
   #bonsai:
   #  source-dirs: bonsai

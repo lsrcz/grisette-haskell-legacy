@@ -9,17 +9,7 @@ version:        0.1.0.0
 synopsis:       Symbolic IR Lowering and Solver Interface for Grisette
 description:    Symbolic IR Lowering and Solver Interface for Grisette
 category:       Formal Methods, Theorem Provers, Symbolic Computation, SMT
-homepage:       https://github.com/lsrcz/grisette-haskell#readme
-bug-reports:    https://github.com/lsrcz/grisette-haskell/issues
-author:         Sirui Lu
-maintainer:     siruilu@uw.edu
-copyright:      2021 Sirui Lu
-license:        BSD3
 build-type:     Simple
-
-source-repository head
-  type: git
-  location: https://github.com/lsrcz/grisette-haskell
 
 flag fast
   description: Compile with O2 optimization

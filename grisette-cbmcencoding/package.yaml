@@ -3,11 +3,6 @@ version: 0.1.0.0
 synopsis: Benchmark set for Grisette
 description: Example symbolic DSLs for benchmarking purpose
 category: Formal Methods, Theorem Provers, Symbolic Computation, SMT
-author: "Sirui Lu"
-maintainer: siruilu@uw.edu
-license: BSD3
-github: lsrcz/grisette-haskell
-copyright: "2021 Sirui Lu"
 
 dependencies:
 - base > 4.14 && < 5
