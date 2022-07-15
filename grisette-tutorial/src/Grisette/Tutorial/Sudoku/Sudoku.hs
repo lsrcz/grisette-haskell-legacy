@@ -1,9 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
@@ -73,15 +71,31 @@ type SymRow = [SymInteger]
 -- | Concrete Sudoku board type. It's a sequence of 9 'Row's.
 --
 -- We declare it as a newtype for implementing custom type class instances.
+--
+-- In Grisette, all functionalities are provided by the type class instances.
+-- For example, 'ToCon' type class instance will convert a concrete type to a symbolic type,
+-- and 'ToSym' type class instance will convert a symbolic type to a concrete type.
+-- There are more type class instances available in "Grisette.Core", and we implemented some of them for
+-- 'Board' and 'SymBoard'.
+-- See the following code and the documentation of "Grisette.Core" for more details.
 newtype Board = Board [Row]
   deriving
-    ( -- | For printing.
+    ( -- | For printing a concrete board. For symbolic boards with all entries filled in,
+      -- they will be printed by first converting them to concrete, and then printing.
       Show,
-      -- | For type class derivation.
+      -- | For type class derivation. Grisette provides a default implementation for ADTs for most type classes
+      -- provided.
+      -- You can use the @DerivingVia@ extension and the 'Default' type wrapper to derive the default
+      -- implementation for other type classes.
+      -- See the code for more details.
       Generic
     )
   deriving
     ( -- | Enable conversion from 'SymBoard' to 'Board'.
+      -- 'ToCon' provides the 'toCon' function, which has the type signature:
+      -- @toCon :: SymBoard -> Board@.
+      --
+      -- It can only convert a symbolic board with all entries filled in, or it will return a 'Nothing'.
       ToCon SymBoard
     )
     via (Default Board)
@@ -94,8 +108,13 @@ newtype SymBoard = SymBoard [SymRow]
     )
   deriving
     ( -- | Not used in this example, but you need this for implementing 'GenSym'.
+      --
+      -- 'Mergeable' enables the merging of symbolic boards in a 'UnionLike' container.
+      -- We will not elaborate on this now.
       Mergeable SymBool,
       -- | Enable conversion from 'Board' to 'SymBoard'.
+      -- 'ToSym' provides the 'toSym' function, which has the type signature:
+      -- @toSym :: Board -> SymBoard@.
       ToSym Board,
       -- | Enable evaluating 'SymBoard' from the solver models.
       Evaluate Model
