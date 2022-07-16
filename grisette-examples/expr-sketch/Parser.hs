@@ -7,6 +7,7 @@ import qualified Data.ByteString as B
 import Data.Void
 import Expr
 import Grisette
+import Grisette.Lib.Text.Megaparsec ()
 import Text.Megaparsec
 import Text.Megaparsec.Byte
 import qualified Text.Megaparsec.Byte.Lexer as L

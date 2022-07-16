@@ -24,6 +24,7 @@ module Grisette.Core.Data.Class.GenSym
     pattern GenSymIdentWithInfo,
     name,
     nameWithInfo,
+    MonadGenSymFresh (..),
     GenSymFreshT,
     GenSymFresh,
     runGenSymFreshT,
@@ -48,9 +49,7 @@ where
 import Control.DeepSeq
 import Control.Monad.Except
 import Control.Monad.Identity
-import Control.Monad.Reader
 import Control.Monad.Signatures
-import Control.Monad.State.Strict
 import Control.Monad.Trans.Maybe
 import Data.Bifunctor
 import qualified Data.ByteString as B
@@ -129,6 +128,10 @@ name = GenSymIdent
 -- The user need to ensure uniqueness by themselves if they need to.
 nameWithInfo :: forall a. (Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) => String -> a -> GenSymIdent
 nameWithInfo = GenSymIdentWithInfo
+
+class Monad m => MonadGenSymFresh m where
+  nextGenSymIndex :: m GenSymIndex
+  getGenSymIdent :: m GenSymIdent
 
 -- | A symbolic generation monad transformer.
 -- It is a reader monad transformer for identifiers and
@@ -213,6 +216,11 @@ type GenSymFresh = GenSymFreshT Identity
 runGenSymFresh :: GenSymFresh a -> GenSymIdent -> a
 runGenSymFresh m ident = runIdentity $ runGenSymFreshT m ident
 
+instance Monad m => MonadGenSymFresh (GenSymFreshT m) where
+  nextGenSymIndex = GenSymFreshT $ \_ idx -> return (idx, idx + 1)
+  getGenSymIdent = GenSymFreshT $ curry return
+
+{-
 instance (Monad m) => MonadState GenSymIndex (GenSymFreshT m) where
   state f = GenSymFreshT $ \_ idx -> return $ f idx
   put newidx = GenSymFreshT $ \_ _ -> return ((), newidx)
@@ -222,6 +230,7 @@ instance (Monad m) => MonadReader GenSymIdent (GenSymFreshT m) where
   ask = GenSymFreshT $ curry return
   local f (GenSymFreshT s) = GenSymFreshT $ \ident idx -> s (f ident) idx
   reader f = GenSymFreshT $ \r s -> return (f r, s)
+  -}
 
 -- | Class of types in which symbolic values can be generated with respect to some specification.
 --
@@ -262,16 +271,14 @@ class (SymBoolOp bool, Mergeable bool a) => GenSym bool spec a where
   --
   -- N.B.: the examples are not executable solely with @grisette-core@ package, and need support from @grisette-symprim@ package.
   genSymFresh ::
-    ( MonadState GenSymIndex m,
-      MonadReader GenSymIdent m,
+    ( MonadGenSymFresh m,
       MonadUnion bool u
     ) =>
     spec ->
     m (u a)
   default genSymFresh ::
     (GenSymSimple bool spec a) =>
-    ( MonadState GenSymIndex m,
-      MonadReader GenSymIdent m,
+    ( MonadGenSymFresh m,
       MonadUnion bool u
     ) =>
     spec ->
@@ -313,8 +320,7 @@ class GenSym bool spec a => GenSymSimple bool spec a where
   --
   -- N.B.: the examples are not executable solely with @grisette-core@ package, and need support from @grisette-symprim@ package.
   genSymSimpleFresh ::
-    ( MonadState GenSymIndex m,
-      MonadReader GenSymIdent m
+    ( MonadGenSymFresh m
     ) =>
     spec ->
     m a
@@ -326,8 +332,7 @@ genSymSimple = runGenSymFresh . (genSymSimpleFresh @bool)
 
 class GenSymNoSpec bool a where
   genSymFreshNoSpec ::
-    ( MonadState GenSymIndex m,
-      MonadReader GenSymIdent m,
+    ( MonadGenSymFresh m,
       MonadUnion bool u
     ) =>
     m (u (a c))
@@ -353,8 +358,7 @@ instance
   where
   genSymFreshNoSpec ::
     forall m u c.
-    ( MonadState GenSymIndex m,
-      MonadReader GenSymIdent m,
+    ( MonadGenSymFresh m,
       MonadUnion bool u
     ) =>
     m (u ((a :+: b) c))
@@ -370,8 +374,7 @@ instance
   where
   genSymFreshNoSpec ::
     forall m u c.
-    ( MonadState GenSymIndex m,
-      MonadReader GenSymIdent m,
+    ( MonadGenSymFresh m,
       MonadUnion bool u
     ) =>
     m (u ((a :*: b) c))
@@ -396,15 +399,14 @@ derivedNoSpecGenSymFresh ::
     SymBoolOp bool,
     GenSymNoSpec bool (Rep a),
     Mergeable bool a,
-    MonadState GenSymIndex m,
-    MonadReader GenSymIdent m,
+    MonadGenSymFresh m,
     MonadUnion bool u
   ) =>
   m (u a)
 derivedNoSpecGenSymFresh = merge . fmap to <$> genSymFreshNoSpec @bool @(Rep a)
 
 class GenSymSimpleNoSpec bool a where
-  genSymSimpleFreshNoSpec :: (MonadState GenSymIndex m, MonadReader GenSymIdent m) => m (a c)
+  genSymSimpleFreshNoSpec :: (MonadGenSymFresh m) => m (a c)
 
 instance (SymBoolOp bool) => GenSymSimpleNoSpec bool U1 where
   genSymSimpleFreshNoSpec = return U1
@@ -436,16 +438,14 @@ derivedNoSpecGenSymSimpleFresh ::
   ( Generic a,
     SymBoolOp bool,
     GenSymSimpleNoSpec bool (Rep a),
-    MonadState GenSymIndex m,
-    MonadReader GenSymIdent m
+    MonadGenSymFresh m
   ) =>
   m a
 derivedNoSpecGenSymSimpleFresh = to <$> genSymSimpleFreshNoSpec @bool @(Rep a)
 
 class GenSymSameShape bool a where
   genSymSameShapeFresh ::
-    ( MonadState GenSymIndex m,
-      MonadReader GenSymIdent m
+    ( MonadGenSymFresh m
     ) =>
     a c ->
     m (a c)
@@ -487,8 +487,7 @@ derivedSameShapeGenSymSimpleFresh ::
   forall bool a m.
   ( Generic a,
     GenSymSameShape bool (Rep a),
-    MonadState GenSymIndex m,
-    MonadReader GenSymIdent m
+    MonadGenSymFresh m
   ) =>
   a ->
   m a
@@ -507,8 +506,7 @@ choose ::
   ( SymBoolOp bool,
     Mergeable bool a,
     GenSymSimple bool () bool,
-    MonadState GenSymIndex m,
-    MonadReader GenSymIdent m,
+    MonadGenSymFresh m,
     MonadUnion bool u
   ) =>
   [a] ->
@@ -534,8 +532,7 @@ simpleChoose ::
   ( SymBoolOp bool,
     SimpleMergeable bool a,
     GenSymSimple bool () bool,
-    MonadState GenSymIndex m,
-    MonadReader GenSymIdent m
+    MonadGenSymFresh m
   ) =>
   [a] ->
   m a
@@ -561,8 +558,7 @@ chooseU ::
   ( SymBoolOp bool,
     Mergeable bool a,
     GenSymSimple bool () bool,
-    MonadState GenSymIndex m,
-    MonadReader GenSymIdent m,
+    MonadGenSymFresh m,
     MonadUnion bool u
   ) =>
   [u a] ->
@@ -688,7 +684,7 @@ instance
     let xs = reverse $ scanr (:) [] l
     choose xs
     where
-      gl :: (MonadState GenSymIndex m, MonadReader GenSymIdent m) => Integer -> m [a]
+      gl :: (MonadGenSymFresh m) => Integer -> m [a]
       gl v1
         | v1 <= 0 = return []
         | otherwise = do
@@ -722,7 +718,7 @@ instance
         let xs = drop (fromInteger minLen) $ reverse $ scanr (:) [] l
         choose xs
     where
-      gl :: (MonadState GenSymIndex m, MonadReader GenSymIdent m) => Integer -> m [a]
+      gl :: (MonadGenSymFresh m) => Integer -> m [a]
       gl currLen
         | currLen <= 0 = return []
         | otherwise = do
@@ -768,7 +764,7 @@ instance
       else do
         gl len
     where
-      gl :: (MonadState GenSymIndex m, MonadReader GenSymIdent m) => Integer -> m [a]
+      gl :: (MonadGenSymFresh m) => Integer -> m [a]
       gl currLen
         | currLen <= 0 = return []
         | otherwise = do

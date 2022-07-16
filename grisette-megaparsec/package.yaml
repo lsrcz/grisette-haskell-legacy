@@ -1,0 +1,48 @@
+name: grisette-megaparsec
+version: 0.1.0.0
+synopsis: Support for megaparsec package with Grisette
+description: Orphan instances and wrappers for megaparsec package with Grisette
+category: Formal Methods, Theorem Provers, Symbolic Computation, SMT
+author: "Sirui Lu"
+maintainer: siruilu@uw.edu
+license: BSD3
+github: lsrcz/grisette-haskell
+copyright: "2021 Sirui Lu"
+
+dependencies:
+- base > 4.14 && < 5
+- grisette-core == 0.1.0.0
+- mtl >= 2.2.2
+- transformers >= 0.5.6.2
+- megaparsec >= 8
+
+flags: {
+  fast: {
+    description: "Compile with O2 optimization",
+    manual: False,
+    default: True,
+  }
+}
+
+when:
+  - condition: flag(fast)
+    then:
+      ghc-options: -O2
+    else:
+      ghc-options: -O0
+
+ghc-options: -Wall -ferror-spans
+
+library:
+  source-dirs: src
+
+# tests:
+#   spec:
+#     defaults: hspec/hspec@master
+#     main: Main.hs
+#     dependencies:
+#       - grisette-core
+#       - grisette-megaparsec
+#       - hspec-junit-formatter
+# 
+# 

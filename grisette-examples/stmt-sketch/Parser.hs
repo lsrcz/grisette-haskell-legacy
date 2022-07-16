@@ -9,6 +9,7 @@ import qualified Data.ByteString.Char8 as C
 import Data.Void
 import DataStructures
 import Grisette
+import Grisette.Lib.Text.Megaparsec ()
 import Language.Haskell.TH
 import Language.Haskell.TH.Quote
 import Text.Megaparsec

@@ -139,6 +139,7 @@ module Grisette.Core
     nameWithLoc,
 
     -- ** Symbolic Generation Monad
+    MonadGenSymFresh (..),
     GenSymFresh,
     GenSymFreshT,
     runGenSymFresh,

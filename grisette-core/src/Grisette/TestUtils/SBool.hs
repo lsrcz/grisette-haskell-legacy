@@ -17,8 +17,6 @@ import qualified Data.HashMap.Strict as M
 import Grisette.Core.Data.Class.ToCon
 import Grisette.Core.Data.Class.ToSym
 import Grisette.Core.Data.Class.GenSym
-import Control.Monad.State
-import Control.Monad.Reader
 import Data.Typeable
 import Data.String
 import Grisette.Lib.Control.Monad
@@ -207,9 +205,8 @@ instance GenSym SBool () SBool where
 
 instance GenSymSimple SBool () SBool where
   genSymSimpleFresh _ = do
-    ident <- ask
-    idx@(GenSymIndex i) <- get
-    put $ idx + 1
+    ident <- getGenSymIdent
+    GenSymIndex i <- nextGenSymIndex
     case ident of
       GenSymIdent s -> return $ ISBool i s
       GenSymIdentWithInfo s info -> return $ IISBool i s info

@@ -66,6 +66,7 @@ library
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
+    , grisette-megaparsec ==0.1.0.0
     , hashable >=1.3
     , loch-th >=0.2.2
     , megaparsec >=8
@@ -122,6 +123,7 @@ executable assert-assume-icfp2022
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
+    , grisette-megaparsec ==0.1.0.0
     , hashable >=1.3
     , loch-th >=0.2.2
     , megaparsec >=8
@@ -186,6 +188,7 @@ executable dpsynth
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
     , grisette-examples
+    , grisette-megaparsec ==0.1.0.0
     , hashable >=1.3
     , loch-th >=0.2.2
     , megaparsec >=8
@@ -242,6 +245,7 @@ executable expr-icfp2022
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
+    , grisette-megaparsec ==0.1.0.0
     , hashable >=1.3
     , loch-th >=0.2.2
     , megaparsec >=8
@@ -299,6 +303,7 @@ executable expr-interpreter
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
+    , grisette-megaparsec ==0.1.0.0
     , hashable >=1.3
     , loch-th >=0.2.2
     , megaparsec >=8
@@ -357,6 +362,7 @@ executable expr-sketch
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
+    , grisette-megaparsec ==0.1.0.0
     , hashable >=1.3
     , loch-th >=0.2.2
     , megaparsec >=8
@@ -414,6 +420,7 @@ executable formula-optimization
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
     , grisette-examples
+    , grisette-megaparsec ==0.1.0.0
     , hashable >=1.3
     , loch-th >=0.2.2
     , megaparsec >=8
@@ -470,6 +477,7 @@ executable genfunc
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
+    , grisette-megaparsec ==0.1.0.0
     , hashable >=1.3
     , loch-th >=0.2.2
     , megaparsec >=8
@@ -528,6 +536,7 @@ executable location
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
+    , grisette-megaparsec ==0.1.0.0
     , hashable >=1.3
     , loch-th >=0.2.2
     , megaparsec >=8
@@ -584,6 +593,7 @@ executable order
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
+    , grisette-megaparsec ==0.1.0.0
     , hashable >=1.3
     , loch-th >=0.2.2
     , megaparsec >=8
@@ -643,6 +653,7 @@ executable stmt-sketch
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
+    , grisette-megaparsec ==0.1.0.0
     , hashable >=1.3
     , loch-th >=0.2.2
     , megaparsec >=8
@@ -699,6 +710,7 @@ executable tutorial
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
+    , grisette-megaparsec ==0.1.0.0
     , hashable >=1.3
     , loch-th >=0.2.2
     , megaparsec >=8

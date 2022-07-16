@@ -183,8 +183,7 @@ $(makeUnionMWrapper "u" ''AST)
 instance Mergeable SymBool sval => GenSym SymBool (CombASTSpec sval) (AST sval) where
   genSymFresh ::
     forall m u.
-    ( MonadState GenSymIndex m,
-      MonadReader GenSymIdent m,
+    ( MonadGenSymFresh m,
       MonadUnion SymBool u
     ) =>
     CombASTSpec sval ->
@@ -267,8 +266,7 @@ instance (ToSym cval sval, Mergeable SymBool sval) => GenSym SymBool (CombProgra
 instance (ToSym cval sval, Mergeable SymBool sval) => GenSymSimple SymBool (CombProgramSpec cval sval) (Program sval) where
   genSymSimpleFresh ::
     forall m.
-    ( MonadState GenSymIndex m,
-      MonadReader GenSymIdent m
+    ( MonadGenSymFresh m
     ) =>
     CombProgramSpec cval sval ->
     m (Program sval)
@@ -301,8 +299,7 @@ instance (ToSym cval sval, Mergeable SymBool sval) => GenSym SymBool (ExtProgram
 instance (ToSym cval sval, Mergeable SymBool sval) => GenSymSimple SymBool (ExtProgramSpec cval sval) (Program sval) where
   genSymSimpleFresh ::
     forall m.
-    ( MonadState GenSymIndex m,
-      MonadReader GenSymIdent m
+    ( MonadGenSymFresh m
     ) =>
     ExtProgramSpec cval sval ->
     m (Program sval)
