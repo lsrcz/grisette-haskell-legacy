@@ -62,7 +62,7 @@ library
     , sbv >=8.11
     , template-haskell >=2.16
     , th-lift-instances >=0.1.16
-    , timeit >=0.9
+    , timeit >=1.0
     , transformers >=0.5.6.2
     , unordered-containers >=0.2.11
     , utf8-string >=1.0.1.1

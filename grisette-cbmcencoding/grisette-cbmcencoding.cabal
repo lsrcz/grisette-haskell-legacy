@@ -92,7 +92,7 @@ library
     , text >=1.2.4.1
     , th-compat >=0.1.2
     , th-lift-instances >=0.1.16
-    , timeit >=0.9
+    , timeit >=1.0
     , transformers >=0.5.6.2
     , unordered-containers >=0.2.11
   if flag(fast)
@@ -160,7 +160,7 @@ executable bonsai-letpoly-cbmc
     , text >=1.2.4.1
     , th-compat >=0.1.2
     , th-lift-instances >=0.1.16
-    , timeit >=0.9
+    , timeit >=1.0
     , transformers >=0.5.6.2
     , unordered-containers >=0.2.11
   if flag(fast)
@@ -228,7 +228,7 @@ executable bonsai-letpoly-nomemo-cbmc
     , text >=1.2.4.1
     , th-compat >=0.1.2
     , th-lift-instances >=0.1.16
-    , timeit >=0.9
+    , timeit >=1.0
     , transformers >=0.5.6.2
     , unordered-containers >=0.2.11
   if flag(fast)
@@ -296,7 +296,7 @@ executable bonsai-nanoscala-cbmc
     , text >=1.2.4.1
     , th-compat >=0.1.2
     , th-lift-instances >=0.1.16
-    , timeit >=0.9
+    , timeit >=1.0
     , transformers >=0.5.6.2
     , unordered-containers >=0.2.11
   if flag(fast)
@@ -364,7 +364,7 @@ executable bonsai-nanoscala-nomemo-cbmc
     , text >=1.2.4.1
     , th-compat >=0.1.2
     , th-lift-instances >=0.1.16
-    , timeit >=0.9
+    , timeit >=1.0
     , transformers >=0.5.6.2
     , unordered-containers >=0.2.11
   if flag(fast)
@@ -432,7 +432,7 @@ executable bonsai-stlc-cbmc
     , text >=1.2.4.1
     , th-compat >=0.1.2
     , th-lift-instances >=0.1.16
-    , timeit >=0.9
+    , timeit >=1.0
     , transformers >=0.5.6.2
     , unordered-containers >=0.2.11
   if flag(fast)
@@ -500,7 +500,7 @@ executable bonsai-stlc-nomemo-cbmc
     , text >=1.2.4.1
     , th-compat >=0.1.2
     , th-lift-instances >=0.1.16
-    , timeit >=0.9
+    , timeit >=1.0
     , transformers >=0.5.6.2
     , unordered-containers >=0.2.11
   if flag(fast)
@@ -572,7 +572,7 @@ executable ifcl-cbmc
     , text >=1.2.4.1
     , th-compat >=0.1.2
     , th-lift-instances >=0.1.16
-    , timeit >=0.9
+    , timeit >=1.0
     , transformers >=0.5.6.2
     , unordered-containers >=0.2.11
   if flag(fast)
