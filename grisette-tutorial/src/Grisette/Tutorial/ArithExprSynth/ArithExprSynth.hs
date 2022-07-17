@@ -12,11 +12,9 @@ module Grisette.Tutorial.ArithExprSynth.ArithExprSynth
   ( -- * Preface
 
     -- | In this tutorial, we will build an arithmetic expression synthesizer.
-    -- We will show
+    -- We will show how to work with complex symbolic types with the 'UnionM' monad
     --
-    --   (1) the 'UnionM' monad, and
-    --
-    --   (2) advanced usage of symbolic generation procedures
+    -- We recommend reading against the source code of this tutorial.
 
     -- * Data Structures
 
@@ -25,12 +23,14 @@ module Grisette.Tutorial.ArithExprSynth.ArithExprSynth
     --
     -- To maximize merging, some fields in 'SymExpr' are wrapped with 'UnionM'.
     -- The 'UnionM' is a monadic container for path condition guarded values.
-    -- With 'UnionM', we can merge the values with the same constructors into a single value.
+    -- With the 'Mergeable' instances, the values contained in the 'UnionM' may be merged.
+    -- Here we can merge the values with the same constructors.
     --
     -- With the current definition, @if cond then (1 + 2) + 3 else (2 - 1) + 4@ can be represented with a single
     -- 'SymAdd' value. The result will have the same structure as follows.
+    -- The (+3) and (+4) are merged together.
     --
-    -- @(if cond then 1 + 2 else 2 - 1) + (ite cond 3 4)@
+    -- @Add (if cond then Add 1 2 else Sub 2 1) (ite cond 3 4)@
     --
     -- This approach will consolidate similar information as much as possible,
     -- and reduce the need for the interpreter to execute on multiple paths,
@@ -41,7 +41,9 @@ module Grisette.Tutorial.ArithExprSynth.ArithExprSynth
 
     -- * Helpful Constructor Wrappers
 
-    -- | The following definitions are generated with
+    -- |
+    -- #helpful-constructor-wrappers#
+    -- The following definitions are generated with
     --
     -- > $(makeUnionMWrapper "u" ''SymExpr)
     --
@@ -80,13 +82,18 @@ data Expr
   deriving (ToCon SymExpr) via (Default Expr)
 
 -- | Symbolic Expression type.
+--
+-- 'UnionM's are used to wrap the fields of 'SymExpr' to help merging efficiently.
 data SymExpr
   = -- | Symbolic integer literals.
-    -- Note that we don't have to wrap 'SymInteger' in a 'UnionM' because 'SymInteger'
-    -- is capable to be merged without the help of 'UnionM'.
+    -- The 'SymInteger' type allows us to have symbolic holes in our expressions. 
     --
-    -- Specifically, 'SymInteger' has the 'SimpleMergeable' instance.
-    -- You can refer to the documentation for more information.
+    -- Note that we don't have to wrap 'SymInteger' in a 'UnionM' because 'SymInteger'
+    -- (and other symbolic primitives)
+    -- is capable to be merged efficiently without the help of 'UnionM'.
+    --
+    -- Such types have the 'SimpleMergeable' instance,
+    -- you can refer to the documentation for more details.
     SymLiteral SymInteger
     -- | Symbolic Addition node. The fields are wrapped in 'UnionM' to help merging.
   | SymAdd (UnionM SymExpr) (UnionM SymExpr)
@@ -103,11 +110,18 @@ data SymExpr
       --
       -- > mrgIf cond (uSymAdd a b) (uSymAdd c d)
       --
-      -- will be merged into
+      -- will be equivalent to:
       --
       -- > uSymAdd (mrgIf cond a c) (mrgIf cond b d)
       --
       -- This helps avoid path explosion.
+      --
+      -- 'mrgIf' is a combinator that takes a condition and two values. It has the semantics similar to
+      -- 'if' in Haskell, but maintains both the two branches in the resulting 'UnionM' structure with the curresponding path conditions,
+      -- and try to merge the results.
+      --
+      -- Here the @u@-prefixed functions are smart constructors that wraps the result in 'UnionM'.
+      -- See [Helpful Constructor Wrappers](#helpful-constructor-wrappers) section for more details.
       Mergeable SymBool,
       Evaluate Model
     )
@@ -117,13 +131,13 @@ $(makeUnionMWrapper "u" ''SymExpr)
 
 -- | The operator type. We will use the 'GenSym' infrastructure to directly generate operators.
 --
--- Note that the result type must be 'UnionM SymExpr'.
--- This is because we need to be able to merge the operator type and we can push the condition in with the 'UnionM' wrapped return value.
+-- Note that the result type must be @'UnionM' 'SymExpr'@.
+-- This allows us to merge the operators and push the conditions into the resulting 'UnionM'.
 --
 -- The following two definitions are equivalent, and will type check.
 --
--- > mrgIte cond uSymAdd uSymSub
--- > \l r -> mrgIf cond (uSymAdd l r) (uSymSub l r)
+-- > mrgIte cond (uSymAdd :: Op) (uSymSub :: Op)
+-- > (\l r -> mrgIf cond (uSymAdd l r) (uSymSub l r)) :: Op
 type Op = UnionM SymExpr -> UnionM SymExpr -> UnionM SymExpr
 
 instance GenSym SymBool () Op
