@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Main where
 
@@ -7,6 +8,7 @@ import Control.Monad.Except
 import GHC.Generics
 import Grisette
 import Data.Maybe
+import Data.Proxy
 
 -- The concrete AST definition.
 -- This is only used for printing purpose as printing the
@@ -204,7 +206,7 @@ run e = stypeCheck e >> mrgReturn () >> sinterpret e
 -- We are still thinking about its naming.
 instance GenSym SymBool Integer SLitExpr where
   genSymFresh listLength = do
-    b :: SymBool <- genSymSimpleFresh @SymBool () -- This @SymBool is required. It's the symbolic boolean we are using.
+    b :: SymBool <- genSymSimpleFresh (Proxy :: Proxy SymBool) () -- This @SymBool is required. It's the symbolic boolean we are using.
     l :: UnionM [SymBool] <- genSymFresh listLength
     choose [SBoolLit b, SListLit l]
 

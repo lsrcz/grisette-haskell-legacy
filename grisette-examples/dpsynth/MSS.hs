@@ -1,10 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications #-}
 
 module MSS where
 
 import Control.Monad
 import Core
 import Data.List
+import Data.Proxy
 import Grisette
 
 mss :: Num a => ConProgram a
@@ -20,7 +22,7 @@ mss =
 
 mssSketch :: forall a. (SupportedPrim a, Num a) => Program (Sym a)
 mssSketch =
-  genSymSimple @SymBool
+  genSymSimple (Proxy :: Proxy SymBool)
     (CombProgramSpec @a @(Sym a) [0] (CombASTSpec0 1 2 ["zero", "id"] ["+", "max"]) (CombASTSpec0 0 1 [] ["max"]) 2 1)
     "mss"
 

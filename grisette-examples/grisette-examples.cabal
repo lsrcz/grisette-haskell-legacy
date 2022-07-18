@@ -53,7 +53,6 @@ library
       ScopedTypeVariables
       StandaloneDeriving
       TupleSections
-      TypeApplications
       TypeFamilies
       TypeOperators
   ghc-options: -Wall -ferror-spans
@@ -110,7 +109,6 @@ executable assert-assume-icfp2022
       ScopedTypeVariables
       StandaloneDeriving
       TupleSections
-      TypeApplications
       TypeFamilies
       TypeOperators
   ghc-options: -Wall -ferror-spans
@@ -174,7 +172,6 @@ executable dpsynth
       ScopedTypeVariables
       StandaloneDeriving
       TupleSections
-      TypeApplications
       TypeFamilies
       TypeOperators
   ghc-options: -Wall -ferror-spans
@@ -232,7 +229,6 @@ executable expr-icfp2022
       ScopedTypeVariables
       StandaloneDeriving
       TupleSections
-      TypeApplications
       TypeFamilies
       TypeOperators
   ghc-options: -Wall -ferror-spans
@@ -290,7 +286,6 @@ executable expr-interpreter
       ScopedTypeVariables
       StandaloneDeriving
       TupleSections
-      TypeApplications
       TypeFamilies
       TypeOperators
   ghc-options: -Wall -ferror-spans
@@ -349,7 +344,6 @@ executable expr-sketch
       ScopedTypeVariables
       StandaloneDeriving
       TupleSections
-      TypeApplications
       TypeFamilies
       TypeOperators
   ghc-options: -Wall -ferror-spans
@@ -406,7 +400,6 @@ executable formula-optimization
       ScopedTypeVariables
       StandaloneDeriving
       TupleSections
-      TypeApplications
       TypeFamilies
       TypeOperators
   ghc-options: -Wall -ferror-spans
@@ -464,7 +457,6 @@ executable genfunc
       ScopedTypeVariables
       StandaloneDeriving
       TupleSections
-      TypeApplications
       TypeFamilies
       TypeOperators
   ghc-options: -Wall -ferror-spans
@@ -523,7 +515,6 @@ executable location
       ScopedTypeVariables
       StandaloneDeriving
       TupleSections
-      TypeApplications
       TypeFamilies
       TypeOperators
   ghc-options: -Wall -ferror-spans
@@ -580,7 +571,6 @@ executable order
       ScopedTypeVariables
       StandaloneDeriving
       TupleSections
-      TypeApplications
       TypeFamilies
       TypeOperators
   ghc-options: -Wall -ferror-spans
@@ -640,7 +630,6 @@ executable stmt-sketch
       ScopedTypeVariables
       StandaloneDeriving
       TupleSections
-      TypeApplications
       TypeFamilies
       TypeOperators
   ghc-options: -Wall -ferror-spans
@@ -697,7 +686,6 @@ executable tutorial
       ScopedTypeVariables
       StandaloneDeriving
       TupleSections
-      TypeApplications
       TypeFamilies
       TypeOperators
   ghc-options: -Wall -ferror-spans

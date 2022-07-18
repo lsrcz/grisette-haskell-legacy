@@ -2,6 +2,7 @@
 module Main where
 
 import Control.DeepSeq
+import Data.Proxy
 import Grisette
 import IFCLInterpreter
 import Indistinguishable
@@ -29,8 +30,9 @@ verifyEENI ::
   pspec ->
   IO (Maybe EENIWitness)
 verifyEENI config end indistinguishable steps progSpec =
-  let p0 = genSymSimple @SymBool progSpec "a"
-      p1 = genSymSimple @SymBool p0 "b"
+  let proxy = Proxy :: Proxy SymBool 
+      p0 = genSymSimple proxy progSpec "a"
+      p1 = genSymSimple proxy p0 "b"
       m0 = freshMachine 2
       m1 = freshMachine 2
       r0 = merge $ withCBMCExceptT (const AssumptionViolation) $ step steps m0 p0

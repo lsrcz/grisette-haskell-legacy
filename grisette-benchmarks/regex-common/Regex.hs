@@ -6,6 +6,7 @@ import Grisette
 import Data.Hashable
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C
+import Data.Proxy
 import Control.Monad
 import Control.Monad.Trans.Maybe
 import Control.DeepSeq
@@ -54,7 +55,7 @@ sketchGen = do
   s1 <- seqOrAlt
   f1 <- freshPrim
   s2 <- choose [SeqPatt s1 f1, AltPatt s1 f1]
-  greedy <- genSymSimpleFresh @SymBool ()
+  greedy <- genSymSimpleFresh (Proxy :: Proxy SymBool) ()
   let p = PlusPatt s2 greedy
   s3 <- seqOrAlt
   return $ SeqPatt s3 (mrgReturn p)

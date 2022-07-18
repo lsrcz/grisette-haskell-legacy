@@ -68,6 +68,7 @@ module Grisette.Tutorial.ArithExprSynth.ArithExprSynth
 where
 
 import GHC.Generics
+import Data.Proxy
 import Grisette
 
 -- | Concrete Expression type.
@@ -148,7 +149,7 @@ instance GenSym SymBool () Op
 --
 -- They introduces fresh symbolic boolean variables, and use them to conditionally select one of the provided expressions.
 instance GenSymSimple SymBool () Op where
-  genSymSimpleFresh _ = simpleChoose @SymBool [uSymAdd, uSymSub]
+  genSymSimpleFresh proxy _ = simpleChoose proxy [uSymAdd, uSymSub]
 
 -- | The symbolic interpreter interprets a symbolic expression to a symbolic integer.
 --
@@ -211,8 +212,8 @@ sketch =
         let v1 :: UnionM SymExpr = uSymLiteral 1
         let v2 :: UnionM SymExpr = uSymLiteral 2
         let v3 :: UnionM SymExpr = uSymLiteral 4
-        op1 :: Op <- genSymSimpleFresh @SymBool ()
-        op2 :: Op <- genSymSimpleFresh @SymBool ()
+        op1 :: Op <- genSymSimpleFresh (Proxy :: Proxy SymBool) ()
+        op2 :: Op <- genSymSimpleFresh (Proxy :: Proxy SymBool) ()
         return $ op1 v1 (op2 v2 v3)
     )
     $$(nameWithLoc "a")

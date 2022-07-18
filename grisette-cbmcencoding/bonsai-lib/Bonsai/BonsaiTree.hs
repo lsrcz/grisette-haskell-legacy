@@ -10,6 +10,7 @@ import Data.BitVector.Sized.Unsigned
 import qualified Data.ByteString as B
 import Data.Hashable
 import Data.Maybe
+import Data.Proxy
 import Generics.Deriving
 import GHC.TypeNats
 import Grisette
@@ -49,11 +50,11 @@ showConcTree stx (ConcBonsaiNode l r) = do
 instance (KnownNat n, 1 <= n) => GenSym SymBool Int (BonsaiTree (SymUnsignedBV n)) where
   genSymFresh depth =
     if depth <= 1
-      then uBonsaiLeaf <$> genSymSimpleFresh @SymBool ()
+      then uBonsaiLeaf <$> genSymSimpleFresh (Proxy :: Proxy SymBool) ()
       else do
         l <- genSymFresh $ depth - 1
         r <- genSymFresh $ depth - 1
-        sym <- genSymSimpleFresh @SymBool ()
+        sym <- genSymSimpleFresh (Proxy :: Proxy SymBool) ()
         choose [BonsaiLeaf sym, BonsaiNode l r]
 
 unsafeLeaf :: (KnownNat n, 1 <= n) => OptimSyntaxSpec n -> B.ByteString -> BonsaiTree (SymUnsignedBV n)

@@ -94,15 +94,15 @@ instance Show Identifier where
   show (Identifier i) = "v" ++ show i
 
 instance GenSym SymBool () SIdentifier where
-  genSymFresh _ = derivedNoSpecGenSymFresh
+  genSymFresh = derivedNoSpecGenSymFresh
 
 instance GenSymSimple SymBool () SIdentifier where
-  genSymSimpleFresh _ = derivedNoSpecGenSymSimpleFresh @SymBool
+  genSymSimpleFresh = derivedNoSpecGenSymSimpleFresh
 
 instance GenSym SymBool [Integer] SIdentifier
 
 instance GenSymSimple SymBool [Integer] SIdentifier where
-  genSymSimpleFresh l = simpleChoose @SymBool (SIdentifier . conc <$> l)
+  genSymSimpleFresh proxy l = simpleChoose proxy (SIdentifier . conc <$> l)
 
 data Stmt
   = AssignStmt Identifier ConcExpr

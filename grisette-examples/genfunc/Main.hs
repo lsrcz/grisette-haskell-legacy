@@ -5,6 +5,7 @@
 module Main where
 
 import GHC.Generics
+import Data.Proxy
 import Grisette
 
 data Coord = Coord SymInteger SymInteger
@@ -19,7 +20,7 @@ data Move
   deriving (Mergeable SymBool) via (Default Move)
 
 instance GenSymSimple (Sym Bool) () Coord where
-  genSymSimpleFresh _ = derivedNoSpecGenSymSimpleFresh @SymBool
+  genSymSimpleFresh = derivedNoSpecGenSymSimpleFresh
 
 $(makeUnionMWrapper "u" ''Move)
 
@@ -29,19 +30,19 @@ instance GenSym (Sym Bool) (Int, Coord) Move where
       then do
         return $ uExactCoord coord
       else do
-        m <- genSymFresh @SymBool (v - 1, coord)
+        m <- genSymFresh (v - 1, coord)
         choose [ExactCoord coord, MoveLeft m, MoveRight m]
 
 instance GenSym (Sym Bool) Int (Coord -> UnionM Move) where
 
 instance GenSymSimple (Sym Bool) Int (Coord -> UnionM Move) where
-  genSymSimpleFresh v =
+  genSymSimpleFresh proxy v =
     if v <= 0
       then do
         return uExactCoord 
       else do
-        m <- genSymSimpleFresh @SymBool (v - 1)
-        simpleChoose @SymBool [uExactCoord, uMoveLeft . m, uMoveRight . m]
+        m <- genSymSimpleFresh proxy (v - 1)
+        simpleChoose proxy [uExactCoord, uMoveLeft . m, uMoveRight . m]
 
 -- The following should lie in Grisette lib
 extractArgFromListOfFunc :: [a -> b] -> a -> [b]
@@ -59,8 +60,8 @@ instance
   (SymBoolOp bool, GenSymSimple bool () bool, GenSymSimple bool spec (a -> b), Mergeable bool b) =>
   GenSymSimple bool (ListSpec spec) (a -> UnionMBase bool [b])
   where
-  genSymSimpleFresh spec = do
-    l <- genSymFresh @bool @(ListSpec spec) @[a -> b] spec
+  genSymSimpleFresh _ spec = do
+    l <- genSymFresh spec
     return $ extractArgFromUnionMBaseOfFunc (extractArgFromListOfFunc <$> l)
 
 -- The previous section should lie in Grisette lib
@@ -69,7 +70,7 @@ genSketch :: ListSpec Int -> GenSymIdent -> Coord -> UnionM [UnionM Move]
 genSketch (ListSpec minl maxl sub) nm coord = genSym (ListSpec minl maxl (sub, coord)) nm
 
 genSketchBetter :: ListSpec Int -> GenSymIdent -> Coord -> UnionM [UnionM Move]
-genSketchBetter (ListSpec minl maxl sub) = genSymSimple @SymBool (ListSpec minl maxl sub)
+genSketchBetter (ListSpec minl maxl sub) = genSymSimple (Proxy :: Proxy SymBool) (ListSpec minl maxl sub)
 
 sketch :: Coord -> UnionM [UnionM Move]
 sketch = genSketch (ListSpec 0 1 1) "a"
@@ -80,6 +81,6 @@ sketch1 = genSketchBetter (ListSpec 0 1 1) "a"
 main :: IO ()
 main = do
   print $ sketch (Coord (conc 0) (conc 0))
-  print $ sketch (genSymSimple @SymBool () "coord")
+  print $ sketch (genSymSimple (Proxy :: Proxy SymBool) () "coord")
   print $ sketch1 (Coord (conc 0) (conc 0))
-  print $ sketch1 (genSymSimple @SymBool () "coord")
+  print $ sketch1 (genSymSimple (Proxy :: Proxy SymBool) () "coord")

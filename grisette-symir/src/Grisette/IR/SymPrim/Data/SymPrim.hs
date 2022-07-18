@@ -123,10 +123,10 @@ instance (SupportedPrim a) => ExtractSymbolics (S.HashSet TermSymbol) (Sym a) wh
   extractSymbolics (Sym t) = extractSymbolicsTerm t
 
 instance (SymBoolOp (Sym Bool), SupportedPrim a) => GenSym (Sym Bool) () (Sym a) where
-  genSymFresh _ = mrgReturn <$> genSymSimpleFresh @(Sym Bool) ()
+  genSymFresh _ = mrgReturn <$> genSymSimpleFresh (Proxy :: Proxy (Sym Bool)) ()
 
 instance (SymBoolOp (Sym Bool), SupportedPrim a) => GenSymSimple (Sym Bool) () (Sym a) where
-  genSymSimpleFresh _ = do
+  genSymSimpleFresh _ _ = do
     ident <- getGenSymIdent
     GenSymIndex i <- nextGenSymIndex
     case ident of
@@ -136,7 +136,7 @@ instance (SymBoolOp (Sym Bool), SupportedPrim a) => GenSymSimple (Sym Bool) () (
 instance (SymBoolOp (Sym Bool), SupportedPrim a) => GenSym (Sym Bool) (Sym a) (Sym a)
 
 instance (SymBoolOp (Sym Bool), SupportedPrim a) => GenSymSimple (Sym Bool) (Sym a) (Sym a) where
-  genSymSimpleFresh _ = genSymSimpleFresh @SymBool ()
+  genSymSimpleFresh proxy _ = genSymSimpleFresh proxy ()
 
 instance (SupportedPrim a) => Show (Sym a) where
   show (Sym t) = pformat t

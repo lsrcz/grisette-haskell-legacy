@@ -34,6 +34,7 @@ module Grisette.Tutorial.ComplexExprSynth.ComplexExprSynth
 where
 
 import Control.Monad.Except
+import Data.Proxy
 import GHC.Generics
 import Grisette
 
@@ -88,16 +89,18 @@ $(makeUnionMWrapper "u" ''SymValue)
 instance GenSym SymBool Integer SymExpr where
   genSymFresh depth
     | depth <= 0 = do
-      b1 <- genSymSimpleFresh @SymBool ()
-      i1 <- genSymSimpleFresh @SymBool ()
+      b1 <- genSymSimpleFresh proxy ()
+      i1 <- genSymSimpleFresh proxy ()
       choose [SymBoolConst b1, SymIntegerConst i1]
     | otherwise = do
-      b1 <- genSymSimpleFresh @SymBool ()
-      i1 <- genSymSimpleFresh @SymBool ()
+      b1 <- genSymSimpleFresh proxy ()
+      i1 <- genSymSimpleFresh proxy ()
       v1 <- genSymFresh (depth - 1)
       v2 <- genSymFresh (depth - 1)
       v3 <- genSymFresh (depth - 1)
       choose [SymBoolConst b1, SymIntegerConst i1, SymAdd v1 v2, SymAnd v1 v2, SymEqv v1 v2, SymITE v1 v2 v3]
+    where
+      proxy = Proxy :: Proxy SymBool
 
 type Typer = SymExpr -> ExceptT Error UnionM Type
 

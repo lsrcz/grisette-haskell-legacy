@@ -1,6 +1,7 @@
 module Interpret where
 
 import Control.Monad.State.Strict
+import Data.Proxy
 import Fs
 import Grisette
 import Lang
@@ -27,7 +28,7 @@ zoomy f = StateT $ \s -> (,s) <$> f {-do
 
 nonDet :: StateT [SymBool] GenSymFresh SymBool
 nonDet = do
-  v <- zoomy (genSymSimpleFresh @SymBool ())
+  v <- zoomy (genSymSimpleFresh (Proxy :: Proxy SymBool) ())
   modify $ (v :)
   return v
 
@@ -79,9 +80,9 @@ validOrdering fs iops ordering = isPermutation ordering &&~ reorderOk fs iops or
 
 insertSynthSyncs :: Integer -> [SysCall] -> GenSymFresh [SysCall]
 insertSynthSyncs i [] = do
-  e <- genSymSimpleFresh @SymBool (GenEfsync i)
+  e <- genSymSimpleFresh (Proxy :: Proxy SymBool) (GenEfsync i)
   return [e]
 insertSynthSyncs i (x : xs) = do
-  e <- genSymSimpleFresh @SymBool (GenEfsync i)
+  e <- genSymSimpleFresh (Proxy :: Proxy SymBool) (GenEfsync i)
   tl <- insertSynthSyncs i xs
   return $ e : x : tl

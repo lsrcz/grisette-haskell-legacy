@@ -3,6 +3,7 @@ module Synth where
 
 import Control.Monad.State.Strict
 import Data.Maybe
+import Data.Proxy
 import Fs
 import Grisette
 import Interpret
@@ -39,7 +40,7 @@ synth config (Litmus fsBound make setupProc prog allowCond) =
       prog1 = crack newfs progWithSyncs
 
       order =
-        genSymSimple @SymBool
+        genSymSimple (Proxy :: Proxy SymBool)
           (SimpleListSpec (fromIntegral $ length prog1) (EnumGenUpperBound @Integer (fromIntegral $ length prog1)))
           "order"
       --order = [0,1,2,4,5,3,6]

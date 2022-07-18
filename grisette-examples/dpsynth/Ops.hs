@@ -19,6 +19,6 @@ availableBinary =
     [ ("+", \x y -> mrgReturn $ x + y),
       ("-", \x y -> mrgReturn $ x - y),
       ("-comp", \x y -> mrgReturn $ y - x),
-      ("max", \x y -> mrgReturn $ mrgIte @SymBool (x >=~ y) x y),
-      ("min", \x y -> mrgReturn $ mrgIte @SymBool (x >=~ y) y x)
+      ("max", \x y -> mrgReturn $ mrgIte (x >=~ y :: SymBool) x y),
+      ("min", \x y -> mrgReturn $ mrgIte (x >=~ y :: SymBool) y x)
     ]

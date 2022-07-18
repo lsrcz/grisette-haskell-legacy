@@ -34,6 +34,7 @@ import Data.Char
 import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet as S
 import Data.Hashable
+import Data.Proxy
 import Data.List hiding (inits)
 import GHC.Generics
 import Grisette
@@ -265,12 +266,13 @@ instance (ToSym cval sval, Mergeable SymBool sval) => GenSym SymBool (CombProgra
 
 instance (ToSym cval sval, Mergeable SymBool sval) => GenSymSimple SymBool (CombProgramSpec cval sval) (Program sval) where
   genSymSimpleFresh ::
-    forall m.
+    forall proxy m.
     ( MonadGenSymFresh m
     ) =>
+    proxy SymBool ->
     CombProgramSpec cval sval ->
     m (Program sval)
-  genSymSimpleFresh spec = do
+  genSymSimpleFresh _ spec = do
     i <- initsGen
     u <- updatesGen
     t <- terminateGen
@@ -298,12 +300,13 @@ data ExtProgramSpec cval sval = ExtProgramSpec
 instance (ToSym cval sval, Mergeable SymBool sval) => GenSym SymBool (ExtProgramSpec cval sval) (Program sval)
 instance (ToSym cval sval, Mergeable SymBool sval) => GenSymSimple SymBool (ExtProgramSpec cval sval) (Program sval) where
   genSymSimpleFresh ::
-    forall m.
+    forall proxy m.
     ( MonadGenSymFresh m
     ) =>
+    proxy SymBool ->
     ExtProgramSpec cval sval ->
     m (Program sval)
-  genSymSimpleFresh spec = do
+  genSymSimpleFresh _ spec = do
     i <- initsGen
     o <- optsGen
     t <- terGen [0..extsSlots spec - 1]
@@ -455,13 +458,13 @@ synth1 config u b inputSpec inputSpace spec sketch = go [] 3
   where
     go origCexs n = do
       print n
-      let inputs = genSymSimple @SymBool (SimpleListSpec n (SimpleListSpec (fromIntegral $ inputNum sketch) inputSpec)) "a" :: [[UnionM val]]
+      let inputs = genSymSimple (Proxy :: Proxy SymBool) (SimpleListSpec n (SimpleListSpec (fromIntegral $ inputNum sketch) inputSpec)) "a" :: [[UnionM val]]
       synthed <- synth config u b origCexs inputs inputSpace spec sketch
       case synthed of
         Nothing -> return Nothing
         Just (cexs, cp) -> do
           print cexs
-          let inputs1 = genSymSimple @SymBool (SimpleListSpec (n + 1) (SimpleListSpec (fromIntegral $ inputNum sketch) inputSpec)) "a" :: [[UnionM val]]
+          let inputs1 = genSymSimple (Proxy :: Proxy SymBool) (SimpleListSpec (n + 1) (SimpleListSpec (fromIntegral $ inputNum sketch) inputSpec)) "a" :: [[UnionM val]]
           v :: Maybe [[cval]] <- verify config u b inputs1 inputSpace spec (toSym cp)
           case v of
             Just _ -> go (cexs ++ origCexs) (n + 1)

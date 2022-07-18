@@ -6,7 +6,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -47,6 +46,7 @@ import Grisette.Core.Data.Class.ToSym
 import Grisette.Core.Data.UnionBase
 import Language.Haskell.TH.Syntax
 import Language.Haskell.TH.Syntax.Compat (unTypeSplice)
+import Data.Proxy
 
 
 -- $setup
@@ -165,7 +165,7 @@ instance (SymBoolOp bool) => Monad (UnionMBase bool) where
   {-# INLINE (>>=) #-}
 
 instance (SymBoolOp bool, Mergeable bool a) => Mergeable bool (UnionMBase bool a) where
-  mergingStrategy = SimpleStrategy $ \cond t f -> unionIf cond t f >>= mrgSingle @bool
+  mergingStrategy = SimpleStrategy $ \cond t f -> unionIf cond t f >>= mrgSingle
   {-# INLINE mergingStrategy #-}
 
 instance (SymBoolOp bool, Mergeable bool a) => SimpleMergeable bool (UnionMBase bool a) where
@@ -363,7 +363,7 @@ instance (SymBoolOp bool) => Traversable (UnionMBase bool) where
 instance (SymBoolOp bool, GenSym bool spec a, Mergeable bool a) => GenSym bool spec (UnionMBase bool a)
 
 instance (SymBoolOp bool, GenSym bool spec a) => GenSymSimple bool spec (UnionMBase bool a) where
-  genSymSimpleFresh spec = do
+  genSymSimpleFresh _ spec = do
     res <- genSymFresh spec
     if not (isMerged res) then error "Not merged" else return res
 
@@ -374,7 +374,7 @@ instance
   genSymFresh spec = go (underlyingUnion $ merge spec)
     where
       go (Single x) = genSymFresh x
-      go (If _ _ _ t f) = mrgIf <$> genSymSimpleFresh @bool () <*> go t <*> go f
+      go (If _ _ _ t f) = mrgIf <$> genSymSimpleFresh (Proxy :: Proxy bool) () <*> go t <*> go f
 
 -- Concrete Key HashMaps
 -- | Tag for concrete types.

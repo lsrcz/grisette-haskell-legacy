@@ -6,6 +6,7 @@ module Parser where
 import Control.Monad.Combinators.Expr as E
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C
+import Data.Proxy
 import Data.Void
 import DataStructures
 import Grisette
@@ -37,25 +38,25 @@ intlst = between (symbol "??[") (symbol "]") (sepBy1 L.decimal (symbol ","))
 intHoleRangeExpr :: Parser (UnionM SymbExpr)
 intHoleRangeExpr = do
   l <- intlst
-  (i :: UnionM SymInteger) <- choose @SymBool (conc @SymInteger <$> l)
+  (i :: UnionM SymInteger) <- choose (conc <$> l)
   return $ uSIntConstantExpr $ getSingle i
 
 intHoleExpr :: Parser (UnionM SymbExpr)
 intHoleExpr = do
   _ <- symbol "??i"
-  i <- genSymSimpleFresh @SymBool ()
+  i <- genSymSimpleFresh (Proxy :: Proxy SymBool) ()
   return $ uSIntConstantExpr i
 
 boolHoleExpr :: Parser (UnionM SymbExpr)
 boolHoleExpr = do
   _ <- symbol "??b"
-  b <- genSymSimpleFresh @SymBool ()
+  b <- genSymSimpleFresh (Proxy :: Proxy SymBool) ()
   return $ uSBoolConstantExpr b
 
 identHole :: Parser SIdentifier
 identHole = do
   _ <- symbol "??v"
-  genSymSimpleFresh @SymBool ()
+  genSymSimpleFresh (Proxy :: Proxy SymBool) ()
 
 concIdent :: Parser SIdentifier
 concIdent = do
@@ -74,7 +75,7 @@ binary nm f = E.InfixL (f <$ symbol nm)
 opHoleOperator :: Operator Parser (UnionM SymbExpr)
 opHoleOperator = E.InfixL $ do
   _ <- symbol "??op"
-  simpleChoose @SymBool [uSAddExpr, uSSubExpr, uSMulExpr, uSLtExpr,
+  simpleChoose (Proxy :: Proxy SymBool) [uSAddExpr, uSSubExpr, uSMulExpr, uSLtExpr,
     uSEqExpr, uSAndExpr, uSOrExpr]
 
 addOp :: Parser (UnionM SymbExpr -> UnionM SymbExpr -> UnionM SymbExpr)
@@ -107,7 +108,7 @@ opBetterHole :: Operator Parser (UnionM SymbExpr)
 opBetterHole = E.InfixL $ do
   ops <- between (symbol "??{") (symbol "}") $
     sepBy (choice [addOp, subOp, mulOp, ltOp, eqOp, andOp, orOp]) (symbol ",")
-  simpleChoose @SymBool ops
+  simpleChoose (Proxy :: Proxy SymBool) ops
 
 -- hole op is handled separately
 operatorTable :: [[Operator Parser (UnionM SymbExpr)]]

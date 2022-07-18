@@ -1,4 +1,3 @@
-{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE DerivingVia #-}
@@ -69,6 +68,7 @@ import Language.Haskell.TH.Syntax hiding (lift)
 -- >>> import Grisette.Core
 -- >>> import Grisette.IR.SymPrim
 -- >>> :set -XOverloadedStrings
+-- >>> :set -XTypeApplications
 
 -- | Index type used for 'GenSym'.
 --
@@ -283,7 +283,7 @@ class (SymBoolOp bool, Mergeable bool a) => GenSym bool spec a where
     ) =>
     spec ->
     m (u a)
-  genSymFresh spec = mrgSingle @bool <$> genSymSimpleFresh @bool spec
+  genSymFresh spec = mrgSingle <$> genSymSimpleFresh (Proxy :: Proxy bool) spec
 
 -- | Generate a symbolic variable wrapped in a Union without the monadic context.
 -- The uniqueness need to be ensured by the uniqueness of the provided identifier.
@@ -304,31 +304,32 @@ class GenSym bool spec a => GenSymSimple bool spec a where
   -- Thus the type application to 'SymBool' is necessary here.
   --
   -- >>> :set -XTypeApplications
-  -- >>> runGenSymFresh (genSymSimpleFresh @SymBool ()) "a" :: SymBool
+  -- >>> runGenSymFresh (genSymSimpleFresh (Proxy @SymBool) ()) "a" :: SymBool
   -- a@0
   --
   -- The example shows that why the system cannot infer the symbolic boolean type.
   --
-  -- >>> runGenSymFresh (genSymSimpleFresh @SymBool ()) "a" :: ()
+  -- >>> runGenSymFresh (genSymSimpleFresh (Proxy @SymBool) ()) "a" :: ()
   -- ()
   --
   -- The following code generates list of symbolic boolean with length 2.
   -- As the length is fixed, we don't have to wrap the result in unions.
   --
-  -- >>> runGenSymFresh (genSymSimpleFresh @SymBool (SimpleListSpec 2 ())) "a" :: [SymBool]
+  -- >>> runGenSymFresh (genSymSimpleFresh (Proxy @SymBool) (SimpleListSpec 2 ())) "a" :: [SymBool]
   -- [a@0,a@1]
   --
   -- N.B.: the examples are not executable solely with @grisette-core@ package, and need support from @grisette-symprim@ package.
   genSymSimpleFresh ::
     ( MonadGenSymFresh m
     ) =>
+    proxy bool ->
     spec ->
     m a
 
 -- | Generate a simple symbolic variable wrapped in a Union without the monadic context.
 -- The uniqueness need to be ensured by the uniqueness of the provided identifier.
-genSymSimple :: forall bool spec a. (GenSymSimple bool spec a) => spec -> GenSymIdent -> a
-genSymSimple = runGenSymFresh . (genSymSimpleFresh @bool)
+genSymSimple :: forall proxy bool spec a. (GenSymSimple bool spec a) => proxy bool -> spec -> GenSymIdent -> a
+genSymSimple proxy = runGenSymFresh . genSymSimpleFresh proxy
 
 class GenSymNoSpec bool a where
   genSymFreshNoSpec ::
@@ -363,7 +364,7 @@ instance
     ) =>
     m (u ((a :+: b) c))
   genSymFreshNoSpec = do
-    cond :: bool <- genSymSimpleFresh @bool ()
+    cond :: bool <- genSymSimpleFresh (Proxy :: Proxy bool) ()
     l :: u (a c) <- genSymFreshNoSpec
     r :: u (b c) <- genSymFreshNoSpec
     return $ mrgIf cond (fmap L1 l) (fmap R1 r)
@@ -402,28 +403,29 @@ derivedNoSpecGenSymFresh ::
     MonadGenSymFresh m,
     MonadUnion bool u
   ) =>
+  () ->
   m (u a)
-derivedNoSpecGenSymFresh = merge . fmap to <$> genSymFreshNoSpec @bool @(Rep a)
+derivedNoSpecGenSymFresh _ = merge . fmap to <$> genSymFreshNoSpec
 
 class GenSymSimpleNoSpec bool a where
-  genSymSimpleFreshNoSpec :: (MonadGenSymFresh m) => m (a c)
+  genSymSimpleFreshNoSpec :: (MonadGenSymFresh m) => proxy bool -> m (a c)
 
 instance (SymBoolOp bool) => GenSymSimpleNoSpec bool U1 where
-  genSymSimpleFreshNoSpec = return U1
+  genSymSimpleFreshNoSpec _ = return U1
 
 instance (SymBoolOp bool, GenSymSimple bool () c) => GenSymSimpleNoSpec bool (K1 i c) where
-  genSymSimpleFreshNoSpec = K1 <$> genSymSimpleFresh @bool ()
+  genSymSimpleFreshNoSpec _ = K1 <$> genSymSimpleFresh (Proxy :: Proxy bool) ()
 
 instance (SymBoolOp bool, GenSymSimpleNoSpec bool a) => GenSymSimpleNoSpec bool (M1 i c a) where
-  genSymSimpleFreshNoSpec = M1 <$> genSymSimpleFreshNoSpec @bool
+  genSymSimpleFreshNoSpec proxy = M1 <$> genSymSimpleFreshNoSpec proxy
 
 instance
   (SymBoolOp bool, GenSymSimple bool () bool, GenSymSimpleNoSpec bool a, GenSymSimpleNoSpec bool b) =>
   GenSymSimpleNoSpec bool (a :*: b)
   where
-  genSymSimpleFreshNoSpec = do
-    l :: a c <- genSymSimpleFreshNoSpec @bool
-    r :: b c <- genSymSimpleFreshNoSpec @bool
+  genSymSimpleFreshNoSpec proxy = do
+    l :: a c <- genSymSimpleFreshNoSpec proxy
+    r :: b c <- genSymSimpleFreshNoSpec proxy
     return $ l :*: r
 
 -- | We cannot provide DerivingVia style derivation for 'GenSymSimple'.
@@ -434,45 +436,48 @@ instance
 --
 -- N.B. Never use on recursive types
 derivedNoSpecGenSymSimpleFresh ::
-  forall bool a m.
+  forall proxy bool a m.
   ( Generic a,
     SymBoolOp bool,
     GenSymSimpleNoSpec bool (Rep a),
     MonadGenSymFresh m
   ) =>
+  proxy bool ->
+  () ->
   m a
-derivedNoSpecGenSymSimpleFresh = to <$> genSymSimpleFreshNoSpec @bool @(Rep a)
+derivedNoSpecGenSymSimpleFresh proxy _ = to <$> genSymSimpleFreshNoSpec proxy 
 
 class GenSymSameShape bool a where
   genSymSameShapeFresh ::
     ( MonadGenSymFresh m
     ) =>
+    proxy bool ->
     a c ->
     m (a c)
 
 instance (SymBoolOp bool) => GenSymSameShape bool U1 where
-  genSymSameShapeFresh _ = return U1
+  genSymSameShapeFresh _ _ = return U1
 
 instance (SymBoolOp bool, GenSymSimple bool c c) => GenSymSameShape bool (K1 i c) where
-  genSymSameShapeFresh (K1 c) = K1 <$> genSymSimpleFresh @bool c
+  genSymSameShapeFresh proxy (K1 c) = K1 <$> genSymSimpleFresh proxy c
 
 instance (SymBoolOp bool, GenSymSameShape bool a) => GenSymSameShape bool (M1 i c a) where
-  genSymSameShapeFresh (M1 a) = M1 <$> genSymSameShapeFresh @bool a
+  genSymSameShapeFresh proxy (M1 a) = M1 <$> genSymSameShapeFresh proxy a
 
 instance
   (SymBoolOp bool, GenSymSimple bool () bool, GenSymSameShape bool a, GenSymSameShape bool b) =>
   GenSymSameShape bool (a :+: b)
   where
-  genSymSameShapeFresh (L1 a) = L1 <$> genSymSameShapeFresh @bool a
-  genSymSameShapeFresh (R1 a) = R1 <$> genSymSameShapeFresh @bool a
+  genSymSameShapeFresh proxy (L1 a) = L1 <$> genSymSameShapeFresh proxy a
+  genSymSameShapeFresh proxy (R1 a) = R1 <$> genSymSameShapeFresh proxy a
 
 instance
   (SymBoolOp bool, GenSymSimple bool () bool, GenSymSameShape bool a, GenSymSameShape bool b) =>
   GenSymSameShape bool (a :*: b)
   where
-  genSymSameShapeFresh (a :*: b) = do
-    l :: a c <- genSymSameShapeFresh @bool a
-    r :: b c <- genSymSameShapeFresh @bool b
+  genSymSameShapeFresh proxy (a :*: b) = do
+    l :: a c <- genSymSameShapeFresh proxy a
+    r :: b c <- genSymSameShapeFresh proxy b
     return $ l :*: r
 
 -- | We cannot provide DerivingVia style derivation for 'GenSymSimple'.
@@ -484,14 +489,15 @@ instance
 --
 -- N.B. Can be used on recursive types
 derivedSameShapeGenSymSimpleFresh ::
-  forall bool a m.
+  forall proxy bool a m.
   ( Generic a,
     GenSymSameShape bool (Rep a),
     MonadGenSymFresh m
   ) =>
+  proxy bool ->
   a ->
   m a
-derivedSameShapeGenSymSimpleFresh a = to <$> genSymSameShapeFresh @bool @(Rep a) (from a)
+derivedSameShapeGenSymSimpleFresh proxy a = to <$> genSymSameShapeFresh proxy (from a)
 
 -- | Symbolically chooses one of the provided values.
 -- The procedure creates @n - 1@ fresh symbolic boolean variables every time it is evaluated, and use
@@ -513,7 +519,7 @@ choose ::
   m (u a)
 choose [x] = return $ mrgSingle x
 choose (r : rs) = do
-  b <- genSymSimpleFresh @bool ()
+  b <- genSymSimpleFresh (Proxy :: Proxy bool) ()
   res <- choose rs
   return $ mrgIf b (mrgSingle r) res
 choose [] = error "choose expects at least one value"
@@ -525,23 +531,24 @@ choose [] = error "choose expects at least one value"
 -- The result will __/not/__ be wrapped in a union-like monad, but will be wrapped in a monad maintaining the 'GenSym' context.
 -- Similar to 'genSymSimpleFresh', you need to tell the system what symbolic boolean type to use.
 --
--- >>> runGenSymFresh (simpleChoose @SymBool [ssymb "b", ssymb "c", ssymb "d"]) "a" :: SymInteger
+-- >>> runGenSymFresh (simpleChoose (Proxy @SymBool) [ssymb "b", ssymb "c", ssymb "d"]) "a" :: SymInteger
 -- (ite a@0 b (ite a@1 c d))
 simpleChoose ::
-  forall bool a m.
+  forall proxy bool a m.
   ( SymBoolOp bool,
     SimpleMergeable bool a,
     GenSymSimple bool () bool,
     MonadGenSymFresh m
   ) =>
+  proxy bool ->
   [a] ->
   m a
-simpleChoose [x] = return x
-simpleChoose (r : rs) = do
-  b <- genSymSimpleFresh @bool ()
-  res <- simpleChoose @bool rs
-  return $ mrgIte @bool b r res
-simpleChoose [] = error "simpleChoose expects at least one value"
+simpleChoose _ [x] = return x
+simpleChoose proxy (r : rs) = do
+  b :: bool <- genSymSimpleFresh proxy ()
+  res <- simpleChoose proxy rs
+  return $ mrgIte b r res
+simpleChoose _ [] = error "simpleChoose expects at least one value"
 
 -- | Symbolically chooses one of the provided values wrapped in union-like monads.
 -- The procedure creates @n - 1@ fresh symbolic boolean variables every time it is evaluated, and use
@@ -565,7 +572,7 @@ chooseU ::
   m (u a)
 chooseU [x] = return x
 chooseU (r : rs) = do
-  b <- genSymSimpleFresh @bool ()
+  b <- genSymSimpleFresh (Proxy :: Proxy bool) ()
   res <- chooseU rs
   return $ mrgIf b r res
 chooseU [] = error "chooseU expects at least one value"
@@ -575,7 +582,7 @@ instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSym bool type type wh
   genSymFresh v = return $ mrgSingle v;
 #define CONCRETE_GENSYM_SIMPLE_SAMESHAPE(type) \
 instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSymSimple bool type type where \
-  genSymSimpleFresh v = return v
+  genSymSimpleFresh _ v = return v
 
 CONCRETE_GENSYM_SAMESHAPE (Bool)
 CONCRETE_GENSYM_SAMESHAPE (Integer)
@@ -609,7 +616,7 @@ CONCRETE_GENSYM_SIMPLE_SAMESHAPE (B.ByteString)
 
 -- Bool
 instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSym bool () Bool where
-  genSymFresh _ = derivedNoSpecGenSymFresh
+  genSymFresh = derivedNoSpecGenSymFresh
 
 -- Enums
 
@@ -652,13 +659,13 @@ instance
   ) =>
   GenSymSimple bool (Either a b) (Either a b)
   where
-  genSymSimpleFresh v = derivedSameShapeGenSymSimpleFresh @bool v
+  genSymSimpleFresh = derivedSameShapeGenSymSimpleFresh
 
 instance
   (SymBoolOp bool, GenSymSimple bool () bool, GenSym bool () a, Mergeable bool a, GenSym bool () b, Mergeable bool b) =>
   GenSym bool () (Either a b)
   where
-  genSymFresh _ = derivedNoSpecGenSymFresh
+  genSymFresh = derivedNoSpecGenSymFresh
 
 -- Maybe
 instance
@@ -669,10 +676,10 @@ instance
   (SymBoolOp bool, GenSymSimple bool () bool, GenSymSimple bool a a, Mergeable bool a) =>
   GenSymSimple bool (Maybe a) (Maybe a)
   where
-  genSymSimpleFresh v = derivedSameShapeGenSymSimpleFresh @bool v
+  genSymSimpleFresh = derivedSameShapeGenSymSimpleFresh
 
 instance (SymBoolOp bool, GenSymSimple bool () bool, GenSym bool () a, Mergeable bool a) => GenSym bool () (Maybe a) where
-  genSymFresh _ = derivedNoSpecGenSymFresh
+  genSymFresh = derivedNoSpecGenSymFresh
 
 -- List
 instance
@@ -688,7 +695,7 @@ instance
       gl v1
         | v1 <= 0 = return []
         | otherwise = do
-          l <- genSymSimpleFresh @bool ()
+          l <- genSymSimpleFresh (Proxy :: Proxy bool) ()
           r <- gl (v1 - 1)
           return $ l : r
 
@@ -722,7 +729,7 @@ instance
       gl currLen
         | currLen <= 0 = return []
         | otherwise = do
-          l <- genSymSimpleFresh @bool subSpec
+          l <- genSymSimpleFresh (Proxy :: Proxy bool) subSpec
           r <- gl (currLen - 1)
           return $ l : r
 
@@ -734,11 +741,11 @@ instance
   (SymBoolOp bool, GenSymSimple bool () bool, GenSymSimple bool a a, Mergeable bool a) =>
   GenSymSimple bool [a] [a]
   where
-  genSymSimpleFresh v = derivedSameShapeGenSymSimpleFresh @bool v
+  genSymSimpleFresh = derivedSameShapeGenSymSimpleFresh
 
 -- | Specification for list generation of a specific length.
 --
--- >>> runGenSymFresh (genSymSimpleFresh @SymBool (SimpleListSpec 2 ())) "c" :: [SymBool]
+-- >>> runGenSymFresh (genSymSimpleFresh (Proxy @SymBool) (SimpleListSpec 2 ())) "c" :: [SymBool]
 -- [c@0,c@1]
 data SimpleListSpec spec = SimpleListSpec
   { -- | The length of the generated list
@@ -752,13 +759,13 @@ instance
   (SymBoolOp bool, GenSymSimple bool () bool, GenSymSimple bool spec a, Mergeable bool a) =>
   GenSym bool (SimpleListSpec spec) [a]
   where
-  genSymFresh = fmap mrgSingle . genSymSimpleFresh @bool
+  genSymFresh = fmap mrgSingle . genSymSimpleFresh (Proxy :: Proxy bool)
 
 instance
   (SymBoolOp bool, GenSymSimple bool () bool, GenSymSimple bool spec a, Mergeable bool a) =>
   GenSymSimple bool (SimpleListSpec spec) [a]
   where
-  genSymSimpleFresh (SimpleListSpec len subSpec) =
+  genSymSimpleFresh proxy (SimpleListSpec len subSpec) =
     if len < 0
       then error $ "Bad lengthes: " ++ show len
       else do
@@ -768,7 +775,7 @@ instance
       gl currLen
         | currLen <= 0 = return []
         | otherwise = do
-          l <- genSymSimpleFresh @bool subSpec
+          l <- genSymSimpleFresh proxy subSpec
           r <- gl (currLen - 1)
           return $ l : r
 
@@ -776,7 +783,7 @@ instance
 instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSym bool () ()
 
 instance (SymBoolOp bool, GenSymSimple bool () bool) => GenSymSimple bool () () where
-  genSymSimpleFresh _ = derivedNoSpecGenSymSimpleFresh @bool
+  genSymSimpleFresh = derivedNoSpecGenSymSimpleFresh
 
 -- (,)
 instance
@@ -807,16 +814,16 @@ instance
   ) =>
   GenSymSimple bool (aspec, bspec) (a, b)
   where
-  genSymSimpleFresh (aspec, bspec) = do
+  genSymSimpleFresh proxy (aspec, bspec) = do
     (,)
-      <$> genSymSimpleFresh @bool aspec
-      <*> genSymSimpleFresh @bool bspec
+      <$> genSymSimpleFresh proxy aspec
+      <*> genSymSimpleFresh proxy bspec
 
 instance
   (SymBoolOp bool, GenSymSimple bool () bool, GenSym bool () a, Mergeable bool a, GenSym bool () b, Mergeable bool b) =>
   GenSym bool () (a, b)
   where
-  genSymFresh _ = derivedNoSpecGenSymFresh
+  genSymFresh = derivedNoSpecGenSymFresh
 
 instance
   ( SymBoolOp bool,
@@ -828,7 +835,7 @@ instance
   ) =>
   GenSymSimple bool () (a, b)
   where
-  genSymSimpleFresh _ = derivedNoSpecGenSymSimpleFresh @bool
+  genSymSimpleFresh = derivedNoSpecGenSymSimpleFresh
 
 -- (,,)
 instance
@@ -865,11 +872,11 @@ instance
   ) =>
   GenSymSimple bool (aspec, bspec, cspec) (a, b, c)
   where
-  genSymSimpleFresh (aspec, bspec, cspec) = do
+  genSymSimpleFresh proxy (aspec, bspec, cspec) = do
     (,,)
-      <$> genSymSimpleFresh @bool aspec
-      <*> genSymSimpleFresh @bool bspec
-      <*> genSymSimpleFresh @bool cspec
+      <$> genSymSimpleFresh proxy aspec
+      <*> genSymSimpleFresh proxy bspec
+      <*> genSymSimpleFresh proxy cspec
 
 instance
   ( SymBoolOp bool,
@@ -883,7 +890,7 @@ instance
   ) =>
   GenSym bool () (a, b, c)
   where
-  genSymFresh _ = derivedNoSpecGenSymFresh
+  genSymFresh = derivedNoSpecGenSymFresh
 
 instance
   ( SymBoolOp bool,
@@ -897,7 +904,7 @@ instance
   ) =>
   GenSymSimple bool () (a, b, c)
   where
-  genSymSimpleFresh _ = derivedNoSpecGenSymSimpleFresh @bool
+  genSymSimpleFresh = derivedNoSpecGenSymSimpleFresh
 
 -- (,,,)
 instance
@@ -940,12 +947,12 @@ instance
   ) =>
   GenSymSimple bool (aspec, bspec, cspec, dspec) (a, b, c, d)
   where
-  genSymSimpleFresh (aspec, bspec, cspec, dspec) = do
+  genSymSimpleFresh proxy (aspec, bspec, cspec, dspec) = do
     (,,,)
-      <$> genSymSimpleFresh @bool aspec
-      <*> genSymSimpleFresh @bool bspec
-      <*> genSymSimpleFresh @bool cspec
-      <*> genSymSimpleFresh @bool dspec
+      <$> genSymSimpleFresh proxy aspec
+      <*> genSymSimpleFresh proxy bspec
+      <*> genSymSimpleFresh proxy cspec
+      <*> genSymSimpleFresh proxy dspec
 
 instance
   ( SymBoolOp bool,
@@ -961,7 +968,7 @@ instance
   ) =>
   GenSym bool () (a, b, c, d)
   where
-  genSymFresh _ = derivedNoSpecGenSymFresh
+  genSymFresh = derivedNoSpecGenSymFresh
 
 instance
   ( SymBoolOp bool,
@@ -977,7 +984,7 @@ instance
   ) =>
   GenSymSimple bool () (a, b, c, d)
   where
-  genSymSimpleFresh _ = derivedNoSpecGenSymSimpleFresh @bool
+  genSymSimpleFresh = derivedNoSpecGenSymSimpleFresh
 
 -- (,,,,)
 instance
@@ -1026,13 +1033,13 @@ instance
   ) =>
   GenSymSimple bool (aspec, bspec, cspec, dspec, espec) (a, b, c, d, e)
   where
-  genSymSimpleFresh (aspec, bspec, cspec, dspec, espec) = do
+  genSymSimpleFresh proxy (aspec, bspec, cspec, dspec, espec) = do
     (,,,,)
-      <$> genSymSimpleFresh @bool aspec
-      <*> genSymSimpleFresh @bool bspec
-      <*> genSymSimpleFresh @bool cspec
-      <*> genSymSimpleFresh @bool dspec
-      <*> genSymSimpleFresh @bool espec
+      <$> genSymSimpleFresh proxy aspec
+      <*> genSymSimpleFresh proxy bspec
+      <*> genSymSimpleFresh proxy cspec
+      <*> genSymSimpleFresh proxy dspec
+      <*> genSymSimpleFresh proxy espec
 
 instance
   ( SymBoolOp bool,
@@ -1050,7 +1057,7 @@ instance
   ) =>
   GenSym bool () (a, b, c, d, e)
   where
-  genSymFresh _ = derivedNoSpecGenSymFresh
+  genSymFresh = derivedNoSpecGenSymFresh
 
 instance
   ( SymBoolOp bool,
@@ -1068,7 +1075,7 @@ instance
   ) =>
   GenSymSimple bool () (a, b, c, d, e)
   where
-  genSymSimpleFresh _ = derivedNoSpecGenSymSimpleFresh @bool
+  genSymSimpleFresh = derivedNoSpecGenSymSimpleFresh
 
 -- (,,,,,)
 instance
@@ -1123,14 +1130,14 @@ instance
   ) =>
   GenSymSimple bool (aspec, bspec, cspec, dspec, espec, fspec) (a, b, c, d, e, f)
   where
-  genSymSimpleFresh (aspec, bspec, cspec, dspec, espec, fspec) = do
+  genSymSimpleFresh proxy (aspec, bspec, cspec, dspec, espec, fspec) = do
     (,,,,,)
-      <$> genSymSimpleFresh @bool aspec
-      <*> genSymSimpleFresh @bool bspec
-      <*> genSymSimpleFresh @bool cspec
-      <*> genSymSimpleFresh @bool dspec
-      <*> genSymSimpleFresh @bool espec
-      <*> genSymSimpleFresh @bool fspec
+      <$> genSymSimpleFresh proxy aspec
+      <*> genSymSimpleFresh proxy bspec
+      <*> genSymSimpleFresh proxy cspec
+      <*> genSymSimpleFresh proxy dspec
+      <*> genSymSimpleFresh proxy espec
+      <*> genSymSimpleFresh proxy fspec
 
 instance
   ( SymBoolOp bool,
@@ -1150,7 +1157,7 @@ instance
   ) =>
   GenSym bool () (a, b, c, d, e, f)
   where
-  genSymFresh _ = derivedNoSpecGenSymFresh
+  genSymFresh = derivedNoSpecGenSymFresh
 
 instance
   ( SymBoolOp bool,
@@ -1170,7 +1177,7 @@ instance
   ) =>
   GenSymSimple bool () (a, b, c, d, e, f)
   where
-  genSymSimpleFresh _ = derivedNoSpecGenSymSimpleFresh @bool
+  genSymSimpleFresh = derivedNoSpecGenSymSimpleFresh
 
 -- (,,,,,,)
 instance
@@ -1231,15 +1238,15 @@ instance
   ) =>
   GenSymSimple bool (aspec, bspec, cspec, dspec, espec, fspec, gspec) (a, b, c, d, e, f, g)
   where
-  genSymSimpleFresh (aspec, bspec, cspec, dspec, espec, fspec, gspec) = do
+  genSymSimpleFresh proxy (aspec, bspec, cspec, dspec, espec, fspec, gspec) = do
     (,,,,,,)
-      <$> genSymSimpleFresh @bool aspec
-      <*> genSymSimpleFresh @bool bspec
-      <*> genSymSimpleFresh @bool cspec
-      <*> genSymSimpleFresh @bool dspec
-      <*> genSymSimpleFresh @bool espec
-      <*> genSymSimpleFresh @bool fspec
-      <*> genSymSimpleFresh @bool gspec
+      <$> genSymSimpleFresh proxy aspec
+      <*> genSymSimpleFresh proxy bspec
+      <*> genSymSimpleFresh proxy cspec
+      <*> genSymSimpleFresh proxy dspec
+      <*> genSymSimpleFresh proxy espec
+      <*> genSymSimpleFresh proxy fspec
+      <*> genSymSimpleFresh proxy gspec
 
 instance
   ( SymBoolOp bool,
@@ -1261,7 +1268,7 @@ instance
   ) =>
   GenSym bool () (a, b, c, d, e, f, g)
   where
-  genSymFresh _ = derivedNoSpecGenSymFresh
+  genSymFresh = derivedNoSpecGenSymFresh
 
 instance
   ( SymBoolOp bool,
@@ -1283,7 +1290,7 @@ instance
   ) =>
   GenSymSimple bool () (a, b, c, d, e, f, g)
   where
-  genSymSimpleFresh _ = derivedNoSpecGenSymSimpleFresh @bool
+  genSymSimpleFresh = derivedNoSpecGenSymSimpleFresh
 
 -- (,,,,,,,)
 instance
@@ -1350,16 +1357,16 @@ instance
   ) =>
   GenSymSimple bool (aspec, bspec, cspec, dspec, espec, fspec, gspec, hspec) (a, b, c, d, e, f, g, h)
   where
-  genSymSimpleFresh (aspec, bspec, cspec, dspec, espec, fspec, gspec, hspec) = do
+  genSymSimpleFresh proxy (aspec, bspec, cspec, dspec, espec, fspec, gspec, hspec) = do
     (,,,,,,,)
-      <$> genSymSimpleFresh @bool aspec
-      <*> genSymSimpleFresh @bool bspec
-      <*> genSymSimpleFresh @bool cspec
-      <*> genSymSimpleFresh @bool dspec
-      <*> genSymSimpleFresh @bool espec
-      <*> genSymSimpleFresh @bool fspec
-      <*> genSymSimpleFresh @bool gspec
-      <*> genSymSimpleFresh @bool hspec
+      <$> genSymSimpleFresh proxy aspec
+      <*> genSymSimpleFresh proxy bspec
+      <*> genSymSimpleFresh proxy cspec
+      <*> genSymSimpleFresh proxy dspec
+      <*> genSymSimpleFresh proxy espec
+      <*> genSymSimpleFresh proxy fspec
+      <*> genSymSimpleFresh proxy gspec
+      <*> genSymSimpleFresh proxy hspec
 
 instance
   ( SymBoolOp bool,
@@ -1383,7 +1390,7 @@ instance
   ) =>
   GenSym bool () (a, b, c, d, e, f, g, h)
   where
-  genSymFresh _ = derivedNoSpecGenSymFresh
+  genSymFresh = derivedNoSpecGenSymFresh
 
 instance
   ( SymBoolOp bool,
@@ -1407,7 +1414,7 @@ instance
   ) =>
   GenSymSimple bool () (a, b, c, d, e, f, g, h)
   where
-  genSymSimpleFresh _ = derivedNoSpecGenSymSimpleFresh @bool
+  genSymSimpleFresh = derivedNoSpecGenSymSimpleFresh
 
 -- MaybeT
 instance
@@ -1421,7 +1428,7 @@ instance
   GenSym bool spec (MaybeT m a)
   where
   genSymFresh v = do
-    x <- genSymFresh @bool v
+    x <- genSymFresh v
     return $ merge . fmap MaybeT $ x
 
 instance
@@ -1434,7 +1441,7 @@ instance
   ) =>
   GenSymSimple bool spec (MaybeT m a)
   where
-  genSymSimpleFresh v = MaybeT <$> genSymSimpleFresh @bool v
+  genSymSimpleFresh proxy v = MaybeT <$> genSymSimpleFresh proxy v
 
 instance
   {-# OVERLAPPING #-}
@@ -1446,7 +1453,7 @@ instance
   ) =>
   GenSymSimple bool (MaybeT m a) (MaybeT m a)
   where
-  genSymSimpleFresh (MaybeT v) = MaybeT <$> genSymSimpleFresh @bool v
+  genSymSimpleFresh proxy (MaybeT v) = MaybeT <$> genSymSimpleFresh proxy v
 
 instance
   {-# OVERLAPPING #-}
@@ -1471,7 +1478,7 @@ instance
   GenSym bool spec (ExceptT a m b)
   where
   genSymFresh v = do
-    x <- genSymFresh @bool v
+    x <- genSymFresh v
     return $ merge . fmap ExceptT $ x
 
 instance
@@ -1485,7 +1492,7 @@ instance
   ) =>
   GenSymSimple bool spec (ExceptT a m b)
   where
-  genSymSimpleFresh v = ExceptT <$> genSymSimpleFresh @bool v
+  genSymSimpleFresh proxy v = ExceptT <$> genSymSimpleFresh proxy v
 
 instance
   {-# OVERLAPPING #-}
@@ -1498,7 +1505,7 @@ instance
   ) =>
   GenSymSimple bool (ExceptT e m a) (ExceptT e m a)
   where
-  genSymSimpleFresh (ExceptT v) = ExceptT <$> genSymSimpleFresh @bool v
+  genSymSimpleFresh proxy (ExceptT v) = ExceptT <$> genSymSimpleFresh proxy v
 
 instance
   {-# OVERLAPPING #-}

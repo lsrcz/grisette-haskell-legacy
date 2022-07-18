@@ -6,7 +6,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE DeriveLift #-}
 
@@ -77,13 +76,13 @@ instance
   ) =>
   GenSymSimple bool (CBMCEither a b) (CBMCEither a b)
   where
-  genSymSimpleFresh v = derivedSameShapeGenSymSimpleFresh @bool v
+  genSymSimpleFresh = derivedSameShapeGenSymSimpleFresh
 
 instance
   (SymBoolOp bool, GenSymSimple bool () bool, GenSym bool () a, Mergeable bool a, GenSym bool () b, Mergeable bool b) =>
   GenSym bool () (CBMCEither a b)
   where
-  genSymFresh _ = derivedNoSpecGenSymFresh
+  genSymFresh = derivedNoSpecGenSymFresh
 
 deriving newtype instance (SymBoolOp bool, SOrd bool a, SOrd bool b) => SOrd bool (CBMCEither a b)
 
@@ -334,7 +333,7 @@ instance
   GenSym bool spec (CBMCExceptT a m b)
   where
   genSymFresh v = do
-    x <- genSymFresh @bool v
+    x <- genSymFresh v
     return $ merge . fmap CBMCExceptT $ x
 
 instance
@@ -348,7 +347,7 @@ instance
   ) =>
   GenSymSimple bool spec (CBMCExceptT a m b)
   where
-  genSymSimpleFresh v = CBMCExceptT <$> genSymSimpleFresh @bool v
+  genSymSimpleFresh proxy v = CBMCExceptT <$> genSymSimpleFresh proxy v
 
 instance
   {-# OVERLAPPING #-}
@@ -361,7 +360,7 @@ instance
   ) =>
   GenSymSimple bool (CBMCExceptT e m a) (CBMCExceptT e m a)
   where
-  genSymSimpleFresh (CBMCExceptT v) = CBMCExceptT <$> genSymSimpleFresh @bool v
+  genSymSimpleFresh proxy (CBMCExceptT v) = CBMCExceptT <$> genSymSimpleFresh proxy v
 
 instance
   {-# OVERLAPPING #-}

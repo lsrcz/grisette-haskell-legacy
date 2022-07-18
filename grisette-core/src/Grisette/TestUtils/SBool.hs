@@ -204,7 +204,7 @@ instance ToSym SBool SBool where
 instance GenSym SBool () SBool where
 
 instance GenSymSimple SBool () SBool where
-  genSymSimpleFresh _ = do
+  genSymSimpleFresh _ _ = do
     ident <- getGenSymIdent
     GenSymIndex i <- nextGenSymIndex
     case ident of
@@ -214,5 +214,5 @@ instance GenSymSimple SBool () SBool where
 instance GenSym SBool SBool SBool where
 
 instance GenSymSimple SBool SBool SBool where
-  genSymSimpleFresh _ = genSymSimpleFresh @SBool ()
+  genSymSimpleFresh proxy _ = genSymSimpleFresh proxy ()
 

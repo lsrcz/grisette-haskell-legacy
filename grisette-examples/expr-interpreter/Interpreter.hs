@@ -3,6 +3,7 @@ module Interpreter where
 
 import Control.Monad.Except
 import Control.Monad.State
+import Data.Proxy
 import GHC.Generics
 import Grisette
 
@@ -41,15 +42,15 @@ data ExprSpec = ExprSpec
 
 instance GenSym (Sym Bool) Integer LitExpr where
   genSymFresh listLength = do
-    b <- genSymSimpleFresh @SymBool ()
-    l <- genSymFresh @SymBool listLength
+    b <- genSymSimpleFresh (Proxy :: Proxy SymBool) ()
+    l <- genSymFresh listLength
     choose [BoolLit b, ListLit l, UnitLit]
 
 instance GenSym (Sym Bool) ExprSpec OpsExpr where
   genSymFresh (ExprSpec d l) = do
-    l1 <- genSymFresh @SymBool (ExprSpec (d - 1) l)
-    l2 <- genSymFresh @SymBool (ExprSpec (d - 1) l)
-    v <- genSymSimpleFresh @SymBool ()
+    l1 <- genSymFresh (ExprSpec (d - 1) l)
+    l2 <- genSymFresh (ExprSpec (d - 1) l)
+    v <- genSymSimpleFresh (Proxy :: Proxy SymBool) ()
     choose
       [ HeadExpr l1,
         TailExpr l1,
@@ -63,11 +64,11 @@ instance GenSym (Sym Bool) ExprSpec Expr where
   genSymFresh e@(ExprSpec d l) =
     if d <= 0
         then do
-          lit <- genSymFresh @SymBool l
+          lit <- genSymFresh l
           return $ mrgFmap Lit lit
         else do
-          lit <- genSymFresh @SymBool l
-          ops <- genSymFresh @SymBool e
+          lit <- genSymFresh l
+          ops <- genSymFresh e
           chooseU [Lit <$> lit, Ops <$> ops]
 
 data Stmt
@@ -78,8 +79,8 @@ data Stmt
 
 instance GenSym (Sym Bool) ExprSpec Stmt where
   genSymFresh e = do
-    expr <- genSymFresh @SymBool e
-    vari <- genSymSimpleFresh @SymBool ()
+    expr <- genSymFresh e
+    vari <- genSymSimpleFresh (Proxy :: Proxy SymBool) ()
     choose [DefineStmt vari expr, ValueStmt expr]
 
 data Error
@@ -136,7 +137,7 @@ typeCheck env (Ops (NotExpr e)) = do
 typeCheck env (Ops (VarExpr i)) = resolveEnv env i
   where
     resolveEnv [] _ = throwError $ Typer TypeVarNotFound
-    resolveEnv ((hdi, hdt) : tl) i1 = mrgIf @SymBool (hdi ==~ i1) (lift hdt) $ resolveEnv tl i1
+    resolveEnv ((hdi, hdt) : tl) i1 = mrgIf (hdi ==~ i1) (lift hdt) $ resolveEnv tl i1
 
 typeCheckStmt :: Stmt -> StateT TypingEnv (ExceptT Error UnionM) Type
 typeCheckStmt (DefineStmt i expr) = StateT $ \st -> mrgFmap (\t -> (UnitType, (i, mrgReturn t) : st)) $ typeCheck st #~ expr
@@ -181,7 +182,7 @@ type ExecutingEnv = [(SymInteger, UnionM LitExpr)]
 
 reduceValue :: ExecutingEnv -> SymInteger -> ExceptT Error UnionM LitExpr
 reduceValue [] _ = throwError $ Runtime RuntimeVarNotFound
-reduceValue ((hdi, hdv) : tl) h = mrgIf @SymBool (hdi ==~ h) (lift hdv) $ reduceValue tl h
+reduceValue ((hdi, hdv) : tl) h = mrgIf (hdi ==~ h) (lift hdv) $ reduceValue tl h
 
 interpret :: ExecutingEnv -> Expr -> ExceptT Error UnionM LitExpr
 interpret env (Ops (HeadExpr e)) = do
