@@ -10,6 +10,7 @@ import Grisette.Core.Data.Class.GenSym
 import Grisette.Core.Data.Class.SimpleMergeable
 import Grisette.TestUtils.SBool
 import Test.Hspec
+import Data.Proxy
 
 spec :: Spec
 spec = do
@@ -18,12 +19,12 @@ spec = do
       it "GenSym for SBool with ()" $ do
         (genSym @SBool () "a" :: UnionMBase SBool SBool)
           `shouldBe` mrgSingle (ISBool 0 "a")
-        (genSymSimple @SBool () "a" :: SBool)
+        (genSymSimple (Proxy @SBool) () "a" :: SBool)
           `shouldBe` ISBool 0 "a"
       it "GenSym for SBool with SBool" $ do
         (genSym @SBool (CBool True) "a" :: UnionMBase SBool SBool)
           `shouldBe` mrgSingle (ISBool 0 "a")
-        (genSymSimple @SBool (CBool True) "a" :: SBool)
+        (genSymSimple (Proxy @SBool) (CBool True) "a" :: SBool)
           `shouldBe` ISBool 0 "a"
     describe "GenSym for Bool" $ do
       it "GenSym for Bool with ()" $ do
@@ -34,15 +35,15 @@ spec = do
           `shouldBe` mrgSingle True
         (genSym @SBool False "a" :: UnionMBase SBool Bool)
           `shouldBe` mrgSingle False
-        (genSymSimple @SBool True "a" :: Bool)
+        (genSymSimple (Proxy @SBool) True "a" :: Bool)
           `shouldBe` True
-        (genSymSimple @SBool False "a" :: Bool)
+        (genSymSimple (Proxy @SBool) False "a" :: Bool)
           `shouldBe` False
     describe "GenSym for Integer" $ do
       it "GenSym for Integer with Integer" $ do
         (genSym @SBool (1 :: Integer) "a" :: UnionMBase SBool Integer)
           `shouldBe` mrgSingle 1
-        (genSymSimple @SBool (1 :: Integer) "a" :: Integer)
+        (genSymSimple (Proxy @SBool) (1 :: Integer) "a" :: Integer)
           `shouldBe` 1
       it "GenSym for Integer with upper bound" $ do
         (genSym @SBool (EnumGenUpperBound (3 :: Integer)) "a" :: UnionMBase SBool Integer)
@@ -54,7 +55,7 @@ spec = do
       it "GenSym for Char with Char" $ do
         (genSym @SBool 'x' "a" :: UnionMBase SBool Char)
           `shouldBe` mrgSingle 'x'
-        (genSymSimple @SBool 'x' "a" :: Char) `shouldBe` 'x'
+        (genSymSimple (Proxy @SBool) 'x' "a" :: Char) `shouldBe` 'x'
       it "GenSym for Integer with upper bound" $ do
         (genSym @SBool (EnumGenUpperBound @Char (toEnum 3)) "a" :: UnionMBase SBool Char)
           `shouldBe` mrgIf (ISBool 0 "a") (mrgSingle $ toEnum 0) (mrgIf (ISBool 1 "a") (mrgSingle $ toEnum 1) (mrgSingle $ toEnum 2))
@@ -65,8 +66,8 @@ spec = do
       it "GenSym for Maybe with Maybe" $ do
         (genSym (Just (SSBool "a")) "a" :: UnionMBase SBool (Maybe SBool)) `shouldBe` mrgSingle (Just (ISBool 0 "a"))
         (genSym (Nothing :: Maybe SBool) "a" :: UnionMBase SBool (Maybe SBool)) `shouldBe` mrgSingle Nothing
-        (genSymSimple @SBool (Just (SSBool "a")) "a" :: Maybe SBool) `shouldBe` Just (ISBool 0 "a")
-        (genSymSimple @SBool (Nothing :: Maybe SBool) "a" :: Maybe SBool) `shouldBe` Nothing
+        (genSymSimple (Proxy @SBool) (Just (SSBool "a")) "a" :: Maybe SBool) `shouldBe` Just (ISBool 0 "a")
+        (genSymSimple (Proxy @SBool) (Nothing :: Maybe SBool) "a" :: Maybe SBool) `shouldBe` Nothing
       it "GenSym for Maybe with ()" $ do
         (genSym () "a" :: UnionMBase SBool (Maybe SBool))
           `shouldBe` mrgIf (ISBool 0 "a") (mrgSingle Nothing) (mrgSingle (Just (ISBool 1 "a")))
@@ -76,9 +77,9 @@ spec = do
           `shouldBe` mrgSingle (Left (ISBool 0 "a"))
         (genSym (Right (SSBool "a") :: Either SBool SBool) "a" :: UnionMBase SBool (Either SBool SBool))
           `shouldBe` mrgSingle (Right (ISBool 0 "a"))
-        (genSymSimple @SBool (Left (SSBool "a") :: Either SBool SBool) "a" :: Either SBool SBool)
+        (genSymSimple (Proxy @SBool) (Left (SSBool "a") :: Either SBool SBool) "a" :: Either SBool SBool)
           `shouldBe` Left (ISBool 0 "a")
-        (genSymSimple @SBool (Right (SSBool "a") :: Either SBool SBool) "a" :: Either SBool SBool)
+        (genSymSimple (Proxy @SBool) (Right (SSBool "a") :: Either SBool SBool) "a" :: Either SBool SBool)
           `shouldBe` Right (ISBool 0 "a")
       it "GenSym for Either with ()" $ do
         (genSym () "a" :: UnionMBase SBool (Either SBool SBool))
@@ -133,21 +134,21 @@ spec = do
       it "GenSym for List with exact length" $ do
         (genSym (SimpleListSpec 2 ()) "a" :: UnionMBase SBool [SBool])
           `shouldBe` mrgSingle [ISBool 0 "a", ISBool 1 "a"]
-        (genSymSimple @SBool (SimpleListSpec 2 ()) "a" :: [SBool])
+        (genSymSimple (Proxy @SBool) (SimpleListSpec 2 ()) "a" :: [SBool])
           `shouldBe` [ISBool 0 "a", ISBool 1 "a"]
         (genSym (SimpleListSpec 2 (SimpleListSpec 2 ())) "a" :: UnionMBase SBool [[SBool]])
           `shouldBe` mrgSingle [[ISBool 0 "a", ISBool 1 "a"], [ISBool 2 "a", ISBool 3 "a"]]
-        (genSymSimple @SBool (SimpleListSpec 2 (SimpleListSpec 2 ())) "a" :: [[SBool]])
+        (genSymSimple (Proxy @SBool) (SimpleListSpec 2 (SimpleListSpec 2 ())) "a" :: [[SBool]])
           `shouldBe` [[ISBool 0 "a", ISBool 1 "a"], [ISBool 2 "a", ISBool 3 "a"]]
       it "GenSym for List with same shape" $ do
         (genSym [[CBool True], [SSBool "a", SSBool "b"]] "a" :: UnionMBase SBool [[SBool]])
           `shouldBe` mrgSingle [[ISBool 0 "a"], [ISBool 1 "a", ISBool 2 "a"]]
-        (genSymSimple @SBool [[CBool True], [SSBool "a", SSBool "b"]] "a" :: [[SBool]])
+        (genSymSimple (Proxy @SBool) [[CBool True], [SSBool "a", SSBool "b"]] "a" :: [[SBool]])
           `shouldBe` [[ISBool 0 "a"], [ISBool 1 "a", ISBool 2 "a"]]
     describe "GenSym for ()" $ do
       it "GenSym for () with ()" $ do
         (genSym () "a" :: UnionMBase SBool ()) `shouldBe` mrgSingle ()
-        (genSymSimple @SBool () "a" :: ()) `shouldBe` ()
+        (genSymSimple (Proxy @SBool) () "a" :: ()) `shouldBe` ()
     describe "GenSym for (,)" $ do
       it "GenSym for (,) with some spec" $ do
         (genSym (EnumGenUpperBound @Integer 2, EnumGenUpperBound @Integer 2) "a" :: UnionMBase SBool (Integer, Integer))
@@ -155,11 +156,11 @@ spec = do
             x1 <- mrgIf (ISBool 0 "a") (mrgSingle 0) (mrgSingle 1)
             x2 <- mrgIf (ISBool 1 "a") (mrgSingle 0) (mrgSingle 1)
             mrgSingle (x1, x2)
-        (genSymSimple @SBool ((), [[SSBool "b"], [SSBool "b", SSBool "c"]]) "a" :: (SBool, [[SBool]]))
+        (genSymSimple (Proxy @SBool) ((), [[SSBool "b"], [SSBool "b", SSBool "c"]]) "a" :: (SBool, [[SBool]]))
           `shouldBe` (ISBool 0 "a", [[ISBool 1 "a"], [ISBool 2 "a", ISBool 3 "a"]])
       it "GenSym for (,) with no spec" $ do
         (genSym () "a" :: UnionMBase SBool (SBool, SBool)) `shouldBe` mrgSingle (ISBool 0 "a", ISBool 1 "a")
-        (genSymSimple @SBool () "a" :: (SBool, SBool)) `shouldBe` (ISBool 0 "a", ISBool 1 "a")
+        (genSymSimple (Proxy @SBool) () "a" :: (SBool, SBool)) `shouldBe` (ISBool 0 "a", ISBool 1 "a")
     describe "GenSym for (,,)" $ do
       it "GenSym for (,,) with some spec" $ do
         ( genSym
@@ -175,12 +176,12 @@ spec = do
             x2 <- mrgIf (ISBool 1 "a") (mrgSingle 0) (mrgSingle 1)
             x3 <- mrgIf (ISBool 2 "a") (mrgSingle 0) (mrgSingle 1)
             mrgSingle (x1, x2, x3)
-        (genSymSimple @SBool ((), [[SSBool "b"], [SSBool "b", SSBool "c"]], ()) "a" :: (SBool, [[SBool]], SBool))
+        (genSymSimple (Proxy @SBool) ((), [[SSBool "b"], [SSBool "b", SSBool "c"]], ()) "a" :: (SBool, [[SBool]], SBool))
           `shouldBe` (ISBool 0 "a", [[ISBool 1 "a"], [ISBool 2 "a", ISBool 3 "a"]], ISBool 4 "a")
       it "GenSym for (,,) with no spec" $ do
         (genSym () "a" :: UnionMBase SBool (SBool, SBool, SBool))
           `shouldBe` mrgSingle (ISBool 0 "a", ISBool 1 "a", ISBool 2 "a")
-        (genSymSimple @SBool () "a" :: (SBool, SBool, SBool))
+        (genSymSimple (Proxy @SBool) () "a" :: (SBool, SBool, SBool))
           `shouldBe` (ISBool 0 "a", ISBool 1 "a", ISBool 2 "a")
     describe "GenSym for (,,,)" $ do
       it "GenSym for (,,,) with some spec" $ do
@@ -199,7 +200,7 @@ spec = do
             x3 <- mrgIf (ISBool 2 "a") (mrgSingle 0) (mrgSingle 1)
             x4 <- mrgIf (ISBool 3 "a") (mrgSingle 0) (mrgSingle 1)
             mrgSingle (x1, x2, x3, x4)
-        ( genSymSimple @SBool
+        ( genSymSimple (Proxy @SBool)
             ((), [[SSBool "b"], [SSBool "b", SSBool "c"]], (), ())
             "a" ::
             (SBool, [[SBool]], SBool, SBool)
@@ -212,7 +213,7 @@ spec = do
       it "GenSym for (,,,) with no spec" $ do
         (genSym () "a" :: UnionMBase SBool (SBool, SBool, SBool, SBool))
           `shouldBe` mrgSingle (ISBool 0 "a", ISBool 1 "a", ISBool 2 "a", ISBool 3 "a")
-        (genSymSimple @SBool () "a" :: (SBool, SBool, SBool, SBool))
+        (genSymSimple (Proxy @SBool) () "a" :: (SBool, SBool, SBool, SBool))
           `shouldBe` (ISBool 0 "a", ISBool 1 "a", ISBool 2 "a", ISBool 3 "a")
     describe "GenSym for (,,,,)" $ do
       it "GenSym for (,,,,) with some spec" $ do
@@ -233,7 +234,7 @@ spec = do
             x4 <- mrgIf (ISBool 3 "a") (mrgSingle 0) (mrgSingle 1)
             x5 <- mrgIf (ISBool 4 "a") (mrgSingle 0) (mrgSingle 1)
             mrgSingle (x1, x2, x3, x4, x5)
-        ( genSymSimple @SBool
+        ( genSymSimple (Proxy @SBool)
             ((), [[SSBool "b"], [SSBool "b", SSBool "c"]], (), (), ())
             "a" ::
             (SBool, [[SBool]], SBool, SBool, SBool)
@@ -248,7 +249,7 @@ spec = do
         (genSym () "a" :: UnionMBase SBool (SBool, SBool, SBool, SBool, SBool))
           `shouldBe` mrgSingle
             (ISBool 0 "a", ISBool 1 "a", ISBool 2 "a", ISBool 3 "a", ISBool 4 "a")
-        (genSymSimple @SBool () "a" :: (SBool, SBool, SBool, SBool, SBool))
+        (genSymSimple (Proxy @SBool) () "a" :: (SBool, SBool, SBool, SBool, SBool))
           `shouldBe` ( ISBool 0 "a",
                        ISBool 1 "a",
                        ISBool 2 "a",
@@ -276,7 +277,7 @@ spec = do
             x5 <- mrgIf (ISBool 4 "a") (mrgSingle 0) (mrgSingle 1)
             x6 <- mrgIf (ISBool 5 "a") (mrgSingle 0) (mrgSingle 1)
             mrgSingle (x1, x2, x3, x4, x5, x6)
-        ( genSymSimple @SBool
+        ( genSymSimple (Proxy @SBool)
             ((), [[SSBool "b"], [SSBool "b", SSBool "c"]], (), (), (), ())
             "a" ::
             (SBool, [[SBool]], SBool, SBool, SBool, SBool)
@@ -298,7 +299,7 @@ spec = do
               ISBool 4 "a",
               ISBool 5 "a"
             )
-        (genSymSimple @SBool () "a" :: (SBool, SBool, SBool, SBool, SBool, SBool))
+        (genSymSimple (Proxy @SBool) () "a" :: (SBool, SBool, SBool, SBool, SBool, SBool))
           `shouldBe` ( ISBool 0 "a",
                        ISBool 1 "a",
                        ISBool 2 "a",
@@ -329,7 +330,7 @@ spec = do
             x6 <- mrgIf (ISBool 5 "a") (mrgSingle 0) (mrgSingle 1)
             x7 <- mrgIf (ISBool 6 "a") (mrgSingle 0) (mrgSingle 1)
             mrgSingle (x1, x2, x3, x4, x5, x6, x7)
-        ( genSymSimple @SBool
+        ( genSymSimple (Proxy @SBool)
             ((), [[SSBool "b"], [SSBool "b", SSBool "c"]], (), (), (), (), ())
             "a" ::
             (SBool, [[SBool]], SBool, SBool, SBool, SBool, SBool)
@@ -353,7 +354,7 @@ spec = do
               ISBool 5 "a",
               ISBool 6 "a"
             )
-        (genSymSimple @SBool () "a" :: (SBool, SBool, SBool, SBool, SBool, SBool, SBool))
+        (genSymSimple (Proxy @SBool) () "a" :: (SBool, SBool, SBool, SBool, SBool, SBool, SBool))
           `shouldBe` ( ISBool 0 "a",
                        ISBool 1 "a",
                        ISBool 2 "a",
@@ -387,7 +388,7 @@ spec = do
             x7 <- mrgIf (ISBool 6 "a") (mrgSingle 0) (mrgSingle 1)
             x8 <- mrgIf (ISBool 7 "a") (mrgSingle 0) (mrgSingle 1)
             mrgSingle (x1, x2, x3, x4, x5, x6, x7, x8)
-        ( genSymSimple @SBool
+        ( genSymSimple (Proxy @SBool)
             ((), [[SSBool "b"], [SSBool "b", SSBool "c"]], (), (), (), (), (), ())
             "a" ::
             (SBool, [[SBool]], SBool, SBool, SBool, SBool, SBool, SBool)
@@ -413,7 +414,7 @@ spec = do
               ISBool 6 "a",
               ISBool 7 "a"
             )
-        (genSymSimple @SBool () "a" :: (SBool, SBool, SBool, SBool, SBool, SBool, SBool, SBool))
+        (genSymSimple (Proxy @SBool) () "a" :: (SBool, SBool, SBool, SBool, SBool, SBool, SBool, SBool))
           `shouldBe` ( ISBool 0 "a",
                        ISBool 1 "a",
                        ISBool 2 "a",
@@ -427,15 +428,15 @@ spec = do
       it "GenSym for MaybeT with same shape" $ do
         (genSym (MaybeT Nothing :: MaybeT Maybe SBool) "a" :: UnionMBase SBool (MaybeT Maybe SBool))
           `shouldBe` mrgSingle (MaybeT Nothing)
-        (genSymSimple @SBool (MaybeT Nothing :: MaybeT Maybe SBool) "a" :: MaybeT Maybe SBool)
+        (genSymSimple (Proxy @SBool) (MaybeT Nothing :: MaybeT Maybe SBool) "a" :: MaybeT Maybe SBool)
           `shouldBe` MaybeT Nothing
         (genSym (MaybeT (Just Nothing) :: MaybeT Maybe SBool) "a" :: UnionMBase SBool (MaybeT Maybe SBool))
           `shouldBe` mrgSingle (MaybeT (Just Nothing))
-        (genSymSimple @SBool (MaybeT (Just (Just $ SSBool "a")) :: MaybeT Maybe SBool) "a" :: MaybeT Maybe SBool)
+        (genSymSimple (Proxy @SBool) (MaybeT (Just (Just $ SSBool "a")) :: MaybeT Maybe SBool) "a" :: MaybeT Maybe SBool)
           `shouldBe` MaybeT (Just (Just $ ISBool 0 "a"))
         (genSym (MaybeT (Just (Just $ SSBool "a")) :: MaybeT Maybe SBool) "a" :: UnionMBase SBool (MaybeT Maybe SBool))
           `shouldBe` mrgSingle (MaybeT (Just (Just $ ISBool 0 "a")))
-        (genSymSimple @SBool (MaybeT (Just (Just $ SSBool "a")) :: MaybeT Maybe SBool) "a" :: MaybeT Maybe SBool)
+        (genSymSimple (Proxy @SBool) (MaybeT (Just (Just $ SSBool "a")) :: MaybeT Maybe SBool) "a" :: MaybeT Maybe SBool)
           `shouldBe` MaybeT (Just (Just $ ISBool 0 "a"))
       it "GenSym for MaybeT with general spec" $ do
         (genSym () "a" :: UnionMBase SBool (MaybeT Maybe SBool))
@@ -447,26 +448,26 @@ spec = do
                 (mrgSingle $ MaybeT $ Just Nothing)
                 (mrgSingle $ MaybeT $ Just $ Just $ ISBool 2 "a")
             )
-        (genSymSimple @SBool (Nothing :: Maybe (Maybe SBool)) "a" :: MaybeT Maybe SBool)
+        (genSymSimple (Proxy @SBool) (Nothing :: Maybe (Maybe SBool)) "a" :: MaybeT Maybe SBool)
           `shouldBe` MaybeT Nothing
-        (genSymSimple @SBool (Just $ Nothing :: Maybe (Maybe SBool)) "a" :: MaybeT Maybe SBool)
+        (genSymSimple (Proxy @SBool) (Just $ Nothing :: Maybe (Maybe SBool)) "a" :: MaybeT Maybe SBool)
           `shouldBe` MaybeT (Just Nothing)
-        (genSymSimple @SBool (Just $ Just $ SSBool "a" :: Maybe (Maybe SBool)) "a" :: MaybeT Maybe SBool)
+        (genSymSimple (Proxy @SBool) (Just $ Just $ SSBool "a" :: Maybe (Maybe SBool)) "a" :: MaybeT Maybe SBool)
           `shouldBe` MaybeT (Just (Just $ ISBool 0 "a"))
-        (genSymSimple @SBool (Just $ Just $ SSBool "a" :: Maybe (Maybe SBool)) "a" :: MaybeT Maybe SBool)
+        (genSymSimple (Proxy @SBool) (Just $ Just $ SSBool "a" :: Maybe (Maybe SBool)) "a" :: MaybeT Maybe SBool)
           `shouldBe` MaybeT (Just (Just $ ISBool 0 "a"))
 
     describe "GenSym for ExceptT" $ do
       it "GenSym for ExceptT with same shape" $ do
         (genSym (ExceptT Nothing :: ExceptT SBool Maybe SBool) "a" :: UnionMBase SBool (ExceptT SBool Maybe SBool))
           `shouldBe` mrgSingle (ExceptT Nothing)
-        (genSymSimple @SBool (ExceptT Nothing :: ExceptT SBool Maybe SBool) "a" :: ExceptT SBool Maybe SBool)
+        (genSymSimple (Proxy @SBool) (ExceptT Nothing :: ExceptT SBool Maybe SBool) "a" :: ExceptT SBool Maybe SBool)
           `shouldBe` ExceptT Nothing
         ( genSym (ExceptT $ Just $ Left $ SSBool "a" :: ExceptT SBool Maybe SBool) "a" ::
             UnionMBase SBool (ExceptT SBool Maybe SBool)
           )
           `shouldBe` mrgSingle (ExceptT $ Just $ Left $ ISBool 0 "a")
-        ( genSymSimple @SBool
+        ( genSymSimple (Proxy @SBool)
             (ExceptT $ Just $ Left $ SSBool "a" :: ExceptT SBool Maybe SBool)
             "a" ::
             ExceptT SBool Maybe SBool
@@ -476,7 +477,7 @@ spec = do
             UnionMBase SBool (ExceptT SBool Maybe SBool)
           )
           `shouldBe` mrgSingle (ExceptT $ Just $ Right $ ISBool 0 "a")
-        ( genSymSimple @SBool
+        ( genSymSimple (Proxy @SBool)
             (ExceptT $ Just $ Right $ SSBool "a" :: ExceptT SBool Maybe SBool)
             "a" ::
             ExceptT SBool Maybe SBool
@@ -492,9 +493,9 @@ spec = do
               (mrgSingle $ ExceptT $ Just $ Left $ ISBool 2 "a")
               (mrgSingle $ ExceptT $ Just $ Right $ ISBool 3 "a")
           )
-      (genSymSimple @SBool (Nothing :: Maybe (Either SBool SBool)) "a" :: ExceptT SBool Maybe SBool)
+      (genSymSimple (Proxy @SBool) (Nothing :: Maybe (Either SBool SBool)) "a" :: ExceptT SBool Maybe SBool)
         `shouldBe` ExceptT Nothing
-      (genSymSimple @SBool (Just $ Left $ SSBool "a" :: Maybe (Either SBool SBool)) "a" :: ExceptT SBool Maybe SBool)
+      (genSymSimple (Proxy @SBool) (Just $ Left $ SSBool "a" :: Maybe (Either SBool SBool)) "a" :: ExceptT SBool Maybe SBool)
         `shouldBe` ExceptT (Just (Left $ ISBool 0 "a"))
-      (genSymSimple @SBool (Just $ Right $ SSBool "a" :: Maybe (Either SBool SBool)) "a" :: ExceptT SBool Maybe SBool)
+      (genSymSimple (Proxy @SBool) (Just $ Right $ SSBool "a" :: Maybe (Either SBool SBool)) "a" :: ExceptT SBool Maybe SBool)
         `shouldBe` ExceptT (Just (Right $ ISBool 0 "a"))

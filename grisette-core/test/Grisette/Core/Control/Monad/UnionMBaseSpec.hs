@@ -24,6 +24,7 @@ import Grisette.Core.Data.Class.ToSym
 import Grisette.Core.Data.UnionBase
 import Test.Hspec
 import Grisette.TestUtils.SBool
+import Data.Proxy
 
 spec :: Spec
 spec = do
@@ -467,7 +468,7 @@ spec = do
                   (mrgSingle [ISBool 0 "a", ISBool 1 "a", ISBool 2 "a"])
               )
           )
-      (genSymSimple @SBool (ListSpec 1 3 ()) "a" :: UnionMBase SBool [SBool])
+      (genSymSimple (Proxy @SBool) (ListSpec 1 3 ()) "a" :: UnionMBase SBool [SBool])
         `shouldBe` mrgIf
           (ISBool 3 "a")
           (mrgSingle [ISBool 2 "a"])
