@@ -7,7 +7,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE UndecidableSuperClasses #-}
 
 module Grisette.Core.Data.Class.BitVector
   ( BVConcat (..),

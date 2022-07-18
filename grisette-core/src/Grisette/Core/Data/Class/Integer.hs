@@ -1,6 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE UndecidableSuperClasses #-}
 
 module Grisette.Core.Data.Class.Integer
   ( ArithException (..),

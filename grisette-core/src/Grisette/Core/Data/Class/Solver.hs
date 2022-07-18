@@ -14,7 +14,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE UndecidableSuperClasses #-}
 
 module Grisette.Core.Data.Class.Solver
   ( SolverErrorTranslation (..),

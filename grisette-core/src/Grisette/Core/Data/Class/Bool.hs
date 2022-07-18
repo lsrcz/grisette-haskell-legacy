@@ -5,7 +5,6 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE UndecidableSuperClasses #-}
 {-# LANGUAGE CPP #-}
 
 module Grisette.Core.Data.Class.Bool
@@ -67,7 +66,7 @@ instance (SymBoolOp bool, SEq' bool a, SEq' bool b) => SEq' bool (a :*: b) where
 -- a concrete 'Bool' value.
 --
 -- The @bool@ type is the symbolic boolean type to return.
-class (SymBoolOp bool) => SEq bool a where
+class LogicalOp bool => SEq bool a where
   (==~) :: a -> a -> bool
   a ==~ b = nots $ a /=~ b
   {-# INLINE (==~) #-}

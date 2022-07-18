@@ -7,7 +7,6 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE UndecidableSuperClasses #-}
 
 module Grisette.Core.Data.Class.SOrd
   ( SOrd (..),

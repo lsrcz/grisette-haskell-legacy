@@ -104,11 +104,11 @@ instance
   where
   extractSymbolics = VSized.foldl' (\acc v -> acc <> extractSymbolics v) mempty
 
-instance (KnownNat m, SEq bool t, VGeneric.Vector v t) =>
+instance (KnownNat m, SEq bool t, SymBoolOp bool, VGeneric.Vector v t) =>
   SEq bool (VSized.Vector v m t) where
   a ==~ b = VSized.toList a ==~ VSized.toList b
 
-instance (KnownNat m, SOrd bool t, VGeneric.Vector v t) =>
+instance (KnownNat m, SOrd bool t, SymBoolOp bool, VGeneric.Vector v t) =>
   SOrd bool (VSized.Vector v m t) where
   a <=~ b = VSized.toList a <=~ VSized.toList b
   a <~ b = VSized.toList a <~ VSized.toList b

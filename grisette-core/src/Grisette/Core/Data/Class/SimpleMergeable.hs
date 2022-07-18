@@ -3,13 +3,12 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE UndecidableSuperClasses #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Grisette.Core.Data.Class.SimpleMergeable
   ( SimpleMergeable (..),
@@ -108,7 +107,7 @@ mrgIte2 = liftMrgIte2 mrgIte mrgIte
 -- that are 'SimpleMergeable' when applied to any 'Mergeable' types.
 --
 -- Usually it is Union-like structures.
-class (SimpleMergeable1 bool u, Mergeable1 bool u) => UnionLike bool u | u -> bool where
+class (SimpleMergeable1 bool u, Mergeable1 bool u, SymBoolOp bool) => UnionLike bool u | u -> bool where
   -- | Wrap a single value in the union.
   single :: a -> u a
 
