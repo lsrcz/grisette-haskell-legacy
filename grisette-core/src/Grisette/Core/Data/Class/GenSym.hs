@@ -14,7 +14,6 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE UndecidableSuperClasses #-}
 
 module Grisette.Core.Data.Class.GenSym
   ( GenSymIndex (..),
