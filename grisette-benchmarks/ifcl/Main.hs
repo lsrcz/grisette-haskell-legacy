@@ -4,7 +4,6 @@ module Main where
 import Control.DeepSeq
 import Control.Monad.Except
 import Grisette
-import Data.Proxy
 import IFCLInterpreter
 import Indistinguishable
 import Instructions
@@ -23,7 +22,7 @@ instance SolverTranslation VerifyEENI SymBool VerificationConditions () where
   valueTranslation _ _ = conc False
 
 verifyEENI ::
-  (GenSymSimple SymBool pspec Program) =>
+  (GenSymSimple pspec Program) =>
   GrisetteSMTConfig n ->
   (Machine -> Program -> SymBool) ->
   (Machine -> Program -> Machine -> Program -> SymBool) ->
@@ -31,8 +30,8 @@ verifyEENI ::
   pspec ->
   IO (Maybe EENIWitness)
 verifyEENI config end indistinguishable steps progSpec =
-  let p0 = genSymSimple (Proxy :: Proxy SymBool) progSpec "a"
-      p1 = genSymSimple (Proxy :: Proxy SymBool) p0 "b"
+  let p0 = genSymSimple progSpec "a"
+      p1 = genSymSimple p0 "b"
       m0 = freshMachine 2
       m1 = freshMachine 2
       r0 = merge $ withExceptT (const AssumptionViolation) $ step steps m0 p0
@@ -53,7 +52,7 @@ verifyEENI config end indistinguishable steps progSpec =
           Right mo -> return $ Just $ EENIWitness (evaluate True mo p0) (evaluate True mo p1)
 
 runCexCase ::
-  (GenSymSimple SymBool pspec Program) =>
+  (GenSymSimple pspec Program) =>
   String ->
   GrisetteSMTConfig n ->
   (Machine -> Program -> SymBool) ->
@@ -68,7 +67,7 @@ runCexCase nm config end steps progSpec = do
     Just v -> print v >> return v
 
 runValidCase ::
-  (GenSymSimple SymBool pspec Program) =>
+  (GenSymSimple pspec Program) =>
   String ->
   GrisetteSMTConfig n ->
   (Machine -> Program -> SymBool) ->

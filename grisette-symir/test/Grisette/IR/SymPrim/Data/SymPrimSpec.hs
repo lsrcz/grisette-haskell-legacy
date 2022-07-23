@@ -104,11 +104,11 @@ spec = do
   describe "GenSym" $ do
     it "GenSym for SymPrim should work" $ do
       (genSym () "a" :: UnionM (Sym Bool)) `shouldBe` mrgSingle (isymb 0 "a")
-      (genSymSimple (Proxy @SymBool) () "a" :: Sym Bool) `shouldBe` isymb 0 "a"
+      (genSymSimple () "a" :: Sym Bool) `shouldBe` isymb 0 "a"
       (genSym (ssymb "a" :: Sym Bool) "a" :: UnionM (Sym Bool)) `shouldBe` mrgSingle (isymb 0 "a")
-      (genSymSimple (Proxy @SymBool) (ssymb "a" :: Sym Bool) "a" :: Sym Bool) `shouldBe` isymb 0 "a"
+      (genSymSimple (ssymb "a" :: Sym Bool) "a" :: Sym Bool) `shouldBe` isymb 0 "a"
       (genSym () (nameWithInfo "a" True) :: UnionM (Sym Bool)) `shouldBe` mrgSingle (iinfosymb 0 "a" True)
-      (genSymSimple (Proxy @SymBool) () (nameWithInfo "a" True) :: Sym Bool) `shouldBe` iinfosymb 0 "a" True
+      (genSymSimple () (nameWithInfo "a" True) :: Sym Bool) `shouldBe` iinfosymb 0 "a" True
   describe "SEq" $ do
     it "SEq for SymPrim should work" $ do
       (ssymb "a" :: Sym Bool) ==~ ssymb "b" `shouldBe` Sym (eqterm (ssymbTerm "a" :: Term Bool) (ssymbTerm "b"))

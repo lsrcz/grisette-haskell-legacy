@@ -219,7 +219,7 @@ instance GenSym SymBool Integer Expr where
   genSymFresh i =
     if i <= 0
       then do
-        f <- genSymSimpleFresh proxy ()
+        f <- genSymSimpleFresh ()
         return $ uConst f
       else -- You still need to write this mrgReturn.
       -- I realized that forcing the user to insert mrgReturn/mrgReturn everywhere is not a good idea
@@ -229,11 +229,10 @@ instance GenSym SymBool Integer Expr where
       -- In scala we can use implicit conversions.
       -- No need for metaprogramming
       do
-        f <- genSymSimpleFresh proxy ()
-        l <- genSymSimpleFresh proxy (i - 1)
-        r <- genSymSimpleFresh proxy (i - 1)
+        f <- genSymSimpleFresh ()
+        l <- genSymSimpleFresh (i - 1)
+        r <- genSymSimpleFresh (i - 1)
         choose [Const f, Add l r, Sub l r, Eqv l r]
-    where proxy = Proxy :: Proxy SymBool
 
 sketch1 :: UnionM Expr
 sketch1 = genSym (1 :: Integer) "a"
@@ -249,14 +248,14 @@ sketch2 = genSym (2 :: Integer) "b"
 -- here ?? is an operator
 instance GenSym SymBool () (UnionM Expr -> UnionM Expr -> UnionM Expr)
 
-instance GenSymSimple SymBool () (UnionM Expr -> UnionM Expr -> UnionM Expr) where
-  genSymSimpleFresh proxy _ = simpleChoose proxy [uAdd, uSub, uEqv]
+instance GenSymSimple () (UnionM Expr -> UnionM Expr -> UnionM Expr) where
+  genSymSimpleFresh _ = simpleChoose (Proxy :: Proxy SymBool) [uAdd, uSub, uEqv]
 
 sketch3 :: UnionM Expr
 sketch3 =
   runGenSymFresh
     ( do
-        op <- genSymSimpleFresh (Proxy :: Proxy SymBool) ()
+        op <- genSymSimpleFresh ()
         l :: UnionM Expr <- genSymFresh (0 :: Integer)
         r :: UnionM Expr <- genSymFresh (0 :: Integer)
         return $ op l r
@@ -334,7 +333,7 @@ sketch4 :: UnionM Expr
 sketch4 =
   runGenSymFresh
     ( do
-        op <- genSymSimpleFresh (Proxy :: Proxy SymBool) ()
+        op <- genSymSimpleFresh ()
         return $ op (uConst 1 :: UnionM Expr) (uConst 2 :: UnionM Expr)
     )
     "a"

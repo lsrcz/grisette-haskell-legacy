@@ -58,28 +58,24 @@ deriving newtype instance
 
 instance
   ( SymBoolOp bool,
-    GenSymSimple bool () bool,
-    GenSymSimple bool a a,
+    GenSymSimple () bool,
+    GenSymSimple a a,
     Mergeable bool a,
-    GenSymSimple bool b b,
+    GenSymSimple b b,
     Mergeable bool b
   ) =>
   GenSym bool (CBMCEither a b) (CBMCEither a b)
 
 instance
-  ( SymBoolOp bool,
-    GenSymSimple bool () bool,
-    GenSymSimple bool a a,
-    Mergeable bool a,
-    GenSymSimple bool b b,
-    Mergeable bool b
+  ( GenSymSimple a a,
+    GenSymSimple b b
   ) =>
-  GenSymSimple bool (CBMCEither a b) (CBMCEither a b)
+  GenSymSimple (CBMCEither a b) (CBMCEither a b)
   where
   genSymSimpleFresh = derivedSameShapeGenSymSimpleFresh
 
 instance
-  (SymBoolOp bool, GenSymSimple bool () bool, GenSym bool () a, Mergeable bool a, GenSym bool () b, Mergeable bool b) =>
+  (SymBoolOp bool, GenSymSimple () bool, GenSym bool () a, Mergeable bool a, GenSym bool () b, Mergeable bool b) =>
   GenSym bool () (CBMCEither a b)
   where
   genSymFresh = derivedNoSpecGenSymFresh
@@ -324,7 +320,7 @@ instance (SymBoolOp bool, Mergeable1 bool m, Mergeable bool e) => Mergeable1 boo
 instance
   {-# OVERLAPPABLE #-}
   ( SymBoolOp bool,
-    GenSymSimple bool () bool,
+    GenSymSimple () bool,
     GenSym bool spec (m (CBMCEither a b)),
     Mergeable1 bool m,
     Mergeable bool a,
@@ -338,35 +334,25 @@ instance
 
 instance
   {-# OVERLAPPABLE #-}
-  ( SymBoolOp bool,
-    GenSymSimple bool () bool,
-    GenSymSimple bool spec (m (CBMCEither a b)),
-    Mergeable1 bool m,
-    Mergeable bool a,
-    Mergeable bool b
+  ( GenSymSimple spec (m (CBMCEither a b))
   ) =>
-  GenSymSimple bool spec (CBMCExceptT a m b)
+  GenSymSimple spec (CBMCExceptT a m b)
   where
-  genSymSimpleFresh proxy v = CBMCExceptT <$> genSymSimpleFresh proxy v
+  genSymSimpleFresh v = CBMCExceptT <$> genSymSimpleFresh v
+
+instance
+  {-# OVERLAPPING #-}
+  ( GenSymSimple (m (CBMCEither e a)) (m (CBMCEither e a))
+  ) =>
+  GenSymSimple (CBMCExceptT e m a) (CBMCExceptT e m a)
+  where
+  genSymSimpleFresh (CBMCExceptT v) = CBMCExceptT <$> genSymSimpleFresh v
 
 instance
   {-# OVERLAPPING #-}
   ( SymBoolOp bool,
-    GenSymSimple bool () bool,
-    GenSymSimple bool (m (CBMCEither e a)) (m (CBMCEither e a)),
-    Mergeable1 bool m,
-    Mergeable bool e,
-    Mergeable bool a
-  ) =>
-  GenSymSimple bool (CBMCExceptT e m a) (CBMCExceptT e m a)
-  where
-  genSymSimpleFresh proxy (CBMCExceptT v) = CBMCExceptT <$> genSymSimpleFresh proxy v
-
-instance
-  {-# OVERLAPPING #-}
-  ( SymBoolOp bool,
-    GenSymSimple bool () bool,
-    GenSymSimple bool (m (CBMCEither e a)) (m (CBMCEither e a)),
+    GenSymSimple () bool,
+    GenSymSimple (m (CBMCEither e a)) (m (CBMCEither e a)),
     Mergeable1 bool m,
     Mergeable bool e,
     Mergeable bool a

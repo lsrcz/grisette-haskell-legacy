@@ -3,7 +3,6 @@ module Verifier where
 
 import Control.Monad.State.Strict
 import Data.Maybe
-import Data.Proxy
 import Fs
 import Grisette
 import Interpret
@@ -34,7 +33,7 @@ verify config (Litmus _ make setupProc prog allowCond) =
           else fs
       prog1 = crack newfs prog
       order =
-        genSymSimple (Proxy :: Proxy SymBool)
+        genSymSimple
           (SimpleListSpec (fromIntegral $ length prog1) (EnumGenUpperBound @Integer (fromIntegral $ length prog1)))
           "order"
 

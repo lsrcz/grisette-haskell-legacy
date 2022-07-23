@@ -148,8 +148,8 @@ instance GenSym SymBool () Op
 -- In Grisette, there are several such APIs for symbolic choices, for example, 'choose', 'simpleChoose' and 'chooseU'.
 --
 -- They introduces fresh symbolic boolean variables, and use them to conditionally select one of the provided expressions.
-instance GenSymSimple SymBool () Op where
-  genSymSimpleFresh proxy _ = simpleChoose proxy [uSymAdd, uSymSub]
+instance GenSymSimple () Op where
+  genSymSimpleFresh _ = simpleChoose (Proxy @SymBool) [uSymAdd, uSymSub]
 
 -- | The symbolic interpreter interprets a symbolic expression to a symbolic integer.
 --
@@ -212,8 +212,8 @@ sketch =
         let v1 :: UnionM SymExpr = uSymLiteral 1
         let v2 :: UnionM SymExpr = uSymLiteral 2
         let v3 :: UnionM SymExpr = uSymLiteral 4
-        op1 :: Op <- genSymSimpleFresh (Proxy :: Proxy SymBool) ()
-        op2 :: Op <- genSymSimpleFresh (Proxy :: Proxy SymBool) ()
+        op1 :: Op <- genSymSimpleFresh ()
+        op2 :: Op <- genSymSimpleFresh ()
         return $ op1 v1 (op2 v2 v3)
     )
     $$(nameWithLoc "a")

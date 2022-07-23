@@ -39,7 +39,7 @@ intHoleRangeExpr = do
 intHoleExpr :: Parser (UnionM SymbExpr)
 intHoleExpr = do
   _ <- symbol "??i"
-  i <- genSymSimpleFresh (Proxy :: Proxy SymBool) ()
+  i <- genSymSimpleFresh ()
   return $ uSConstantExpr i
 
 binary :: B.ByteString -> (a -> a -> a) -> Operator Parser a

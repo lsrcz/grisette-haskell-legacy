@@ -44,19 +44,19 @@ intHoleRangeExpr = do
 intHoleExpr :: Parser (UnionM SymbExpr)
 intHoleExpr = do
   _ <- symbol "??i"
-  i <- genSymSimpleFresh (Proxy :: Proxy SymBool) ()
+  i <- genSymSimpleFresh ()
   return $ uSIntConstantExpr i
 
 boolHoleExpr :: Parser (UnionM SymbExpr)
 boolHoleExpr = do
   _ <- symbol "??b"
-  b <- genSymSimpleFresh (Proxy :: Proxy SymBool) ()
+  b <- genSymSimpleFresh ()
   return $ uSBoolConstantExpr b
 
 identHole :: Parser SIdentifier
 identHole = do
   _ <- symbol "??v"
-  genSymSimpleFresh (Proxy :: Proxy SymBool) ()
+  genSymSimpleFresh ()
 
 concIdent :: Parser SIdentifier
 concIdent = do

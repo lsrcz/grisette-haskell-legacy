@@ -1,10 +1,12 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeApplications #-}
 module DataStructures where
 
 import Data.List (intercalate)
 import Generics.Deriving
 import Grisette
 import Language.Haskell.TH.Syntax (Lift)
+import Data.Proxy
 
 data ConcExpr
   = IntConstantExpr Integer
@@ -96,13 +98,13 @@ instance Show Identifier where
 instance GenSym SymBool () SIdentifier where
   genSymFresh = derivedNoSpecGenSymFresh
 
-instance GenSymSimple SymBool () SIdentifier where
+instance GenSymSimple () SIdentifier where
   genSymSimpleFresh = derivedNoSpecGenSymSimpleFresh
 
 instance GenSym SymBool [Integer] SIdentifier
 
-instance GenSymSimple SymBool [Integer] SIdentifier where
-  genSymSimpleFresh proxy l = simpleChoose proxy (SIdentifier . conc <$> l)
+instance GenSymSimple [Integer] SIdentifier where
+  genSymSimpleFresh l = simpleChoose (Proxy @SymBool) (SIdentifier . conc <$> l)
 
 data Stmt
   = AssignStmt Identifier ConcExpr

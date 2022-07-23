@@ -12,7 +12,6 @@ module Main where
 
 import Control.Monad.Except
 import Control.Monad.Writer
-import Data.Proxy
 import GHC.Generics
 import GHC.IO.Unsafe
 import Grisette
@@ -62,19 +61,16 @@ swap l x y =
 
 type Algo = forall x. (Mergeable SymBool x) => Integer -> [x] -> M [x]
 
-boolProxy :: Proxy SymBool
-boolProxy = Proxy
-
 algo0 :: Algo
 algo0 fuel l
   | fuel < 0 = mrgThrowError AssertionError
   | otherwise = do
-    c <- genSymSimpleFresh boolProxy ()
+    c <- genSymSimpleFresh ()
     mrgIf
       c
       ( do
-          i <- genSymSimpleFresh boolProxy ()
-          j <- genSymSimpleFresh boolProxy ()
+          i <- genSymSimpleFresh ()
+          j <- genSymSimpleFresh ()
           r <- swap l i j
           lift . tell $ Trace $ mrgReturn [(i, j)]
           algo0 (fuel - 1) r
@@ -88,11 +84,11 @@ algo1 fuel = go fuel 0
     go fuel1 i l
       | fuel1 < 0 = mrgReturn l
       | otherwise = do
-        c <- genSymSimpleFresh boolProxy ()
+        c <- genSymSimpleFresh ()
         mrgIf
           c
           ( do
-              j <- genSymSimpleFresh boolProxy ()
+              j <- genSymSimpleFresh ()
               r <- swap l (conc i) j
               lift . tell $ Trace $ mrgReturn [(conc i, j)]
               go (fuel1 - 1) (i + 1) r

@@ -34,10 +34,10 @@ newtype GenEfsync = GenEfsync Integer
 
 instance GenSym SymBool GenEfsync SysCall
 
-instance GenSymSimple SymBool GenEfsync SysCall where
-  genSymSimpleFresh proxy (GenEfsync n) = do
+instance GenSymSimple GenEfsync SysCall where
+  genSymSimpleFresh (GenEfsync n) = do
     fds <- choose [0 .. n -1]
-    b <- genSymSimpleFresh proxy ()
+    b <- genSymSimpleFresh ()
     return $ Efsync fds b
 
 data InodeOp

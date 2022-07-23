@@ -80,8 +80,8 @@ newtype Exact = Exact [InstructionSpec]
 
 instance GenSym SymBool Exact Program
 
-instance GenSymSimple SymBool Exact Program where
-  genSymSimpleFresh _ (Exact spec) = traverse genSymFresh spec
+instance GenSymSimple Exact Program where
+  genSymSimpleFresh (Exact spec) = traverse genSymFresh spec
 
 loc :: Program -> Int
 loc = length

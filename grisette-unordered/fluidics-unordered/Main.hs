@@ -7,7 +7,6 @@ import Control.Monad.Except
 import Control.Monad.State.Strict
 import qualified Data.ByteString as B
 import Data.Maybe (isJust)
-import Data.Proxy
 import GHC.Generics
 import Grisette
 import Utils.Timing
@@ -38,10 +37,10 @@ data Point = Point SymInteger SymInteger
   deriving (Show, Generic, GenSym SymBool ())
   deriving (Evaluate Model, Mergeable SymBool) via (Default Point)
 
-instance GenSymSimple SymBool () Point where
-  genSymSimpleFresh proxy () = do
-    x <- genSymSimpleFresh proxy ()
-    y <- genSymSimpleFresh proxy ()
+instance GenSymSimple () Point where
+  genSymSimpleFresh () = do
+    x <- genSymSimpleFresh ()
+    y <- genSymSimpleFresh ()
     return $ Point x y
 
 gridRef :: Point -> StateT Grid (ExceptT () UUnionM) (UUnionM (Maybe B.ByteString))
@@ -114,7 +113,7 @@ data Instruction = Move Point (UUnionM Dir) | Mix Point
 
 instance GenSym SymBool () Instruction where
   genSymFresh _ = do
-    p <- genSymSimpleFresh (Proxy :: Proxy SymBool) ()
+    p <- genSymSimpleFresh ()
     d <- genSymFresh ()
     choose [Move p d, Mix p]
 
@@ -138,7 +137,7 @@ synthesizeProgram ::
   IO (Maybe [ConcInstruction])
 synthesizeProgram config i initst f = go 0 (mrgReturn initst)
   where
-    lst = genSymSimple (Proxy :: Proxy SymBool) (SimpleListSpec (toInteger i) ()) "a"
+    lst = genSymSimple (SimpleListSpec (toInteger i) ()) "a"
     go num st
       | num == i = return Nothing
       | otherwise =

@@ -3,7 +3,6 @@ module Interpreter where
 
 import Control.Monad.Except
 import Control.Monad.State
-import Data.Proxy
 import GHC.Generics
 import Grisette
 
@@ -42,7 +41,7 @@ data ExprSpec = ExprSpec
 
 instance GenSym (Sym Bool) Integer LitExpr where
   genSymFresh listLength = do
-    b <- genSymSimpleFresh (Proxy :: Proxy SymBool) ()
+    b <- genSymSimpleFresh ()
     l <- genSymFresh listLength
     choose [BoolLit b, ListLit l, UnitLit]
 
@@ -50,7 +49,7 @@ instance GenSym (Sym Bool) ExprSpec OpsExpr where
   genSymFresh (ExprSpec d l) = do
     l1 <- genSymFresh (ExprSpec (d - 1) l)
     l2 <- genSymFresh (ExprSpec (d - 1) l)
-    v <- genSymSimpleFresh (Proxy :: Proxy SymBool) ()
+    v <- genSymSimpleFresh ()
     choose
       [ HeadExpr l1,
         TailExpr l1,
@@ -80,7 +79,7 @@ data Stmt
 instance GenSym (Sym Bool) ExprSpec Stmt where
   genSymFresh e = do
     expr <- genSymFresh e
-    vari <- genSymSimpleFresh (Proxy :: Proxy SymBool) ()
+    vari <- genSymSimpleFresh ()
     choose [DefineStmt vari expr, ValueStmt expr]
 
 data Error

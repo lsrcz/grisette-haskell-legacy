@@ -4,7 +4,6 @@ module Regex where
 import GHC.Generics
 import Grisette
 import Data.Hashable
-import Data.Proxy
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C
 import Control.Monad
@@ -56,7 +55,7 @@ sketchGen = do
   s1 <- seqOrAlt
   f1 <- freshPrim
   s2 <- choose [SeqPatt s1 f1, AltPatt s1 f1]
-  greedy <- genSymSimpleFresh (Proxy :: Proxy SymBool) ()
+  greedy <- genSymSimpleFresh ()
   let p = PlusPatt s2 greedy
   s3 <- seqOrAlt
   return $ SeqPatt s3 (mrgReturn p)

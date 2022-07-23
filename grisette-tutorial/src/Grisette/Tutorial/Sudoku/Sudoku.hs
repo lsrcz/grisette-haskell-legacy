@@ -84,7 +84,6 @@ module Grisette.Tutorial.Sudoku.Sudoku
 where
 
 import Data.List
-import Data.Proxy
 import GHC.Generics
 import Grisette
 
@@ -161,8 +160,8 @@ instance GenSym SymBool Board SymBoard
 -- 'genSymSimpleFresh' function generates unique symbolic values in a 'MonadSymGenFresh' environment with a specification.
 -- For symbolic primitive types, 'genSymSimpleFresh' will generate a unique symbolic constant from no specifications (represented as unit values).
 -- For complex types, 'genSymSimpleFresh' can generate symbolic variables containing symbolic constants.
-instance GenSymSimple SymBool Board SymBoard where
-  genSymSimpleFresh proxy (Board b) =
+instance GenSymSimple Board SymBoard where
+  genSymSimpleFresh (Board b) =
     SymBoard
       <$> traverse
         ( traverse
@@ -171,7 +170,7 @@ instance GenSymSimple SymBool Board SymBoard where
                   -- As Grisette is configurable with different symbolic primitive implementations,
                   -- this @SymBool annotation is required for disambiguation.
                   -- The '()' is the specification for the symbolic integers.
-                  genSymSimpleFresh proxy ()
+                  genSymSimpleFresh ()
                 x ->
                   -- The 'conc' call wraps a concrete value into a symbolic value.
                   return $ conc x
@@ -235,7 +234,7 @@ valid (SymBoard rows) =
 sudoku :: GrisetteSMTConfig n -> Board -> IO (Maybe Board)
 sudoku config board = do
   -- generate the symbolic board sketch
-  let symboard = genSymSimple (Proxy :: Proxy SymBool) board "a"
+  let symboard = genSymSimple board "a"
   -- call the solver with the given configuration
   m <- solveFormula config $ valid symboard
   case m of

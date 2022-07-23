@@ -46,7 +46,6 @@ import Grisette.Core.Data.Class.ToSym
 import Grisette.Core.Data.UnionBase
 import Language.Haskell.TH.Syntax
 import Language.Haskell.TH.Syntax.Compat (unTypeSplice)
-import Data.Proxy
 
 
 -- $setup
@@ -362,19 +361,19 @@ instance (SymBoolOp bool) => Traversable (UnionMBase bool) where
 -- GenSym
 instance (SymBoolOp bool, GenSym bool spec a, Mergeable bool a) => GenSym bool spec (UnionMBase bool a)
 
-instance (SymBoolOp bool, GenSym bool spec a) => GenSymSimple bool spec (UnionMBase bool a) where
-  genSymSimpleFresh _ spec = do
+instance (SymBoolOp bool, GenSym bool spec a) => GenSymSimple spec (UnionMBase bool a) where
+  genSymSimpleFresh spec = do
     res <- genSymFresh spec
     if not (isMerged res) then error "Not merged" else return res
 
 instance
-  (SymBoolOp bool, GenSym bool a a, GenSymSimple bool () bool, Mergeable bool a) =>
+  (SymBoolOp bool, GenSym bool a a, GenSymSimple () bool, Mergeable bool a) =>
   GenSym bool (UnionMBase bool a) a
   where
   genSymFresh spec = go (underlyingUnion $ merge spec)
     where
       go (Single x) = genSymFresh x
-      go (If _ _ _ t f) = mrgIf <$> genSymSimpleFresh (Proxy :: Proxy bool) () <*> go t <*> go f
+      go (If _ _ _ t f) = mrgIf <$> genSymSimpleFresh () <*> go t <*> go f
 
 -- Concrete Key HashMaps
 -- | Tag for concrete types.

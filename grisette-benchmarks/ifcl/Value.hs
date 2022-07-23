@@ -14,12 +14,12 @@ $(makeUnionMWrapper "u" ''PCValue)
 
 instance GenSym SymBool () PCValue
 
-instance GenSymSimple SymBool () PCValue where
+instance GenSymSimple () PCValue where
   genSymSimpleFresh = derivedNoSpecGenSymSimpleFresh
 
 instance GenSym SymBool PCValue PCValue
 
-instance GenSymSimple SymBool PCValue PCValue where
+instance GenSymSimple PCValue PCValue where
   genSymSimpleFresh = derivedSameShapeGenSymSimpleFresh
 
 zeroLow :: PCValue

@@ -6,7 +6,6 @@ module MIS where
 import Control.Monad
 import Core
 import Data.List
-import Data.Proxy
 import Grisette
 
 mis :: (Num a) => ConProgram a
@@ -22,13 +21,13 @@ mis =
 
 misSketch :: forall a. (SupportedPrim a, Num a) => Program (Sym a)
 misSketch =
-  genSymSimple (Proxy :: Proxy SymBool)
+  genSymSimple
     (CombProgramSpec @a @(Sym a) [0] (CombASTSpec0 1 1 ["zero", "id"] ["+", "max"]) (CombASTSpec0 0 1 [] ["max"]) 2 1)
     "mis"
 
 misSketchOpt :: forall a. (SupportedPrim a, Num a) => Program (Sym a)
 misSketchOpt =
-  genSymSimple (Proxy :: Proxy SymBool)
+  genSymSimple
     (ExtProgramSpec @a @(Sym a) [0] (CombASTSpec0 1 1 ["zero", "id"] ["+", "max"]) "max" 2 1)
     "misopt"
 

@@ -34,7 +34,6 @@ import Grisette.Core.Data.Class.Function
 import Data.String
 import Grisette.Core.Data.Class.GenSym
 import Grisette.IR.SymPrim
-import Data.Proxy
 
 data UUnionMBase bool a where
   UUAny :: IORef (Either (UUnionBase bool a) (UUnionMBase bool a)) ->
@@ -275,20 +274,20 @@ instance (SymBoolOp bool, IsString a, Mergeable bool a) => IsString (UUnionMBase
 
 instance (SymBoolOp bool, GenSym bool spec a, Mergeable bool a) => GenSym bool spec (UUnionMBase bool a)
 
-instance (SymBoolOp bool, GenSym bool spec a) => GenSymSimple bool spec (UUnionMBase bool a) where
-  genSymSimpleFresh _ spec = do
+instance (SymBoolOp bool, GenSym bool spec a) => GenSymSimple spec (UUnionMBase bool a) where
+  genSymSimpleFresh spec = do
     res <- genSymFresh spec
     if not (isMerged res) then error "Not merged" else return res
 
 instance
-  (SymBoolOp bool, GenSym bool a a, GenSymSimple bool () bool, Mergeable bool a) =>
+  (SymBoolOp bool, GenSym bool a a, GenSymSimple () bool, Mergeable bool a) =>
   GenSym bool (UUnionMBase bool a) a
   where
   genSymFresh spec = go (underlyingUnion $ merge spec)
     where
       go (UUnionBase l) = go1 l
       go1 [(_,x)] = genSymFresh x
-      go1 ((_,x1):xs) = mrgIf <$> genSymSimpleFresh (Proxy :: Proxy bool) () <*> genSymFresh x1 <*> go1 xs
+      go1 ((_,x1):xs) = mrgIf <$> genSymSimpleFresh () <*> genSymFresh x1 <*> go1 xs
       go1 _ = undefined
 
 

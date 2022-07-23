@@ -6,7 +6,6 @@ module MAS where
 import Control.Monad
 import Core
 import Data.Foldable
-import Data.Proxy
 import Grisette
 
 mas :: Num a => ConProgram a
@@ -68,19 +67,19 @@ masAlgo = go 0 0 0
 
 masSketch :: forall a. (SupportedPrim a, Num a) => Program (Sym a)
 masSketch =
-  genSymSimple (Proxy :: Proxy SymBool)
+  genSymSimple
     (CombProgramSpec @a @(Sym a) [0] (CombASTSpec0 1 3 ["zero", "id", "-"] ["+", "max"]) (CombASTSpec0 0 2 [] ["max"]) 3 1)
     "mas"
 
 masSketchOpt :: forall a. (SupportedPrim a, Num a) => Program (Sym a)
 masSketchOpt =
-  genSymSimple (Proxy :: Proxy SymBool)
+  genSymSimple
     (ExtProgramSpec @a @(Sym a) [0] (CombASTSpec0 1 1 ["zero", "id", "-"] ["+", "max"]) "max" 3 1)
     "mas"
 
 masSketch1 :: forall a. (SupportedPrim a, Num a) => Program (Sym a)
 masSketch1 =
-  genSymSimple (Proxy :: Proxy SymBool)
+  genSymSimple
     (CombProgramSpec @a @(Sym a) [0] (CombASTSpec0 1 3 ["zero", "id", "-"] ["+", "max"]) (CombASTSpec0 0 2 [] ["max"]) 2 1)
     "mas"
 
