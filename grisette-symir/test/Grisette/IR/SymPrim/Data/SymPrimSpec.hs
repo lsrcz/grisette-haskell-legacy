@@ -49,7 +49,7 @@ spec = do
     it "ssymb should work" $ do
       (ssymb "a" :: Sym Integer) `shouldBe` Sym (ssymbTerm "a")
     it "isymb should work" $ do
-      (isymb 1 "a" :: Sym Integer) `shouldBe` Sym (isymbTerm 1 "a")
+      (isymb "a" 1 :: Sym Integer) `shouldBe` Sym (isymbTerm "a" 1)
     it "concView should work" $ do
       concView (conc 1 :: Sym Integer) `shouldBe` Just 1
       concView (ssymb "a" :: Sym Integer) `shouldBe` Nothing
@@ -103,12 +103,12 @@ spec = do
           ]
   describe "GenSym" $ do
     it "GenSym for SymPrim should work" $ do
-      (genSym () "a" :: UnionM (Sym Bool)) `shouldBe` mrgSingle (isymb 0 "a")
-      (genSymSimple () "a" :: Sym Bool) `shouldBe` isymb 0 "a"
-      (genSym (ssymb "a" :: Sym Bool) "a" :: UnionM (Sym Bool)) `shouldBe` mrgSingle (isymb 0 "a")
-      (genSymSimple (ssymb "a" :: Sym Bool) "a" :: Sym Bool) `shouldBe` isymb 0 "a"
-      (genSym () (nameWithInfo "a" True) :: UnionM (Sym Bool)) `shouldBe` mrgSingle (iinfosymb 0 "a" True)
-      (genSymSimple () (nameWithInfo "a" True) :: Sym Bool) `shouldBe` iinfosymb 0 "a" True
+      (genSym () "a" :: UnionM (Sym Bool)) `shouldBe` mrgSingle (isymb "a" 0)
+      (genSymSimple () "a" :: Sym Bool) `shouldBe` isymb "a" 0
+      (genSym (ssymb "a" :: Sym Bool) "a" :: UnionM (Sym Bool)) `shouldBe` mrgSingle (isymb "a" 0)
+      (genSymSimple (ssymb "a" :: Sym Bool) "a" :: Sym Bool) `shouldBe` isymb "a" 0
+      (genSym () (nameWithInfo "a" True) :: UnionM (Sym Bool)) `shouldBe` mrgSingle (iinfosymb "a" 0 True)
+      (genSymSimple () (nameWithInfo "a" True) :: Sym Bool) `shouldBe` iinfosymb "a" 0 True
   describe "SEq" $ do
     it "SEq for SymPrim should work" $ do
       (ssymb "a" :: Sym Bool) ==~ ssymb "b" `shouldBe` Sym (eqterm (ssymbTerm "a" :: Term Bool) (ssymbTerm "b"))

@@ -957,18 +957,18 @@ parseModel _ (SBVI.SMTModel _ _ assoc uifuncs) mp = foldr gouifuncs (foldr goass
       case ta2 of
         GFunType (ta2' :: R.TypeRep a2) (tr2' :: R.TypeRep r2) ->
           let
-            symb = WithInfo (IndexedSymbol idx "arg") FuncArg
+            symb = WithInfo (IndexedSymbol "arg" idx) FuncArg
             funs = second (\r -> gougfuncResolve (idx + 1) ta2' tr2' (r, s)) <$> partition ta1 l
             def = gougfuncResolve (idx + 1) ta2' tr2' ([], s)
-            body = foldl' (\acc (v, f) -> iteterm (eqterm (iinfosymbTerm idx "arg" FuncArg) (concTerm v)) (concTerm f) acc) (concTerm def) funs
+            body = foldl' (\acc (v, f) -> iteterm (eqterm (iinfosymbTerm "arg" idx FuncArg) (concTerm v)) (concTerm f) acc) (concTerm def) funs
            in
              GeneralFunc Proxy symb body
         _ ->
           let
-            symb = WithInfo (IndexedSymbol idx "arg") FuncArg
+            symb = WithInfo (IndexedSymbol "arg" idx) FuncArg
             vs = bimap (resolveSingle ta1 . head) (resolveSingle ta2) <$> l
             def = resolveSingle ta2 s
-            body = foldl' (\acc (v, a) -> iteterm (eqterm (iinfosymbTerm idx "arg" FuncArg) (concTerm v)) (concTerm a) acc) (concTerm def) vs
+            body = foldl' (\acc (v, a) -> iteterm (eqterm (iinfosymbTerm "arg" idx FuncArg) (concTerm v)) (concTerm a) acc) (concTerm def) vs
            in
              GeneralFunc Proxy symb body
     partition :: R.TypeRep a -> [([SBVI.CV], SBVI.CV)] -> [(a, [([SBVI.CV], SBVI.CV)])]

@@ -95,9 +95,9 @@ instance (SupportedPrim a) => SimpleMergeable (Sym Bool) (Sym a) where
 instance (SupportedPrim a) => PrimWrapper (Sym a) a where
   conc = Sym . concTerm
   ssymb = Sym . ssymbTerm
-  isymb i str = Sym $ isymbTerm i str
+  isymb str i = Sym $ isymbTerm str i
   sinfosymb str info = Sym $ sinfosymbTerm str info
-  iinfosymb i str info = Sym $ iinfosymbTerm i str info
+  iinfosymb str i info = Sym $ iinfosymbTerm str i info
   concView (Sym (ConcTerm _ t)) = Just t
   concView _ = Nothing
 
@@ -130,8 +130,8 @@ instance (SymBoolOp (Sym Bool), SupportedPrim a) => GenSymSimple () (Sym a) wher
     ident <- getGenSymIdent
     GenSymIndex i <- nextGenSymIndex
     case ident of
-      GenSymIdent s -> return $ isymb i s
-      GenSymIdentWithInfo s info -> return $ iinfosymb i s info
+      GenSymIdent s -> return $ isymb s i
+      GenSymIdentWithInfo s info -> return $ iinfosymb s i info
 
 instance (SymBoolOp (Sym Bool), SupportedPrim a) => GenSym (Sym Bool) (Sym a) (Sym a)
 

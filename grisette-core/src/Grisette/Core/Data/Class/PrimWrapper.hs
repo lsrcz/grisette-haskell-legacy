@@ -41,11 +41,11 @@ class IsString t => PrimWrapper t c | t -> c where
   ssymb :: String -> t
   -- | Generate indexed symbolic variables.
   --
-  -- >>> isymb 1 "a" :: SymBool
+  -- >>> isymb "a" 1 :: SymBool
   -- a@1
-  isymb :: Int -> String -> t
+  isymb :: String -> Int -> t
   sinfosymb :: (Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) => String -> a -> t
-  iinfosymb :: (Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) => Int -> String -> a -> t
+  iinfosymb :: (Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) => String -> Int -> a -> t
 
 -- | Extract the concrete value from a symbolic value with 'concView'.
 --

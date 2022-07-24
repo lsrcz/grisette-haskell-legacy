@@ -25,8 +25,8 @@ data SBool where
   CBool :: Bool -> SBool
   SSBool :: String -> SBool
   ISSBool :: (Typeable a, Show a, Eq a, Hashable a) => String -> a -> SBool
-  ISBool :: Int -> String -> SBool
-  IISBool :: (Typeable a, Show a, Eq a, Hashable a) => Int -> String -> a -> SBool
+  ISBool :: String -> Int -> SBool
+  IISBool :: (Typeable a, Show a, Eq a, Hashable a) => String -> Int -> a -> SBool
   Or :: SBool -> SBool -> SBool
   And :: SBool -> SBool -> SBool
   Not :: SBool -> SBool
@@ -37,8 +37,8 @@ instance Show SBool where
   show (CBool v) = "CBool " ++ show v
   show (SSBool s) = "SSBool " ++ s
   show (ISSBool s info) = "ISSBool " ++ s ++ " " ++ show info
-  show (ISBool i s) = "ISBool " ++ show i ++ " " ++ s
-  show (IISBool i s info) = "IISBool " ++ show i ++ " " ++ show s ++ " " ++ show info
+  show (ISBool s i) = "ISBool " ++ show i ++ " " ++ s
+  show (IISBool s i info) = "IISBool " ++ show i ++ " " ++ show s ++ " " ++ show info
   show (Or l r) = "Or (" ++ show l ++ ") (" ++ show r ++ ")"
   show (And l r) = "And (" ++ show l ++ ") (" ++ show r ++ ")"
   show (Not v) = "Not (" ++ show v ++ ")"
@@ -76,10 +76,10 @@ instance Evaluate (M.HashMap Symbol Bool) SBool where
   evaluate fillDefault model s@(ISSBool sym info) = case M.lookup (ISSymbol sym info) model of
     Just v -> CBool v
     Nothing -> if fillDefault then (CBool False) else s
-  evaluate fillDefault model s@(ISBool i sym) = case M.lookup (ISymbol i sym) model of
+  evaluate fillDefault model s@(ISBool sym i) = case M.lookup (ISymbol sym i) model of
     Just v -> CBool v
     Nothing -> if fillDefault then (CBool False) else s
-  evaluate fillDefault model s@(IISBool i sym info) = case M.lookup (IISymbol i sym info) model of
+  evaluate fillDefault model s@(IISBool sym i info) = case M.lookup (IISymbol sym i info) model of
     Just v -> CBool v
     Nothing -> if fillDefault then (CBool False) else s
   evaluate fillDefault model (Or l r) = evaluate fillDefault model l ||~ evaluate fillDefault model r
@@ -145,15 +145,15 @@ instance SymBoolOp SBool
 data Symbol where
   SSymbol :: String -> Symbol
   ISSymbol :: (Typeable a, Show a, Eq a, Hashable a) => String -> a -> Symbol
-  ISymbol :: Int -> String -> Symbol
-  IISymbol :: (Typeable a, Show a, Eq a, Hashable a) => Int -> String -> a -> Symbol
+  ISymbol :: String -> Int -> Symbol
+  IISymbol :: (Typeable a, Show a, Eq a, Hashable a) => String -> Int -> a -> Symbol
   -- deriving (Generic, Show, Eq, Hashable)
 
 instance Show Symbol where
   show (SSymbol s) = "SSymbol " ++ s
   show (ISSymbol s info) = "ISSymbol " ++ s ++ " " ++ show info
-  show (ISymbol i s) = "ISymbol " ++ show i ++ " " ++ s
-  show (IISymbol i s info) = "IISymbol " ++ show i ++ " " ++ s ++ " " ++ show info
+  show (ISymbol s i) = "ISymbol " ++ show i ++ " " ++ s
+  show (IISymbol s i info) = "IISymbol " ++ show i ++ " " ++ s ++ " " ++ show info
 
 instance Eq Symbol where
   SSymbol s1 == SSymbol s2 = s1 == s2
@@ -161,8 +161,8 @@ instance Eq Symbol where
     case eqT @info1 @info2 of
       Just Refl -> s1 == s2 && info1 == info2
       _ -> False
-  ISymbol i1 s1 == ISymbol i2 s2 = i1 == i2 && s1 == s2
-  IISymbol i1 s1 (info1 :: info1) == IISymbol i2 s2 (info2 :: info2) =
+  ISymbol s1 i1 == ISymbol s2 i2 = i1 == i2 && s1 == s2
+  IISymbol s1 i1 (info1 :: info1) == IISymbol s2 i2 (info2 :: info2) =
     case eqT @info1 @info2 of
       Just Refl -> i1 == i2 && s1 == s2 && info1 == info2
       _ -> False
@@ -180,8 +180,8 @@ instance ExtractSymbolics (S.HashSet Symbol) SBool where
       go s (CBool _) = s
       go s (SSBool sym) = S.insert (SSymbol sym) s
       go s (ISSBool sym info) = S.insert (ISSymbol sym info) s
-      go s (ISBool i sym) = S.insert (ISymbol i sym) s
-      go s (IISBool i sym info) = S.insert (IISymbol i sym info) s
+      go s (ISBool sym i) = S.insert (ISymbol sym i) s
+      go s (IISBool sym i info) = S.insert (IISymbol sym i info) s
       go s (Or l r) = go (go s l) r
       go s (And l r) = go (go s l) r
       go s (Not v) = go s v
@@ -208,8 +208,8 @@ instance GenSymSimple () SBool where
     ident <- getGenSymIdent
     GenSymIndex i <- nextGenSymIndex
     case ident of
-      GenSymIdent s -> return $ ISBool i s
-      GenSymIdentWithInfo s info -> return $ IISBool i s info
+      GenSymIdent s -> return $ ISBool s i
+      GenSymIdentWithInfo s info -> return $ IISBool s i info
 
 instance GenSym SBool SBool SBool where
 

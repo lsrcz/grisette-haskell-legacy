@@ -24,7 +24,7 @@ symbBoolOverloadedStr = "a" -- simple symbolic
 
 -- Fresh names
 isymbBool :: Sym Bool
-isymbBool = isymb 0 "a" -- indexed symbolic "a#0"
+isymbBool = isymb "a" 0 -- indexed symbolic "a#0"
 
 -- Symbolic primitives can hold concrete values for partial evaluation
 concBool :: Sym Bool

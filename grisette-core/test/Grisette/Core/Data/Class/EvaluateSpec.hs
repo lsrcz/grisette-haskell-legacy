@@ -29,7 +29,7 @@ spec = do
         let model = M.empty :: M.HashMap Symbol Bool
         evaluate False model (CBool True) `shouldBe` CBool True
         evaluate False model (SSBool "a") `shouldBe` SSBool "a"
-        evaluate False model (ISBool 1 "a") `shouldBe` ISBool 1 "a"
+        evaluate False model (ISBool "a" 1) `shouldBe` ISBool "a" 1
         evaluate False model (Or (SSBool "a") (SSBool "b"))
           `shouldBe` Or (SSBool "a") (SSBool "b")
         evaluate False model (And (SSBool "a") (SSBool "b"))
@@ -44,7 +44,7 @@ spec = do
         let model = M.empty :: M.HashMap Symbol Bool
         evaluate True model (CBool True) `shouldBe` CBool True
         evaluate True model (SSBool "a") `shouldBe` CBool False
-        evaluate True model (ISBool 1 "a") `shouldBe` CBool False
+        evaluate True model (ISBool "a" 1) `shouldBe` CBool False
         evaluate True model (Or (SSBool "a") (SSBool "b")) `shouldBe` CBool False
         evaluate True model (And (SSBool "a") (SSBool "b")) `shouldBe` CBool False
         evaluate True model (Equal (SSBool "a") (SSBool "b")) `shouldBe` CBool True
@@ -54,14 +54,14 @@ spec = do
         let model =
               M.fromList
                 [ (SSymbol "a", True),
-                  (ISymbol 1 "a", False),
+                  (ISymbol "a" 1, False),
                   (SSymbol "b", False),
                   (SSymbol "c", True)
                 ] ::
                 M.HashMap Symbol Bool
         evaluate True model (CBool True) `shouldBe` CBool True
         evaluate True model (SSBool "a") `shouldBe` CBool True
-        evaluate True model (ISBool 1 "a") `shouldBe` CBool False
+        evaluate True model (ISBool "a" 1) `shouldBe` CBool False
         evaluate True model (Or (SSBool "a") (SSBool "b")) `shouldBe` CBool True
         evaluate True model (And (SSBool "a") (SSBool "b")) `shouldBe` CBool False
         evaluate True model (Equal (SSBool "a") (SSBool "b")) `shouldBe` CBool False

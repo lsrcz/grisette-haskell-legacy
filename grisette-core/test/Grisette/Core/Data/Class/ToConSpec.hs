@@ -30,7 +30,7 @@ spec = do
         let sbools :: [SBool] =
               [ CBool True,
                 SSBool "a",
-                ISBool 1 "a",
+                ISBool "a" 1,
                 And (SSBool "a") (SSBool "b"),
                 Or (SSBool "a") (SSBool "b"),
                 Not (SSBool "a"),
@@ -41,7 +41,7 @@ spec = do
       it "ToCon for symbolic SBool should work" $ do
         let sbools :: [SBool] =
               [ SSBool "a",
-                ISBool 1 "a",
+                ISBool "a" 1,
                 And (SSBool "a") (SSBool "b"),
                 Or (SSBool "a") (SSBool "b"),
                 Not (SSBool "a"),

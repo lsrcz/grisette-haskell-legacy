@@ -60,5 +60,5 @@ slocsymb nm = [|| sinfosymb nm (parseFileLocation $$(liftSplice $ unsafeTExpCoer
 -- a@1:<interactive>:10:4-17
 --
 -- The uniqueness is ensured for the call to 'ilocsymb' at different location.
-ilocsymb :: (PrimWrapper s c) => Int -> String -> SpliceQ s
-ilocsymb idx nm = [|| iinfosymb idx nm (parseFileLocation $$(liftSplice $ unsafeTExpCoerce __LOCATION__)) ||]
+ilocsymb :: (PrimWrapper s c) => String -> Int -> SpliceQ s
+ilocsymb nm idx = [|| iinfosymb nm idx (parseFileLocation $$(liftSplice $ unsafeTExpCoerce __LOCATION__)) ||]

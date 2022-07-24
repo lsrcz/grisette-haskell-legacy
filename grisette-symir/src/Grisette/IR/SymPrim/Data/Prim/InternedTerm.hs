@@ -123,14 +123,14 @@ class
 
 data Symbol where
   SimpleSymbol :: String -> Symbol
-  IndexedSymbol :: Int -> String -> Symbol
+  IndexedSymbol :: String -> Int -> Symbol
   WithInfo :: forall a. (Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) => Symbol -> a -> Symbol
 
 -- deriving (Eq, Ord, Generic, Lift, NFData)
 
 instance Eq Symbol where
   SimpleSymbol x == SimpleSymbol y = x == y
-  IndexedSymbol i x == IndexedSymbol j y = i == j && x == y
+  IndexedSymbol x i == IndexedSymbol y j = i == j && x == y
   WithInfo s1 (i1 :: a) == WithInfo s2 (i2 :: b) = case eqT @a @b of
     Just Refl -> i1 == i2 && s1 == s2
     _ -> False
@@ -138,7 +138,7 @@ instance Eq Symbol where
 
 instance Ord Symbol where
   SimpleSymbol x <= SimpleSymbol y = x <= y
-  IndexedSymbol i x <= IndexedSymbol j y = i < j || (i == j && x <= y)
+  IndexedSymbol x i <= IndexedSymbol y j = i < j || (i == j && x <= y)
   WithInfo s1 (i1 :: a) <= WithInfo s2 (i2 :: b) = case eqT @a @b of
     Just Refl -> s1 < s2 || (s1 == s2 && i1 <= i2)
     _ -> False
@@ -146,22 +146,22 @@ instance Ord Symbol where
 
 instance Lift Symbol where
   liftTyped (SimpleSymbol x) = [||SimpleSymbol x||]
-  liftTyped (IndexedSymbol i x) = [||IndexedSymbol i x||]
+  liftTyped (IndexedSymbol x i) = [||IndexedSymbol x i||]
   liftTyped (WithInfo s1 i1) = [||WithInfo s1 i1||]
 
 instance Show Symbol where
   show (SimpleSymbol str) = str
-  show (IndexedSymbol i str) = str ++ "@" ++ show i
+  show (IndexedSymbol str i) = str ++ "@" ++ show i
   show (WithInfo s info) = show s ++ ":" ++ show info
 
 instance Hashable Symbol where
   s `hashWithSalt` SimpleSymbol x = s `hashWithSalt` x
-  s `hashWithSalt` IndexedSymbol i x = s `hashWithSalt` i `hashWithSalt` x
+  s `hashWithSalt` IndexedSymbol x i = s `hashWithSalt` x `hashWithSalt` i
   s `hashWithSalt` WithInfo sym info = s `hashWithSalt` sym `hashWithSalt` info
 
 instance NFData Symbol where
   rnf (SimpleSymbol str) = rnf str
-  rnf (IndexedSymbol i str) = rnf i `seq` rnf str
+  rnf (IndexedSymbol str i) = rnf str `seq` rnf i
   rnf (WithInfo s info) = rnf s `seq` rnf info
 
 data TermSymbol where
@@ -434,14 +434,14 @@ symbTerm t = internTerm $ USymbTerm (TermSymbol (Proxy @t) t)
 ssymbTerm :: (SupportedPrim t, Typeable t) => String -> Term t
 ssymbTerm = symbTerm . SimpleSymbol
 
-isymbTerm :: (SupportedPrim t, Typeable t) => Int -> String -> Term t
-isymbTerm idx str = symbTerm $ IndexedSymbol idx str
+isymbTerm :: (SupportedPrim t, Typeable t) => String -> Int -> Term t
+isymbTerm str idx = symbTerm $ IndexedSymbol str idx
 
 sinfosymbTerm :: (SupportedPrim t, Typeable t, Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) => String -> a -> Term t
 sinfosymbTerm s info = symbTerm $ WithInfo (SimpleSymbol s) info
 
-iinfosymbTerm :: (SupportedPrim t, Typeable t, Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) => Int -> String -> a -> Term t
-iinfosymbTerm idx str info = symbTerm $ WithInfo (IndexedSymbol idx str) info
+iinfosymbTerm :: (SupportedPrim t, Typeable t, Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) => String -> Int -> a -> Term t
+iinfosymbTerm str idx info = symbTerm $ WithInfo (IndexedSymbol str idx) info
 
 extractSymbolicsSomeTerm :: SomeTerm -> S.HashSet TermSymbol
 extractSymbolicsSomeTerm t1 = evalState (gocached t1) M.empty

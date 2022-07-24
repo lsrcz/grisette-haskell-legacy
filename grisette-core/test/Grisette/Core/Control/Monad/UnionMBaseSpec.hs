@@ -427,7 +427,7 @@ spec = do
     it "PrimWrapper should work for UnionMBase" $ do
       conc True `shouldBe` (mrgSingle $ CBool True :: UnionMBase SBool SBool)
       ssymb "a" `shouldBe` (mrgSingle $ SSBool "a" :: UnionMBase SBool SBool)
-      isymb 0 "a" `shouldBe` (mrgSingle $ ISBool 0 "a" :: UnionMBase SBool SBool)
+      isymb "a" 0 `shouldBe` (mrgSingle $ ISBool "a" 0 :: UnionMBase SBool SBool)
       concView (mrgSingle $ CBool True :: UnionMBase SBool SBool) `shouldBe` Just True
       concView (mrgSingle $ SSBool "a" :: UnionMBase SBool SBool) `shouldBe` Nothing
       concView
@@ -459,22 +459,22 @@ spec = do
       (genSym (ListSpec 1 3 ()) "a" :: UnionMBase SBool (UnionMBase SBool [SBool]))
         `shouldBe` mrgSingle
           ( mrgIf
-              (ISBool 3 "a")
-              (mrgSingle [ISBool 2 "a"])
+              (ISBool "a" 3)
+              (mrgSingle [ISBool "a" 2])
               ( mrgIf
-                  (ISBool 4 "a")
-                  (mrgSingle [ISBool 1 "a", ISBool 2 "a"])
-                  (mrgSingle [ISBool 0 "a", ISBool 1 "a", ISBool 2 "a"])
+                  (ISBool "a" 4)
+                  (mrgSingle [ISBool "a" 1, ISBool "a" 2])
+                  (mrgSingle [ISBool "a" 0, ISBool "a" 1, ISBool "a" 2])
               )
           )
       (genSymSimple (ListSpec 1 3 ()) "a" :: UnionMBase SBool [SBool])
         `shouldBe` mrgIf
-          (ISBool 3 "a")
-          (mrgSingle [ISBool 2 "a"])
+          (ISBool "a" 3)
+          (mrgSingle [ISBool "a" 2])
           ( mrgIf
-              (ISBool 4 "a")
-              (mrgSingle [ISBool 1 "a", ISBool 2 "a"])
-              (mrgSingle [ISBool 0 "a", ISBool 1 "a", ISBool 2 "a"])
+              (ISBool "a" 4)
+              (mrgSingle [ISBool "a" 1, ISBool "a" 2])
+              (mrgSingle [ISBool "a" 0, ISBool "a" 1, ISBool "a" 2])
           )
     it "GenSym for UnionMBase with same shape" $ do
       ( genSym
@@ -487,7 +487,7 @@ spec = do
           "a" ::
           UnionMBase SBool [SBool]
         )
-        `shouldBe` mrgIf (ISBool 0 "a") (mrgSingle [ISBool 1 "a"]) (mrgSingle [ISBool 2 "a", ISBool 3 "a"])
+        `shouldBe` mrgIf (ISBool "a" 0) (mrgSingle [ISBool "a" 1]) (mrgSingle [ISBool "a" 2, ISBool "a" 3])
   describe "Concrete Key HashMaps" $ do
     it "Concrete Key HashMap should work" $ do
       mrgIte

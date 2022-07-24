@@ -30,16 +30,16 @@ spec = do
     it "ExtractSymbolics for SBool" $ do
       extractSymbolics (CBool True) `shouldBe` (S.empty :: S.HashSet Symbol)
       extractSymbolics (SSBool "a") `shouldBe` S.singleton (SSymbol "a")
-      extractSymbolics (ISBool 1 "a") `shouldBe` S.singleton (ISymbol 1 "a")
-      extractSymbolics (And (SSBool "a") (ISBool 1 "b")) `shouldBe`
-        S.fromList [SSymbol "a", ISymbol 1 "b"]
-      extractSymbolics (Or (SSBool "a") (ISBool 1 "b")) `shouldBe`
-        S.fromList [SSymbol "a", ISymbol 1 "b"]
-      extractSymbolics (Equal (SSBool "a") (ISBool 1 "b")) `shouldBe`
-        S.fromList [SSymbol "a", ISymbol 1 "b"]
-      extractSymbolics (ITE (SSBool "a") (ISBool 1 "b") (SSBool "c")) `shouldBe`
-        S.fromList [SSymbol "a", ISymbol 1 "b", SSymbol "c"]
-      extractSymbolics (Not $ ISBool 1 "a") `shouldBe` S.singleton (ISymbol 1 "a")
+      extractSymbolics (ISBool "a" 1) `shouldBe` S.singleton (ISymbol "a" 1)
+      extractSymbolics (And (SSBool "a") (ISBool "b" 1)) `shouldBe`
+        S.fromList [SSymbol "a", ISymbol "b" 1]
+      extractSymbolics (Or (SSBool "a") (ISBool "b" 1)) `shouldBe`
+        S.fromList [SSymbol "a", ISymbol "b" 1]
+      extractSymbolics (Equal (SSBool "a") (ISBool "b" 1)) `shouldBe`
+        S.fromList [SSymbol "a", ISymbol "b" 1]
+      extractSymbolics (ITE (SSBool "a") (ISBool "b" 1) (SSBool "c")) `shouldBe`
+        S.fromList [SSymbol "a", ISymbol "b" 1, SSymbol "c"]
+      extractSymbolics (Not $ ISBool "a" 1) `shouldBe` S.singleton (ISymbol "a" 1)
     prop "ExtractSymbolics for Bool" (concreteExtractSymbolicsOkProp @Bool)
     prop "ExtractSymbolics for Integer" (concreteExtractSymbolicsOkProp @Integer)
     prop "ExtractSymbolics for Char" (concreteExtractSymbolicsOkProp @Char)
