@@ -6,17 +6,17 @@
 
 module Grisette.Backend.SBV.Data.SMT.TermRewritingSpec where
 
-import qualified Data.BitVector.Sized.Signed as BVS
 import Data.Foldable
 import qualified Data.SBV as SBV
-import Grisette.Backend.SBV.Data.SMT.Solving ()
-import Grisette.Core.Data.Class.Solver
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm
 import Grisette.Backend.SBV.Data.SMT.Config
+import Grisette.Backend.SBV.Data.SMT.Solving ()
+import Grisette.Backend.SBV.Data.SMT.TermRewritingGen
+import Grisette.Core.Data.Class.Solver
+import Grisette.IR.SymPrim.Data.BV
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm
 import Grisette.IR.SymPrim.Data.SymPrim
 import Test.Hspec
 import Test.Hspec.QuickCheck
-import Grisette.Backend.SBV.Data.SMT.TermRewritingGen
 
 validateSpec :: (TermRewritingSpec a av, Show a, SupportedPrim av) => GrisetteSMTConfig n -> a -> Expectation
 validateSpec config a = do
@@ -44,12 +44,12 @@ spec = do
   describe "Different sized SignedBV" $ do
     modifyMaxSuccess (const 300) $
       modifyMaxSize (const 10) $
-        prop "Fixed Sized SignedBV random test" $ \(x :: (DifferentSizeBVSpec BVS.SignedBV 4)) -> do
+        prop "Fixed Sized SignedBV random test" $ \(x :: (DifferentSizeBVSpec IntN 4)) -> do
           validateSpec unboundedConfig x
   describe "Fixed sized SignedBV" $ do
     modifyMaxSuccess (const 300) $
       modifyMaxSize (const 10) $
-        prop "Fixed Sized SignedBV random test" $ \(x :: (FixedSizedBVWithBoolSpec BVS.SignedBV)) -> do
+        prop "Fixed Sized SignedBV random test" $ \(x :: (FixedSizedBVWithBoolSpec IntN)) -> do
           validateSpec unboundedConfig x
 
   describe "Times on integer" $ do

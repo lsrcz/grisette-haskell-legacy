@@ -6,7 +6,6 @@ module LetPoly (letPolySyntax, execLetPoly, LetPolyTree, ConcLetPolyTree) where
 import Bonsai.BonsaiTree
 import Control.DeepSeq
 import Control.Monad.Except
-import Data.BitVector.Sized.Unsigned
 import qualified Data.ByteString as B
 import Data.Maybe
 import Bonsai.Env
@@ -20,9 +19,9 @@ import Data.Hashable
 
 type LetPolyWidth = 19
 
-type LetPolyTree = BonsaiTree (SymUnsignedBV LetPolyWidth)
+type LetPolyTree = BonsaiTree (SymWordN LetPolyWidth)
 
-type ConcLetPolyTree = ConcBonsaiTree (UnsignedBV LetPolyWidth)
+type ConcLetPolyTree = ConcBonsaiTree (WordN LetPolyWidth)
 
 letPolySyntax :: OptimSyntaxSpec LetPolyWidth
 letPolySyntax =
@@ -51,7 +50,7 @@ letPolySyntax =
       "name" --> ["a", "b", "c", "d", "e"]
     ]
 
-letPolyLiteral :: B.ByteString -> Pattern (SymUnsignedBV LetPolyWidth) 0
+letPolyLiteral :: B.ByteString -> Pattern (SymWordN LetPolyWidth) 0
 letPolyLiteral s = literal $ fromJust $ toSym $ terminalToBV letPolySyntax s
 
 simpleNode :: B.ByteString -> LetPolyTree
@@ -74,7 +73,7 @@ tyassert = symFailIfNot BonsaiTypeError
 
 tyMatch ::
   (Mergeable SymBool t, Show t) =>
-  [PatternHandler (SymUnsignedBV LetPolyWidth) BonsaiError t] ->
+  [PatternHandler (SymWordN LetPolyWidth) BonsaiError t] ->
   LetPolyTree ->
   ExceptT BonsaiError UnionM t
 tyMatch = bonsaiMatchCustomError BonsaiTypeError
@@ -102,7 +101,7 @@ typeCompatible = htmemo2 $ \current expect ->
     ]
     expect
 
-isValidName :: BonsaiError -> SymUnsignedBV LetPolyWidth -> ExceptT BonsaiError UnionM ()
+isValidName :: BonsaiError -> SymWordN LetPolyWidth -> ExceptT BonsaiError UnionM ()
 isValidName err sym =
   symFailIfNot err $
     foldl
@@ -176,7 +175,7 @@ data LetPolyValue
   = LetPolyInt SymInteger
   | LetPolyBool SymBool
   | LetPolyRefCell (UnionM Integer)
-  | LetPolyLambda (SymUnsignedBV LetPolyWidth) (UnionM LetPolyTree) (Env LetPolyWidth LetPolyValue)
+  | LetPolyLambda (SymWordN LetPolyWidth) (UnionM LetPolyTree) (Env LetPolyWidth LetPolyValue)
   deriving (Show, Eq, Generic, NFData, Hashable)
   deriving (SEq SymBool, Evaluate Model) via (Default LetPolyValue)
 
@@ -253,7 +252,7 @@ simpleEvalList ::
   EvalType ->
   Env LetPolyWidth LetPolyValue ->
   RefEnv ->
-  [PatternHandler (SymUnsignedBV LetPolyWidth) BonsaiError (UnionM LetPolyValue, RefEnv)]
+  [PatternHandler (SymWordN LetPolyWidth) BonsaiError (UnionM LetPolyValue, RefEnv)]
 simpleEvalList evalFunc named ref =
   [ letPolyLiteral "true" ==> uTuple2 (uLetPolyBool $ conc True) ref,
     letPolyLiteral "one" ==> uTuple2 (uLetPolyInt 1) ref,
@@ -303,7 +302,7 @@ simpleEvalList evalFunc named ref =
 
 evalMatch ::
   (Mergeable SymBool t, Show t) =>
-  [PatternHandler (SymUnsignedBV LetPolyWidth) BonsaiError t] ->
+  [PatternHandler (SymWordN LetPolyWidth) BonsaiError t] ->
   LetPolyTree ->
   ExceptT BonsaiError UnionM t
 evalMatch = bonsaiMatchCustomError BonsaiExecError

@@ -1,9 +1,9 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+
 module Grisette.IR.SymPrim.Data.Prim.BoolSpec where
 
-import Data.BitVector.Sized.Signed as BVS
-import Data.BitVector.Sized.Unsigned as BVU
+import Grisette.IR.SymPrim.Data.BV
 import Grisette.IR.SymPrim.Data.Prim.Bool
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm
 import Grisette.IR.SymPrim.Data.Prim.Num
@@ -47,10 +47,10 @@ spec = do
         eqterm (concTerm False) (concTerm False) `shouldBe` concTerm True
         eqterm (concTerm (1 :: Integer)) (concTerm 1) `shouldBe` concTerm True
         eqterm (concTerm (1 :: Integer)) (concTerm 2) `shouldBe` concTerm False
-        eqterm (concTerm (1 :: BVS.SignedBV 4)) (concTerm 1) `shouldBe` concTerm True
-        eqterm (concTerm (1 :: BVS.SignedBV 4)) (concTerm 2) `shouldBe` concTerm False
-        eqterm (concTerm (1 :: BVU.UnsignedBV 4)) (concTerm 1) `shouldBe` concTerm True
-        eqterm (concTerm (1 :: BVU.UnsignedBV 4)) (concTerm 2) `shouldBe` concTerm False
+        eqterm (concTerm (1 :: IntN 4)) (concTerm 1) `shouldBe` concTerm True
+        eqterm (concTerm (1 :: IntN 4)) (concTerm 2) `shouldBe` concTerm False
+        eqterm (concTerm (1 :: WordN 4)) (concTerm 1) `shouldBe` concTerm True
+        eqterm (concTerm (1 :: WordN 4)) (concTerm 2) `shouldBe` concTerm False
       it "Eqv with single concrete always put concrete ones in the right" $ do
         eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1)
           `shouldBe` constructBinary Eqv (ssymbTerm "a" :: Term Integer) (concTerm 1 :: Term Integer)
@@ -73,17 +73,17 @@ spec = do
       it "Eqv(n1+x, n2)" $ do
         eqterm (addNum (concTerm 1 :: Term Integer) (ssymbTerm "a")) (concTerm 3)
           `shouldBe` eqterm (ssymbTerm "a") (concTerm 2 :: Term Integer)
-        eqterm (addNum (concTerm 1 :: Term (BVS.SignedBV 4)) (ssymbTerm "a")) (concTerm 3)
-          `shouldBe` eqterm (ssymbTerm "a") (concTerm 2 :: Term (BVS.SignedBV 4))
-        eqterm (addNum (concTerm 1 :: Term (BVU.UnsignedBV 4)) (ssymbTerm "a")) (concTerm 3)
-          `shouldBe` eqterm (ssymbTerm "a") (concTerm 2 :: Term (BVU.UnsignedBV 4))
+        eqterm (addNum (concTerm 1 :: Term (IntN 4)) (ssymbTerm "a")) (concTerm 3)
+          `shouldBe` eqterm (ssymbTerm "a") (concTerm 2 :: Term (IntN 4))
+        eqterm (addNum (concTerm 1 :: Term (WordN 4)) (ssymbTerm "a")) (concTerm 3)
+          `shouldBe` eqterm (ssymbTerm "a") (concTerm 2 :: Term (WordN 4))
       it "Eqv(n1, n2+x)" $ do
         eqterm (concTerm 3) (addNum (concTerm 1 :: Term Integer) (ssymbTerm "a"))
           `shouldBe` eqterm (ssymbTerm "a") (concTerm 2 :: Term Integer)
-        eqterm (concTerm 3) (addNum (concTerm 1 :: Term (BVS.SignedBV 4)) (ssymbTerm "a"))
-          `shouldBe` eqterm (ssymbTerm "a") (concTerm 2 :: Term (BVS.SignedBV 4))
-        eqterm (concTerm 3) (addNum (concTerm 1 :: Term (BVU.UnsignedBV 4)) (ssymbTerm "a"))
-          `shouldBe` eqterm (ssymbTerm "a") (concTerm 2 :: Term (BVU.UnsignedBV 4))
+        eqterm (concTerm 3) (addNum (concTerm 1 :: Term (IntN 4)) (ssymbTerm "a"))
+          `shouldBe` eqterm (ssymbTerm "a") (concTerm 2 :: Term (IntN 4))
+        eqterm (concTerm 3) (addNum (concTerm 1 :: Term (WordN 4)) (ssymbTerm "a"))
+          `shouldBe` eqterm (ssymbTerm "a") (concTerm 2 :: Term (WordN 4))
       it "Eqv(l, ITE(c, l, f)) / Eqv(l, ITE(c, t, l) / Eqv(ITE(c, r, f), r) / Eqv(ITE(c, t, r), r)" $ do
         eqterm (ssymbTerm "a" :: Term Integer) (iteterm (ssymbTerm "b") (ssymbTerm "a") (ssymbTerm "c"))
           `shouldBe` orb (ssymbTerm "b") (eqterm (ssymbTerm "a") (ssymbTerm "c" :: Term Integer))

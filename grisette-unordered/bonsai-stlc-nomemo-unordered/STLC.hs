@@ -6,7 +6,6 @@ module STLC (stlcSyntax, STLCTree, ConcSTLCTree, execStlc) where
 import Bonsai.BonsaiTree
 import Control.DeepSeq
 import Control.Monad.Except
-import Data.BitVector.Sized.Unsigned
 import qualified Data.ByteString as B
 import Data.Maybe
 import Bonsai.Env
@@ -23,9 +22,9 @@ import Grisette.Unordered.UUnionM
 
 type STLCBitWidth = 14
 
-type STLCTree = BonsaiTree (SymUnsignedBV STLCBitWidth)
+type STLCTree = BonsaiTree (SymWordN STLCBitWidth)
 
-type ConcSTLCTree = ConcBonsaiTree (UnsignedBV STLCBitWidth)
+type ConcSTLCTree = ConcBonsaiTree (WordN STLCBitWidth)
 
 stlcSyntax :: OptimSyntaxSpec STLCBitWidth
 stlcSyntax =
@@ -45,7 +44,7 @@ stlcSyntax =
       "name" --> ["a", "b", "c"]
     ]
 
-stlcLiteral :: B.ByteString -> Pattern (SymUnsignedBV STLCBitWidth) 0
+stlcLiteral :: B.ByteString -> Pattern (SymWordN STLCBitWidth) 0
 stlcLiteral s = literal $ fromJust $ toSym $ terminalToBV stlcSyntax s
 
 simpleNode :: B.ByteString -> STLCTree
@@ -123,9 +122,9 @@ typer tree = typer' tree (mrgReturn [])
 data STLCValue
   = STLCInt SymInteger
   | STLCList (UUnionM [SymInteger])
-  | STLCBuiltin (SymUnsignedBV 14)
-  | STLCPartiallyAppliedBuiltin (SymUnsignedBV 14) (UUnionM STLCValue)
-  | STLCLambda (SymUnsignedBV 14) (UUnionM STLCTree) (Env 14 STLCValue)
+  | STLCBuiltin (SymWordN 14)
+  | STLCPartiallyAppliedBuiltin (SymWordN 14) (UUnionM STLCValue)
+  | STLCLambda (SymWordN 14) (UUnionM STLCTree) (Env 14 STLCValue)
   deriving (Show, Eq, Generic, NFData, Hashable)
   deriving (Mergeable SymBool) via (Default STLCValue)
 

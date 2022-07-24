@@ -5,16 +5,14 @@ module Grisette.IR.SymPrim
     type (=->) (..),
     type (-->),
     Sym (..),
-    --SymConcView (..),
-    --pattern SymConc,
     SymBool,
     SymInteger,
     type (=~>),
     type (-~>),
-    SignedBV,
-    UnsignedBV,
-    SymSignedBV,
-    SymUnsignedBV,
+    IntN,
+    WordN,
+    SymIntN,
+    SymWordN,
     Model (..),
     Symbol (..),
     TermSymbol (..),
@@ -31,10 +29,9 @@ module Grisette.IR.SymPrim
 where
 
 import Grisette.IR.SymPrim.Control.Monad.UnionM
+import Grisette.IR.SymPrim.Data.BV
+import Grisette.IR.SymPrim.Data.GeneralFunc
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm
 import Grisette.IR.SymPrim.Data.Prim.Model
 import Grisette.IR.SymPrim.Data.SymPrim
 import Grisette.IR.SymPrim.Data.TabularFunc
-import Data.BitVector.Sized.Signed
-import Data.BitVector.Sized.Unsigned
-import Grisette.IR.SymPrim.Data.GeneralFunc
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm

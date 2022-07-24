@@ -40,13 +40,11 @@ library
   ghc-options: -Wall -ferror-spans
   build-depends:
       base >4.14 && <5
-    , bv-sized >=1.0.3
     , deepseq >=1.4.4
     , grisette-core ==0.1.0.0
     , grisette-symir ==0.1.0.0
     , hashable >=1.3
     , mtl >=2.2.2
-    , parameterized-utils >=2.1.4
     , sbv >=8.11
     , template-haskell >=2.16
     , unordered-containers >=0.2.11
@@ -72,7 +70,6 @@ test-suite spec
   build-depends:
       QuickCheck
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , deepseq >=1.4.4
     , grisette-backend-sbv
     , grisette-core ==0.1.0.0
@@ -81,7 +78,6 @@ test-suite spec
     , hspec ==2.*
     , hspec-junit-formatter
     , mtl >=2.2.2
-    , parameterized-utils >=2.1.4
     , sbv >=8.11
     , template-haskell >=2.16
     , unordered-containers >=0.2.11

@@ -49,10 +49,6 @@ module Grisette.Internal.IR.SymPrim
     xorb,
     unaryUnfoldOnce,
     binaryUnfoldOnce,
-    pattern SignedBVConcTerm,
-    pattern SignedBVTerm,
-    pattern UnsignedBVConcTerm,
-    pattern UnsignedBVTerm,
     pattern UnaryTermPatt,
     pattern BinaryTermPatt,
     pattern TernaryTermPatt,
@@ -111,7 +107,6 @@ module Grisette.Internal.IR.SymPrim
   )
 where
 
-import Grisette.IR.SymPrim.Data.Prim.BV
 import Grisette.IR.SymPrim.Data.Prim.Bool
 import Grisette.IR.SymPrim.Data.Prim.Helpers
 import Grisette.IR.SymPrim.Data.Prim.Integer

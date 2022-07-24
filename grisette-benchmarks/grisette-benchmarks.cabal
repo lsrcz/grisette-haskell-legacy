@@ -73,7 +73,6 @@ library
       QuickCheck >=2.13.2
     , Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
@@ -88,7 +87,6 @@ library
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
     , natural-transformation >=0.3
-    , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
     , regex-pcre-builtin >=0.95.1.1.8.44
@@ -140,7 +138,6 @@ executable bonsai-letpoly
       QuickCheck >=2.13.2
     , Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
@@ -156,7 +153,6 @@ executable bonsai-letpoly
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
     , natural-transformation >=0.3
-    , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
     , regex-pcre-builtin >=0.95.1.1.8.44
@@ -208,7 +204,6 @@ executable bonsai-letpoly-nomemo
       QuickCheck >=2.13.2
     , Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
@@ -224,7 +219,6 @@ executable bonsai-letpoly-nomemo
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
     , natural-transformation >=0.3
-    , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
     , regex-pcre-builtin >=0.95.1.1.8.44
@@ -276,7 +270,6 @@ executable bonsai-nanoscala
       QuickCheck >=2.13.2
     , Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
@@ -292,7 +285,6 @@ executable bonsai-nanoscala
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
     , natural-transformation >=0.3
-    , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
     , regex-pcre-builtin >=0.95.1.1.8.44
@@ -344,7 +336,6 @@ executable bonsai-nanoscala-nomemo
       QuickCheck >=2.13.2
     , Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
@@ -360,7 +351,6 @@ executable bonsai-nanoscala-nomemo
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
     , natural-transformation >=0.3
-    , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
     , regex-pcre-builtin >=0.95.1.1.8.44
@@ -412,7 +402,6 @@ executable bonsai-stlc
       QuickCheck >=2.13.2
     , Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
@@ -428,7 +417,6 @@ executable bonsai-stlc
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
     , natural-transformation >=0.3
-    , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
     , regex-pcre-builtin >=0.95.1.1.8.44
@@ -480,7 +468,6 @@ executable bonsai-stlc-nomemo
       QuickCheck >=2.13.2
     , Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
@@ -496,7 +483,6 @@ executable bonsai-stlc-nomemo
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
     , natural-transformation >=0.3
-    , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
     , regex-pcre-builtin >=0.95.1.1.8.44
@@ -555,7 +541,6 @@ executable cosette
       QuickCheck >=2.13.2
     , Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
@@ -571,7 +556,6 @@ executable cosette
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
     , natural-transformation >=0.3
-    , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
     , regex-pcre-builtin >=0.95.1.1.8.44
@@ -630,7 +614,6 @@ executable cosette-optimized-merge
       QuickCheck >=2.13.2
     , Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
@@ -646,7 +629,6 @@ executable cosette-optimized-merge
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
     , natural-transformation >=0.3
-    , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
     , regex-pcre-builtin >=0.95.1.1.8.44
@@ -704,7 +686,6 @@ executable ferrite
       QuickCheck >=2.13.2
     , Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
@@ -720,7 +701,6 @@ executable ferrite
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
     , natural-transformation >=0.3
-    , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
     , regex-pcre-builtin >=0.95.1.1.8.44
@@ -771,7 +751,6 @@ executable fluidics
       QuickCheck >=2.13.2
     , Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
@@ -787,7 +766,6 @@ executable fluidics
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
     , natural-transformation >=0.3
-    , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
     , regex-pcre-builtin >=0.95.1.1.8.44
@@ -843,7 +821,6 @@ executable ifcl
       QuickCheck >=2.13.2
     , Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
@@ -859,7 +836,6 @@ executable ifcl
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
     , natural-transformation >=0.3
-    , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
     , regex-pcre-builtin >=0.95.1.1.8.44
@@ -914,7 +890,6 @@ executable microsem
       QuickCheck >=2.13.2
     , Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
@@ -930,7 +905,6 @@ executable microsem
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
     , natural-transformation >=0.3
-    , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
     , regex-pcre-builtin >=0.95.1.1.8.44
@@ -981,7 +955,6 @@ executable regex
       QuickCheck >=2.13.2
     , Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
@@ -997,7 +970,6 @@ executable regex
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
     , natural-transformation >=0.3
-    , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
     , regex-pcre-builtin >=0.95.1.1.8.44
@@ -1048,7 +1020,6 @@ executable regex-delim
       QuickCheck >=2.13.2
     , Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
@@ -1064,7 +1035,6 @@ executable regex-delim
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
     , natural-transformation >=0.3
-    , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
     , regex-pcre-builtin >=0.95.1.1.8.44
@@ -1115,7 +1085,6 @@ executable regex-delim-nomemo
       QuickCheck >=2.13.2
     , Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
@@ -1131,7 +1100,6 @@ executable regex-delim-nomemo
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
     , natural-transformation >=0.3
-    , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
     , regex-pcre-builtin >=0.95.1.1.8.44
@@ -1182,7 +1150,6 @@ executable regex-nomemo
       QuickCheck >=2.13.2
     , Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
@@ -1198,7 +1165,6 @@ executable regex-nomemo
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
     , natural-transformation >=0.3
-    , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
     , regex-pcre-builtin >=0.95.1.1.8.44

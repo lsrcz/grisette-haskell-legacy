@@ -1,10 +1,10 @@
-{-# LANGUAGE StandaloneKindSignatures #-}
-{-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE StandaloneKindSignatures #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Grisette.Backend.SBV.Data.SMT.Config
   ( GrisetteSMTConfig (..),
@@ -13,13 +13,12 @@ module Grisette.Backend.SBV.Data.SMT.Config
   )
 where
 
-import Data.BitVector.Sized.Signed
-import Data.BitVector.Sized.Unsigned
+import Data.Kind
 import qualified Data.SBV as SBV
 import GHC.TypeNats
-import Grisette.IR.SymPrim.Data.TabularFunc
+import Grisette.IR.SymPrim.Data.BV
 import Grisette.IR.SymPrim.Data.GeneralFunc
-import Data.Kind
+import Grisette.IR.SymPrim.Data.TabularFunc
 
 type Aux :: Bool -> Nat -> Type
 type family Aux o n where
@@ -35,8 +34,8 @@ type TermTy :: Nat -> Type -> Type
 type family TermTy bitWidth b where
   TermTy _ Bool = SBV.SBool
   TermTy n Integer = Aux (IsZero n) n
-  TermTy n (SignedBV x) = SBV.SBV (SBV.IntN x)
-  TermTy n (UnsignedBV x) = SBV.SBV (SBV.WordN x)
+  TermTy n (IntN x) = SBV.SBV (SBV.IntN x)
+  TermTy n (WordN x) = SBV.SBV (SBV.WordN x)
   TermTy n (a =-> b) = TermTy n a -> TermTy n b
   TermTy n (a --> b) = TermTy n a -> TermTy n b
   TermTy _ v = v

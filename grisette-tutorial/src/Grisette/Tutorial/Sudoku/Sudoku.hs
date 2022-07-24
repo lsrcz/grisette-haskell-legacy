@@ -26,8 +26,8 @@ module Grisette.Tutorial.Sudoku.Sudoku
 
     -- | Grisette provides the support for some primitive types directly supported by SMT solvers.
     -- Currently, Grisette provided native support for the symbolic counterparts of
-    -- 'Integer', 'Bool', @'SignedBV' n@ and @'UnsignedBV'@ n types.
-    -- They can be accessed via @'Sym' 'Integer'@, @'Sym' 'Bool'@, @'Sym' ('SignedBV' n)@ and @'Sym' ('UnsignedBV' n)@.
+    -- 'Integer', 'Bool', @'IntN' n@ and @'WordN'@ n types.
+    -- They can be accessed via @'Sym' 'Integer'@, @'Sym' 'Bool'@, @'Sym' ('IntN' n)@ and @'Sym' ('WordN' n)@.
     -- Grisette also provides the support for fixed bitwidth signed and unsigned integer types @Int*@ and @Word*@,
     -- e.g. 'Data.Int.Int8', 'Data.Word.Word32', etc.
     -- The symbolic counterparts of these types are symbolic signed and unsigned bitvectors.

@@ -6,11 +6,11 @@ import GHC.TypeNats
 import Grisette
 import Grisette.Unordered.UUnionM
 
-type EnvSingle n t = [(SymUnsignedBV n, UUnionM t)]
+type EnvSingle n t = [(SymWordN n, UUnionM t)]
 
 type Env n t = UUnionM (EnvSingle n t)
 
-envAdd :: (Mergeable SymBool t, KnownNat n, 1 <= n) => Env n t -> SymUnsignedBV n -> UUnionM t -> Env n t
+envAdd :: (Mergeable SymBool t, KnownNat n, 1 <= n) => Env n t -> SymWordN n -> UUnionM t -> Env n t
 envAdd env k v = do
   e <- env
   mrgReturn $ (k, v) : e
@@ -19,8 +19,8 @@ envAdd env k v = do
 extractName ::
   (KnownNat n, 1 <= n) =>
   BonsaiError ->
-  UUnionM (BonsaiTree (SymUnsignedBV n)) ->
-  ExceptT BonsaiError UUnionM (SymUnsignedBV n)
+  UUnionM (BonsaiTree (SymWordN n)) ->
+  ExceptT BonsaiError UUnionM (SymWordN n)
 extractName err m = do
   t <- lift m
   case t of
@@ -32,7 +32,7 @@ envAddTree ::
   (Mergeable SymBool t, KnownNat n, 1 <= n) =>
   BonsaiError ->
   Env n t ->
-  UUnionM (BonsaiTree (SymUnsignedBV n)) ->
+  UUnionM (BonsaiTree (SymWordN n)) ->
   UUnionM t ->
   ExceptT BonsaiError UUnionM (Env n t)
 envAddTree err env t v = do
@@ -44,7 +44,7 @@ envResolveU ::
   (Mergeable SymBool t, KnownNat n, 1 <= n) =>
   BonsaiError ->
   Env n t ->
-  SymUnsignedBV n ->
+  SymWordN n ->
   ExceptT BonsaiError UUnionM (UUnionM t)
 envResolveU err env k = do
   e <- lift env
@@ -60,7 +60,7 @@ envResolve' ::
   Int ->
   BonsaiError ->
   Env n t ->
-  SymUnsignedBV n ->
+  SymWordN n ->
   ExceptT BonsaiError UUnionM t
 envResolve' fuel err env k = do
   e <- lift env

@@ -39,7 +39,6 @@ library
       base >4.14 && <5
     , grisette-core ==0.1.0.0
     , mtl >=2.2.2
-    , parameterized-utils >=2.1.4
     , transformers >=0.5.6.2
     , vector >=0.12.1.2
     , vector-sized >=1.4.1
@@ -66,7 +65,6 @@ test-suite spec
     , hspec ==2.*
     , hspec-junit-formatter
     , mtl >=2.2.2
-    , parameterized-utils >=2.1.4
     , transformers >=0.5.6.2
     , unordered-containers >=0.2.11
     , vector >=0.12.1.2

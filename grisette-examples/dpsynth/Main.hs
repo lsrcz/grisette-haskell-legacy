@@ -52,26 +52,26 @@ main = do
   quickCheck $ \(x :: [Integer]) -> interpretSketch @SymInteger availableUnary availableBinary (toSym $ masSynthedOpt1 @Integer) (toSym $ (: []) <$> x) == mrgReturn (toSym $ masAlgo x)
 
 
-  masIntSynthedOpt1 :: Maybe (ConProgram (SignedBV 11)) <-
+  masIntSynthedOpt1 :: Maybe (ConProgram (IntN 11)) <-
     timeItAll "masOpt1" $ synth1 configb availableUnary availableBinary ()
-       (\x -> let t = foldl (\acc y -> acc &&~ y >=~ -8 &&~ y <=~ 8) (conc True) $ getSingle <$> join x in trace (show t) t) (masSpec @(SignedBV 11) . fmap (getSingle . head)) masSketchOpt
+       (\x -> let t = foldl (\acc y -> acc &&~ y >=~ -8 &&~ y <=~ 8) (conc True) $ getSingle <$> join x in trace (show t) t) (masSpec @(IntN 11) . fmap (getSingle . head)) masSketchOpt
   print masIntSynthedOpt1
-  print $ interpretSketch @(SymSignedBV 11) availableUnary availableBinary (toSym $ fromJust masIntSynthedOpt1) ((: []) <$> [-1,1,1,-2])
-  print $ interpretSketch @(SymSignedBV 11) availableUnary availableBinary (toSym $ masSynthedOpt1 @(SignedBV 11)) ((: []) <$> [-1,1,1,-2])
+  print $ interpretSketch @(SymIntN 11) availableUnary availableBinary (toSym $ fromJust masIntSynthedOpt1) ((: []) <$> [-1,1,1,-2])
+  print $ interpretSketch @(SymIntN 11) availableUnary availableBinary (toSym $ masSynthedOpt1 @(IntN 11)) ((: []) <$> [-1,1,1,-2])
 
   masIntSynthedOpt :: Maybe (ConProgram Integer) <-
     timeItAll "masOpt" $ synth1 config availableUnary availableBinary ()
        (const $ conc True) (masSpec @Integer . fmap (getSingle . head)) masSketchOpt
   print masIntSynthedOpt
 
-  masIntSynthed1 :: Maybe (ConProgram (SignedBV 10)) <-
+  masIntSynthed1 :: Maybe (ConProgram (IntN 10)) <-
     timeItAll "mas1" $ synth1 configb availableUnary availableBinary ()
-       (\x -> foldl (\acc y -> acc &&~ y >=~ -4 &&~ y <=~ 4) (conc True) $ getSingle <$> join x) (masSpec @(SignedBV 10) . fmap (getSingle . head)) masSketch
+       (\x -> foldl (\acc y -> acc &&~ y >=~ -4 &&~ y <=~ 4) (conc True) $ getSingle <$> join x) (masSpec @(IntN 10) . fmap (getSingle . head)) masSketch
   print masIntSynthed1
 
-  masIntSynthed1' :: Maybe (ConProgram (SignedBV 10)) <-
+  masIntSynthed1' :: Maybe (ConProgram (IntN 10)) <-
     timeItAll "mas1'" $ synth1 configb availableUnary availableBinary ()
-       (\x -> foldl (\acc y -> acc &&~ y >=~ -4 &&~ y <=~ 4) (conc True) $ getSingle <$> join x) (masSpec @(SignedBV 10) . fmap (getSingle . head)) masSketch1
+       (\x -> foldl (\acc y -> acc &&~ y >=~ -4 &&~ y <=~ 4) (conc True) $ getSingle <$> join x) (masSpec @(IntN 10) . fmap (getSingle . head)) masSketch1
   print masIntSynthed1'
 
   masIntSynthed :: Maybe (ConProgram Integer) <-

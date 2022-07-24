@@ -75,7 +75,6 @@ library
   build-depends:
       Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11
@@ -146,7 +145,6 @@ executable bonsai-letpoly-nomemo-unordered
   build-depends:
       Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11
@@ -218,7 +216,6 @@ executable bonsai-letpoly-unordered
   build-depends:
       Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11
@@ -290,7 +287,6 @@ executable bonsai-nanoscala-nomemo-unordered
   build-depends:
       Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11
@@ -362,7 +358,6 @@ executable bonsai-nanoscala-unordered
   build-depends:
       Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11
@@ -434,7 +429,6 @@ executable bonsai-stlc-nomemo-unordered
   build-depends:
       Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11
@@ -506,7 +500,6 @@ executable bonsai-stlc-unordered
   build-depends:
       Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11
@@ -585,7 +578,6 @@ executable cosette-optimized-merge-unordered
   build-depends:
       Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11
@@ -664,7 +656,6 @@ executable cosette-unordered
   build-depends:
       Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11
@@ -742,7 +733,6 @@ executable ferrite-unordered
   build-depends:
       Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11
@@ -813,7 +803,6 @@ executable fluidics-unordered
   build-depends:
       Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11
@@ -889,7 +878,6 @@ executable ifcl-unordered
   build-depends:
       Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11
@@ -960,7 +948,6 @@ executable regex-delim-nomemo-unordered
   build-depends:
       Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11
@@ -1031,7 +1018,6 @@ executable regex-delim-unordered
   build-depends:
       Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11
@@ -1102,7 +1088,6 @@ executable regex-nomemo-unordered
   build-depends:
       Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11
@@ -1173,7 +1158,6 @@ executable regex-unordered
   build-depends:
       Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11

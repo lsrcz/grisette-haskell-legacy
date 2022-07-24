@@ -58,12 +58,8 @@ packages:
 #
 # extra-deps: []
 extra-deps:
-  - bitwise-1.0.0.1@sha256:2499779e8c9d59b3d8660e4994d357328750de8b4d1076c9924fb93404fa4c3a,3110
-  - panic-0.4.0.1@sha256:fb46577c9e0ca38c37960572f958a8469f2b577e963ed4f3ea1904d8400d828b,702
   - doctest-0.20.0@sha256:fd56edde124a92d42c42c74333f0ae74532329d15a6c63d578cbb51f4e7cfd34,7121
   - fused-effects-1.1.0.0
-  - bv-sized-1.0.3
-  - parameterized-utils-2.1.4.0
   - Unique-0.4.7
   - hashtables-1.2.3.4
   - vector-sized-1.4.1.0

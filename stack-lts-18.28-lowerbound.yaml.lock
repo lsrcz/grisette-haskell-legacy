@@ -5,20 +5,6 @@
 
 packages:
 - completed:
-    hackage: bitwise-1.0.0.1@sha256:2499779e8c9d59b3d8660e4994d357328750de8b4d1076c9924fb93404fa4c3a,3110
-    pantry-tree:
-      size: 760
-      sha256: dfc85fd0cf52e0595bd5beffaa2633927703d3f92ebdd7ba21cf71afb1bc4816
-  original:
-    hackage: bitwise-1.0.0.1@sha256:2499779e8c9d59b3d8660e4994d357328750de8b4d1076c9924fb93404fa4c3a,3110
-- completed:
-    hackage: panic-0.4.0.1@sha256:fb46577c9e0ca38c37960572f958a8469f2b577e963ed4f3ea1904d8400d828b,702
-    pantry-tree:
-      size: 252
-      sha256: 2f4a32588a5935a4d58ee50ae2b83cd5be25b1a1b814dbd2c6a9451248c32b4a
-  original:
-    hackage: panic-0.4.0.1@sha256:fb46577c9e0ca38c37960572f958a8469f2b577e963ed4f3ea1904d8400d828b,702
-- completed:
     hackage: doctest-0.20.0@sha256:fd56edde124a92d42c42c74333f0ae74532329d15a6c63d578cbb51f4e7cfd34,7121
     pantry-tree:
       size: 8027
@@ -32,20 +18,6 @@ packages:
       sha256: e427a329bd733f5096e37bfcf5a211bb2e8555b88b7e87ac43607d2f455e3f66
   original:
     hackage: fused-effects-1.1.0.0
-- completed:
-    hackage: bv-sized-1.0.3@sha256:0453825c28a5560603ad682ad43dc6699bd6d1aab5512a1351b8d4b7e75917e9,2099
-    pantry-tree:
-      size: 709
-      sha256: c4e0509532e35b24a2600128083b46ae6153b8672ed12e175c35509ed538a39a
-  original:
-    hackage: bv-sized-1.0.3
-- completed:
-    hackage: parameterized-utils-2.1.4.0@sha256:ac8bc9945b38b6ec4d1fef83f5f7f7d8ebbf2cb62351dcc92a60fbdae90f2f68,4405
-    pantry-tree:
-      size: 3292
-      sha256: 12d0e0eb45c43547031f6515d30d359155748adc99d65b5c6dbc8905f7caa9a7
-  original:
-    hackage: parameterized-utils-2.1.4.0
 - completed:
     hackage: Unique-0.4.7@sha256:2b8442a754c4d10111a37e1c792d9b08316221bae87ec60258bf32ec06b76797,1484
     pantry-tree:
@@ -166,12 +138,12 @@ packages:
   original:
     hackage: parser-combinators-1.0.0
 - completed:
-    hackage: timeit-0.9.0.0@sha256:5c5a2af2785742b6a17cb166b64248adc19ade4853126b8665d3fa2ac2c46380,298
+    hackage: timeit-1.0.0.0@sha256:883527e27da4aaf4d6ac8bd1a654900492907812e34d4e316fc7991c83d2261e,330
     pantry-tree:
       size: 158
-      sha256: d9df7bdefa43c9e3bd993bab6af24ca32cf6998468fe4ac438c14058dabdd39f
+      sha256: aff071c864511ee6364e2ac0c3bf55cc8a6b474e59447b7160aa46d25419ee54
   original:
-    hackage: timeit-0.9.0.0
+    hackage: timeit-1.0.0.0
 - completed:
     hackage: clock-0.7.1@sha256:8ff36c0d291f83e4ab25d9a6cc6562298fdad3b5883d1d033da957af843cbe35,3653
     pantry-tree:

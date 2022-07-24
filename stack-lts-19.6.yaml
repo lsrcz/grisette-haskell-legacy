@@ -60,10 +60,6 @@ packages:
 extra-deps:
   - typerep-map-0.5.0.0@sha256:34f1ba9b268a6d52e26ae460011a5571e8099b50a3f4a7c8db25dd8efe3be8ee,4667
   - Unique-0.4.7.9@sha256:a7e154cf6d05169777a1e54aadab24fb3a6eae3ee167e5e77d7ba96d182436c7,2064
-  - bv-sized-1.0.4@sha256:ddb32f807240f79e89bd85d9de16d663cb328d981015523bdf0d88d84e332d4f,2099
-  - parameterized-utils-2.1.5.0@sha256:9afa78ad40442118b11959c9c21f50423dc3be002d58d85a17a8969fbd4f0356,4406
-  - bitwise-1.0.0.1@sha256:04c0e0c65a9228d9e004b5c4b08633b2f0e915afe8f3affc9bd16f75f92ccf61,3110
-  - panic-0.4.0.1@sha256:fb46577c9e0ca38c37960572f958a8469f2b577e963ed4f3ea1904d8400d828b,702
   - doctest-0.20.0@sha256:fd56edde124a92d42c42c74333f0ae74532329d15a6c63d578cbb51f4e7cfd34,7121
 
 # Override default flag values for local packages and extra-deps

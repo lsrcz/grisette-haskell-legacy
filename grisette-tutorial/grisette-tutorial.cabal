@@ -41,7 +41,6 @@ library
   build-depends:
       Unique >=0.4.7
     , base >4.14 && <5
-    , bv-sized >=1.0.3
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
@@ -55,7 +54,6 @@ library
     , megaparsec >=8
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
-    , parameterized-utils >=2.1.4
     , parser-combinators >=1
     , regex-base >=0.94
     , regex-pcre-builtin >=0.95.1.1.8.44

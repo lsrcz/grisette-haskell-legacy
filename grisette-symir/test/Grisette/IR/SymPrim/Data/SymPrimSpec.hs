@@ -7,24 +7,26 @@
 module Grisette.IR.SymPrim.Data.SymPrimSpec where
 
 import Control.Monad.Except
-import qualified Data.BitVector.Sized.Signed as BVS
-import qualified Data.BitVector.Sized.Unsigned as BVU
 import Data.Bits
 import qualified Data.HashSet as S
+import Data.Int
 import Data.Proxy
-import Grisette.IR.SymPrim.Control.Monad.UnionM
+import Data.Word
 import Grisette.Core.Data.Class.BitVector
 import Grisette.Core.Data.Class.Bool
+import Grisette.Core.Data.Class.Evaluate
 import Grisette.Core.Data.Class.ExtractSymbolics
+import Grisette.Core.Data.Class.Function
+import Grisette.Core.Data.Class.GenSym
 import Grisette.Core.Data.Class.Integer
 import Grisette.Core.Data.Class.Mergeable
 import Grisette.Core.Data.Class.PrimWrapper
 import Grisette.Core.Data.Class.SOrd
 import Grisette.Core.Data.Class.SimpleMergeable
-import Grisette.Core.Data.Class.Evaluate
-import Grisette.Core.Data.Class.GenSym
 import Grisette.Core.Data.Class.ToCon
 import Grisette.Core.Data.Class.ToSym
+import Grisette.IR.SymPrim.Control.Monad.UnionM
+import Grisette.IR.SymPrim.Data.BV
 import Grisette.IR.SymPrim.Data.Prim.BV
 import Grisette.IR.SymPrim.Data.Prim.Bits
 import Grisette.IR.SymPrim.Data.Prim.Bool
@@ -32,14 +34,11 @@ import Grisette.IR.SymPrim.Data.Prim.Integer
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm
 import qualified Grisette.IR.SymPrim.Data.Prim.Model as Model
 import Grisette.IR.SymPrim.Data.Prim.Num
+import Grisette.IR.SymPrim.Data.Prim.TabularFunc
 import Grisette.IR.SymPrim.Data.SymPrim
+import Grisette.IR.SymPrim.Data.TabularFunc
 import Test.Hspec
 import Test.Hspec.QuickCheck
-import Grisette.Core.Data.Class.Function
-import Grisette.IR.SymPrim.Data.Prim.TabularFunc
-import Grisette.IR.SymPrim.Data.TabularFunc
-import Data.Int
-import Data.Word
 
 spec :: Spec
 spec = do
@@ -194,18 +193,18 @@ spec = do
         (a `symCompare` ssymb "b" :: UnionM Ordering)
           `shouldBe` mrgIf (a <~ b) (mrgSingle LT) (mrgIf (a ==~ b) (mrgSingle EQ) (mrgSingle (GT)))
   describe "Sym BV" $ do
-    let au :: Sym (BVU.UnsignedBV 4) = ssymb "a"
-    let bu :: Sym (BVU.UnsignedBV 4) = ssymb "b"
-    let as :: Sym (BVS.SignedBV 4) = ssymb "a"
-    let bs :: Sym (BVS.SignedBV 4) = ssymb "b"
-    let aut :: Term (BVU.UnsignedBV 4) = ssymbTerm "a"
-    let but :: Term (BVU.UnsignedBV 4) = ssymbTerm "b"
-    let ast :: Term (BVS.SignedBV 4) = ssymbTerm "a"
-    let bst :: Term (BVS.SignedBV 4) = ssymbTerm "b"
+    let au :: Sym (WordN 4) = ssymb "a"
+    let bu :: Sym (WordN 4) = ssymb "b"
+    let as :: Sym (IntN 4) = ssymb "a"
+    let bs :: Sym (IntN 4) = ssymb "b"
+    let aut :: Term (WordN 4) = ssymbTerm "a"
+    let but :: Term (WordN 4) = ssymbTerm "b"
+    let ast :: Term (IntN 4) = ssymbTerm "a"
+    let bst :: Term (IntN 4) = ssymbTerm "b"
     describe "Num for Sym BV" $ do
       it "fromInteger should work" $ do
-        (1 :: Sym (BVU.UnsignedBV 4)) `shouldBe` Sym (concTerm 1)
-        (1 :: Sym (BVS.SignedBV 4)) `shouldBe` Sym (concTerm 1)
+        (1 :: Sym (WordN 4)) `shouldBe` Sym (concTerm 1)
+        (1 :: Sym (IntN 4)) `shouldBe` Sym (concTerm 1)
       it "(+) for SymPrim should work" $ do
         au + bu `shouldBe` Sym (addNum aut but)
         as + bs `shouldBe` Sym (addNum ast bst)
@@ -226,23 +225,23 @@ spec = do
         signum as `shouldBe` Sym (signumNum ast)
     describe "SOrd for Sym BV" $ do
       prop "SOrd should work on concrete" $ \(i :: Integer, j :: Integer) -> do
-        let iu :: BVU.UnsignedBV 4 = fromInteger i
-        let ju :: BVU.UnsignedBV 4 = fromInteger j
-        let is :: BVS.SignedBV 4 = fromInteger i
-        let js :: BVS.SignedBV 4 = fromInteger j
+        let iu :: WordN 4 = fromInteger i
+        let ju :: WordN 4 = fromInteger j
+        let is :: IntN 4 = fromInteger i
+        let js :: IntN 4 = fromInteger j
         let normalizeu k = k - k `div` 16 * 16
         let normalizes k = if normalizeu k >= 8 then normalizeu k - 16 else normalizeu k
-        (conc iu :: Sym (BVU.UnsignedBV 4)) <=~ conc ju `shouldBe` (conc (normalizeu i <= normalizeu j) :: SymBool)
-        (conc iu :: Sym (BVU.UnsignedBV 4)) <~ conc ju `shouldBe` (conc (normalizeu i < normalizeu j) :: SymBool)
-        (conc iu :: Sym (BVU.UnsignedBV 4)) >=~ conc ju `shouldBe` (conc (normalizeu i >= normalizeu j) :: SymBool)
-        (conc iu :: Sym (BVU.UnsignedBV 4)) >~ conc ju `shouldBe` (conc (normalizeu i > normalizeu j) :: SymBool)
-        (conc iu :: Sym (BVU.UnsignedBV 4)) `symCompare` conc ju
+        (conc iu :: Sym (WordN 4)) <=~ conc ju `shouldBe` (conc (normalizeu i <= normalizeu j) :: SymBool)
+        (conc iu :: Sym (WordN 4)) <~ conc ju `shouldBe` (conc (normalizeu i < normalizeu j) :: SymBool)
+        (conc iu :: Sym (WordN 4)) >=~ conc ju `shouldBe` (conc (normalizeu i >= normalizeu j) :: SymBool)
+        (conc iu :: Sym (WordN 4)) >~ conc ju `shouldBe` (conc (normalizeu i > normalizeu j) :: SymBool)
+        (conc iu :: Sym (WordN 4)) `symCompare` conc ju
           `shouldBe` (normalizeu i `symCompare` normalizeu j :: UnionM Ordering)
-        (conc is :: Sym (BVS.SignedBV 4)) <=~ conc js `shouldBe` (conc (normalizes i <= normalizes j) :: SymBool)
-        (conc is :: Sym (BVS.SignedBV 4)) <~ conc js `shouldBe` (conc (normalizes i < normalizes j) :: SymBool)
-        (conc is :: Sym (BVS.SignedBV 4)) >=~ conc js `shouldBe` (conc (normalizes i >= normalizes j) :: SymBool)
-        (conc is :: Sym (BVS.SignedBV 4)) >~ conc js `shouldBe` (conc (normalizes i > normalizes j) :: SymBool)
-        (conc is :: Sym (BVS.SignedBV 4)) `symCompare` conc js
+        (conc is :: Sym (IntN 4)) <=~ conc js `shouldBe` (conc (normalizes i <= normalizes j) :: SymBool)
+        (conc is :: Sym (IntN 4)) <~ conc js `shouldBe` (conc (normalizes i < normalizes j) :: SymBool)
+        (conc is :: Sym (IntN 4)) >=~ conc js `shouldBe` (conc (normalizes i >= normalizes j) :: SymBool)
+        (conc is :: Sym (IntN 4)) >~ conc js `shouldBe` (conc (normalizes i > normalizes j) :: SymBool)
+        (conc is :: Sym (IntN 4)) `symCompare` conc js
           `shouldBe` (normalizes i `symCompare` normalizes j :: UnionM Ordering)
       it "SOrd should work on symbolic" $ do
         au <=~ bu `shouldBe` Sym (leNum aut but)
@@ -284,38 +283,38 @@ spec = do
         isSigned au `shouldBe` False
         isSigned as `shouldBe` True
       it "testBit for SymPrim would only work on concrete ones" $ do
-        testBit (Conc 3 :: Sym (BVU.UnsignedBV 4)) 1 `shouldBe` True
-        testBit (Conc 3 :: Sym (BVU.UnsignedBV 4)) 2 `shouldBe` False
-        testBit (Conc 3 :: Sym (BVS.SignedBV 4)) 1 `shouldBe` True
-        testBit (Conc 3 :: Sym (BVS.SignedBV 4)) 2 `shouldBe` False
+        testBit (Conc 3 :: Sym (WordN 4)) 1 `shouldBe` True
+        testBit (Conc 3 :: Sym (WordN 4)) 2 `shouldBe` False
+        testBit (Conc 3 :: Sym (IntN 4)) 1 `shouldBe` True
+        testBit (Conc 3 :: Sym (IntN 4)) 2 `shouldBe` False
       it "bit for SymPrim would work" $ do
-        bit 1 `shouldBe` (Conc 2 :: Sym (BVU.UnsignedBV 4))
-        bit 1 `shouldBe` (Conc 2 :: Sym (BVS.SignedBV 4))
+        bit 1 `shouldBe` (Conc 2 :: Sym (WordN 4))
+        bit 1 `shouldBe` (Conc 2 :: Sym (IntN 4))
       it "popCount for SymPrim would only work on concrete ones" $ do
-        popCount (Conc 3 :: Sym (BVU.UnsignedBV 4)) `shouldBe` 2
-        popCount (Conc 3 :: Sym (BVU.UnsignedBV 4)) `shouldBe` 2
-        popCount (Conc 3 :: Sym (BVS.SignedBV 4)) `shouldBe` 2
-        popCount (Conc 3 :: Sym (BVS.SignedBV 4)) `shouldBe` 2
+        popCount (Conc 3 :: Sym (WordN 4)) `shouldBe` 2
+        popCount (Conc 3 :: Sym (WordN 4)) `shouldBe` 2
+        popCount (Conc 3 :: Sym (IntN 4)) `shouldBe` 2
+        popCount (Conc 3 :: Sym (IntN 4)) `shouldBe` 2
     describe "BVConcat for Sym BV" $ do
       it "bvconcat for SymPrim" $ do
         bvconcat
-          (ssymb "a" :: Sym (BVU.UnsignedBV 4))
-          (ssymb "b" :: Sym (BVU.UnsignedBV 3))
+          (ssymb "a" :: Sym (WordN 4))
+          (ssymb "b" :: Sym (WordN 3))
           `shouldBe` Sym
             ( bvtconcat
-                (ssymbTerm "a" :: Term (BVU.UnsignedBV 4))
-                (ssymbTerm "b" :: Term (BVU.UnsignedBV 3))
+                (ssymbTerm "a" :: Term (WordN 4))
+                (ssymbTerm "b" :: Term (WordN 3))
             )
     describe "bvextend for Sym BV" $ do
       it "bvzeroExtend for SymPrim" $ do
-        bvzeroExtend (Proxy @6) au `shouldBe` Sym (bvtext (Proxy @2) False aut)
-        bvzeroExtend (Proxy @6) as `shouldBe` Sym (bvtext (Proxy @2) False ast)
+        bvzeroExtend (Proxy @6) au `shouldBe` Sym (bvtext (Proxy @6) False aut)
+        bvzeroExtend (Proxy @6) as `shouldBe` Sym (bvtext (Proxy @6) False ast)
       it "bvsignExtend for SymPrim" $ do
-        bvsignExtend (Proxy @6) au `shouldBe` Sym (bvtext (Proxy @2) True aut)
-        bvsignExtend (Proxy @6) as `shouldBe` Sym (bvtext (Proxy @2) True ast)
+        bvsignExtend (Proxy @6) au `shouldBe` Sym (bvtext (Proxy @6) True aut)
+        bvsignExtend (Proxy @6) as `shouldBe` Sym (bvtext (Proxy @6) True ast)
       it "bvextend for SymPrim" $ do
-        bvextend (Proxy @6) au `shouldBe` Sym (bvtext (Proxy @2) False aut)
-        bvextend (Proxy @6) as `shouldBe` Sym (bvtext (Proxy @2) True ast)
+        bvextend (Proxy @6) au `shouldBe` Sym (bvtext (Proxy @6) False aut)
+        bvextend (Proxy @6) as `shouldBe` Sym (bvtext (Proxy @6) True ast)
     describe "bvselect for Sym BV" $ do
       it "bvselect for SymPrim" $ do
         bvselect (Proxy @2) (Proxy @1) au
@@ -324,25 +323,25 @@ spec = do
           `shouldBe` Sym (bvtselect (Proxy @2) (Proxy @1) ast)
     describe "conversion between Int8 and Sym BV" $ do
       it "toSym" $ do
-        toSym (0 :: Int8) `shouldBe` (conc 0 :: SymSignedBV 8)
-        toSym (-127 :: Int8) `shouldBe` (conc $ -127 :: SymSignedBV 8)
-        toSym (-128 :: Int8) `shouldBe` (conc $ -128 :: SymSignedBV 8)
-        toSym (127 :: Int8) `shouldBe` (conc 127 :: SymSignedBV 8)
+        toSym (0 :: Int8) `shouldBe` (conc 0 :: SymIntN 8)
+        toSym (-127 :: Int8) `shouldBe` (conc $ -127 :: SymIntN 8)
+        toSym (-128 :: Int8) `shouldBe` (conc $ -128 :: SymIntN 8)
+        toSym (127 :: Int8) `shouldBe` (conc 127 :: SymIntN 8)
       it "toCon" $ do
-        toCon (conc 0 :: SymSignedBV 8) `shouldBe` Just (0 :: Int8)
-        toCon (conc $ -127 :: SymSignedBV 8) `shouldBe` Just (-127 :: Int8)
-        toCon (conc $ -128 :: SymSignedBV 8) `shouldBe` Just (-128 :: Int8)
-        toCon (conc 127 :: SymSignedBV 8) `shouldBe` Just (127 :: Int8)
+        toCon (conc 0 :: SymIntN 8) `shouldBe` Just (0 :: Int8)
+        toCon (conc $ -127 :: SymIntN 8) `shouldBe` Just (-127 :: Int8)
+        toCon (conc $ -128 :: SymIntN 8) `shouldBe` Just (-128 :: Int8)
+        toCon (conc 127 :: SymIntN 8) `shouldBe` Just (127 :: Int8)
     describe "conversion between Word8 and Sym BV" $ do
       it "toSym" $ do
-        toSym (0 :: Word8) `shouldBe` (conc 0 :: SymUnsignedBV 8)
-        toSym (1 :: Word8) `shouldBe` (conc 1 :: SymUnsignedBV 8)
-        toSym (255 :: Word8) `shouldBe` (conc 255 :: SymUnsignedBV 8)
+        toSym (0 :: Word8) `shouldBe` (conc 0 :: SymWordN 8)
+        toSym (1 :: Word8) `shouldBe` (conc 1 :: SymWordN 8)
+        toSym (255 :: Word8) `shouldBe` (conc 255 :: SymWordN 8)
       it "toCon" $ do
-        toCon (conc 0 :: SymUnsignedBV 8) `shouldBe` Just (0 :: Word8)
-        toCon (conc 1 :: SymUnsignedBV 8) `shouldBe` Just (1 :: Word8)
-        toCon (conc 255 :: SymUnsignedBV 8) `shouldBe` Just (255 :: Word8)
+        toCon (conc 0 :: SymWordN 8) `shouldBe` Just (0 :: Word8)
+        toCon (conc 1 :: SymWordN 8) `shouldBe` Just (1 :: Word8)
+        toCon (conc 255 :: SymWordN 8) `shouldBe` Just (255 :: Word8)
   describe "TabularFunc" $ do
     it "apply" $ do
-      (ssymb "a" :: Integer =~> Integer) # ssymb "b" `shouldBe`
-        Sym (applyf (ssymbTerm "a" :: Term (Integer =-> Integer)) (ssymbTerm "b"))
+      (ssymb "a" :: Integer =~> Integer) # ssymb "b"
+        `shouldBe` Sym (applyf (ssymbTerm "a" :: Term (Integer =-> Integer)) (ssymbTerm "b"))

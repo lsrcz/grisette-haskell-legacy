@@ -4,8 +4,6 @@
 module Main where
 
 import Control.Monad.Except
-import Data.BitVector.Sized.Signed as BVS
-import Data.BitVector.Sized.Unsigned as BVU
 import GHC.Generics
 import Grisette
 import Data.Proxy
@@ -40,30 +38,30 @@ concInteger :: Sym Integer
 concInteger = 1
 
 -- Symbolic Signed BitVector
-symbSignedBV :: Sym (SignedBV 4)
-symbSignedBV = "a"
+symbIntN :: Sym (IntN 4)
+symbIntN = "a"
 
-concSignedBV :: Sym (SignedBV 4)
-concSignedBV = 3
+concIntN :: Sym (IntN 4)
+concIntN = 3
 
-concSignedBV' :: Sym (SignedBV 4)
-concSignedBV' = 9 -- -7
+concIntN' :: Sym (IntN 4)
+concIntN' = 9 -- -7
 
-concSignedBVCmpWith0' :: Sym Bool
-concSignedBVCmpWith0' = concSignedBV' <~ 0 -- true <~ SOrd
+concIntNCmpWith0' :: Sym Bool
+concIntNCmpWith0' = concIntN' <~ 0 -- true <~ SOrd
 
 -- Symbolic Unsigned BitVector
-symbUnsignedBV :: Sym (UnsignedBV 4)
-symbUnsignedBV = "a"
+symbWordN :: Sym (WordN 4)
+symbWordN = "a"
 
-concUnsignedBV :: Sym (UnsignedBV 4)
-concUnsignedBV = 3
+concWordN :: Sym (WordN 4)
+concWordN = 3
 
-concUnsignedBV' :: Sym (UnsignedBV 4)
-concUnsignedBV' = 9
+concWordN' :: Sym (WordN 4)
+concWordN' = 9
 
-concUnsignedBVCmpWith0' :: Sym Bool
-concUnsignedBVCmpWith0' = concUnsignedBV' <~ 0
+concWordNCmpWith0' :: Sym Bool
+concWordNCmpWith0' = concWordN' <~ 0
 
 -- bvult bvslt
 

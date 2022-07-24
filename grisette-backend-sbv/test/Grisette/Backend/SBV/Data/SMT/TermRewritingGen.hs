@@ -9,18 +9,21 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE UndecidableInstances #-}
+
 module Grisette.Backend.SBV.Data.SMT.TermRewritingGen where
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm
-import Test.QuickCheck
-import GHC.TypeLits
+
 import Data.Bits
-import Grisette.IR.SymPrim.Data.Prim.BV hiding (wrap)
-import Grisette.IR.SymPrim.Data.Prim.Num
-import Grisette.IR.SymPrim.Data.Prim.Bool
 import Data.Data
-import Grisette.IR.SymPrim.Data.Prim.Bits
-import Grisette.IR.SymPrim.Data.Prim.Integer
 import Data.Kind
+import GHC.TypeLits
+import Grisette.Core.Data.Class.BitVector
+import Grisette.IR.SymPrim.Data.Prim.BV
+import Grisette.IR.SymPrim.Data.Prim.Bits
+import Grisette.IR.SymPrim.Data.Prim.Bool
+import Grisette.IR.SymPrim.Data.Prim.Integer
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm
+import Grisette.IR.SymPrim.Data.Prim.Num
+import Test.QuickCheck
 
 class (SupportedPrim b) => TermRewritingSpec a b | a -> b where
   norewriteVer :: a -> Term b
@@ -76,6 +79,7 @@ constructTernarySpec tag a b c =
   wrap
     (constructTernary tag (norewriteVer a) (norewriteVer b) (norewriteVer c))
     (partialEvalTernary tag (rewriteVer a) (rewriteVer b) (rewriteVer c))
+
 data BoolOnlySpec = BoolOnlySpec (Term Bool) (Term Bool)
 
 instance Show BoolOnlySpec where
@@ -296,7 +300,39 @@ dsbv1 ::
     SupportedBV bv 2,
     SupportedBV bv 3,
     SupportedBV bv 4,
-    UnderlyingBV bv
+    Typeable bv,
+    BVSelect (bv 4) 0 2 (bv 2),
+    BVSelect (bv 4) 1 2 (bv 2),
+    BVSelect (bv 4) 2 2 (bv 2),
+    BVSelect (bv 3) 0 2 (bv 2),
+    BVSelect (bv 3) 1 2 (bv 2),
+    BVSelect (bv 2) 0 2 (bv 2),
+    BVConcat (bv 1) (bv 1) (bv 2),
+    BVExtend (bv 1) 2 (bv 2),
+    BVSelect (bv 4) 0 1 (bv 1),
+    BVSelect (bv 4) 1 1 (bv 1),
+    BVSelect (bv 4) 2 1 (bv 1),
+    BVSelect (bv 4) 3 1 (bv 1),
+    BVSelect (bv 3) 0 1 (bv 1),
+    BVSelect (bv 3) 1 1 (bv 1),
+    BVSelect (bv 3) 2 1 (bv 1),
+    BVSelect (bv 2) 0 1 (bv 1),
+    BVSelect (bv 2) 1 1 (bv 1),
+    BVSelect (bv 1) 0 1 (bv 1),
+    BVSelect (bv 4) 0 3 (bv 3),
+    BVSelect (bv 4) 1 3 (bv 3),
+    BVSelect (bv 3) 0 3 (bv 3),
+    BVConcat (bv 1) (bv 2) (bv 3),
+    BVConcat (bv 2) (bv 1) (bv 3),
+    BVExtend (bv 1) 3 (bv 3),
+    BVExtend (bv 2) 3 (bv 3),
+    BVSelect (bv 4) 0 4 (bv 4),
+    BVConcat (bv 1) (bv 3) (bv 4),
+    BVConcat (bv 2) (bv 2) (bv 4),
+    BVConcat (bv 3) (bv 1) (bv 4),
+    BVExtend (bv 1) 4 (bv 4),
+    BVExtend (bv 2) 4 (bv 4),
+    BVExtend (bv 3) 4 (bv 4)
   ) =>
   proxy bv ->
   Int ->
@@ -327,16 +363,16 @@ dsbv1 p depth | depth > 0 = do
       return $ constructUnarySpec (ComplementBits @(bv 1)) v1,
       return $ constructUnarySpec (ShiftBits @(bv 1) i) v1,
       return $ constructUnarySpec (RotateBits @(bv 1) i) v1,
-      return $ constructUnarySpec (BVTSelect @0 @1 @4 Proxy) v4,
-      return $ constructUnarySpec (BVTSelect @1 @1 @4 Proxy) v4,
-      return $ constructUnarySpec (BVTSelect @2 @1 @4 Proxy) v4,
-      return $ constructUnarySpec (BVTSelect @3 @1 @4 Proxy) v4,
-      return $ constructUnarySpec (BVTSelect @0 @1 @3 Proxy) v3,
-      return $ constructUnarySpec (BVTSelect @1 @1 @3 Proxy) v3,
-      return $ constructUnarySpec (BVTSelect @2 @1 @3 Proxy) v3,
-      return $ constructUnarySpec (BVTSelect @0 @1 @2 Proxy) v2,
-      return $ constructUnarySpec (BVTSelect @1 @1 @2 Proxy) v2,
-      return $ constructUnarySpec (BVTSelect @0 @1 @1 Proxy) v1
+      return $ constructUnarySpec (BVTSelect @bv @0 @1 @4 Proxy) v4,
+      return $ constructUnarySpec (BVTSelect @bv @1 @1 @4 Proxy) v4,
+      return $ constructUnarySpec (BVTSelect @bv @2 @1 @4 Proxy) v4,
+      return $ constructUnarySpec (BVTSelect @bv @3 @1 @4 Proxy) v4,
+      return $ constructUnarySpec (BVTSelect @bv @0 @1 @3 Proxy) v3,
+      return $ constructUnarySpec (BVTSelect @bv @1 @1 @3 Proxy) v3,
+      return $ constructUnarySpec (BVTSelect @bv @2 @1 @3 Proxy) v3,
+      return $ constructUnarySpec (BVTSelect @bv @0 @1 @2 Proxy) v2,
+      return $ constructUnarySpec (BVTSelect @bv @1 @1 @2 Proxy) v2,
+      return $ constructUnarySpec (BVTSelect @bv @0 @1 @1 Proxy) v1
     ]
 dsbv1 _ _ = error "Should never be called"
 
@@ -346,7 +382,39 @@ dsbv2 ::
     SupportedBV bv 2,
     SupportedBV bv 3,
     SupportedBV bv 4,
-    UnderlyingBV bv
+    Typeable bv,
+    BVSelect (bv 4) 0 2 (bv 2),
+    BVSelect (bv 4) 1 2 (bv 2),
+    BVSelect (bv 4) 2 2 (bv 2),
+    BVSelect (bv 3) 0 2 (bv 2),
+    BVSelect (bv 3) 1 2 (bv 2),
+    BVSelect (bv 2) 0 2 (bv 2),
+    BVConcat (bv 1) (bv 1) (bv 2),
+    BVExtend (bv 1) 2 (bv 2),
+    BVSelect (bv 4) 0 1 (bv 1),
+    BVSelect (bv 4) 1 1 (bv 1),
+    BVSelect (bv 4) 2 1 (bv 1),
+    BVSelect (bv 4) 3 1 (bv 1),
+    BVSelect (bv 3) 0 1 (bv 1),
+    BVSelect (bv 3) 1 1 (bv 1),
+    BVSelect (bv 3) 2 1 (bv 1),
+    BVSelect (bv 2) 0 1 (bv 1),
+    BVSelect (bv 2) 1 1 (bv 1),
+    BVSelect (bv 1) 0 1 (bv 1),
+    BVSelect (bv 4) 0 3 (bv 3),
+    BVSelect (bv 4) 1 3 (bv 3),
+    BVSelect (bv 3) 0 3 (bv 3),
+    BVConcat (bv 1) (bv 2) (bv 3),
+    BVConcat (bv 2) (bv 1) (bv 3),
+    BVExtend (bv 1) 3 (bv 3),
+    BVExtend (bv 2) 3 (bv 3),
+    BVSelect (bv 4) 0 4 (bv 4),
+    BVConcat (bv 1) (bv 3) (bv 4),
+    BVConcat (bv 2) (bv 2) (bv 4),
+    BVConcat (bv 3) (bv 1) (bv 4),
+    BVExtend (bv 1) 4 (bv 4),
+    BVExtend (bv 2) 4 (bv 4),
+    BVExtend (bv 3) 4 (bv 4)
   ) =>
   proxy bv ->
   Int ->
@@ -378,15 +446,15 @@ dsbv2 p depth | depth > 0 = do
       return $ constructUnarySpec (ComplementBits @(bv 2)) v2,
       return $ constructUnarySpec (ShiftBits @(bv 2) i) v2,
       return $ constructUnarySpec (RotateBits @(bv 2) i) v2,
-      return $ constructUnarySpec (BVTSelect @0 @2 @4 Proxy) v4,
-      return $ constructUnarySpec (BVTSelect @1 @2 @4 Proxy) v4,
-      return $ constructUnarySpec (BVTSelect @2 @2 @4 Proxy) v4,
-      return $ constructUnarySpec (BVTSelect @0 @2 @3 Proxy) v3,
-      return $ constructUnarySpec (BVTSelect @1 @2 @3 Proxy) v3,
-      return $ constructUnarySpec (BVTSelect @0 @2 @2 Proxy) v2,
-      return $ constructBinarySpec (BVTConcat @1 @1 @2) v1 v1',
-      return $ constructUnarySpec (Zext @1 @1 @2 Proxy) v1,
-      return $ constructUnarySpec (Sext @1 @1 @2 Proxy) v1
+      return $ constructUnarySpec (BVTSelect @bv @0 @2 @4 Proxy) v4,
+      return $ constructUnarySpec (BVTSelect @bv @1 @2 @4 Proxy) v4,
+      return $ constructUnarySpec (BVTSelect @bv @2 @2 @4 Proxy) v4,
+      return $ constructUnarySpec (BVTSelect @bv @0 @2 @3 Proxy) v3,
+      return $ constructUnarySpec (BVTSelect @bv @1 @2 @3 Proxy) v3,
+      return $ constructUnarySpec (BVTSelect @bv @0 @2 @2 Proxy) v2,
+      return $ constructBinarySpec (BVTConcat @bv @1 @1 @2) v1 v1',
+      return $ constructUnarySpec (Zext @bv @1 @2) v1,
+      return $ constructUnarySpec (Sext @bv @1 @2) v1
     ]
 dsbv2 _ _ = error "Should never be called"
 
@@ -396,7 +464,39 @@ dsbv3 ::
     SupportedBV bv 2,
     SupportedBV bv 3,
     SupportedBV bv 4,
-    UnderlyingBV bv
+    Typeable bv,
+    BVSelect (bv 4) 0 2 (bv 2),
+    BVSelect (bv 4) 1 2 (bv 2),
+    BVSelect (bv 4) 2 2 (bv 2),
+    BVSelect (bv 3) 0 2 (bv 2),
+    BVSelect (bv 3) 1 2 (bv 2),
+    BVSelect (bv 2) 0 2 (bv 2),
+    BVConcat (bv 1) (bv 1) (bv 2),
+    BVExtend (bv 1) 2 (bv 2),
+    BVSelect (bv 4) 0 1 (bv 1),
+    BVSelect (bv 4) 1 1 (bv 1),
+    BVSelect (bv 4) 2 1 (bv 1),
+    BVSelect (bv 4) 3 1 (bv 1),
+    BVSelect (bv 3) 0 1 (bv 1),
+    BVSelect (bv 3) 1 1 (bv 1),
+    BVSelect (bv 3) 2 1 (bv 1),
+    BVSelect (bv 2) 0 1 (bv 1),
+    BVSelect (bv 2) 1 1 (bv 1),
+    BVSelect (bv 1) 0 1 (bv 1),
+    BVSelect (bv 4) 0 3 (bv 3),
+    BVSelect (bv 4) 1 3 (bv 3),
+    BVSelect (bv 3) 0 3 (bv 3),
+    BVConcat (bv 1) (bv 2) (bv 3),
+    BVConcat (bv 2) (bv 1) (bv 3),
+    BVExtend (bv 1) 3 (bv 3),
+    BVExtend (bv 2) 3 (bv 3),
+    BVSelect (bv 4) 0 4 (bv 4),
+    BVConcat (bv 1) (bv 3) (bv 4),
+    BVConcat (bv 2) (bv 2) (bv 4),
+    BVConcat (bv 3) (bv 1) (bv 4),
+    BVExtend (bv 1) 4 (bv 4),
+    BVExtend (bv 2) 4 (bv 4),
+    BVExtend (bv 3) 4 (bv 4)
   ) =>
   proxy bv ->
   Int ->
@@ -427,15 +527,15 @@ dsbv3 p depth | depth > 0 = do
       return $ constructUnarySpec (ComplementBits @(bv 3)) v3,
       return $ constructUnarySpec (ShiftBits @(bv 3) i) v3,
       return $ constructUnarySpec (RotateBits @(bv 3) i) v3,
-      return $ constructUnarySpec (BVTSelect @0 @3 @4 Proxy) v4,
-      return $ constructUnarySpec (BVTSelect @1 @3 @4 Proxy) v4,
-      return $ constructUnarySpec (BVTSelect @0 @3 @3 Proxy) v3,
-      return $ constructBinarySpec (BVTConcat @1 @2 @3) v1 v2,
-      return $ constructBinarySpec (BVTConcat @2 @1 @3) v2 v1,
-      return $ constructUnarySpec (Zext @2 @1 @3 Proxy) v1,
-      return $ constructUnarySpec (Sext @2 @1 @3 Proxy) v1,
-      return $ constructUnarySpec (Zext @1 @2 @3 Proxy) v2,
-      return $ constructUnarySpec (Sext @1 @2 @3 Proxy) v2
+      return $ constructUnarySpec (BVTSelect @bv @0 @3 @4 Proxy) v4,
+      return $ constructUnarySpec (BVTSelect @bv @1 @3 @4 Proxy) v4,
+      return $ constructUnarySpec (BVTSelect @bv @0 @3 @3 Proxy) v3,
+      return $ constructBinarySpec (BVTConcat @bv @1 @2 @3) v1 v2,
+      return $ constructBinarySpec (BVTConcat @bv @2 @1 @3) v2 v1,
+      return $ constructUnarySpec (Zext @bv @1 @3) v1,
+      return $ constructUnarySpec (Sext @bv @1 @3) v1,
+      return $ constructUnarySpec (Zext @bv @2 @3) v2,
+      return $ constructUnarySpec (Sext @bv @2 @3) v2
     ]
 dsbv3 _ _ = error "Should never be called"
 
@@ -445,7 +545,39 @@ dsbv4 ::
     SupportedBV bv 2,
     SupportedBV bv 3,
     SupportedBV bv 4,
-    UnderlyingBV bv
+    Typeable bv,
+    BVSelect (bv 4) 0 2 (bv 2),
+    BVSelect (bv 4) 1 2 (bv 2),
+    BVSelect (bv 4) 2 2 (bv 2),
+    BVSelect (bv 3) 0 2 (bv 2),
+    BVSelect (bv 3) 1 2 (bv 2),
+    BVSelect (bv 2) 0 2 (bv 2),
+    BVConcat (bv 1) (bv 1) (bv 2),
+    BVExtend (bv 1) 2 (bv 2),
+    BVSelect (bv 4) 0 1 (bv 1),
+    BVSelect (bv 4) 1 1 (bv 1),
+    BVSelect (bv 4) 2 1 (bv 1),
+    BVSelect (bv 4) 3 1 (bv 1),
+    BVSelect (bv 3) 0 1 (bv 1),
+    BVSelect (bv 3) 1 1 (bv 1),
+    BVSelect (bv 3) 2 1 (bv 1),
+    BVSelect (bv 2) 0 1 (bv 1),
+    BVSelect (bv 2) 1 1 (bv 1),
+    BVSelect (bv 1) 0 1 (bv 1),
+    BVSelect (bv 4) 0 3 (bv 3),
+    BVSelect (bv 4) 1 3 (bv 3),
+    BVSelect (bv 3) 0 3 (bv 3),
+    BVConcat (bv 1) (bv 2) (bv 3),
+    BVConcat (bv 2) (bv 1) (bv 3),
+    BVExtend (bv 1) 3 (bv 3),
+    BVExtend (bv 2) 3 (bv 3),
+    BVSelect (bv 4) 0 4 (bv 4),
+    BVConcat (bv 1) (bv 3) (bv 4),
+    BVConcat (bv 2) (bv 2) (bv 4),
+    BVConcat (bv 3) (bv 1) (bv 4),
+    BVExtend (bv 1) 4 (bv 4),
+    BVExtend (bv 2) 4 (bv 4),
+    BVExtend (bv 3) 4 (bv 4)
   ) =>
   proxy bv ->
   Int ->
@@ -477,16 +609,16 @@ dsbv4 p depth | depth > 0 = do
       return $ constructUnarySpec (ComplementBits @(bv 4)) v4,
       return $ constructUnarySpec (ShiftBits @(bv 4) i) v4,
       return $ constructUnarySpec (RotateBits @(bv 4) i) v4,
-      return $ constructUnarySpec (BVTSelect @0 @4 @4 Proxy) v4,
-      return $ constructBinarySpec (BVTConcat @1 @3 @4) v1 v3,
-      return $ constructBinarySpec (BVTConcat @2 @2 @4) v2 v2',
-      return $ constructBinarySpec (BVTConcat @3 @1 @4) v3 v1,
-      return $ constructUnarySpec (Zext @3 @1 @4 Proxy) v1,
-      return $ constructUnarySpec (Sext @3 @1 @4 Proxy) v1,
-      return $ constructUnarySpec (Zext @2 @2 @4 Proxy) v2,
-      return $ constructUnarySpec (Sext @2 @2 @4 Proxy) v2,
-      return $ constructUnarySpec (Zext @1 @3 @4 Proxy) v3,
-      return $ constructUnarySpec (Sext @1 @3 @4 Proxy) v3
+      return $ constructUnarySpec (BVTSelect @bv @0 @4 @4 Proxy) v4,
+      return $ constructBinarySpec (BVTConcat @bv @1 @3 @4) v1 v3,
+      return $ constructBinarySpec (BVTConcat @bv @2 @2 @4) v2 v2',
+      return $ constructBinarySpec (BVTConcat @bv @3 @1 @4) v3 v1,
+      return $ constructUnarySpec (Zext @bv @1 @4) v1,
+      return $ constructUnarySpec (Sext @bv @1 @4) v1,
+      return $ constructUnarySpec (Zext @bv @2 @4) v2,
+      return $ constructUnarySpec (Sext @bv @2 @4) v2,
+      return $ constructUnarySpec (Zext @bv @3 @4) v3,
+      return $ constructUnarySpec (Sext @bv @3 @4) v3
     ]
 dsbv4 _ _ = error "Should never be called"
 
@@ -495,7 +627,39 @@ instance
     SupportedBV bv 2,
     SupportedBV bv 3,
     SupportedBV bv 4,
-    UnderlyingBV bv
+    Typeable bv,
+    BVSelect (bv 4) 0 2 (bv 2),
+    BVSelect (bv 4) 1 2 (bv 2),
+    BVSelect (bv 4) 2 2 (bv 2),
+    BVSelect (bv 3) 0 2 (bv 2),
+    BVSelect (bv 3) 1 2 (bv 2),
+    BVSelect (bv 2) 0 2 (bv 2),
+    BVConcat (bv 1) (bv 1) (bv 2),
+    BVExtend (bv 1) 2 (bv 2),
+    BVSelect (bv 4) 0 1 (bv 1),
+    BVSelect (bv 4) 1 1 (bv 1),
+    BVSelect (bv 4) 2 1 (bv 1),
+    BVSelect (bv 4) 3 1 (bv 1),
+    BVSelect (bv 3) 0 1 (bv 1),
+    BVSelect (bv 3) 1 1 (bv 1),
+    BVSelect (bv 3) 2 1 (bv 1),
+    BVSelect (bv 2) 0 1 (bv 1),
+    BVSelect (bv 2) 1 1 (bv 1),
+    BVSelect (bv 1) 0 1 (bv 1),
+    BVSelect (bv 4) 0 3 (bv 3),
+    BVSelect (bv 4) 1 3 (bv 3),
+    BVSelect (bv 3) 0 3 (bv 3),
+    BVConcat (bv 1) (bv 2) (bv 3),
+    BVConcat (bv 2) (bv 1) (bv 3),
+    BVExtend (bv 1) 3 (bv 3),
+    BVExtend (bv 2) 3 (bv 3),
+    BVSelect (bv 4) 0 4 (bv 4),
+    BVConcat (bv 1) (bv 3) (bv 4),
+    BVConcat (bv 2) (bv 2) (bv 4),
+    BVConcat (bv 3) (bv 1) (bv 4),
+    BVExtend (bv 1) 4 (bv 4),
+    BVExtend (bv 2) 4 (bv 4),
+    BVExtend (bv 3) 4 (bv 4)
   ) =>
   Arbitrary (DifferentSizeBVSpec bv 4)
   where
@@ -543,4 +707,3 @@ divint = binop DivI
 
 modint :: GeneralSpec Integer -> GeneralSpec Integer -> GeneralSpec Integer
 modint = binop ModI
-

@@ -14,7 +14,6 @@ module Bonsai.SyntaxSpec
   )
 where
 
-import Data.BitVector.Sized.Unsigned
 import Data.Bits
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C
@@ -25,7 +24,7 @@ import Data.List
 import Data.String
 import GHC.Generics
 import GHC.TypeLits
-import Grisette ()
+import Grisette (WordN)
 
 data Rule
   = SymRule B.ByteString
@@ -64,8 +63,8 @@ instance Show Generation where
 data OptimSyntaxSpec n = OptimSyntaxSpecC
   { nonTerminals :: S.HashSet B.ByteString,
     terminals :: S.HashSet B.ByteString,
-    terminalToBV :: B.ByteString -> Maybe (UnsignedBV n),
-    bvToTerminal :: UnsignedBV n -> Maybe B.ByteString,
+    terminalToBV :: B.ByteString -> Maybe (WordN n),
+    bvToTerminal :: WordN n -> Maybe B.ByteString,
     generations :: [Generation],
     getRules :: B.ByteString -> Maybe [Rule]
   }
@@ -83,7 +82,7 @@ buildSyntax gens = OptimSyntaxSpecC nt t t2bv bv2t gens rulesf
         )
         S.empty
         gens
-    t2bvm :: M.HashMap B.ByteString (UnsignedBV n)
+    t2bvm :: M.HashMap B.ByteString (WordN n)
     t2bvm =
       fst $
         foldl
@@ -95,7 +94,7 @@ buildSyntax gens = OptimSyntaxSpecC nt t t2bv bv2t gens rulesf
           (M.empty, 1)
           t
     t2bv s = M.lookup s t2bvm
-    bv2tm :: M.HashMap (UnsignedBV n) B.ByteString
+    bv2tm :: M.HashMap (WordN n) B.ByteString
     bv2tm = M.foldlWithKey (\acc v n -> M.insert n v acc) M.empty t2bvm
     bv2t b = M.lookup b bv2tm
     rulesm :: M.HashMap B.ByteString [Rule]

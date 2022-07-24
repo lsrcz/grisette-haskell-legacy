@@ -16,7 +16,6 @@ dependencies:
 - transformers >= 0.5.6.2
 - vector >= 0.12.1.2
 - vector-sized >= 1.4.1
-- parameterized-utils >= 2.1.4
 
 flags: {
   fast: {

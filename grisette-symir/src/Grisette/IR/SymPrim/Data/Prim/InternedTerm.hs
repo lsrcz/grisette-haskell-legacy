@@ -47,9 +47,6 @@ where
 import Control.DeepSeq
 import Control.Monad.State
 import Data.Array
-import Data.BitVector.Sized
-import Data.BitVector.Sized.Signed as BVS
-import Data.BitVector.Sized.Unsigned as BVU
 import Data.Dynamic
 import Data.Function (on)
 import qualified Data.HashMap.Strict as M
@@ -62,9 +59,9 @@ import Data.Typeable
 import GHC.Exts (Constraint)
 import GHC.IO (unsafeDupablePerformIO)
 import GHC.TypeNats
+import Grisette.IR.SymPrim.Data.BV
 import Grisette.IR.SymPrim.Data.Prim.Caches
 import Grisette.IR.SymPrim.Data.Prim.ModelValue
-import Grisette.IR.SymPrim.Data.Prim.Orphan ()
 import Language.Haskell.TH.Syntax
 import Language.Haskell.TH.Syntax.Compat
 
@@ -76,6 +73,7 @@ class (Lift t, Typeable t, Hashable t, Eq t, Show t, NFData t) => SupportedPrim 
   withPrim i = i
   termCache :: Cache (Term t)
   termCache = typeMemoizedCache
+
   -- termReverseCache :: ReverseCache (Term t)
   -- termReverseCache = typeMemoizedReverseCache
   pformatConc :: t -> String
@@ -512,14 +510,27 @@ instance SupportedPrim Integer where
   defaultValueDynamic = defaultValueForIntegerDyn
 
 -- Signed BV
-
+{-
 instance (KnownNat w, 1 <= w) => SupportedPrim (SignedBV w) where
   type PrimConstraint (SignedBV w) = (KnownNat w, 1 <= w)
   pformatConc i = show i
   defaultValue = mkSignedBV knownNat 0
+  -}
+
+instance (KnownNat w, 1 <= w) => SupportedPrim (IntN w) where
+  type PrimConstraint (IntN w) = (KnownNat w, 1 <= w)
+  pformatConc i = show i
+  defaultValue = 0
 
 -- Unsigned BV
+{-
 instance (KnownNat w, 1 <= w) => SupportedPrim (UnsignedBV w) where
   type PrimConstraint (UnsignedBV w) = (KnownNat w, 1 <= w)
   pformatConc i = show i
   defaultValue = mkUnsignedBV knownNat 0
+  -}
+
+instance (KnownNat w, 1 <= w) => SupportedPrim (WordN w) where
+  type PrimConstraint (WordN w) = (KnownNat w, 1 <= w)
+  pformatConc i = show i
+  defaultValue = 0

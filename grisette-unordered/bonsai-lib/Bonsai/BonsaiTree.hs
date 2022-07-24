@@ -6,7 +6,6 @@
 module Bonsai.BonsaiTree where
 
 import Control.DeepSeq
-import Data.BitVector.Sized.Unsigned
 import qualified Data.ByteString as B
 import Data.Hashable
 import Data.Maybe
@@ -40,14 +39,14 @@ deriving via (Default (BonsaiTree leaf)) instance
 
 $(makeUnionMWrapper "u" ''BonsaiTree)
 
-showConcTree :: OptimSyntaxSpec n -> ConcBonsaiTree (UnsignedBV n) -> Maybe B.ByteString
+showConcTree :: OptimSyntaxSpec n -> ConcBonsaiTree (WordN n) -> Maybe B.ByteString
 showConcTree stx (ConcBonsaiLeaf sym) = bvToTerminal stx sym
 showConcTree stx (ConcBonsaiNode l r) = do
   ls <- showConcTree stx l
   rs <- showConcTree stx r
   return $ B.append "[ " (B.append ls (B.append " " (B.append rs " ]")))
 
-instance (KnownNat n, 1 <= n) => GenSym SymBool Int (BonsaiTree (SymUnsignedBV n)) where
+instance (KnownNat n, 1 <= n) => GenSym SymBool Int (BonsaiTree (SymWordN n)) where
   genSymFresh depth =
     if depth <= 1
       then uBonsaiLeaf <$> genSymSimpleFresh ()
@@ -57,7 +56,7 @@ instance (KnownNat n, 1 <= n) => GenSym SymBool Int (BonsaiTree (SymUnsignedBV n
         sym <- genSymSimpleFresh ()
         choose [BonsaiLeaf sym, BonsaiNode l r]
 
-unsafeLeaf :: (KnownNat n, 1 <= n) => OptimSyntaxSpec n -> B.ByteString -> BonsaiTree (SymUnsignedBV n)
+unsafeLeaf :: (KnownNat n, 1 <= n) => OptimSyntaxSpec n -> B.ByteString -> BonsaiTree (SymWordN n)
 unsafeLeaf stx nm = BonsaiLeaf $ conc $ fromJust $ terminalToBV stx nm
 
 data BonsaiError

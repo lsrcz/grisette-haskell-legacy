@@ -1,4 +1,8 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
@@ -11,13 +15,56 @@
 module Grisette.Lib.Data.Vector.Generic.Sized where
 
 import Data.Functor.Classes
-import Data.Parameterized
 import Data.Typeable
 import qualified Data.Vector.Generic as VGeneric
 import qualified Data.Vector.Generic.Sized as VSized
-import GHC.TypeLits
+import GHC.TypeNats
 import Grisette.Core
 import Unsafe.Coerce
+import GHC.Natural
+
+newtype NatRepr (n::Nat) = NatRepr Natural
+
+knownNat :: forall n. KnownNat n => NatRepr n
+knownNat = NatRepr (natVal (Proxy @n))
+
+withKnownNat :: forall n r. NatRepr n -> (KnownNat n => r) -> r
+withKnownNat (NatRepr nVal) v =
+  case someNatVal nVal of
+    SomeNat (Proxy :: Proxy n') ->
+      case unsafeAxiom :: n :~: n' of
+        Refl -> v
+
+data LeqProof (m :: Nat) (n :: Nat) where
+  LeqProof :: m <= n => LeqProof m n
+
+withLeqProof :: LeqProof m n -> ((m <= n) => a) -> a
+withLeqProof p a = case p of LeqProof -> a
+
+unsafeLeqProof :: LeqProof m n
+unsafeLeqProof = unsafeCoerce (LeqProof @0 @0)
+{-# NOINLINE unsafeLeqProof #-}
+
+-- | Assert a proof of equality between two types.
+-- This is unsafe if used improperly, so use this with caution!
+unsafeAxiom :: forall a b. a :~: b
+unsafeAxiom = unsafeCoerce (Refl @a)
+{-# NOINLINE unsafeAxiom #-} -- Note [Mark unsafe axioms as NOINLINE]
+
+data IsZeroNat n where
+  ZeroNat    :: IsZeroNat 0
+  NonZeroNat :: IsZeroNat (n+1)
+
+isZeroNat :: NatRepr n -> IsZeroNat n
+isZeroNat (NatRepr 0) = unsafeCoerce ZeroNat
+isZeroNat (NatRepr _) = unsafeCoerce NonZeroNat
+
+-- | Every nat is either zero or >= 1.
+isZeroOrGT1 :: NatRepr n -> Either (n :~: 0) (LeqProof 1 n)
+isZeroOrGT1 n =
+  case isZeroNat n of
+    ZeroNat    -> Left Refl
+    NonZeroNat -> Right $ unsafeLeqProof
 
 instance
   {-# OVERLAPPABLE #-}

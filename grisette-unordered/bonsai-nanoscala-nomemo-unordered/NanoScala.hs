@@ -4,7 +4,6 @@ module NanoScala (DotTree, ConcDotTree, dotSyntax, execDot) where
 
 import Bonsai.BonsaiTree
 import Control.Monad.Except
-import Data.BitVector.Sized.Unsigned
 import qualified Data.ByteString as B
 import Data.Either.Combinators
 import Data.Maybe
@@ -18,9 +17,9 @@ import Grisette.Unordered.UUnionM
 
 type DotBitWidth = 15
 
-type DotTree = BonsaiTree (SymUnsignedBV DotBitWidth)
+type DotTree = BonsaiTree (SymWordN DotBitWidth)
 
-type ConcDotTree = ConcBonsaiTree (UnsignedBV DotBitWidth)
+type ConcDotTree = ConcBonsaiTree (WordN DotBitWidth)
 
 dotSyntax :: OptimSyntaxSpec DotBitWidth
 dotSyntax =
@@ -50,7 +49,7 @@ dotSyntax =
       "name" --> ["a", "b", "c"]
     ]
 
-dotLiteral :: B.ByteString -> Pattern (SymUnsignedBV DotBitWidth) 0
+dotLiteral :: B.ByteString -> Pattern (SymWordN DotBitWidth) 0
 dotLiteral s = literal $ fromJust $ toSym $ terminalToBV dotSyntax s
 
 eval' :: DotTree -> Env DotBitWidth DotResult -> ExceptT BonsaiError UUnionM (UUnionM DotResult)
@@ -83,23 +82,23 @@ eval' tree env =
 eval :: DotTree -> ExceptT BonsaiError UUnionM (UUnionM DotResult)
 eval tree = eval' tree (mrgReturn [])
 
-type DotT = UUnionM (Either (SymUnsignedBV DotBitWidth) B.ByteString)
+type DotT = UUnionM (Either (SymWordN DotBitWidth) B.ByteString)
 
 type DotResult = BonsaiTree DotT
 
-dotFindU :: B.ByteString -> SymUnsignedBV DotBitWidth -> UUnionM DotResult -> UUnionM (Maybe (UUnionM DotResult))
+dotFindU :: B.ByteString -> SymWordN DotBitWidth -> UUnionM DotResult -> UUnionM (Maybe (UUnionM DotResult))
 dotFindU kind nm tb = dotFind kind nm #~ tb
 
-unsafeBV :: B.ByteString -> SymUnsignedBV DotBitWidth
+unsafeBV :: B.ByteString -> SymWordN DotBitWidth
 unsafeBV s = fromJust $ toSym $ terminalToBV dotSyntax s
 
-andBV :: SymUnsignedBV DotBitWidth
+andBV :: SymWordN DotBitWidth
 andBV = unsafeBV "and"
 
 terminalLiteral :: B.ByteString -> Pattern DotT 0
 terminalLiteral s = literal $ uLeft $ unsafeBV s
 
-dotFind :: B.ByteString -> SymUnsignedBV DotBitWidth -> DotResult -> UUnionM (Maybe (UUnionM DotResult))
+dotFind :: B.ByteString -> SymWordN DotBitWidth -> DotResult -> UUnionM (Maybe (UUnionM DotResult))
 dotFind kind nm tb =
   mrgFmap (join . rightToMaybe) $
     runExceptT $
@@ -118,7 +117,7 @@ dotFind kind nm tb =
         ]
         tb
 
-dotMakeU :: B.ByteString -> SymUnsignedBV DotBitWidth -> UUnionM DotResult -> UUnionM DotResult
+dotMakeU :: B.ByteString -> SymWordN DotBitWidth -> UUnionM DotResult -> UUnionM DotResult
 dotMakeU kind nm = uBonsaiNode (uBonsaiNode (uBonsaiLeaf $ uRight kind) (uBonsaiLeaf $ uLeft nm))
 
 dotJoinU :: UUnionM DotResult -> UUnionM DotResult -> UUnionM DotResult

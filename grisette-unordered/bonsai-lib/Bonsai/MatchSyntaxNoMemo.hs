@@ -10,8 +10,8 @@ import Bonsai.SyntaxSpec
 matchSyntax ::
   (KnownNat n, 1 <= n) =>
   OptimSyntaxSpec n ->
-  (Rule -> BonsaiTree (SymUnsignedBV n) -> SymBool) ->
-  BonsaiTree (SymUnsignedBV n) ->
+  (Rule -> BonsaiTree (SymWordN n) -> SymBool) ->
+  BonsaiTree (SymWordN n) ->
   B.ByteString ->
   SymBool
 matchSyntax stx fR tree sym = case getRules stx sym of
@@ -22,10 +22,10 @@ matchSyntax stx fR tree sym = case getRules stx sym of
 matchRule ::
   (KnownNat n, 1 <= n) =>
   OptimSyntaxSpec n ->
-  (BonsaiTree (SymUnsignedBV n) -> B.ByteString -> SymBool) ->
-  (Rule -> BonsaiTree (SymUnsignedBV n) -> SymBool) ->
+  (BonsaiTree (SymWordN n) -> B.ByteString -> SymBool) ->
+  (Rule -> BonsaiTree (SymWordN n) -> SymBool) ->
   Rule ->
-  BonsaiTree (SymUnsignedBV n) ->
+  BonsaiTree (SymWordN n) ->
   SymBool
 matchRule stx fS fR rule tree = case (tree, rule) of
   (_, SymRule sym) | sym `S.member` nonTerminals stx -> fS tree sym

@@ -30,7 +30,6 @@ dependencies:
 - loch-th >= 0.2.2
 - th-compat >= 0.1.2
 - hspec == 2.*
-- bv-sized >= 1.0.3
 - Unique >= 0.4.7
 - clock >= 0.7.1
 - formatting >= 6.3.1

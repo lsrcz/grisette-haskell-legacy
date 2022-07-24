@@ -9,23 +9,22 @@
 module Grisette.Backend.SBV.Data.SMT.LoweringSpec where
 
 import Control.Monad.Trans
-import Data.BitVector.Sized.Signed
+import Data.Bits
 import Data.Dynamic
 import qualified Data.HashMap.Strict as M
+import Data.Proxy
 import qualified Data.SBV as SBV
 import qualified Data.SBV.Control as SBV
+import Grisette.Backend.SBV.Data.SMT.Config
+import Grisette.Backend.SBV.Data.SMT.Lowering
+import Grisette.IR.SymPrim.Data.BV
+import Grisette.IR.SymPrim.Data.Prim.BV
+import Grisette.IR.SymPrim.Data.Prim.Bits
 import Grisette.IR.SymPrim.Data.Prim.Bool
 import Grisette.IR.SymPrim.Data.Prim.Integer
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm
 import Grisette.IR.SymPrim.Data.Prim.Num
-import Grisette.Backend.SBV.Data.SMT.Config
-import Grisette.Backend.SBV.Data.SMT.Lowering
 import Test.Hspec
-import Grisette.IR.SymPrim.Data.Prim.BV
-import Data.Proxy
-import Data.BitVector.Sized.Unsigned
-import Grisette.IR.SymPrim.Data.Prim.Bits
-import Data.Bits
 
 testUnaryOpLowering' ::
   forall a b as n tag.
@@ -282,250 +281,334 @@ spec = do
     it "ModI lowering should work" $ do
       testBinaryOpLowering' @Integer @Integer @Integer unboundedConfig ModI SBV.sMod
       testBinaryOpLowering' @Integer @Integer @Integer boundedConfig ModI SBV.sMod
-  describe "Test SignedBV Lowering" $ do
+  describe "Test IntN Lowering" $ do
     it "Add lowering should work" $ do
-      testBinaryOpLowering' @(SignedBV 5) @(SignedBV 5) unboundedConfig (AddNum @(SignedBV 5)) (+)
-      testBinaryOpLowering' @(SignedBV 5) @(SignedBV 5)
+      testBinaryOpLowering' @(IntN 5) @(IntN 5) unboundedConfig (AddNum @(IntN 5)) (+)
+      testBinaryOpLowering' @(IntN 5) @(IntN 5)
         unboundedConfig
-        (AddNum @(SignedBV 5))
+        (AddNum @(IntN 5))
         (\x y -> (x + 1) * (y + 1) - x * y - 1)
     it "Uminus lowering should work" $ do
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig UMinusNum negate
-      testUnaryOpLowering' @(SignedBV 5)
+      testUnaryOpLowering' @(IntN 5) unboundedConfig UMinusNum negate
+      testUnaryOpLowering' @(IntN 5)
         unboundedConfig
         UMinusNum
         (\x -> (x + 1) * (x + 1) - 3 * x - x * x - 1)
     it "Abs lowering should work" $ do
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig AbsNum abs
+      testUnaryOpLowering' @(IntN 5) unboundedConfig AbsNum abs
     it "Signum lowering should work" $ do
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig SignumNum signum
+      testUnaryOpLowering' @(IntN 5) unboundedConfig SignumNum signum
     it "Times lowering should work" $ do
-      testBinaryOpLowering' @(SignedBV 5) @(SignedBV 5) unboundedConfig TimesNum (*)
-      testBinaryOpLowering' @(SignedBV 5) @(SignedBV 5)
+      testBinaryOpLowering' @(IntN 5) @(IntN 5) unboundedConfig TimesNum (*)
+      testBinaryOpLowering' @(IntN 5) @(IntN 5)
         unboundedConfig
         TimesNum
         (\x y -> (x + 1) * (y + 1) - x - y - 1)
     it "Lt lowering should work" $ do
-      testBinaryOpLowering' @(SignedBV 5) @(SignedBV 5) unboundedConfig LTNum (SBV..<)
-      testBinaryOpLowering' @(SignedBV 5) @(SignedBV 5)
+      testBinaryOpLowering' @(IntN 5) @(IntN 5) unboundedConfig LTNum (SBV..<)
+      testBinaryOpLowering' @(IntN 5) @(IntN 5)
         unboundedConfig
         LTNum
         (\x y -> x * 2 - x SBV..< y * 2 - y)
     it "Le lowering should work" $ do
-      testBinaryOpLowering' @(SignedBV 5) @(SignedBV 5) unboundedConfig LENum (SBV..<=)
-      testBinaryOpLowering' @(SignedBV 5) @(SignedBV 5)
+      testBinaryOpLowering' @(IntN 5) @(IntN 5) unboundedConfig LENum (SBV..<=)
+      testBinaryOpLowering' @(IntN 5) @(IntN 5)
         unboundedConfig
         LENum
         (\x y -> x * 2 - x SBV..<= y * 2 - y)
     it "Extract lowering should work" $ do
-      testUnaryOpLowering' @(SignedBV 5) @(SignedBV 1) unboundedConfig (BVTSelect @0 @1 @5 Proxy)
+      testUnaryOpLowering' @(IntN 5) @(IntN 1)
+        unboundedConfig
+        (BVTSelect @IntN @0 @1 @5 Proxy)
         (SBV.bvExtract @0 @0 @5 Proxy Proxy)
-      testUnaryOpLowering' @(SignedBV 5) @(SignedBV 1) unboundedConfig (BVTSelect @1 @1 @5 Proxy)
+      testUnaryOpLowering' @(IntN 5) @(IntN 1)
+        unboundedConfig
+        (BVTSelect @IntN @1 @1 @5 Proxy)
         (SBV.bvExtract @1 @1 @5 Proxy Proxy)
-      testUnaryOpLowering' @(SignedBV 5) @(SignedBV 1) unboundedConfig (BVTSelect @2 @1 @5 Proxy)
+      testUnaryOpLowering' @(IntN 5) @(IntN 1)
+        unboundedConfig
+        (BVTSelect @IntN @2 @1 @5 Proxy)
         (SBV.bvExtract @2 @2 @5 Proxy Proxy)
-      testUnaryOpLowering' @(SignedBV 5) @(SignedBV 1) unboundedConfig (BVTSelect @3 @1 @5 Proxy)
+      testUnaryOpLowering' @(IntN 5) @(IntN 1)
+        unboundedConfig
+        (BVTSelect @IntN @3 @1 @5 Proxy)
         (SBV.bvExtract @3 @3 @5 Proxy Proxy)
-      testUnaryOpLowering' @(SignedBV 5) @(SignedBV 1) unboundedConfig (BVTSelect @4 @1 @5 Proxy)
+      testUnaryOpLowering' @(IntN 5) @(IntN 1)
+        unboundedConfig
+        (BVTSelect @IntN @4 @1 @5 Proxy)
         (SBV.bvExtract @4 @4 @5 Proxy Proxy)
-      testUnaryOpLowering' @(SignedBV 5) @(SignedBV 2) unboundedConfig (BVTSelect @0 @2 @5 Proxy)
+      testUnaryOpLowering' @(IntN 5) @(IntN 2)
+        unboundedConfig
+        (BVTSelect @IntN @0 @2 @5 Proxy)
         (SBV.bvExtract @1 @0 @5 Proxy Proxy)
-      testUnaryOpLowering' @(SignedBV 5) @(SignedBV 2) unboundedConfig (BVTSelect @1 @2 @5 Proxy)
+      testUnaryOpLowering' @(IntN 5) @(IntN 2)
+        unboundedConfig
+        (BVTSelect @IntN @1 @2 @5 Proxy)
         (SBV.bvExtract @2 @1 @5 Proxy Proxy)
-      testUnaryOpLowering' @(SignedBV 5) @(SignedBV 2) unboundedConfig (BVTSelect @2 @2 @5 Proxy)
+      testUnaryOpLowering' @(IntN 5) @(IntN 2)
+        unboundedConfig
+        (BVTSelect @IntN @2 @2 @5 Proxy)
         (SBV.bvExtract @3 @2 @5 Proxy Proxy)
-      testUnaryOpLowering' @(SignedBV 5) @(SignedBV 2) unboundedConfig (BVTSelect @3 @2 @5 Proxy)
+      testUnaryOpLowering' @(IntN 5) @(IntN 2)
+        unboundedConfig
+        (BVTSelect @IntN @3 @2 @5 Proxy)
         (SBV.bvExtract @4 @3 @5 Proxy Proxy)
-      testUnaryOpLowering' @(SignedBV 5) @(SignedBV 3) unboundedConfig (BVTSelect @0 @3 @5 Proxy)
+      testUnaryOpLowering' @(IntN 5) @(IntN 3)
+        unboundedConfig
+        (BVTSelect @IntN @0 @3 @5 Proxy)
         (SBV.bvExtract @2 @0 @5 Proxy Proxy)
-      testUnaryOpLowering' @(SignedBV 5) @(SignedBV 3) unboundedConfig (BVTSelect @1 @3 @5 Proxy)
+      testUnaryOpLowering' @(IntN 5) @(IntN 3)
+        unboundedConfig
+        (BVTSelect @IntN @1 @3 @5 Proxy)
         (SBV.bvExtract @3 @1 @5 Proxy Proxy)
-      testUnaryOpLowering' @(SignedBV 5) @(SignedBV 3) unboundedConfig (BVTSelect @2 @3 @5 Proxy)
+      testUnaryOpLowering' @(IntN 5) @(IntN 3)
+        unboundedConfig
+        (BVTSelect @IntN @2 @3 @5 Proxy)
         (SBV.bvExtract @4 @2 @5 Proxy Proxy)
-      testUnaryOpLowering' @(SignedBV 5) @(SignedBV 4) unboundedConfig (BVTSelect @0 @4 @5 Proxy)
+      testUnaryOpLowering' @(IntN 5) @(IntN 4)
+        unboundedConfig
+        (BVTSelect @IntN @0 @4 @5 Proxy)
         (SBV.bvExtract @3 @0 @5 Proxy Proxy)
-      testUnaryOpLowering' @(SignedBV 5) @(SignedBV 4) unboundedConfig (BVTSelect @1 @4 @5 Proxy)
+      testUnaryOpLowering' @(IntN 5) @(IntN 4)
+        unboundedConfig
+        (BVTSelect @IntN @1 @4 @5 Proxy)
         (SBV.bvExtract @4 @1 @5 Proxy Proxy)
-      testUnaryOpLowering' @(SignedBV 5) @(SignedBV 5) unboundedConfig (BVTSelect @0 @5 @5 Proxy)
+      testUnaryOpLowering' @(IntN 5) @(IntN 5)
+        unboundedConfig
+        (BVTSelect @IntN @0 @5 @5 Proxy)
         id
     it "Extension lowering should work" $ do
-      testUnaryOpLowering' @(SignedBV 5) @(SignedBV 6) unboundedConfig (Zext @1 @5 @6 Proxy)
+      testUnaryOpLowering' @(IntN 5) @(IntN 6)
+        unboundedConfig
+        (Zext @IntN @5 @6)
         SBV.zeroExtend
-      testUnaryOpLowering' @(SignedBV 5) @(SignedBV 10) unboundedConfig (Zext @5 @5 @10 Proxy)
+      testUnaryOpLowering' @(IntN 5) @(IntN 10)
+        unboundedConfig
+        (Zext @IntN @5 @10)
         SBV.zeroExtend
-      testUnaryOpLowering' @(SignedBV 5) @(SignedBV 6) unboundedConfig (Sext @1 @5 @6 Proxy)
+      testUnaryOpLowering' @(IntN 5) @(IntN 6)
+        unboundedConfig
+        (Sext @IntN @5 @6)
         SBV.signExtend
-      testUnaryOpLowering' @(SignedBV 5) @(SignedBV 10) unboundedConfig (Sext @5 @5 @10 Proxy)
+      testUnaryOpLowering' @(IntN 5) @(IntN 10)
+        unboundedConfig
+        (Sext @IntN @5 @10)
         SBV.signExtend
     it "Concat should work" $ do
-      testBinaryOpLowering' @(SignedBV 4) @(SignedBV 5) @(SignedBV 9) unboundedConfig
-        (BVTConcat @4 @5 @9) (SBV.#)
+      testBinaryOpLowering' @(IntN 4) @(IntN 5) @(IntN 9)
+        unboundedConfig
+        (BVTConcat @IntN @4 @5 @9)
+        (SBV.#)
 
     it "AndBits lowering should work" $ do
-      testBinaryOpLowering' @(SignedBV 5) @(SignedBV 5) unboundedConfig (AndBits @(SignedBV 5)) (.&.)
+      testBinaryOpLowering' @(IntN 5) @(IntN 5) unboundedConfig (AndBits @(IntN 5)) (.&.)
     it "OrBits lowering should work" $ do
-      testBinaryOpLowering' @(SignedBV 5) @(SignedBV 5) unboundedConfig (OrBits @(SignedBV 5)) (.|.)
+      testBinaryOpLowering' @(IntN 5) @(IntN 5) unboundedConfig (OrBits @(IntN 5)) (.|.)
     it "XorBits lowering should work" $ do
-      testBinaryOpLowering' @(SignedBV 5) @(SignedBV 5) unboundedConfig (XorBits @(SignedBV 5)) xor
+      testBinaryOpLowering' @(IntN 5) @(IntN 5) unboundedConfig (XorBits @(IntN 5)) xor
     it "ComplementBits lowering should work" $ do
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig (ComplementBits @(SignedBV 5)) complement
+      testUnaryOpLowering' @(IntN 5) unboundedConfig (ComplementBits @(IntN 5)) complement
     it "ShiftBits lowering should work" $ do
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig (ShiftBits @(SignedBV 5) 0) id
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig (ShiftBits @(SignedBV 5) 1) (`shift` 1)
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig (ShiftBits @(SignedBV 5) 2) (`shift` 2)
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig (ShiftBits @(SignedBV 5) 3) (`shift` 3)
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig (ShiftBits @(SignedBV 5) 4) (`shift` 4)
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig (ShiftBits @(SignedBV 5) 5) (`shift` 5)
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig (ShiftBits @(SignedBV 5) 5) (const 0)
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig (ShiftBits @(SignedBV 5) $ -1) (`shift` (-1))
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig (ShiftBits @(SignedBV 5) $ -2) (`shift` (-2))
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig (ShiftBits @(SignedBV 5) $ -3) (`shift` (-3))
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig (ShiftBits @(SignedBV 5) $ -4) (`shift` (-4))
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig (ShiftBits @(SignedBV 5) $ -5) (`shift` (-5))
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig (ShiftBits @(SignedBV 5) $ -5)
+      testUnaryOpLowering' @(IntN 5) unboundedConfig (ShiftBits @(IntN 5) 0) id
+      testUnaryOpLowering' @(IntN 5) unboundedConfig (ShiftBits @(IntN 5) 1) (`shift` 1)
+      testUnaryOpLowering' @(IntN 5) unboundedConfig (ShiftBits @(IntN 5) 2) (`shift` 2)
+      testUnaryOpLowering' @(IntN 5) unboundedConfig (ShiftBits @(IntN 5) 3) (`shift` 3)
+      testUnaryOpLowering' @(IntN 5) unboundedConfig (ShiftBits @(IntN 5) 4) (`shift` 4)
+      testUnaryOpLowering' @(IntN 5) unboundedConfig (ShiftBits @(IntN 5) 5) (`shift` 5)
+      testUnaryOpLowering' @(IntN 5) unboundedConfig (ShiftBits @(IntN 5) 5) (const 0)
+      testUnaryOpLowering' @(IntN 5) unboundedConfig (ShiftBits @(IntN 5) $ -1) (`shift` (-1))
+      testUnaryOpLowering' @(IntN 5) unboundedConfig (ShiftBits @(IntN 5) $ -2) (`shift` (-2))
+      testUnaryOpLowering' @(IntN 5) unboundedConfig (ShiftBits @(IntN 5) $ -3) (`shift` (-3))
+      testUnaryOpLowering' @(IntN 5) unboundedConfig (ShiftBits @(IntN 5) $ -4) (`shift` (-4))
+      testUnaryOpLowering' @(IntN 5) unboundedConfig (ShiftBits @(IntN 5) $ -5) (`shift` (-5))
+      testUnaryOpLowering' @(IntN 5)
+        unboundedConfig
+        (ShiftBits @(IntN 5) $ -5)
         (\x -> SBV.ite (x SBV..>= 0) 0 (-1))
     it "RotateBits lowering should work" $ do
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig (RotateBits @(SignedBV 5) 0) id
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig (RotateBits @(SignedBV 5) 1) (`rotate` 1)
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig (RotateBits @(SignedBV 5) 2) (`rotate` 2)
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig (RotateBits @(SignedBV 5) 3) (`rotate` 3)
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig (RotateBits @(SignedBV 5) 4) (`rotate` 4)
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig (RotateBits @(SignedBV 5) 5) (`rotate` 5)
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig (RotateBits @(SignedBV 5) 5) id
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig (RotateBits @(SignedBV 5) $ -1) (`rotate` (-1))
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig (RotateBits @(SignedBV 5) $ -1) (`rotate` 4)
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig (RotateBits @(SignedBV 5) $ -2) (`rotate` (-2))
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig (RotateBits @(SignedBV 5) $ -2) (`rotate` 3)
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig (RotateBits @(SignedBV 5) $ -3) (`rotate` (-3))
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig (RotateBits @(SignedBV 5) $ -3) (`rotate` 2)
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig (RotateBits @(SignedBV 5) $ -4) (`rotate` (-4))
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig (RotateBits @(SignedBV 5) $ -4) (`rotate` 1)
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig (RotateBits @(SignedBV 5) $ -5) (`rotate` (-5))
-      testUnaryOpLowering' @(SignedBV 5) unboundedConfig (RotateBits @(SignedBV 5) $ -5) id
+      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) 0) id
+      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) 1) (`rotate` 1)
+      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) 2) (`rotate` 2)
+      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) 3) (`rotate` 3)
+      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) 4) (`rotate` 4)
+      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) 5) (`rotate` 5)
+      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) 5) id
+      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) $ -1) (`rotate` (-1))
+      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) $ -1) (`rotate` 4)
+      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) $ -2) (`rotate` (-2))
+      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) $ -2) (`rotate` 3)
+      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) $ -3) (`rotate` (-3))
+      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) $ -3) (`rotate` 2)
+      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) $ -4) (`rotate` (-4))
+      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) $ -4) (`rotate` 1)
+      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) $ -5) (`rotate` (-5))
+      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) $ -5) id
 
-  describe "Test UnsignedBV Lowering" $ do
+  describe "Test WordN Lowering" $ do
     it "Add lowering should work" $ do
-      testBinaryOpLowering' @(UnsignedBV 5) @(UnsignedBV 5) unboundedConfig (AddNum @(UnsignedBV 5)) (+)
-      testBinaryOpLowering' @(UnsignedBV 5) @(UnsignedBV 5)
+      testBinaryOpLowering' @(WordN 5) @(WordN 5) unboundedConfig (AddNum @(WordN 5)) (+)
+      testBinaryOpLowering' @(WordN 5) @(WordN 5)
         unboundedConfig
-        (AddNum @(UnsignedBV 5))
+        (AddNum @(WordN 5))
         (\x y -> (x + 1) * (y + 1) - x * y - 1)
     it "Uminus lowering should work" $ do
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig UMinusNum negate
-      testUnaryOpLowering' @(UnsignedBV 5)
+      testUnaryOpLowering' @(WordN 5) unboundedConfig UMinusNum negate
+      testUnaryOpLowering' @(WordN 5)
         unboundedConfig
         UMinusNum
         (\x -> (x + 1) * (x + 1) - 3 * x - x * x - 1)
     it "Abs lowering should work" $ do
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig AbsNum abs
+      testUnaryOpLowering' @(WordN 5) unboundedConfig AbsNum abs
     it "Signum lowering should work" $ do
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig SignumNum signum
+      testUnaryOpLowering' @(WordN 5) unboundedConfig SignumNum signum
     it "Times lowering should work" $ do
-      testBinaryOpLowering' @(UnsignedBV 5) @(UnsignedBV 5) unboundedConfig TimesNum (*)
-      testBinaryOpLowering' @(UnsignedBV 5) @(UnsignedBV 5)
+      testBinaryOpLowering' @(WordN 5) @(WordN 5) unboundedConfig TimesNum (*)
+      testBinaryOpLowering' @(WordN 5) @(WordN 5)
         unboundedConfig
         TimesNum
         (\x y -> (x + 1) * (y + 1) - x - y - 1)
     it "Lt lowering should work" $ do
-      testBinaryOpLowering' @(UnsignedBV 5) @(UnsignedBV 5) unboundedConfig LTNum (SBV..<)
-      testBinaryOpLowering' @(UnsignedBV 5) @(UnsignedBV 5)
+      testBinaryOpLowering' @(WordN 5) @(WordN 5) unboundedConfig LTNum (SBV..<)
+      testBinaryOpLowering' @(WordN 5) @(WordN 5)
         unboundedConfig
         LTNum
         (\x y -> x * 2 - x SBV..< y * 2 - y)
     it "Le lowering should work" $ do
-      testBinaryOpLowering' @(UnsignedBV 5) @(UnsignedBV 5) unboundedConfig LENum (SBV..<=)
-      testBinaryOpLowering' @(UnsignedBV 5) @(UnsignedBV 5)
+      testBinaryOpLowering' @(WordN 5) @(WordN 5) unboundedConfig LENum (SBV..<=)
+      testBinaryOpLowering' @(WordN 5) @(WordN 5)
         unboundedConfig
         LENum
         (\x y -> x * 2 - x SBV..<= y * 2 - y)
     it "Extract lowering should work" $ do
-      testUnaryOpLowering' @(UnsignedBV 5) @(UnsignedBV 1) unboundedConfig (BVTSelect @0 @1 @5 Proxy)
+      testUnaryOpLowering' @(WordN 5) @(WordN 1)
+        unboundedConfig
+        (BVTSelect @WordN @0 @1 @5 Proxy)
         (SBV.bvExtract @0 @0 @5 Proxy Proxy)
-      testUnaryOpLowering' @(UnsignedBV 5) @(UnsignedBV 1) unboundedConfig (BVTSelect @1 @1 @5 Proxy)
+      testUnaryOpLowering' @(WordN 5) @(WordN 1)
+        unboundedConfig
+        (BVTSelect @WordN @1 @1 @5 Proxy)
         (SBV.bvExtract @1 @1 @5 Proxy Proxy)
-      testUnaryOpLowering' @(UnsignedBV 5) @(UnsignedBV 1) unboundedConfig (BVTSelect @2 @1 @5 Proxy)
+      testUnaryOpLowering' @(WordN 5) @(WordN 1)
+        unboundedConfig
+        (BVTSelect @WordN @2 @1 @5 Proxy)
         (SBV.bvExtract @2 @2 @5 Proxy Proxy)
-      testUnaryOpLowering' @(UnsignedBV 5) @(UnsignedBV 1) unboundedConfig (BVTSelect @3 @1 @5 Proxy)
+      testUnaryOpLowering' @(WordN 5) @(WordN 1)
+        unboundedConfig
+        (BVTSelect @WordN @3 @1 @5 Proxy)
         (SBV.bvExtract @3 @3 @5 Proxy Proxy)
-      testUnaryOpLowering' @(UnsignedBV 5) @(UnsignedBV 1) unboundedConfig (BVTSelect @4 @1 @5 Proxy)
+      testUnaryOpLowering' @(WordN 5) @(WordN 1)
+        unboundedConfig
+        (BVTSelect @WordN @4 @1 @5 Proxy)
         (SBV.bvExtract @4 @4 @5 Proxy Proxy)
-      testUnaryOpLowering' @(UnsignedBV 5) @(UnsignedBV 2) unboundedConfig (BVTSelect @0 @2 @5 Proxy)
+      testUnaryOpLowering' @(WordN 5) @(WordN 2)
+        unboundedConfig
+        (BVTSelect @WordN @0 @2 @5 Proxy)
         (SBV.bvExtract @1 @0 @5 Proxy Proxy)
-      testUnaryOpLowering' @(UnsignedBV 5) @(UnsignedBV 2) unboundedConfig (BVTSelect @1 @2 @5 Proxy)
+      testUnaryOpLowering' @(WordN 5) @(WordN 2)
+        unboundedConfig
+        (BVTSelect @WordN @1 @2 @5 Proxy)
         (SBV.bvExtract @2 @1 @5 Proxy Proxy)
-      testUnaryOpLowering' @(UnsignedBV 5) @(UnsignedBV 2) unboundedConfig (BVTSelect @2 @2 @5 Proxy)
+      testUnaryOpLowering' @(WordN 5) @(WordN 2)
+        unboundedConfig
+        (BVTSelect @WordN @2 @2 @5 Proxy)
         (SBV.bvExtract @3 @2 @5 Proxy Proxy)
-      testUnaryOpLowering' @(UnsignedBV 5) @(UnsignedBV 2) unboundedConfig (BVTSelect @3 @2 @5 Proxy)
+      testUnaryOpLowering' @(WordN 5) @(WordN 2)
+        unboundedConfig
+        (BVTSelect @WordN @3 @2 @5 Proxy)
         (SBV.bvExtract @4 @3 @5 Proxy Proxy)
-      testUnaryOpLowering' @(UnsignedBV 5) @(UnsignedBV 3) unboundedConfig (BVTSelect @0 @3 @5 Proxy)
+      testUnaryOpLowering' @(WordN 5) @(WordN 3)
+        unboundedConfig
+        (BVTSelect @WordN @0 @3 @5 Proxy)
         (SBV.bvExtract @2 @0 @5 Proxy Proxy)
-      testUnaryOpLowering' @(UnsignedBV 5) @(UnsignedBV 3) unboundedConfig (BVTSelect @1 @3 @5 Proxy)
+      testUnaryOpLowering' @(WordN 5) @(WordN 3)
+        unboundedConfig
+        (BVTSelect @WordN @1 @3 @5 Proxy)
         (SBV.bvExtract @3 @1 @5 Proxy Proxy)
-      testUnaryOpLowering' @(UnsignedBV 5) @(UnsignedBV 3) unboundedConfig (BVTSelect @2 @3 @5 Proxy)
+      testUnaryOpLowering' @(WordN 5) @(WordN 3)
+        unboundedConfig
+        (BVTSelect @WordN @2 @3 @5 Proxy)
         (SBV.bvExtract @4 @2 @5 Proxy Proxy)
-      testUnaryOpLowering' @(UnsignedBV 5) @(UnsignedBV 4) unboundedConfig (BVTSelect @0 @4 @5 Proxy)
+      testUnaryOpLowering' @(WordN 5) @(WordN 4)
+        unboundedConfig
+        (BVTSelect @WordN @0 @4 @5 Proxy)
         (SBV.bvExtract @3 @0 @5 Proxy Proxy)
-      testUnaryOpLowering' @(UnsignedBV 5) @(UnsignedBV 4) unboundedConfig (BVTSelect @1 @4 @5 Proxy)
+      testUnaryOpLowering' @(WordN 5) @(WordN 4)
+        unboundedConfig
+        (BVTSelect @WordN @1 @4 @5 Proxy)
         (SBV.bvExtract @4 @1 @5 Proxy Proxy)
-      testUnaryOpLowering' @(UnsignedBV 5) @(UnsignedBV 5) unboundedConfig (BVTSelect @0 @5 @5 Proxy)
+      testUnaryOpLowering' @(WordN 5) @(WordN 5)
+        unboundedConfig
+        (BVTSelect @WordN @0 @5 @5 Proxy)
         id
     it "Extension lowering should work" $ do
-      testUnaryOpLowering' @(UnsignedBV 5) @(UnsignedBV 6) unboundedConfig (Zext @1 @5 @6 Proxy)
+      testUnaryOpLowering' @(WordN 5) @(WordN 6)
+        unboundedConfig
+        (Zext @WordN @5 @6)
         SBV.zeroExtend
-      testUnaryOpLowering' @(UnsignedBV 5) @(UnsignedBV 10) unboundedConfig (Zext @5 @5 @10 Proxy)
+      testUnaryOpLowering' @(WordN 5) @(WordN 10)
+        unboundedConfig
+        (Zext @WordN @5 @10)
         SBV.zeroExtend
-      testUnaryOpLowering' @(UnsignedBV 5) @(UnsignedBV 6) unboundedConfig (Sext @1 @5 @6 Proxy)
+      testUnaryOpLowering' @(WordN 5) @(WordN 6)
+        unboundedConfig
+        (Sext @WordN @5 @6)
         SBV.signExtend
-      testUnaryOpLowering' @(UnsignedBV 5) @(UnsignedBV 10) unboundedConfig (Sext @5 @5 @10 Proxy)
+      testUnaryOpLowering' @(WordN 5) @(WordN 10)
+        unboundedConfig
+        (Sext @WordN @5 @10)
         SBV.signExtend
     it "Concat should work" $ do
-      testBinaryOpLowering' @(UnsignedBV 4) @(UnsignedBV 5) @(UnsignedBV 9) unboundedConfig
-        (BVTConcat @4 @5 @9) (SBV.#)
+      testBinaryOpLowering' @(WordN 4) @(WordN 5) @(WordN 9)
+        unboundedConfig
+        (BVTConcat @WordN @4 @5 @9)
+        (SBV.#)
     it "AndBits lowering should work" $ do
-      testBinaryOpLowering' @(UnsignedBV 5) @(UnsignedBV 5) unboundedConfig (AndBits @(UnsignedBV 5)) (.&.)
+      testBinaryOpLowering' @(WordN 5) @(WordN 5) unboundedConfig (AndBits @(WordN 5)) (.&.)
     it "OrBits lowering should work" $ do
-      testBinaryOpLowering' @(UnsignedBV 5) @(UnsignedBV 5) unboundedConfig (OrBits @(UnsignedBV 5)) (.|.)
+      testBinaryOpLowering' @(WordN 5) @(WordN 5) unboundedConfig (OrBits @(WordN 5)) (.|.)
     it "XorBits lowering should work" $ do
-      testBinaryOpLowering' @(UnsignedBV 5) @(UnsignedBV 5) unboundedConfig (XorBits @(UnsignedBV 5)) xor
+      testBinaryOpLowering' @(WordN 5) @(WordN 5) unboundedConfig (XorBits @(WordN 5)) xor
     it "ComplementBits lowering should work" $ do
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig (ComplementBits @(UnsignedBV 5)) complement
+      testUnaryOpLowering' @(WordN 5) unboundedConfig (ComplementBits @(WordN 5)) complement
     it "ShiftBits lowering should work" $ do
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig (ShiftBits @(UnsignedBV 5) 0) id
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig (ShiftBits @(UnsignedBV 5) 1) (`shift` 1)
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig (ShiftBits @(UnsignedBV 5) 2) (`shift` 2)
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig (ShiftBits @(UnsignedBV 5) 3) (`shift` 3)
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig (ShiftBits @(UnsignedBV 5) 4) (`shift` 4)
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig (ShiftBits @(UnsignedBV 5) 5) (`shift` 5)
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig (ShiftBits @(UnsignedBV 5) 5) (const 0)
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig (ShiftBits @(UnsignedBV 5) $ -1) (`shift` (-1))
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig (ShiftBits @(UnsignedBV 5) $ -2) (`shift` (-2))
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig (ShiftBits @(UnsignedBV 5) $ -3) (`shift` (-3))
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig (ShiftBits @(UnsignedBV 5) $ -4) (`shift` (-4))
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig (ShiftBits @(UnsignedBV 5) $ -5) (`shift` (-5))
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig (ShiftBits @(UnsignedBV 5) $ -5)
+      testUnaryOpLowering' @(WordN 5) unboundedConfig (ShiftBits @(WordN 5) 0) id
+      testUnaryOpLowering' @(WordN 5) unboundedConfig (ShiftBits @(WordN 5) 1) (`shift` 1)
+      testUnaryOpLowering' @(WordN 5) unboundedConfig (ShiftBits @(WordN 5) 2) (`shift` 2)
+      testUnaryOpLowering' @(WordN 5) unboundedConfig (ShiftBits @(WordN 5) 3) (`shift` 3)
+      testUnaryOpLowering' @(WordN 5) unboundedConfig (ShiftBits @(WordN 5) 4) (`shift` 4)
+      testUnaryOpLowering' @(WordN 5) unboundedConfig (ShiftBits @(WordN 5) 5) (`shift` 5)
+      testUnaryOpLowering' @(WordN 5) unboundedConfig (ShiftBits @(WordN 5) 5) (const 0)
+      testUnaryOpLowering' @(WordN 5) unboundedConfig (ShiftBits @(WordN 5) $ -1) (`shift` (-1))
+      testUnaryOpLowering' @(WordN 5) unboundedConfig (ShiftBits @(WordN 5) $ -2) (`shift` (-2))
+      testUnaryOpLowering' @(WordN 5) unboundedConfig (ShiftBits @(WordN 5) $ -3) (`shift` (-3))
+      testUnaryOpLowering' @(WordN 5) unboundedConfig (ShiftBits @(WordN 5) $ -4) (`shift` (-4))
+      testUnaryOpLowering' @(WordN 5) unboundedConfig (ShiftBits @(WordN 5) $ -5) (`shift` (-5))
+      testUnaryOpLowering' @(WordN 5)
+        unboundedConfig
+        (ShiftBits @(WordN 5) $ -5)
         (\x -> SBV.ite (x SBV..>= 0) 0 (-1))
     it "RotateBits lowering should work" $ do
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig (RotateBits @(UnsignedBV 5) 0) id
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig (RotateBits @(UnsignedBV 5) 1) (`rotate` 1)
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig (RotateBits @(UnsignedBV 5) 2) (`rotate` 2)
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig (RotateBits @(UnsignedBV 5) 3) (`rotate` 3)
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig (RotateBits @(UnsignedBV 5) 4) (`rotate` 4)
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig (RotateBits @(UnsignedBV 5) 5) (`rotate` 5)
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig (RotateBits @(UnsignedBV 5) 5) id
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig (RotateBits @(UnsignedBV 5) $ -1) (`rotate` (-1))
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig (RotateBits @(UnsignedBV 5) $ -1) (`rotate` 4)
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig (RotateBits @(UnsignedBV 5) $ -2) (`rotate` (-2))
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig (RotateBits @(UnsignedBV 5) $ -2) (`rotate` 3)
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig (RotateBits @(UnsignedBV 5) $ -3) (`rotate` (-3))
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig (RotateBits @(UnsignedBV 5) $ -3) (`rotate` 2)
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig (RotateBits @(UnsignedBV 5) $ -4) (`rotate` (-4))
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig (RotateBits @(UnsignedBV 5) $ -4) (`rotate` 1)
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig (RotateBits @(UnsignedBV 5) $ -5) (`rotate` (-5))
-      testUnaryOpLowering' @(UnsignedBV 5) unboundedConfig (RotateBits @(UnsignedBV 5) $ -5) id
+      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) 0) id
+      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) 1) (`rotate` 1)
+      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) 2) (`rotate` 2)
+      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) 3) (`rotate` 3)
+      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) 4) (`rotate` 4)
+      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) 5) (`rotate` 5)
+      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) 5) id
+      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) $ -1) (`rotate` (-1))
+      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) $ -1) (`rotate` 4)
+      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) $ -2) (`rotate` (-2))
+      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) $ -2) (`rotate` 3)
+      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) $ -3) (`rotate` (-3))
+      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) $ -3) (`rotate` 2)
+      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) $ -4) (`rotate` (-4))
+      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) $ -4) (`rotate` 1)
+      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) $ -5) (`rotate` (-5))
+      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) $ -5) id
 
 {-
 it "DivI lowering should work" $ do
   testBinaryOpLowering' @Integer @Integer unboundedConfig DivI SBV.sDiv
 it "ModI lowering should work" $ do
-  testBinaryOpLowering' @(SignedBV 5) @(SignedBV 5) @(SignedBV 5) unboundedConfig ModI SBV.sMod
+  testBinaryOpLowering' @(IntN 5) @(IntN 5) @(IntN 5) unboundedConfig ModI SBV.sMod
   -}

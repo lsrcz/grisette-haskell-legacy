@@ -25,16 +25,16 @@ instance CegisTranslation Y SymBool VerificationConditions Integer where
     symFailIfNot AssumptionViolation (conc $ i >= 2)
     symFailIfNot AssertionViolation (conc $ odd i)
   
-input :: SymUnsignedBV 4
+input :: SymWordN 4
 input = ssymb "x"
 
-input2 :: SymUnsignedBV 4
+input2 :: SymWordN 4
 input2 = ssymb "c"
 
-eveni :: SymUnsignedBV 4 -> Sym Bool
+eveni :: SymWordN 4 -> Sym Bool
 eveni e = e `shiftR` 1 `shiftL` 1 ==~ e
 
-oddi :: SymUnsignedBV 4 -> Sym Bool
+oddi :: SymWordN 4 -> Sym Bool
 oddi = nots . eveni
 
 m :: UnionM Integer
