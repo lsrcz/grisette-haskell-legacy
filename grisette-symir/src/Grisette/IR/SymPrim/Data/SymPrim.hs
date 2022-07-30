@@ -5,6 +5,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
@@ -50,6 +51,7 @@ import Grisette.Core.Data.Class.ToCon
 import Grisette.Core.Data.Class.ToSym
 import Grisette.IR.SymPrim.Data.BV
 import Grisette.IR.SymPrim.Data.GeneralFunc
+import Grisette.IR.SymPrim.Data.IntBitwidth
 import Grisette.IR.SymPrim.Data.Prim.BV
 import Grisette.IR.SymPrim.Data.Prim.Bits
 import Grisette.IR.SymPrim.Data.Prim.Bool
@@ -295,6 +297,8 @@ TOSYM_MACHINE_INTEGER (Word8, WordN 8)
 TOSYM_MACHINE_INTEGER (Word16, WordN 16)
 TOSYM_MACHINE_INTEGER (Word32, WordN 32)
 TOSYM_MACHINE_INTEGER (Word64, WordN 64)
+TOSYM_MACHINE_INTEGER (Int, IntN $(intBitwidthQ))
+TOSYM_MACHINE_INTEGER (Word, WordN $(intBitwidthQ))
 
 TOCON_MACHINE_INTEGER (IntN, 8, Int8)
 TOCON_MACHINE_INTEGER (IntN, 16, Int16)
@@ -304,6 +308,8 @@ TOCON_MACHINE_INTEGER (WordN, 8, Word8)
 TOCON_MACHINE_INTEGER (WordN, 16, Word16)
 TOCON_MACHINE_INTEGER (WordN, 32, Word32)
 TOCON_MACHINE_INTEGER (WordN, 64, Word64)
+TOCON_MACHINE_INTEGER (IntN, $(intBitwidthQ), Int)
+TOCON_MACHINE_INTEGER (WordN, $(intBitwidthQ), Word)
 
 -- unsigned bv
 type SymWordN n = Sym (WordN n)
