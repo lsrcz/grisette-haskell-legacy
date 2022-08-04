@@ -345,3 +345,13 @@ spec = do
     it "apply" $ do
       (ssymb "a" :: Integer =~> Integer) # ssymb "b"
         `shouldBe` Sym (applyf (ssymbTerm "a" :: Term (Integer =-> Integer)) (ssymbTerm "b"))
+  describe "Symbolic size" $ do
+    it "symSize" $ do
+      symSize (ssymb "a" :: Sym Integer) `shouldBe` 1
+      symSize (conc 1 :: Sym Integer) `shouldBe` 1
+      symSize (conc 1 + ssymb "a" :: Sym Integer) `shouldBe` 3
+      symSize (ssymb "a" + ssymb "a" :: Sym Integer) `shouldBe` 2
+      symSize (- (ssymb "a") :: Sym Integer) `shouldBe` 2
+      symSize (ites (ssymb "a" :: Sym Bool) (ssymb "b") (ssymb "c") :: Sym Integer) `shouldBe` 4
+    it "symsSize" $ do
+      symsSize [ssymb "a" :: Sym Integer, ssymb "a" + ssymb "a"] `shouldBe` 2

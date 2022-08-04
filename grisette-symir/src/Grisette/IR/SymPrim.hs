@@ -5,6 +5,8 @@ module Grisette.IR.SymPrim
     type (=->) (..),
     type (-->),
     Sym (..),
+    symSize,
+    symsSize,
     SymBool,
     SymInteger,
     type (=~>),

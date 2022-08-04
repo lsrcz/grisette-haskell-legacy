@@ -22,6 +22,8 @@ module Grisette.Internal.IR.SymPrim
     isymbTerm,
     sinfosymbTerm,
     iinfosymbTerm,
+    termSize,
+    termsSize,
     extractSymbolicsTerm,
     trueTerm,
     falseTerm,

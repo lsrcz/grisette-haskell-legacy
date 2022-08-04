@@ -2,6 +2,7 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs #-}
@@ -41,6 +42,8 @@ module Grisette.IR.SymPrim.Data.Prim.InternedTerm
     iinfosymbTerm,
     extractSymbolicsTerm,
     TermSymbol (..),
+    termSize,
+    termsSize,
   )
 where
 
@@ -534,3 +537,39 @@ instance (KnownNat w, 1 <= w) => SupportedPrim (WordN w) where
   type PrimConstraint (WordN w) = (KnownNat w, 1 <= w)
   pformatConc i = show i
   defaultValue = 0
+
+termsSize :: [Term a] -> Int
+termsSize terms = S.size $ execState (traverse go terms) S.empty
+  where
+    exists t = gets (S.member (SomeTerm t))
+    add t = modify' (S.insert (SomeTerm t))
+    go :: forall b. Term b -> State (S.HashSet SomeTerm) ()
+    go t@ConcTerm {} = add t
+    go t@SymbTerm {} = add t
+    go t@(UnaryTerm _ _ arg) = do
+      b <- exists t
+      if b
+        then return ()
+        else do
+          add t
+          go arg
+    go t@(BinaryTerm _ _ arg1 arg2) = do
+      b <- exists t
+      if b
+        then return ()
+        else do
+          add t
+          go arg1
+          go arg2
+    go t@(TernaryTerm _ _ arg1 arg2 arg3) = do
+      b <- exists t
+      if b
+        then return ()
+        else do
+          add t
+          go arg1
+          go arg2
+          go arg3
+
+termSize :: Term a -> Int
+termSize term = termsSize [term]

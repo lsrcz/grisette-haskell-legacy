@@ -21,6 +21,8 @@ module Grisette.IR.SymPrim.Data.SymPrim
     type (-~>),
     SymWordN,
     SymIntN,
+    symSize,
+    symsSize,
   )
 where
 
@@ -392,3 +394,9 @@ instance (SupportedPrim a, SupportedPrim b) => Function (a -~> b) where
   type Arg (a -~> b) = Sym a
   type Ret (a -~> b) = Sym b
   (Sym f) # (Sym t) = Sym $ applyg f t
+
+symsSize :: [Sym a] -> Int
+symsSize = termsSize . fmap underlyingTerm
+
+symSize :: Sym a -> Int
+symSize = termSize . underlyingTerm
