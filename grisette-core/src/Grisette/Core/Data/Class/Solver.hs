@@ -46,13 +46,18 @@ module Grisette.Core.Data.Class.Solver
     translateBy,
     -}
     solveWithExcept,
-    solveArgWithExcept,
+    -- solveArgWithExcept,
     solveWithExceptMulti,
     cegisWithExcept,
-    cegisForallByWithExcept,
-    cegisArgWithExcept,
-    cegisArgForallByWithExcept,
+    -- cegisForallByWithExcept,
+    -- cegisArgWithExcept,
+    -- cegisArgForallByWithExcept,
     MonadErrorTrans (..),
+
+    translateSolve,
+    translateSolveSpec,
+    translateCegis,
+    translateCegisSpec,
   )
 where
 
@@ -61,12 +66,12 @@ import Control.Monad.Except
 import Data.Hashable
 import Generics.Deriving
 import Grisette.Core.Control.Exception
-import Grisette.Core.Control.Monad.UnionMBase
+-- import Grisette.Core.Control.Monad.UnionMBase
 import Grisette.Core.Data.Class.Bool
 import Grisette.Core.Data.Class.Evaluate
 import Grisette.Core.Data.Class.ExtractSymbolics
-import Grisette.Core.Data.Class.GenSym
-import Grisette.Core.Data.Class.Mergeable
+-- import Grisette.Core.Data.Class.GenSym
+-- import Grisette.Core.Data.Class.Mergeable
 import Grisette.Core.Data.Class.PrimWrapper
 import Grisette.Core.Data.Class.SimpleMergeable
 import Language.Haskell.TH.Syntax
@@ -91,23 +96,35 @@ class MonadErrorTrans e t where
 instance MonadErrorTrans e (ExceptT e) where
   unwrapMonadErrorTrans = runExceptT
 
-translateSolve :: (SolverTranslation spec bool e v, UnionPrjOp bool u, Monad u, MonadErrorTrans e t) => spec -> t u v -> bool
-translateSolve p t =
-  getSingle $
+translateSolve :: (MonadErrorTrans e t, UnionPrjOp bool u, Monad u) => (Either e v -> bool) -> t u v -> bool
+translateSolve f t =
+  getSingle $ f <$> unwrapMonadErrorTrans t
+
+translateSolveSpec :: (SolverTranslation spec bool e v, UnionPrjOp bool u, Monad u, MonadErrorTrans e t) => spec -> t u v -> bool
+translateSolveSpec p =
+  translateSolve
     ( \case
         Left e -> conc $ errorTranslation p e
         Right v -> valueTranslation p v
     )
-      <$> unwrapMonadErrorTrans t
 
 translateCegis ::
+  forall bool u t e v.
+  (UnionPrjOp bool u, Monad u, MonadErrorTrans e t) =>
+  (Either e v -> (bool, bool)) ->
+  t u v ->
+  (bool, bool)
+translateCegis f t =
+  getSingle $ f <$> unwrapMonadErrorTrans t
+
+translateCegisSpec ::
   forall spec bool u t e v.
   (CegisTranslation spec bool e v, UnionPrjOp bool u, Monad u, MonadErrorTrans e t) =>
   spec ->
   t u v ->
   (bool, bool)
-translateCegis p m =
-  getSingle $
+translateCegisSpec p =
+  translateCegis
     ( \case
         Left e -> let t = cegisErrorTranslation p e in (conc $ t == AssumptionViolation, conc $ t == AssertionViolation)
         Right v ->
@@ -120,7 +137,6 @@ translateCegis p m =
               )
               (runExceptT $ cegisValueTranslation p v :: u (Either VerificationConditions ()))
     )
-      <$> unwrapMonadErrorTrans m
 
 data SolveInternal = SolveInternal deriving (Eq, Show, Ord, Generic, Hashable, Lift, NFData)
 
@@ -132,6 +148,13 @@ class
   solveFormula :: config -> bool -> IO (Either failure model)
   solveFormulaMulti :: config -> Int -> bool -> IO [model]
   solveFormulaAll :: config -> Int -> bool -> IO [model]
+  cegisFormula ::
+    (Evaluate model forallArg, ExtractSymbolics symbolSet forallArg) =>
+    config ->
+    forallArg ->
+    bool ->
+    IO (Either failure ([forallArg], model))
+  cegisFormula config forallArg = cegisFormulas config forallArg (conc False)
   cegisFormulas ::
     (Evaluate model forallArg, ExtractSymbolics symbolSet forallArg) =>
     config ->
@@ -140,6 +163,7 @@ class
     bool ->
     IO (Either failure ([forallArg], model))
 
+{-
   solveArgFormula ::
     forall spec arg.
     (GenSym bool spec arg, Evaluate model arg, ExtractSymbolics symbolSet arg) =>
@@ -219,6 +243,7 @@ class
           case r of
             Left err -> return $ Left err
             Right (arg, forallArgRet, model) -> return $ Right (arg, (\(SingleU v) -> v) <$> forallArgRet, model)
+            -}
 
 solveWithExcept ::
   ( SolverTranslation spec bool err v,
@@ -231,8 +256,9 @@ solveWithExcept ::
   config ->
   t u v ->
   IO (Either failure model)
-solveWithExcept spec config e = solveFormula config (translateSolve spec e)
+solveWithExcept spec config e = solveFormula config (translateSolveSpec spec e)
 
+{-
 solveArgWithExcept ::
   ( SolverTranslation spec bool err v,
     GenSym bool argSpec arg,
@@ -248,7 +274,8 @@ solveArgWithExcept ::
   argSpec ->
   (arg -> t u v) ->
   IO (Either failure (arg, model))
-solveArgWithExcept spec config argSpec f = solveArgFormula config argSpec (translateSolve spec . f)
+solveArgWithExcept spec config argSpec f = solveArgFormula config argSpec (translateSolveSpec spec . f)
+-}
 
 solveWithExceptMulti ::
   ( SolverTranslation spec bool err v,
@@ -262,7 +289,7 @@ solveWithExceptMulti ::
   Int ->
   t u v ->
   IO [model]
-solveWithExceptMulti spec config n e = solveFormulaMulti config n (translateSolve spec e)
+solveWithExceptMulti spec config n e = solveFormulaMulti config n (translateSolveSpec spec e)
 
 cegisWithExcept ::
   ( CegisTranslation spec bool err v,
@@ -279,9 +306,10 @@ cegisWithExcept ::
   t u v ->
   IO (Either failure ([forallArgs], model))
 cegisWithExcept p config foralls e =
-  let (assumes, asserts) = translateCegis p e
+  let (assumes, asserts) = translateCegisSpec p e
    in cegisFormulas config foralls assumes asserts
 
+{-
 cegisForallByWithExcept ::
   forall config bool u spec err v symbolSet a forallSpec model failure.
   ( CegisTranslation spec bool err v,
@@ -374,6 +402,7 @@ cegisArgForallByWithExcept p config forallSpec argSpec f =
         case r of
           Left err -> return $ Left err
           Right (v, forallArgsRet, model) -> return $ Right (v, (\(SingleU vs) -> vs) <$> forallArgsRet, model)
+          -}
 
 {-
 data
