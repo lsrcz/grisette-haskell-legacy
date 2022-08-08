@@ -101,11 +101,9 @@ data Marble = Red | White | Blue
 
 data DutchFlag = DutchFlag {nred :: Int, nwhite :: Int}
 
-instance SolverErrorTranslation DutchFlag AssertionError where
-  errorTranslation _ _ = False
-
-instance SolverTranslation DutchFlag SymBool AssertionError ([UnionM Marble], Trace) where
-  valueTranslation (DutchFlag r w) (v, _) =
+instance ToAssertion DutchFlag SymBool (Either AssertionError ([UnionM Marble], Trace)) where
+  toAssertion _ (Left _) = conc False
+  toAssertion (DutchFlag r w) (Right (v, _)) =
     isColor Red rmarbles &&~ isColor White wmarbles &&~ isColor Blue bmarbles
     where
       rmarbles = take r v
@@ -125,7 +123,7 @@ runDutchFlag config algo len initMarbles = do
       return $ ct : r
   where
     solveProb result = do
-      ms <- solveWithExcept (DutchFlag (length $ filter (== Red) initMarbles) (length $ filter (== White) initMarbles)) config result
+      ms <- solve (DutchFlag (length $ filter (== Red) initMarbles) (length $ filter (== White) initMarbles)) config (runExceptT result)
       case ms of
         Left _ -> return Nothing
         Right mo -> do
@@ -151,7 +149,7 @@ runDutchFlag config algo len initMarbles = do
 -- We currently cannot do this lazily due to the restriction of SBV APIs.
 runDutchFlag' :: GrisetteSMTConfig n -> Algo -> Integer -> Int -> [Marble] -> IO [ConTrace]
 runDutchFlag' config algo len maxModelCnt initMarbles = do
-  ms <- solveWithExceptMulti (DutchFlag (length $ filter (== Red) initMarbles) (length $ filter (== White) initMarbles)) config maxModelCnt final
+  ms <- solveMulti (DutchFlag (length $ filter (== Red) initMarbles) (length $ filter (== White) initMarbles)) config maxModelCnt (runExceptT final)
   return $
     ( \mo ->
         let res :: Either AssertionError ConTrace = evaluateToCon mo (runExceptT (snd <$> final) :: UnionM (Either AssertionError Trace))

@@ -145,18 +145,14 @@ instance Solver (GrisetteSMTConfig n) SymBool (S.HashSet TermSymbol) SBVC.CheckS
 
 data DefaultVerificationCondition = DefaultVerificationCondition
 
-instance SolverErrorTranslation DefaultVerificationCondition VerificationConditions where
-  errorTranslation _ AssumptionViolation = False
-  errorTranslation _ AssertionViolation = True
+instance SymBoolOp bool => ToAssertion DefaultVerificationCondition bool (Either VerificationConditions ()) where
+  toAssertion _ (Left AssertionViolation) = conc True
+  toAssertion _ _ = conc False
 
-instance SymBoolOp bool => SolverTranslation DefaultVerificationCondition bool VerificationConditions () where
-  valueTranslation _ _ = conc False
-
-instance CegisErrorTranslation DefaultVerificationCondition VerificationConditions where
-  cegisErrorTranslation _ = id
-
-instance (SymBoolOp bool) =>
-  CegisTranslation DefaultVerificationCondition bool VerificationConditions () where
+instance SymBoolOp bool => ToVC DefaultVerificationCondition bool (Either VerificationConditions ()) where
+  toVCBoolPair _ (Left AssumptionViolation) = (conc True, conc False)
+  toVCBoolPair _ (Left AssertionViolation) = (conc False, conc True)
+  toVCBoolPair _ _ = (conc False, conc False)
   
 {-
 solveWith ::

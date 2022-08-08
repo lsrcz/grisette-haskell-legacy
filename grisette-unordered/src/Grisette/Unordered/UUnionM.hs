@@ -34,6 +34,7 @@ import Grisette.Core.Data.Class.Function
 import Data.String
 import Grisette.Core.Data.Class.GenSym
 import Grisette.IR.SymPrim
+import Grisette.Core.Data.Class.Solver
 
 data UUnionMBase bool a where
   UUAny :: IORef (Either (UUnionBase bool a) (UUnionMBase bool a)) ->
@@ -292,3 +293,9 @@ instance
 
 
 type UUnionM = UUnionMBase SymBool
+
+instance ToAssertion spec bool v => ToAssertion spec bool (UUnionMBase bool v) where
+  toAssertion spec u = getSingle $ toAssertion spec <$> u
+
+instance ToVC spec bool v => ToVC spec bool (UUnionMBase bool v) where
+  toVCBoolPair spec u = getSingle $ toVCBoolPair spec <$> u

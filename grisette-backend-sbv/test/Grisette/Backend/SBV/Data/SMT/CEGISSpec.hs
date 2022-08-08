@@ -29,7 +29,7 @@ import Test.Hspec
 
 testCegis :: (HasCallStack, ExtractSymbolics (S.HashSet TermSymbol) a, Evaluate Model a, Show a) => GrisetteSMTConfig i -> Bool -> a -> [SymBool] -> Expectation
 testCegis config shouldSuccess a bs = do
-  x <- cegisWithExcept DefaultVerificationCondition config (a, ssymb "internal" :: SymInteger) (buildFormula bs)
+  x <- cegis DefaultVerificationCondition config (a, ssymb "internal" :: SymInteger) (runExceptT $ buildFormula bs)
   case x of
     Left _ -> shouldSuccess `shouldBe` False
     Right (_, m) -> do

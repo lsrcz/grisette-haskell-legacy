@@ -36,7 +36,6 @@ import Grisette.Core.Data.Class.GenSym
 import Grisette.Core.Data.Class.Mergeable
 import Grisette.Core.Data.Class.SOrd
 import Grisette.Core.Data.Class.SimpleMergeable
-import Grisette.Core.Data.Class.Solver
 import Grisette.Core.Data.Class.ToCon
 import Grisette.Core.Data.Class.ToSym
 import Unsafe.Coerce
@@ -385,9 +384,6 @@ instance
   {-# INLINE single #-}
   unionIf cond (CBMCExceptT l) (CBMCExceptT r) = CBMCExceptT $ unionIf cond l r
   {-# INLINE unionIf #-}
-
-instance MonadErrorTrans e (CBMCExceptT e) where
-  unwrapMonadErrorTrans = ((\(CBMCEither v) -> v) <$>) . runCBMCExceptT
 
 instance (SymBoolOp bool, SOrd bool (m (CBMCEither e a))) => SOrd bool (CBMCExceptT e m a) where
   (CBMCExceptT l) <=~ (CBMCExceptT r) = l <=~ r

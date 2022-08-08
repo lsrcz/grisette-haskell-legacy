@@ -319,11 +319,9 @@ interpretExpr (Eqv l r) = interpretBop l r $
 newtype RefResult = RefResult Integer
 
 
-instance SolverErrorTranslation RefResult Errors where
-  errorTranslation _ _ = False
-
-instance SolverTranslation RefResult SymBool Errors Value where
-  valueTranslation (RefResult x) v = VI (conc x) ==~ v
+instance ToAssertion RefResult SymBool (Either Errors Value) where
+  toAssertion (RefResult x) (Right v) = VI (conc x) ==~ v
+  toAssertion _ _ = conc False
 
 -- The sketch is
 -- 1 ??op 2
@@ -340,7 +338,7 @@ sketch4 =
 -- The result has the type: Either CheckSatResult Model.
 result :: Integer -> IO ()
 result i = do
-  m <- solveWithExcept (RefResult i) (UnboundedReasoning z3) $ interpretExprU sketch4
+  m <- solve (RefResult i) (UnboundedReasoning z3) $ runExceptT $ interpretExprU sketch4
   case m of
     Left _ -> putStrLn "No such expression"
     Right mo -> print (toCon $ evaluate True mo sketch4 :: Maybe ConcExpr)

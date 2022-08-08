@@ -43,16 +43,13 @@ mixed = do
 
 data Simple = Simple
 
-instance SolverErrorTranslation Simple Error where
-  errorTranslation _ AssumeError = False
-  errorTranslation _ AssertError = True
-
-instance SymBoolOp bool => SolverTranslation Simple bool Error () where
-  valueTranslation _ _ = conc False
+instance ToAssertion Simple SymBool (Either Error ()) where
+  toAssertion _ (Left AssertError) = conc True
+  toAssertion _ _ = conc False
 
 main :: IO ()
 main = do
   print asserts
   print mixed
-  _ <- solveWithExcept Simple (UnboundedReasoning z3 {verbose = True}) mixed
+  _ <- solve Simple (UnboundedReasoning z3 {verbose = True}) $ runExceptT $ mixed
   return ()

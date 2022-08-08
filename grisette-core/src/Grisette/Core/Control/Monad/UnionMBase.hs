@@ -41,6 +41,7 @@ import Grisette.Core.Data.Class.Mergeable
 import Grisette.Core.Data.Class.PrimWrapper
 import Grisette.Core.Data.Class.SOrd
 import Grisette.Core.Data.Class.SimpleMergeable
+import Grisette.Core.Data.Class.Solver
 import Grisette.Core.Data.Class.ToCon
 import Grisette.Core.Data.Class.ToSym
 import Grisette.Core.Data.UnionBase
@@ -408,3 +409,9 @@ instance (SymBoolOp bool, IsConcrete k, Mergeable bool t) => SimpleMergeable boo
           )
           r
           (HML.keys l)
+
+instance ToAssertion spec bool v => ToAssertion spec bool (UnionMBase bool v) where
+  toAssertion spec u = getSingle $ toAssertion spec <$> u
+
+instance ToVC spec bool v => ToVC spec bool (UnionMBase bool v) where
+  toVCBoolPair spec u = getSingle $ toVCBoolPair spec <$> u

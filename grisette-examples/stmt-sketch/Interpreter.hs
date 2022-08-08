@@ -107,29 +107,24 @@ interpretProgram (SymbProgram s) = evalStateT (interpretStmtList s) (mrgReturn [
 
 data DoSynthesis = DoSynthesis
 
-instance SolverErrorTranslation DoSynthesis Errors where
-  errorTranslation _ _ = False
-
-instance SolverTranslation DoSynthesis SymBool Errors () where
-  valueTranslation _ _ = conc True
+instance ToAssertion DoSynthesis SymBool (Either Errors ()) where
+  toAssertion _ (Left _) = conc False
+  toAssertion _ _ = conc True
 
 data GetTypeError = GetTypeError
 
-instance SolverErrorTranslation GetTypeError Errors where
-  errorTranslation _ BadType = True
-  errorTranslation _ _ = False
-
-instance SolverTranslation GetTypeError SymBool Errors () where
-  valueTranslation _ _ = conc False
+instance ToAssertion GetTypeError SymBool (Either Errors ()) where
+  toAssertion _ (Left BadType) = conc True
+  toAssertion _ _ = conc False
 
 synthesis ::
-  (SolverTranslation method SymBool Errors ()) =>
+  (ToAssertion method SymBool (Either Errors ())) =>
   method ->
   GrisetteSMTConfig i ->
   SymbProgram ->
   IO (Maybe Program)
 synthesis method config s = do
-  m <- solveWithExcept method config (interpretProgram s)
+  m <- solve method config (runExceptT $ interpretProgram s)
   case m of
     Left _ -> return Nothing
     Right mo -> return $ toCon $ evaluate True mo s

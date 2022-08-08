@@ -19,10 +19,9 @@ syncCost [] = 0
 
 data Synth = Synth
 
-instance CegisErrorTranslation Synth AssertionError where
-  cegisErrorTranslation _ _ = AssertionViolation
-
-instance CegisTranslation Synth SymBool AssertionError () where
+instance ToVC Synth SymBool (Either AssertionError ()) where
+  toVCBoolPair _ (Left _) = (conc False, conc True)
+  toVCBoolPair _ _ = (conc False, conc False)
 
 synth ::
   forall b conc fs.
@@ -49,11 +48,11 @@ synth config (Litmus fsBound make setupProc prog allowCond) =
       cost = syncCost progWithSyncs
       go sol currCost =
         let costConstraint = conc (currCost == fromIntegral (length progWithSyncs)) ||~ cost <~ currCost
-            synthCond :: ExceptT AssertionError UnionM ()
-            synthCond = symFailIfNot AssertionError ((validOrdering fs prog1 order `implies` allowed) &&~ costConstraint)
+            synthCond :: UnionM (Either AssertionError ())
+            synthCond = runExceptT $ symFailIfNot AssertionError ((validOrdering fs prog1 order `implies` allowed) &&~ costConstraint)
          in do
-              _ <- timeItAll "evaluate" $ (runExceptT synthCond) `deepseq` return ()
-              m <- timeItAll "Lowering/Solving" $ cegisWithExcept Synth config (crashes, order) synthCond
+              _ <- timeItAll "evaluate" $ synthCond `deepseq` return ()
+              m <- timeItAll "Lowering/Solving" $ cegis Synth config (crashes, order) synthCond
               case m of
                 Left _ -> return sol
                 Right (_, mo) -> go (Just $ evaluate True mo progWithSyncs) $ evaluate True mo cost

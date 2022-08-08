@@ -123,11 +123,9 @@ interpretInstruction (Mix p) = mix p
 
 data Synth = Synth
 
-instance SolverErrorTranslation Synth () where
-  errorTranslation _ _ = False
-
-instance SolverTranslation Synth SymBool () SymBool where
-  valueTranslation _ v = v
+instance ToAssertion Synth SymBool (Either () SymBool) where
+  toAssertion _ (Left _) = conc False
+  toAssertion _ (Right v) = v
 
 synthesizeProgram ::
   GrisetteSMTConfig n ->
@@ -145,11 +143,11 @@ synthesizeProgram config i initst f = go 0 (mrgReturn initst)
               t1 <- st
               ins <- lift (lst !! num)
               merge $ execStateT (interpretInstruction ins) t1
-            cond = newst >>= f
+            cond = runExceptT $ newst >>= f
          in do
               print num
-              _ <- timeItAll "evaluate" $ runExceptT cond `deepseq` return cond
-              r <- timeItAll "Lowering/Solving" $ solveWithExcept Synth config cond
+              _ <- timeItAll "evaluate" $ cond `deepseq` return cond
+              r <- timeItAll "Lowering/Solving" $ solve Synth config cond
               case r of
                 Left _ -> go (num + 1) newst
                 Right m -> return $ toCon $ evaluate True m $ take (num + 1) lst

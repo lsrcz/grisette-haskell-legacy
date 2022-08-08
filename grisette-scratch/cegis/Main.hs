@@ -10,20 +10,19 @@ import Data.Bits
 
 data X = X
 
-instance CegisErrorTranslation X VerificationConditions where
-  cegisErrorTranslation _ = id
-
-instance CegisTranslation X SymBool VerificationConditions () where
+instance ToVC X SymBool (Either VerificationConditions ()) where
+  toVCBoolPair _ (Left AssumptionViolation) = (conc True, conc False)
+  toVCBoolPair _ (Left AssertionViolation) = (conc False, conc True)
+  toVCBoolPair _ _ = (conc False, conc False)
 
 data Y = Y
 
-instance CegisErrorTranslation Y VerificationConditions where
-  cegisErrorTranslation _ = id
-
-instance CegisTranslation Y SymBool VerificationConditions Integer where
-  cegisValueTranslation _ i = do
+instance ToVC Y SymBool (Either VerificationConditions Integer) where
+  toVCBoolPair _ (Left AssumptionViolation) = (conc True, conc False)
+  toVCBoolPair _ (Left AssertionViolation) = (conc False, conc True)
+  toVCBoolPair _ (Right i) = vcToBoolPair $ runExceptT $ do
     symFailIfNot AssumptionViolation (conc $ i >= 2)
-    symFailIfNot AssertionViolation (conc $ odd i)
+    symFailIfNot AssertionViolation (conc $ odd i) :: ExceptT VerificationConditions UnionM ()
   
 input :: SymWordN 4
 input = ssymb "x"
@@ -54,9 +53,9 @@ v = do
 
 main :: IO()
 main = do
-  Right (cexs, mo) <- cegisWithExcept X (UnboundedReasoning z3) input v
+  Right (cexs, mo) <- cegis X (UnboundedReasoning z3) input $ runExceptT v
   print (cexs, evaluate False mo input2)
-  Right (cexs1, mo1) <- cegisWithExcept X (UnboundedReasoning z3) (ssymb "a" :: Sym Bool) m1
+  Right (cexs1, mo1) <- cegis X (UnboundedReasoning z3) (ssymb "a" :: Sym Bool) $ runExceptT m1
   print (cexs1, evaluate False mo1 m)
-  Right (cexs2, mo2) <- cegisWithExcept Y (UnboundedReasoning z3) (ssymb "a" :: Sym Bool) (lift m :: ExceptT VerificationConditions UnionM Integer)
+  Right (cexs2, mo2) <- cegis Y (UnboundedReasoning z3) (ssymb "a" :: Sym Bool) $ runExceptT (lift m :: ExceptT VerificationConditions UnionM Integer)
   print (cexs2, evaluate False mo2 m)

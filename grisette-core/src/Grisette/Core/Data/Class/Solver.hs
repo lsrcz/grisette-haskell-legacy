@@ -16,10 +16,12 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Grisette.Core.Data.Class.Solver
-  ( SolverErrorTranslation (..),
-    SolverTranslation (..),
-    CegisErrorTranslation (..),
-    CegisTranslation (..),
+  ( --SolverErrorTranslation (..),
+    --SolverTranslation (..),
+    --CegisErrorTranslation (..),
+    --CegisTranslation (..),
+    ToAssertion (..),
+    ToVC (..),
     Solver (..),
     {-
     SolveProblem
@@ -45,24 +47,25 @@ module Grisette.Core.Data.Class.Solver
     forallBy,
     translateBy,
     -}
-    solveWithExcept,
+    solve,
     -- solveArgWithExcept,
-    solveWithExceptMulti,
-    cegisWithExcept,
+    solveMulti,
+    cegis,
     -- cegisForallByWithExcept,
     -- cegisArgWithExcept,
     -- cegisArgForallByWithExcept,
-    MonadErrorTrans (..),
+    -- MonadErrorTrans (..),
+    --translateSolve,
+    --translateSolveSpec,
+    --translateCegis,
+    -- translateCegisSpec,
 
-    translateSolve,
-    translateSolveSpec,
-    translateCegis,
-    translateCegisSpec,
+    vcToBoolPair,
   )
 where
 
 import Control.DeepSeq
-import Control.Monad.Except
+-- import Control.Monad.Except
 import Data.Hashable
 import Generics.Deriving
 import Grisette.Core.Control.Exception
@@ -76,6 +79,25 @@ import Grisette.Core.Data.Class.PrimWrapper
 import Grisette.Core.Data.Class.SimpleMergeable
 import Language.Haskell.TH.Syntax
 
+class SymBoolOp bool => ToAssertion spec bool a where
+  toAssertion :: spec -> a -> bool
+
+vcToBoolPair :: (UnionPrjOp bool u, Monad u) => u (Either VerificationConditions ()) -> (bool, bool)
+vcToBoolPair =
+  getSingle
+    . fmap
+      ( \case
+          Left AssumptionViolation -> (conc True, conc False)
+          Left AssertionViolation -> (conc False, conc True)
+          _ -> (conc False, conc False)
+      )
+
+class SymBoolOp bool => ToVC spec bool a where
+  toVCBoolPair :: spec -> a -> (bool, bool)
+  {-default toVC :: (MonadError VerificationConditions u, UnionLike bool u, a ~ ()) => spec -> a -> u ()
+  toVC _ = mrgSingle-}
+
+{-
 class SolverErrorTranslation spec e | spec -> e where
   errorTranslation :: spec -> e -> Bool
 
@@ -89,54 +111,32 @@ class (SymBoolOp bool, CegisErrorTranslation spec e) => CegisTranslation spec bo
   cegisValueTranslation :: (MonadError VerificationConditions u, UnionLike bool u) => spec -> v -> u ()
   default cegisValueTranslation :: (MonadError VerificationConditions u, UnionLike bool u, v ~ ()) => spec -> v -> u ()
   cegisValueTranslation _ = mrgSingle
+  -}
 
-class MonadErrorTrans e t where
-  unwrapMonadErrorTrans :: (Monad u) => t u v -> u (Either e v)
+{-class MonadErrorTrans e t | t -> e where
+  unwrapMonadErrorTrans :: (Monad u) => t u v -> u (Either e v)-}
 
-instance MonadErrorTrans e (ExceptT e) where
-  unwrapMonadErrorTrans = runExceptT
+{-instance MonadErrorTrans e (ExceptT e) where
+  unwrapMonadErrorTrans = runExceptT-}
 
-translateSolve :: (MonadErrorTrans e t, UnionPrjOp bool u, Monad u) => (Either e v -> bool) -> t u v -> bool
-translateSolve f t =
-  getSingle $ f <$> unwrapMonadErrorTrans t
-
-translateSolveSpec :: (SolverTranslation spec bool e v, UnionPrjOp bool u, Monad u, MonadErrorTrans e t) => spec -> t u v -> bool
-translateSolveSpec p =
-  translateSolve
-    ( \case
-        Left e -> conc $ errorTranslation p e
-        Right v -> valueTranslation p v
-    )
-
+{-
 translateCegis ::
-  forall bool u t e v.
-  (UnionPrjOp bool u, Monad u, MonadErrorTrans e t) =>
+  forall bool u e v.
+  (UnionPrjOp bool u, Monad u) =>
   (Either e v -> (bool, bool)) ->
-  t u v ->
+  u (Either e v) ->
   (bool, bool)
 translateCegis f t =
-  getSingle $ f <$> unwrapMonadErrorTrans t
+  getSingle $ f <$> t
 
 translateCegisSpec ::
-  forall spec bool u t e v.
-  (CegisTranslation spec bool e v, UnionPrjOp bool u, Monad u, MonadErrorTrans e t) =>
+  forall spec bool u e v.
+  (ToVC spec bool e, ToVC spec bool v, UnionPrjOp bool u, Monad u) =>
   spec ->
-  t u v ->
+  u (Either e v) ->
   (bool, bool)
 translateCegisSpec p =
-  translateCegis
-    ( \case
-        Left e -> let t = cegisErrorTranslation p e in (conc $ t == AssumptionViolation, conc $ t == AssertionViolation)
-        Right v ->
-          getSingle $
-            fmap
-              ( \case
-                  Left AssumptionViolation -> (conc True, conc False)
-                  Left AssertionViolation -> (conc False, conc True)
-                  _ -> (conc False, conc False)
-              )
-              (runExceptT $ cegisValueTranslation p v :: u (Either VerificationConditions ()))
-    )
+  translateCegis (toVCBoolPair p) -}
 
 data SolveInternal = SolveInternal deriving (Eq, Show, Ord, Generic, Hashable, Lift, NFData)
 
@@ -162,6 +162,24 @@ class
     bool ->
     bool ->
     IO (Either failure ([forallArg], model))
+  cegisVC ::
+    (Evaluate model forallArg, ExtractSymbolics symbolSet forallArg, UnionPrjOp bool u, Monad u) =>
+    config ->
+    forallArg ->
+    u (Either VerificationConditions ()) ->
+    IO (Either failure ([forallArg], model))
+  cegisVC config forallArg u =
+    uncurry
+      (cegisFormulas config forallArg)
+      ( getSingle $
+          fmap
+            ( \case
+                Left AssumptionViolation -> (conc True, conc False)
+                Left AssertionViolation -> (conc False, conc True)
+                _ -> (conc False, conc False)
+            )
+            u
+      )
 
 {-
   solveArgFormula ::
@@ -245,18 +263,15 @@ class
             Right (arg, forallArgRet, model) -> return $ Right (arg, (\(SingleU v) -> v) <$> forallArgRet, model)
             -}
 
-solveWithExcept ::
-  ( SolverTranslation spec bool err v,
-    Solver config bool symbolSet failure model,
-    UnionPrjOp bool u,
-    Monad u,
-    MonadErrorTrans err t
+solve ::
+  ( ToAssertion spec bool v,
+    Solver config bool symbolSet failure model
   ) =>
   spec ->
   config ->
-  t u v ->
+  v ->
   IO (Either failure model)
-solveWithExcept spec config e = solveFormula config (translateSolveSpec spec e)
+solve spec config e = solveFormula config (toAssertion spec e)
 
 {-
 solveArgWithExcept ::
@@ -277,37 +292,29 @@ solveArgWithExcept ::
 solveArgWithExcept spec config argSpec f = solveArgFormula config argSpec (translateSolveSpec spec . f)
 -}
 
-solveWithExceptMulti ::
-  ( SolverTranslation spec bool err v,
-    Solver config bool symbolSet failure model,
-    UnionPrjOp bool u,
-    Monad u,
-    MonadErrorTrans err t
+solveMulti ::
+  ( ToAssertion spec bool v,
+    Solver config bool symbolSet failure model
   ) =>
   spec ->
   config ->
   Int ->
-  t u v ->
+  v ->
   IO [model]
-solveWithExceptMulti spec config n e = solveFormulaMulti config n (translateSolveSpec spec e)
+solveMulti spec config n e = solveFormulaMulti config n (toAssertion spec e)
 
-cegisWithExcept ::
-  ( CegisTranslation spec bool err v,
+cegis ::
+  ( ToVC spec bool v,
     ExtractSymbolics symbolSet forallArgs,
     Evaluate model forallArgs,
-    Solver config bool symbolSet failure model,
-    UnionPrjOp bool u,
-    Monad u,
-    MonadErrorTrans err t
+    Solver config bool symbolSet failure model
   ) =>
   spec ->
   config ->
   forallArgs ->
-  t u v ->
+  v ->
   IO (Either failure ([forallArgs], model))
-cegisWithExcept p config foralls e =
-  let (assumes, asserts) = translateCegisSpec p e
-   in cegisFormulas config foralls assumes asserts
+cegis p config foralls e = uncurry (cegisFormulas config foralls) (toVCBoolPair p e)
 
 {-
 cegisForallByWithExcept ::

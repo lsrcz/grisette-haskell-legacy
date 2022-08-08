@@ -400,7 +400,7 @@ synth ::
   Program val ->
   IO (Maybe ([[[UnionM val]]], ConProgram cval))
 synth config u b cexs inputs inputSpace spec sketch = do
-  m <- cegisWithExcept DefaultVerificationCondition config inputs $ do
+  m <- cegis DefaultVerificationCondition config inputs $ runExceptT $ do
     symAssume $ inputSpace inputs
     -- symAssume $ wellFormedProgram sketch
     mrgTraverse_ (\x -> do
@@ -422,7 +422,7 @@ verify ::
   Program val ->
   IO (Maybe [[cval]])
 verify config u b inputs inputSpace spec sketch = do
-  m <- solveWithExcept DefaultVerificationCondition config $ do
+  m <- solve DefaultVerificationCondition config $ runExceptT $ do
     symAssume $ inputSpace inputs
     -- symAssume $ wellFormedProgram sketch
     let corr = spec inputs

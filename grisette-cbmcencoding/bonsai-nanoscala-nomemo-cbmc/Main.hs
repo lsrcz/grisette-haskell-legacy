@@ -14,9 +14,9 @@ f10 = genSym (10 :: Int) "a"
 
 main :: IO ()
 main = timeItAll "Overall" $ do
-  let result = lift f10 >>= execDot
-  _ <- timeItAll "evaluate" $ runCBMCExceptT result `deepseq` return ()
-  r <- timeItAll "Lowering/Solving" $ solveWithExcept VerifyTyper (BoundedReasoning @6 boolector) result
+  let result = runCBMCExceptT $ lift f10 >>= execDot
+  _ <- timeItAll "evaluate" $ result `deepseq` return ()
+  r <- timeItAll "Lowering/Solving" $ solve VerifyTyper (BoundedReasoning @6 boolector) result
   case r of
     Left _ -> putStrLn "Verified"
     Right mo -> do

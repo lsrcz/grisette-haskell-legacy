@@ -592,11 +592,10 @@ module Grisette.Tutorial.Essentials.Essentials (
   --
   -- >>> data ViolatesAssertions = ViolatesAssertions
   -- >>> :{
-  --   instance SolverErrorTranslation ViolatesAssertions VerificationConditions where
-  --     errorTranslation _ AssumptionViolation = False
-  --     errorTranslation _ AssertionViolation = True
-  --   instance SolverTranslation ViolatesAssertions (Sym Bool) VerificationConditions () where
-  --     valueTranslation _ _ = conc False
+  --   instance ToAssertion ViolatesAssertions SymBool (Either VerificationConditions ()) where
+  --     toAssertion _ (Left AssumptionViolation) = conc False
+  --     toAssertion _ (Left AssertionViolation) = conc True
+  --     toAssertion _ _ = conc False
   -- :}
   --
   -- And we can write the sample program as follows. The @program1@ is a correct program, in which no assertion violation
@@ -613,9 +612,9 @@ module Grisette.Tutorial.Essentials.Essentials (
   --
   -- We can verify our claim with the solvers:
   --
-  -- >>> solveWithExcept ViolatesAssertions (UnboundedReasoning z3) (program1 :: ExceptT VerificationConditions UnionM ())
+  -- >>> solve ViolatesAssertions (UnboundedReasoning z3) $ runExceptT (program1 :: ExceptT VerificationConditions UnionM ())
   -- Left Unsat
-  -- >>> solveWithExcept ViolatesAssertions (UnboundedReasoning z3) (program2 :: ExceptT VerificationConditions UnionM ())
+  -- >>> solve ViolatesAssertions (UnboundedReasoning z3) $ runExceptT (program2 :: ExceptT VerificationConditions UnionM ())
   -- Right (Model (fromList [(a :: Integer,2 :: Integer)]))
   --
   -- Grisette has more flexible ways for expressing solver queries,
@@ -659,7 +658,7 @@ module Grisette.Tutorial.Essentials.Essentials (
 
 import GHC.Generics
 import Grisette
-import Data.SBV hiding (Mergeable)
+import Data.SBV hiding (Mergeable, solve)
 import Control.Monad.State.Lazy
 import Control.Monad.Except
 
@@ -673,6 +672,6 @@ import Control.Monad.Except
 -- >>> :set -XMultiParamTypeClasses
 -- >>> import GHC.Generics
 -- >>> import Grisette
--- >>> import Data.SBV hiding (Mergeable)
+-- >>> import Data.SBV hiding (Mergeable, solve)
 -- >>> import Control.Monad.State.Lazy
 -- >>> import Control.Monad.Except
