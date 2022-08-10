@@ -18,11 +18,9 @@ syncCost (Efsync _ e : xs) = ites @SymBool e 1 0 + syncCost xs
 syncCost (_ : xs) = syncCost xs
 syncCost [] = 0
 
-data Synth = Synth
-
-instance ToVC Synth SymBool (Either AssertionError ()) where
-  toVCBoolPair _ (Left _) = (conc False, conc True)
-  toVCBoolPair _ _ = (conc False, conc False)
+synthVCTranslation :: Either AssertionError () -> (SymBool, SymBool)
+synthVCTranslation (Left _) = (conc False, conc True)
+synthVCTranslation _ = (conc False, conc False)
 
 synth ::
   forall b conc fs.
@@ -53,7 +51,7 @@ synth config (Litmus fsBound make setupProc prog allowCond) =
             synthCond = runExceptT $ symFailIfNot AssertionError ((validOrdering fs prog1 order `implies` allowed) &&~ costConstraint)
          in do
               _ <- timeItAll "evaluate" $ synthCond `deepseq` return ()
-              m <- timeItAll "Lowering/Solving" $ cegis Synth config (crashes, order) synthCond
+              m <- timeItAll "Lowering/Solving" $ cegisFallable config (crashes, order) synthVCTranslation synthCond
               case m of
                 Left _ -> return sol
                 Right (_, mo) -> go (Just $ evaluate True mo progWithSyncs) $ evaluate True mo cost

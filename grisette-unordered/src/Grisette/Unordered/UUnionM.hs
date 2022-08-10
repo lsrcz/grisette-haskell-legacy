@@ -294,8 +294,5 @@ instance
 
 type UUnionM = UUnionMBase SymBool
 
-instance ToAssertion spec bool v => ToAssertion spec bool (UUnionMBase bool v) where
-  toAssertion spec u = getSingle $ toAssertion spec <$> u
-
-instance ToVC spec bool v => ToVC spec bool (UUnionMBase bool v) where
-  toVCBoolPair spec u = getSingle $ toVCBoolPair spec <$> u
+instance ExtractUnionEither (UUnionMBase bool (Either e v)) (UUnionMBase bool) e v where
+  extractUnionEither = id

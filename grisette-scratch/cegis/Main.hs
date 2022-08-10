@@ -10,17 +10,17 @@ import Data.Bits
 
 data X = X
 
-instance ToVC X SymBool (Either VerificationConditions ()) where
-  toVCBoolPair _ (Left AssumptionViolation) = (conc True, conc False)
-  toVCBoolPair _ (Left AssertionViolation) = (conc False, conc True)
-  toVCBoolPair _ _ = (conc False, conc False)
+xTranslation :: Either VerificationConditions () -> (SymBool, SymBool)
+xTranslation (Left AssumptionViolation) = (conc True, conc False)
+xTranslation (Left AssertionViolation) = (conc False, conc True)
+xTranslation _ = (conc False, conc False)
 
 data Y = Y
 
-instance ToVC Y SymBool (Either VerificationConditions Integer) where
-  toVCBoolPair _ (Left AssumptionViolation) = (conc True, conc False)
-  toVCBoolPair _ (Left AssertionViolation) = (conc False, conc True)
-  toVCBoolPair _ (Right i) = vcToBoolPair $ runExceptT $ do
+yTranslation :: Either VerificationConditions Integer -> UnionM (Either VerificationConditions ())
+yTranslation (Left AssumptionViolation) = return $ Left AssumptionViolation
+yTranslation (Left AssertionViolation) = return $ Left AssertionViolation
+yTranslation (Right i) = runExceptT $ do
     symFailIfNot AssumptionViolation (conc $ i >= 2)
     symFailIfNot AssertionViolation (conc $ odd i) :: ExceptT VerificationConditions UnionM ()
   
@@ -53,9 +53,9 @@ v = do
 
 main :: IO()
 main = do
-  Right (cexs, mo) <- cegis X (UnboundedReasoning z3) input $ runExceptT v
+  Right (cexs, mo) <- cegisFallable (UnboundedReasoning z3) input xTranslation $ runExceptT v
   print (cexs, evaluate False mo input2)
-  Right (cexs1, mo1) <- cegis X (UnboundedReasoning z3) (ssymb "a" :: Sym Bool) $ runExceptT m1
+  Right (cexs1, mo1) <- cegisFallable (UnboundedReasoning z3) (ssymb "a" :: Sym Bool) xTranslation $ runExceptT m1
   print (cexs1, evaluate False mo1 m)
-  Right (cexs2, mo2) <- cegis Y (UnboundedReasoning z3) (ssymb "a" :: Sym Bool) $ runExceptT (lift m :: ExceptT VerificationConditions UnionM Integer)
+  Right (cexs2, mo2) <- cegisFallable' (UnboundedReasoning z3) (ssymb "a" :: Sym Bool) yTranslation $ runExceptT (lift m :: ExceptT VerificationConditions UnionM Integer)
   print (cexs2, evaluate False mo2 m)

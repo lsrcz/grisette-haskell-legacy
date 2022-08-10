@@ -43,7 +43,7 @@ import Data.Hashable
 import Control.DeepSeq
 import Language.Haskell.TH.Syntax (Lift)
 
-newtype CBMCEither a b = CBMCEither (Either a b)
+newtype CBMCEither a b = CBMCEither {runCBMCEither :: Either a b}
   deriving newtype (Eq, Eq1, Ord, Ord1, Read, Read1, Show, Show1, Functor, Applicative, Monad, Hashable, NFData)
   deriving stock (Generic, Lift)
 

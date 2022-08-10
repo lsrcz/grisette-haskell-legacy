@@ -45,6 +45,7 @@ import Grisette.Core.Data.Class.Solver
 import Grisette.Core.Data.Class.ToCon
 import Grisette.Core.Data.Class.ToSym
 import Grisette.Core.Data.UnionBase
+import Grisette.Core.Control.Monad.CBMCExcept
 import Language.Haskell.TH.Syntax
 import Language.Haskell.TH.Syntax.Compat (unTypeSplice)
 
@@ -410,8 +411,8 @@ instance (SymBoolOp bool, IsConcrete k, Mergeable bool t) => SimpleMergeable boo
           r
           (HML.keys l)
 
-instance ToAssertion spec bool v => ToAssertion spec bool (UnionMBase bool v) where
-  toAssertion spec u = getSingle $ toAssertion spec <$> u
+instance ExtractUnionEither (UnionMBase bool (Either e v)) (UnionMBase bool) e v where
+  extractUnionEither = id
 
-instance ToVC spec bool v => ToVC spec bool (UnionMBase bool v) where
-  toVCBoolPair spec u = getSingle $ toVCBoolPair spec <$> u
+instance SymBoolOp bool => ExtractUnionEither (UnionMBase bool (CBMCEither e v)) (UnionMBase bool) e v where
+  extractUnionEither = fmap runCBMCEither

@@ -314,14 +314,9 @@ interpretExpr (Eqv l r) = interpretBop l r $
     (VB x, VB y) -> uVB $ x ==~ y
     _ -> throwError InvalidProgram
 
--- The user can translate the errors with SolverTranslation type class
--- In this example, there is only one error type.
-newtype RefResult = RefResult Integer
-
-
-instance ToAssertion RefResult SymBool (Either Errors Value) where
-  toAssertion (RefResult x) (Right v) = VI (conc x) ==~ v
-  toAssertion _ _ = conc False
+withRef :: Integer -> Either Errors Value -> SymBool
+withRef x (Right v) = VI (conc x) ==~ v
+withRef _ _ = conc False
 
 -- The sketch is
 -- 1 ??op 2
@@ -338,7 +333,7 @@ sketch4 =
 -- The result has the type: Either CheckSatResult Model.
 result :: Integer -> IO ()
 result i = do
-  m <- solve (RefResult i) (UnboundedReasoning z3) $ runExceptT $ interpretExprU sketch4
+  m <- solveFallable (UnboundedReasoning z3) (withRef i) $ interpretExprU sketch4
   case m of
     Left _ -> putStrLn "No such expression"
     Right mo -> print (toCon $ evaluate True mo sketch4 :: Maybe ConcExpr)

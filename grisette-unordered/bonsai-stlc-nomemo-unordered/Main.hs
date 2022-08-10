@@ -21,7 +21,7 @@ main :: IO ()
 main = timeItAll "Overall" $ do
   let result = runExceptT $ lift f8 >>= execStlc
   _ <- timeItAll "evaluate" $ result `deepseq` return ()
-  r <- timeItAll "Lowering/Solving" $ solve VerifyTyper (BoundedReasoning @6 boolector) result
+  r <- timeItAll "Lowering/Solving" $ solveFallable (BoundedReasoning @6 boolector) verifyTyperTranslation result
   case r of
     Left _ -> putStrLn "Verified"
     Right mo -> do

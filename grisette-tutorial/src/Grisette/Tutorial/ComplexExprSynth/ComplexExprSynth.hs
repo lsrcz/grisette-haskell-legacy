@@ -25,9 +25,7 @@ module Grisette.Tutorial.ComplexExprSynth.ComplexExprSynth
     typer,
     typerBad,
     interpreter,
-    VerifyTyper (..),
     verifyTyper,
-    SynthExpr (..),
     synthExpr,
     main,
   )
@@ -184,32 +182,19 @@ interpreter (SymITE c l r) = ternary interpreter c l r $ \case
   (SymBoolValue cb, SymIntegerValue li, SymIntegerValue ri) -> uSymIntegerValue $ ites cb li ri
   _ -> mrgThrowError ExecutionError
 
-data VerifyTyper = VerifyTyper
-
-
-instance ToAssertion VerifyTyper SymBool (Either Error SymValue) where
-  toAssertion _ (Left ExecutionError) = conc True
-  toAssertion _ _ = conc False
-
 verifyTyper :: GrisetteSMTConfig n -> Typer -> Interpreter -> IO (Maybe Expr)
 verifyTyper config typerImpl interpreterImpl = do
   let sk :: UnionM SymExpr = genSym (3 :: Integer) $$(nameWithLoc "a")
   let r = runExceptT $ (typerImpl #~ sk) >>~ (interpreterImpl #~ sk)
-  m <- solve VerifyTyper config r
+  m <- solveFallable config (\case (Left ExecutionError) -> conc True; _ -> conc False) r
   case m of
     Left _ -> return Nothing
     Right mo -> return $ Just $ evaluateToCon mo sk
 
-newtype SynthExpr = SynthExpr Value
-
-instance ToAssertion SynthExpr SymBool (Either Error SymValue) where
-  toAssertion (SynthExpr expect) (Right actual) = toSym expect ==~ actual
-  toAssertion _ _ = conc False
-
 synthExpr :: GrisetteSMTConfig n -> UnionM SymExpr -> Value -> IO (Maybe Expr)
 synthExpr config sketch expect = do
   let r = runExceptT $ interpreter #~ sketch
-  m <- solve (SynthExpr expect) config r
+  m <- solveFallable config (\case (Right actual) -> toSym expect ==~ actual; _ -> conc False) r
   case m of
     Left _ -> return Nothing
     Right mo -> return $ Just $ evaluateToCon mo sketch

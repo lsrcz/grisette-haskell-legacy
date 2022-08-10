@@ -70,6 +70,6 @@ instance TransformError BonsaiError BonsaiError where
 
 data VerifyTyper = VerifyTyper
 
-instance ToAssertion VerifyTyper SymBool (CBMCEither BonsaiError a) where
-  toAssertion _ (CBMCEither (Left BonsaiExecError)) = conc True
-  toAssertion _ _ = conc False
+verifyTyperTranslation :: Either BonsaiError a -> SymBool
+verifyTyperTranslation (Left BonsaiExecError) = conc True
+verifyTyperTranslation _ = conc False

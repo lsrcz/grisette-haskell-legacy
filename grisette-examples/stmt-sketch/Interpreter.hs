@@ -105,26 +105,21 @@ interpretStmtList = foldM (\_ stmt -> interpretStmt stmt) ()
 interpretProgram :: SymbProgram -> ExceptT Errors UnionM ()
 interpretProgram (SymbProgram s) = evalStateT (interpretStmtList s) (mrgReturn [])
 
-data DoSynthesis = DoSynthesis
+doSynthesisTranslation :: Either Errors () -> SymBool
+doSynthesisTranslation (Left _) = conc False
+doSynthesisTranslation _ = conc True
 
-instance ToAssertion DoSynthesis SymBool (Either Errors ()) where
-  toAssertion _ (Left _) = conc False
-  toAssertion _ _ = conc True
-
-data GetTypeError = GetTypeError
-
-instance ToAssertion GetTypeError SymBool (Either Errors ()) where
-  toAssertion _ (Left BadType) = conc True
-  toAssertion _ _ = conc False
+getTypeErrorTranslation :: Either Errors () -> SymBool
+getTypeErrorTranslation (Left BadType) = conc True
+getTypeErrorTranslation _ = conc False
 
 synthesis ::
-  (ToAssertion method SymBool (Either Errors ())) =>
-  method ->
   GrisetteSMTConfig i ->
+  (Either Errors () -> SymBool) ->
   SymbProgram ->
   IO (Maybe Program)
-synthesis method config s = do
-  m <- solve method config (runExceptT $ interpretProgram s)
+synthesis config translation s = do
+  m <- solveFallable config translation (runExceptT $ interpretProgram s)
   case m of
     Left _ -> return Nothing
     Right mo -> return $ toCon $ evaluate True mo s

@@ -41,15 +41,13 @@ mixed = do
   symAssume e
   symAssert f
 
-data Simple = Simple
-
-instance ToAssertion Simple SymBool (Either Error ()) where
-  toAssertion _ (Left AssertError) = conc True
-  toAssertion _ _ = conc False
+simpleTranslation :: Either Error () -> SymBool
+simpleTranslation (Left AssertError) = conc True
+simpleTranslation _ = conc False
 
 main :: IO ()
 main = do
   print asserts
   print mixed
-  _ <- solve Simple (UnboundedReasoning z3 {verbose = True}) $ runExceptT $ mixed
+  _ <- solveFallable (UnboundedReasoning z3 {verbose = True}) simpleTranslation $ runExceptT $ mixed
   return ()

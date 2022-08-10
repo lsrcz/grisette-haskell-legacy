@@ -121,11 +121,9 @@ interpretInstruction :: Instruction -> StateT Grid (ExceptT () UUnionM) ()
 interpretInstruction (Move p ud) = (lift . lift) ud >>= move p
 interpretInstruction (Mix p) = mix p
 
-data Synth = Synth
-
-instance ToAssertion Synth SymBool (Either () SymBool) where
-  toAssertion _ (Left _) = conc False
-  toAssertion _ (Right v) = v
+synthTranslation :: Either () SymBool -> SymBool
+synthTranslation (Left _) = conc False
+synthTranslation (Right v) = v
 
 synthesizeProgram ::
   GrisetteSMTConfig n ->
@@ -147,7 +145,7 @@ synthesizeProgram config i initst f = go 0 (mrgReturn initst)
          in do
               print num
               _ <- timeItAll "evaluate" $ cond `deepseq` return cond
-              r <- timeItAll "Lowering/Solving" $ solve Synth config cond
+              r <- timeItAll "Lowering/Solving" $ solveFallable config synthTranslation cond
               case r of
                 Left _ -> go (num + 1) newst
                 Right m -> return $ toCon $ evaluate True m $ take (num + 1) lst

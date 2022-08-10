@@ -1,12 +1,9 @@
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Main where
 
 import Grisette
 import Interpreter
-import Control.Monad.Except
 
 p1 :: [Stmt]
 p1 =
@@ -29,15 +26,15 @@ p3 =
 sketch :: UnionM [UnionM Stmt]
 sketch = genSym (ListSpec 0 2 (ExprSpec 2 1)) "a"
 
-data FindRuntimeTypeMismatch = FindRuntimeTypeMismatch
-
-instance ToAssertion FindRuntimeTypeMismatch SymBool (Either Error LitExpr) where
-  toAssertion _ (Left (Runtime RuntimeTypeMismatch)) = conc True
-  toAssertion _ _ = conc False
+findRuntimeTypeMismatch :: Either Error LitExpr -> SymBool
+findRuntimeTypeMismatch (Left (Runtime RuntimeTypeMismatch)) = conc True
+findRuntimeTypeMismatch _ = conc False
 
 main :: IO ()
 main = do
-  m <- solve FindRuntimeTypeMismatch (UnboundedReasoning z3 {verbose = True}) $ runExceptT $ checkAndInterpretStmtUListU sketch
+  m <-
+    solveFallable (UnboundedReasoning z3 {verbose = True}) findRuntimeTypeMismatch $
+      checkAndInterpretStmtUListU sketch
   case m of
     Right mm -> do
       putStrLn "Not verified, counter example: "
