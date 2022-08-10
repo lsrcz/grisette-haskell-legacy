@@ -77,14 +77,6 @@ executables:
   expr-interpreter:
     source-dirs: expr-interpreter
     main: Main.hs
-#  regex:
-#    source-dirs: regex
-#    main: Main.hs
-#    dependencies: grisette-examples
-#  regex-old:
-#    source-dirs: regex-old
-#    main: Main.hs
-#    dependencies: grisette-examples
   order:
     source-dirs: order
     main: Main.hs
@@ -94,26 +86,6 @@ executables:
   genfunc:
     source-dirs: genfunc
     main: Main.hs
-#  fluidics:
-#    source-dirs: fluidics
-#    main: Main.hs
-#    dependencies: grisette-examples
-#  fluidics-state:
-#    source-dirs: fluidics-state
-#    main: Main.hs
-#    dependencies: grisette-examples
-#  cosette:
-#    source-dirs: cosette
-#    main: Benchmark/Main.hs
-#    dependencies: grisette-examples
-#  cosette-optimized:
-#    source-dirs: cosette-optimized
-#    main: Benchmark/Main.hs
-#    dependencies: grisette-examples
-#  cosette-optimized-merge:
-#    source-dirs: cosette-optimized-merge
-#    main: Benchmark/Main.hs
-#    dependencies: grisette-examples
   expr-sketch:
     source-dirs: expr-sketch
     main: Main.hs
@@ -123,24 +95,6 @@ executables:
   tutorial:
     source-dirs: tutorial
     main: Main.hs
-  expr-icfp2022:
-    source-dirs: expr-icfp2022
-    main: Main.hs
-  assert-assume-icfp2022:
-    source-dirs: assert-assume-icfp2022
-    main: Main.hs
-  #bonsai:
-  #  source-dirs: bonsai
-  #  main: Main.hs
-  #  dependencies: grisette-examples
-  #ifcl:
-  #  source-dirs: ifcl
-  #  main: Main.hs
-  #  dependencies: grisette-examples
-#  ferrite:
-#    source-dirs: ferrite
-#    main: Main.hs
-#    dependencies: grisette-examples
   dpsynth:
     source-dirs: dpsynth
     main: Main.hs
