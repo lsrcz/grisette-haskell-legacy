@@ -24,10 +24,19 @@ import Grisette.Core.Data.Class.BitVector
 import Language.Haskell.TH.Syntax
 
 newtype WordN (n :: Nat) = WordN {unWordN :: Integer}
-  deriving (Eq, Ord, Show, Generic, Lift, Hashable, NFData)
+  deriving (Eq, Ord, Generic, Lift, Hashable, NFData)
+
+instance Show (WordN n) where
+  show (WordN w) = show w
 
 newtype IntN (n :: Nat) = IntN {unIntN :: Integer}
-  deriving (Eq, Show, Generic, Lift, Hashable, NFData)
+  deriving (Eq, Generic, Lift, Hashable, NFData)
+
+instance (KnownNat n, 1 <= n) => Show (IntN n) where
+  show v@(IntN w) = if sign then '-' : show (unIntN $ abs v) else show w
+    where
+      bitwidth = fromIntegral $ natVal (Proxy :: Proxy n)
+      sign = testBit w (bitwidth - 1)
 
 maxWordN :: forall proxy n. KnownNat n => proxy n -> WordN n
 maxWordN _ = WordN ((1 `shiftL` fromIntegral (natVal (Proxy :: Proxy n))) - 1)
