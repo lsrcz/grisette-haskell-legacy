@@ -590,12 +590,11 @@ module Grisette.Tutorial.Essentials.Essentials (
   --
   -- The correctness condition can be defined as follows:
   --
-  -- >>> data ViolatesAssertions = ViolatesAssertions
   -- >>> :{
-  --   instance ToAssertion ViolatesAssertions SymBool (Either VerificationConditions ()) where
-  --     toAssertion _ (Left AssumptionViolation) = conc False
-  --     toAssertion _ (Left AssertionViolation) = conc True
-  --     toAssertion _ _ = conc False
+  --   violatesAssertions :: Either VerificationConditions () -> SymBool
+  --   violatesAssertions (Left AssumptionViolation) = conc False
+  --   violatesAssertions (Left AssertionViolation) = conc True
+  --   violatesAssertions _ = conc False
   -- :}
   --
   -- And we can write the sample program as follows. The @program1@ is a correct program, in which no assertion violation
@@ -612,9 +611,9 @@ module Grisette.Tutorial.Essentials.Essentials (
   --
   -- We can verify our claim with the solvers:
   --
-  -- >>> solve ViolatesAssertions (UnboundedReasoning z3) $ runExceptT (program1 :: ExceptT VerificationConditions UnionM ())
+  -- >>> solveFallable (UnboundedReasoning z3) violatesAssertions $ runExceptT (program1 :: ExceptT VerificationConditions UnionM ())
   -- Left Unsat
-  -- >>> solve ViolatesAssertions (UnboundedReasoning z3) $ runExceptT (program2 :: ExceptT VerificationConditions UnionM ())
+  -- >>> solveFallable (UnboundedReasoning z3) violatesAssertions $ runExceptT (program2 :: ExceptT VerificationConditions UnionM ())
   -- Right (Model (fromList [(a :: Integer,2 :: Integer)]))
   --
   -- Grisette has more flexible ways for expressing solver queries,
