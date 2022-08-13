@@ -14,6 +14,8 @@ module Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
     sinfosymbTerm,
     iinfosymbTerm,
     notTerm,
+    orTerm,
+    andTerm,
   )
 where
 
@@ -98,3 +100,11 @@ iinfosymbTerm str idx info = symbTerm $ WithInfo (IndexedSymbol str idx) info
 notTerm :: Term Bool -> Term Bool
 notTerm = internTerm . UNotTerm
 {-# INLINE notTerm #-}
+
+orTerm :: Term Bool -> Term Bool -> Term Bool
+orTerm l r = internTerm $ UOrTerm l r
+{-# INLINE orTerm #-}
+
+andTerm :: Term Bool -> Term Bool -> Term Bool
+andTerm l r = internTerm $ UAndTerm l r
+{-# INLINE andTerm #-}

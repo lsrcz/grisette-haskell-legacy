@@ -50,7 +50,7 @@ valueOf (Model m) sym =
 
 exceptFor :: Model -> S.HashSet TermSymbol -> Model
 exceptFor (Model m) s =
-  Model $ S.foldl' (\acc sym -> M.delete sym acc) m s
+  Model $ S.foldl' (flip M.delete) m s
 
 restrictTo :: Model -> S.HashSet TermSymbol -> Model
 restrictTo (Model m) s =
@@ -83,43 +83,6 @@ insert (Model m) sym@(TermSymbol p _) v =
     then Model $ M.insert sym (toModelValue v) m
     else error "Bad value type"
 
-{-
-evaluateSomeTermMemo :: Bool -> Model -> SomeTerm -> MemoState (MemoHashMap SomeTerm SomeTerm) SomeTerm SomeTerm SomeTerm
-evaluateSomeTermMemo fillDefault (Model ma) = go
-  where
-    go :: SomeTerm -> MemoState (MemoHashMap SomeTerm SomeTerm) SomeTerm SomeTerm SomeTerm
-    go c@(SomeTerm ConcTerm {}) = return c
-    go c@(SomeTerm ((SymbTerm _ sym@(TermSymbol (_ :: Proxy t) _)) :: Term a)) = return $ case M.lookup sym ma of
-      Nothing -> if fillDefault then SomeTerm $ concTerm (defaultValue @t) else c
-      Just dy -> SomeTerm $ concTerm (unsafeFromModelValue @a dy)
-    go (SomeTerm (UnaryTerm _ tag (arg :: Term a))) = do
-      SomeTerm argv <- memo go (SomeTerm arg)
-      return $ SomeTerm $ partialEvalUnary tag (unsafeCoerce argv :: Term a)
-    go (SomeTerm (BinaryTerm _ tag (arg1 :: Term a1) (arg2 :: Term a2))) = do
-      SomeTerm arg1v <- memo go (SomeTerm arg1)
-      SomeTerm arg2v <- memo go (SomeTerm arg2)
-      return $
-        SomeTerm $
-          partialEvalBinary
-            tag
-            (unsafeCoerce arg1v :: Term a1)
-            (unsafeCoerce arg2v :: Term a2)
-    go (SomeTerm (TernaryTerm _ tag (arg1 :: Term a1) (arg2 :: Term a2) (arg3 :: Term a3))) = do
-      SomeTerm arg1v <- memo go (SomeTerm arg1)
-      SomeTerm arg2v <- memo go (SomeTerm arg2)
-      SomeTerm arg3v <- memo go (SomeTerm arg3)
-      return $
-        SomeTerm $
-          partialEvalTernary
-            tag
-            (unsafeCoerce arg1v :: Term a1)
-            (unsafeCoerce arg2v :: Term a2)
-            (unsafeCoerce arg3v :: Term a3)
-
-evaluateSomeTerm :: Bool -> Model -> SomeTerm -> SomeTerm
-evaluateSomeTerm fillDefault m t1 = evalMemoState (evaluateSomeTermMemo fillDefault m t1) (MemoHashMap M.empty)
--}
-
 evaluateSomeTerm :: Bool -> Model -> SomeTerm -> SomeTerm
 evaluateSomeTerm fillDefault (Model ma) = gomemo
   where
@@ -133,11 +96,7 @@ evaluateSomeTerm fillDefault (Model ma) = gomemo
       Just dy -> SomeTerm $ concTerm (unsafeFromModelValue @a dy)
     go (SomeTerm (UnaryTerm _ tag (arg :: Term a))) = goUnary (partialEvalUnary tag) arg
     go (SomeTerm (BinaryTerm _ tag (arg1 :: Term a1) (arg2 :: Term a2))) =
-          SomeTerm $
-            partialEvalBinary
-              tag
-              (gotyped arg1)
-              (gotyped arg2)
+      goBinary (partialEvalBinary tag) arg1 arg2
     go (SomeTerm (TernaryTerm _ tag (arg1 :: Term a1) (arg2 :: Term a2) (arg3 :: Term a3))) = do
           SomeTerm $
             partialEvalTernary
@@ -146,8 +105,15 @@ evaluateSomeTerm fillDefault (Model ma) = gomemo
               (gotyped arg2)
               (gotyped arg3)
     go (SomeTerm (NotTerm _ arg)) = goUnary notb arg
+    go (SomeTerm (OrTerm _ arg1 arg2)) =
+      goBinary orb arg1 arg2
+    go (SomeTerm (AndTerm _ arg1 arg2)) =
+      goBinary andb arg1 arg2
     goUnary :: (SupportedPrim a, SupportedPrim b) => (Term a -> Term b) -> Term a -> SomeTerm
     goUnary f a = SomeTerm $ f (gotyped a)
+    goBinary :: (SupportedPrim a, SupportedPrim b, SupportedPrim c) =>
+      (Term a -> Term b -> Term c) -> Term a -> Term b -> SomeTerm
+    goBinary f a b = SomeTerm $ f (gotyped a) (gotyped b)
 
 evaluateTerm :: forall a. (SupportedPrim a) => Bool -> Model -> Term a -> Term a
 evaluateTerm fillDefault m t = case evaluateSomeTerm fillDefault m $ SomeTerm t of

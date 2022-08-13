@@ -84,3 +84,5 @@ subst sym@(TermSymbol (_ :: Proxy c) _) term input = case eqT @c @a of
         BinaryTerm _ tag te te' -> SomeTerm $ partialEvalBinary tag (gov te) (gov te')
         TernaryTerm _ tag op1 op2 op3 -> SomeTerm $ partialEvalTernary tag (gov op1) (gov op2) (gov op3)
         NotTerm _ op -> SomeTerm $ notb (gov op)
+        OrTerm _ op1 op2 -> SomeTerm $ orb (gov op1) (gov op2)
+        AndTerm _ op1 op2 -> SomeTerm $ andb (gov op1) (gov op2)

@@ -26,10 +26,8 @@ module Grisette.IR.SymPrim.Data.Prim.Bool
     eqterm,
     neterm,
     pattern EqvTerm,
-    Or (..),
     orb,
     pattern OrTerm,
-    And (..),
     andb,
     pattern AndTerm,
     ITE (..),
@@ -59,13 +57,16 @@ import Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
 
 trueTerm :: Term Bool
 trueTerm = concTerm True
+{-# INLINE trueTerm #-}
 
 falseTerm :: Term Bool
 falseTerm = concTerm False
+{-# INLINE falseTerm #-}
 
 boolConcTermView :: forall a. Term a -> Maybe Bool
 boolConcTermView (ConcTerm _ b) = cast b
 boolConcTermView _ = Nothing
+{-# INLINE boolConcTermView #-}
 
 pattern BoolConcTerm :: Bool -> Term a
 pattern BoolConcTerm b <- (boolConcTermView -> Just b)
@@ -88,11 +89,12 @@ notb = partialEvalUnary Not-}
 notb :: Term Bool -> Term Bool
 notb (NotTerm _ tm) = tm
 notb (ConcTerm _ a) = if a then falseTerm else trueTerm
-notb (OrTerm (NotTerm _ n1) n2) = andb n1 (notb n2)
-notb (OrTerm n1 (NotTerm _ n2)) = andb (notb n1) n2
-notb (AndTerm (NotTerm _ n1) n2) = orb n1 (notb n2)
-notb (AndTerm n1 (NotTerm _ n2)) = orb (notb n1) n2
+notb (OrTerm _ (NotTerm _ n1) n2) = andb n1 (notb n2)
+notb (OrTerm _ n1 (NotTerm _ n2)) = andb (notb n1) n2
+notb (AndTerm _ (NotTerm _ n1) n2) = orb n1 (notb n2)
+notb (AndTerm _ n1 (NotTerm _ n2)) = orb (notb n1) n2
 notb tm = notTerm tm
+{-# INLINABLE notb #-}
 
 {-
 instance UnaryOp Not Bool Bool where
@@ -226,88 +228,82 @@ andEqFalse _ _ = False
 {-# INLINE andEqFalse #-}
 
 -- Or
-data Or = Or deriving (Show, Lift, Generic, NFData, Eq, Hashable)
+-- data Or = Or deriving (Show, Lift, Generic, NFData, Eq, Hashable)
 
 orb :: Term Bool -> Term Bool -> Term Bool
-orb = partialEvalBinary Or
-
-instance BinaryOp Or Bool Bool Bool where
-  partialEvalBinary _ l r
+orb l r
     | orEqTrue l r = trueTerm
     | orEqFirst l r = l
     | orEqFirst r l = r
-  partialEvalBinary _ l r@(OrTerm r1 r2)
+orb l r@(OrTerm _ r1 r2)
     | orEqTrue l r1 = trueTerm
     | orEqTrue l r2 = trueTerm
     | orEqFirst r1 l = r
     | orEqFirst r2 l = r
     | orEqFirst l r1 = orb l r2
     | orEqFirst l r2 = orb l r1
-  partialEvalBinary _ l@(OrTerm l1 l2) r
+orb l@(OrTerm _ l1 l2) r
     | orEqTrue l1 r = trueTerm
     | orEqTrue l2 r = trueTerm
     | orEqFirst l1 r = l
     | orEqFirst l2 r = l
     | orEqFirst r l1 = orb l2 r
     | orEqFirst r l2 = orb l1 r
-  partialEvalBinary _ l (AndTerm r1 r2)
+orb l (AndTerm _ r1 r2)
     | orEqFirst l r1 = l
     | orEqFirst l r2 = l
     | orEqTrue l r1 = orb l r2
     | orEqTrue l r2 = orb l r1
-  partialEvalBinary _ (AndTerm l1 l2) r
+orb (AndTerm _ l1 l2) r
     | orEqFirst r l1 = r
     | orEqFirst r l2 = r
     | orEqTrue l1 r = orb l2 r
     | orEqTrue l2 r = orb l1 r
-  partialEvalBinary _ (NotTerm _ nl) (NotTerm _ nr) = notb $ andb nl nr
-  partialEvalBinary _ l r = constructBinary Or l r
-  pformatBinary _ l r = "(|| " ++ pformat l ++ " " ++ pformat r ++ ")"
+orb (NotTerm _ nl) (NotTerm _ nr) = notb $ andb nl nr
+orb l r = orTerm l r
+{-# INLINABLE orb #-}
 
-pattern OrTerm :: Term Bool -> Term Bool -> Term a
-pattern OrTerm l r <- UnsafeBinaryTermPatt Or l r
+-- pattern OrTerm :: Term Bool -> Term Bool -> Term a
+-- pattern OrTerm l r <- UnsafeBinaryTermPatt Or l r
 
 -- And
-data And = And deriving (Show, Lift, Generic, NFData, Eq, Hashable)
+-- data And = And deriving (Show, Lift, Generic, NFData, Eq, Hashable)
 
 andb :: Term Bool -> Term Bool -> Term Bool
-andb = partialEvalBinary And
-
-instance BinaryOp And Bool Bool Bool where
-  partialEvalBinary _ l r
+andb l r
     | andEqFalse l r = falseTerm
     | andEqFirst l r = l
     | andEqFirst r l = r
-  partialEvalBinary _ l r@(AndTerm r1 r2)
+andb l r@(AndTerm _ r1 r2)
     | andEqFalse l r1 = falseTerm
     | andEqFalse l r2 = falseTerm
     | andEqFirst r1 l = r
     | andEqFirst r2 l = r
     | andEqFirst l r1 = andb l r2
     | andEqFirst l r2 = andb l r1
-  partialEvalBinary _ l@(AndTerm l1 l2) r
+andb l@(AndTerm _ l1 l2) r
     | andEqFalse l1 r = falseTerm
     | andEqFalse l2 r = falseTerm
     | andEqFirst l1 r = l
     | andEqFirst l2 r = l
     | andEqFirst r l1 = andb l2 r
     | andEqFirst r l2 = andb l1 r
-  partialEvalBinary _ l (OrTerm r1 r2)
+andb l (OrTerm _ r1 r2)
     | andEqFirst l r1 = l
     | andEqFirst l r2 = l
     | andEqFalse l r1 = andb l r2
     | andEqFalse l r2 = andb l r1
-  partialEvalBinary _ (OrTerm l1 l2) r
+andb (OrTerm _ l1 l2) r
     | andEqFirst r l1 = r
     | andEqFirst r l2 = r
     | andEqFalse l1 r = andb l2 r
     | andEqFalse l2 r = andb l1 r
-  partialEvalBinary _ (NotTerm _ nl) (NotTerm _ nr) = notb $ orb nl nr
-  partialEvalBinary _ l r = constructBinary And l r
-  pformatBinary _ l r = "(&& " ++ pformat l ++ " " ++ pformat r ++ ")"
+andb (NotTerm _ nl) (NotTerm _ nr) = notb $ orb nl nr
+andb l r = andTerm l r
+{-# INLINABLE andb #-}
 
-pattern AndTerm :: Term Bool -> Term Bool -> Term a
-pattern AndTerm l r <- UnsafeBinaryTermPatt And l r
+-- pattern AndTerm :: Term Bool -> Term Bool -> Term a
+-- pattern AndTerm l r <- UnsafeBinaryTermPatt And l r
 
 data ITE = ITE deriving (Show, Lift, Generic, NFData, Eq, Hashable)
 
@@ -340,13 +336,13 @@ partialEvalITEBoolLeftNot :: Term Bool -> Term Bool -> Term Bool -> Maybe (Term 
 partialEvalITEBoolLeftNot cond nIfTrue ifFalse
   | cond == nIfTrue = Just $ andb (notb cond) ifFalse -- need test
   | otherwise = case nIfTrue of
-    AndTerm nt1 nt2 -> ra
+    AndTerm _ nt1 nt2 -> ra
       where
         ra | impliesTerm cond nt1 = Just $ iteterm cond (notb nt2) ifFalse
            | impliesTerm cond nt2 = Just $ iteterm cond (notb nt1) ifFalse
            | impliesTerm cond (notb nt1) || impliesTerm cond (notb nt2) = Just $ orb cond ifFalse
            | otherwise = Nothing
-    OrTerm nt1 nt2 -> ra
+    OrTerm _ nt1 nt2 -> ra
       where
         ra | impliesTerm cond nt1 || impliesTerm cond nt2 = Just $ andb (notb cond) ifFalse
            | impliesTerm cond (notb nt1) = Just $ iteterm cond (notb nt2) ifFalse
@@ -432,18 +428,18 @@ partialEvalITEBoolRightOr cond ifTrue f1 f2
   | otherwise = Nothing
 
 partialEvalITEBoolLeft :: Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
-partialEvalITEBoolLeft cond (AndTerm t1 t2) ifFalse =
+partialEvalITEBoolLeft cond (AndTerm _ t1 t2) ifFalse =
   msum
     [ partialEvalITEBoolLeftAnd cond t1 t2 ifFalse,
       case ifFalse of
-        AndTerm f1 f2 -> partialEvalITEBoolBothAnd cond t1 t2 f1 f2
+        AndTerm _ f1 f2 -> partialEvalITEBoolBothAnd cond t1 t2 f1 f2
         _ -> Nothing
     ]
-partialEvalITEBoolLeft cond (OrTerm t1 t2) ifFalse =
+partialEvalITEBoolLeft cond (OrTerm _ t1 t2) ifFalse =
   msum
     [ partialEvalITEBoolLeftOr cond t1 t2 ifFalse,
       case ifFalse of
-        OrTerm f1 f2 -> partialEvalITEBoolBothOr cond t1 t2 f1 f2
+        OrTerm _ f1 f2 -> partialEvalITEBoolBothOr cond t1 t2 f1 f2
         _ -> Nothing
     ]
 partialEvalITEBoolLeft cond (NotTerm _ nIfTrue) ifFalse =
@@ -457,8 +453,8 @@ partialEvalITEBoolLeft cond (NotTerm _ nIfTrue) ifFalse =
 partialEvalITEBoolLeft _ _ _ = Nothing
 
 partialEvalITEBoolNoLeft :: Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
-partialEvalITEBoolNoLeft cond ifTrue (AndTerm f1 f2) = partialEvalITEBoolRightAnd cond ifTrue f1 f2
-partialEvalITEBoolNoLeft cond ifTrue (OrTerm f1 f2) = partialEvalITEBoolRightOr cond ifTrue f1 f2
+partialEvalITEBoolNoLeft cond ifTrue (AndTerm _ f1 f2) = partialEvalITEBoolRightAnd cond ifTrue f1 f2
+partialEvalITEBoolNoLeft cond ifTrue (OrTerm _ f1 f2) = partialEvalITEBoolRightOr cond ifTrue f1 f2
 partialEvalITEBoolNoLeft cond ifTrue (NotTerm _ nIfFalse) = partialEvalITEBoolRightNot cond ifTrue nIfFalse
 partialEvalITEBoolNoLeft _ _ _ = Nothing
 

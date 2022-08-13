@@ -86,7 +86,60 @@ testUnaryOpLowering' ::
   tag ->
   (TermTy n a -> TermTy n b) ->
   Expectation
-testUnaryOpLowering' config t sbvfun = testUnaryOpLowering @a @b @as config (constructUnary t) (show t) sbvfun
+testUnaryOpLowering' config t = testUnaryOpLowering @a @b @as config (constructUnary t) (show t)
+
+testBinaryOpLowering ::
+  forall a b c as bs n.
+  ( HasCallStack,
+    SupportedPrim a,
+    SupportedPrim b,
+    SBV.EqSymbolic (TermTy n c),
+    Typeable (TermTy n a),
+    Typeable (TermTy n b),
+    SBV.SymVal as,
+    SBV.SymVal bs,
+    Show as,
+    Show bs,
+    TermTy n a ~ SBV.SBV as,
+    TermTy n b ~ SBV.SBV bs
+  ) =>
+  GrisetteSMTConfig n ->
+  (Term a -> Term b -> Term c) ->
+  String ->
+  (TermTy n a -> TermTy n b -> TermTy n c) ->
+  Expectation
+testBinaryOpLowering config f name sbvfun = do
+  let a :: Term a = ssymbTerm "a"
+  let b :: Term b = ssymbTerm "b"
+  let fab :: Term c = f a b
+  SBV.runSMTWith (sbvConfig config) $ do
+    (m, lt) <- lowerSinglePrim config fab
+    let sbva :: Maybe (TermTy n a) = M.lookup (SomeTerm a) (biMapToSBV m) >>= fromDynamic
+    let sbvb :: Maybe (TermTy n b) = M.lookup (SomeTerm b) (biMapToSBV m) >>= fromDynamic
+    case (sbva, sbvb) of
+      (Just sbvav, Just sbvbv) -> SBV.query $ do
+        SBV.constrain $ lt SBV..== sbvfun sbvav sbvbv
+        satres <- SBV.checkSat
+        case satres of
+          SBV.Sat -> return ()
+          _ -> lift $ expectationFailure $ "Lowering for " ++ name ++ " generated unsolvable formula"
+      _ -> lift $ expectationFailure "Failed to extract the term"
+  SBV.runSMTWith (sbvConfig config) $ do
+    (m, lt) <- lowerSinglePrim config fab
+    let sbva :: Maybe (TermTy n a) = M.lookup (SomeTerm a) (biMapToSBV m) >>= fromDynamic
+    let sbvb :: Maybe (TermTy n b) = M.lookup (SomeTerm b) (biMapToSBV m) >>= fromDynamic
+    case (sbva, sbvb) of
+      (Just sbvav, Just sbvbv) -> SBV.query $ do
+        SBV.constrain $ lt SBV../= sbvfun sbvav sbvbv
+        r <- SBV.checkSat
+        case r of
+          SBV.Sat -> do
+            counterExampleA <- SBV.getValue sbvav
+            counterExampleB <- SBV.getValue sbvbv
+            lift $ expectationFailure $ "Translation counter example found: " ++ show (counterExampleA, counterExampleB)
+          SBV.Unsat -> return ()
+          _ -> lift $ expectationFailure $ "Lowering for " ++ name ++ " generated unknown formula"
+      _ -> lift $ expectationFailure "Failed to extract the term"
 
 testBinaryOpLowering' ::
   forall a b c as bs n tag.
@@ -106,37 +159,71 @@ testBinaryOpLowering' ::
   tag ->
   (TermTy n a -> TermTy n b -> TermTy n c) ->
   Expectation
-testBinaryOpLowering' config t sbvfun = do
+testBinaryOpLowering' config t = testBinaryOpLowering @a @b @c @as @bs config (constructBinary t) (show t)
+
+testTernaryOpLowering ::
+  forall a b c d as bs cs n.
+  ( HasCallStack,
+    SupportedPrim a,
+    SupportedPrim b,
+    SupportedPrim c,
+    SBV.EqSymbolic (TermTy n d),
+    Typeable (TermTy n a),
+    Typeable (TermTy n b),
+    Typeable (TermTy n c),
+    SBV.SymVal as,
+    SBV.SymVal bs,
+    SBV.SymVal cs,
+    Show as,
+    Show bs,
+    Show cs,
+    TermTy n a ~ SBV.SBV as,
+    TermTy n b ~ SBV.SBV bs,
+    TermTy n c ~ SBV.SBV cs
+  ) =>
+  GrisetteSMTConfig n ->
+  (Term a -> Term b -> Term c -> Term d) ->
+  String ->
+  (TermTy n a -> TermTy n b -> TermTy n c -> TermTy n d) ->
+  Expectation
+testTernaryOpLowering config f name sbvfun = do
   let a :: Term a = ssymbTerm "a"
   let b :: Term b = ssymbTerm "b"
-  let fab :: Term c = constructBinary t a b
+  let c :: Term c = ssymbTerm "c"
+  let fabc :: Term d = f a b c
   SBV.runSMTWith (sbvConfig config) $ do
-    (m, lt) <- lowerSinglePrim config fab
+    (m, lt) <- lowerSinglePrim config fabc
     let sbva :: Maybe (TermTy n a) = M.lookup (SomeTerm a) (biMapToSBV m) >>= fromDynamic
     let sbvb :: Maybe (TermTy n b) = M.lookup (SomeTerm b) (biMapToSBV m) >>= fromDynamic
-    case (sbva, sbvb) of
-      (Just sbvav, Just sbvbv) -> SBV.query $ do
-        SBV.constrain $ lt SBV..== sbvfun sbvav sbvbv
+    let sbvc :: Maybe (TermTy n c) = M.lookup (SomeTerm c) (biMapToSBV m) >>= fromDynamic
+    case (sbva, sbvb, sbvc) of
+      (Just sbvav, Just sbvbv, Just sbvcv) -> SBV.query $ do
+        SBV.constrain $ lt SBV..== sbvfun sbvav sbvbv sbvcv
         satres <- SBV.checkSat
         case satres of
           SBV.Sat -> return ()
-          _ -> lift $ expectationFailure $ "Lowering for " ++ show t ++ " generated unsolvable formula"
+          _ -> lift $ expectationFailure $ "Lowering for " ++ name ++ " generated unsolvable formula"
       _ -> lift $ expectationFailure "Failed to extract the term"
   SBV.runSMTWith (sbvConfig config) $ do
-    (m, lt) <- lowerSinglePrim config fab
+    (m, lt) <- lowerSinglePrim config fabc
     let sbva :: Maybe (TermTy n a) = M.lookup (SomeTerm a) (biMapToSBV m) >>= fromDynamic
     let sbvb :: Maybe (TermTy n b) = M.lookup (SomeTerm b) (biMapToSBV m) >>= fromDynamic
-    case (sbva, sbvb) of
-      (Just sbvav, Just sbvbv) -> SBV.query $ do
-        SBV.constrain $ lt SBV../= sbvfun sbvav sbvbv
+    let sbvc :: Maybe (TermTy n c) = M.lookup (SomeTerm c) (biMapToSBV m) >>= fromDynamic
+    case (sbva, sbvb, sbvc) of
+      (Just sbvav, Just sbvbv, Just sbvcv) -> SBV.query $ do
+        SBV.constrain $ lt SBV../= sbvfun sbvav sbvbv sbvcv
         r <- SBV.checkSat
         case r of
           SBV.Sat -> do
             counterExampleA <- SBV.getValue sbvav
             counterExampleB <- SBV.getValue sbvbv
-            lift $ expectationFailure $ "Translation counter example found: " ++ show (counterExampleA, counterExampleB)
+            counterExampleC <- SBV.getValue sbvcv
+            lift $
+              expectationFailure $
+                "Translation counter example found: "
+                  ++ show (counterExampleA, counterExampleB, counterExampleC)
           SBV.Unsat -> return ()
-          _ -> lift $ expectationFailure $ "Lowering for " ++ show t ++ " generated unknown formula"
+          _ -> lift $ expectationFailure $ "Lowering for " ++ name ++ " generated unknown formula"
       _ -> lift $ expectationFailure "Failed to extract the term"
 
 testTernaryOpLowering' ::
@@ -161,45 +248,7 @@ testTernaryOpLowering' ::
   tag ->
   (TermTy n a -> TermTy n b -> TermTy n c -> TermTy n d) ->
   Expectation
-testTernaryOpLowering' config t sbvfun = do
-  let a :: Term a = ssymbTerm "a"
-  let b :: Term b = ssymbTerm "b"
-  let c :: Term c = ssymbTerm "c"
-  let fabc :: Term d = constructTernary t a b c
-  SBV.runSMTWith (sbvConfig config) $ do
-    (m, lt) <- lowerSinglePrim config fabc
-    let sbva :: Maybe (TermTy n a) = M.lookup (SomeTerm a) (biMapToSBV m) >>= fromDynamic
-    let sbvb :: Maybe (TermTy n b) = M.lookup (SomeTerm b) (biMapToSBV m) >>= fromDynamic
-    let sbvc :: Maybe (TermTy n c) = M.lookup (SomeTerm c) (biMapToSBV m) >>= fromDynamic
-    case (sbva, sbvb, sbvc) of
-      (Just sbvav, Just sbvbv, Just sbvcv) -> SBV.query $ do
-        SBV.constrain $ lt SBV..== sbvfun sbvav sbvbv sbvcv
-        satres <- SBV.checkSat
-        case satres of
-          SBV.Sat -> return ()
-          _ -> lift $ expectationFailure $ "Lowering for " ++ show t ++ " generated unsolvable formula"
-      _ -> lift $ expectationFailure "Failed to extract the term"
-  SBV.runSMTWith (sbvConfig config) $ do
-    (m, lt) <- lowerSinglePrim config fabc
-    let sbva :: Maybe (TermTy n a) = M.lookup (SomeTerm a) (biMapToSBV m) >>= fromDynamic
-    let sbvb :: Maybe (TermTy n b) = M.lookup (SomeTerm b) (biMapToSBV m) >>= fromDynamic
-    let sbvc :: Maybe (TermTy n c) = M.lookup (SomeTerm c) (biMapToSBV m) >>= fromDynamic
-    case (sbva, sbvb, sbvc) of
-      (Just sbvav, Just sbvbv, Just sbvcv) -> SBV.query $ do
-        SBV.constrain $ lt SBV../= sbvfun sbvav sbvbv sbvcv
-        r <- SBV.checkSat
-        case r of
-          SBV.Sat -> do
-            counterExampleA <- SBV.getValue sbvav
-            counterExampleB <- SBV.getValue sbvbv
-            counterExampleC <- SBV.getValue sbvcv
-            lift $
-              expectationFailure $
-                "Translation counter example found: "
-                  ++ show (counterExampleA, counterExampleB, counterExampleC)
-          SBV.Unsat -> return ()
-          _ -> lift $ expectationFailure $ "Lowering for " ++ show t ++ " generated unknown formula"
-      _ -> lift $ expectationFailure "Failed to extract the term"
+testTernaryOpLowering' config t = testTernaryOpLowering @a @b @c @d @as @bs @cs config (constructTernary t) (show t)
 
 spec :: Spec
 spec = do
@@ -209,16 +258,16 @@ spec = do
     it "Not lowering should work" $ do
       testUnaryOpLowering @Bool @Bool unboundedConfig notTerm "not" SBV.sNot
     it "And lowering should work" $ do
-      testBinaryOpLowering' @Bool @Bool @Bool unboundedConfig And (SBV..&&)
-      testBinaryOpLowering' @Bool @Bool @Bool
+      testBinaryOpLowering @Bool @Bool @Bool unboundedConfig andTerm "and" (SBV..&&)
+      testBinaryOpLowering @Bool @Bool @Bool
         unboundedConfig
-        And
+        andTerm "and" 
         (\x y -> SBV.sNot (x SBV..<+> y) SBV..&& (x SBV..|| y))
     it "Or lowering should work" $ do
-      testBinaryOpLowering' @Bool @Bool @Bool unboundedConfig Or (SBV..||)
-      testBinaryOpLowering' @Bool @Bool @Bool
+      testBinaryOpLowering @Bool @Bool @Bool unboundedConfig orTerm "or" (SBV..||)
+      testBinaryOpLowering @Bool @Bool @Bool
         unboundedConfig
-        Or
+        orTerm "or"
         (\x y -> (x SBV..<+> y) SBV..|| (x SBV..&& y))
     it "Eqv lowering should work" $ do
       testBinaryOpLowering' @Bool @Bool @Bool unboundedConfig Eqv (SBV..==)

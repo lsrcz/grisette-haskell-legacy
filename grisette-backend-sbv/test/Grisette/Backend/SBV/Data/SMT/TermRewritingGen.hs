@@ -63,6 +63,23 @@ constructUnarySpec' ::
 constructUnarySpec' tag = constructUnarySpec @a @av @b @bv (constructUnary tag) (partialEvalUnary tag)
 
 constructBinarySpec ::
+  forall a av b bv c cv.
+  ( TermRewritingSpec a av,
+    TermRewritingSpec b bv,
+    TermRewritingSpec c cv
+  ) =>
+  (Term av -> Term bv -> Term cv) ->
+  (Term av -> Term bv -> Term cv) ->
+  a ->
+  b ->
+  c
+constructBinarySpec construct partial a b =
+  wrap
+    (construct (norewriteVer a) (norewriteVer b))
+    (partial (rewriteVer a) (rewriteVer b))
+
+constructBinarySpec' ::
+  forall a av b bv c cv tag.
   ( TermRewritingSpec a av,
     TermRewritingSpec b bv,
     TermRewritingSpec c cv,
@@ -72,10 +89,7 @@ constructBinarySpec ::
   a ->
   b ->
   c
-constructBinarySpec tag a b =
-  wrap
-    (constructBinary tag (norewriteVer a) (norewriteVer b))
-    (partialEvalBinary tag (rewriteVer a) (rewriteVer b))
+constructBinarySpec' tag = constructBinarySpec @a @av @b @bv @c @cv (constructBinary tag) (partialEvalBinary tag)
 
 constructTernarySpec ::
   ( TermRewritingSpec a av,
@@ -119,9 +133,9 @@ boolonly n | n > 0 = do
   v3 <- boolonly (n - 1)
   oneof
     [ return $ constructUnarySpec notTerm notb v1,
-      return $ constructBinarySpec And v1 v2,
-      return $ constructBinarySpec Or v1 v2,
-      return $ constructBinarySpec Eqv v1 v2,
+      return $ constructBinarySpec andTerm andb v1 v2,
+      return $ constructBinarySpec orTerm orb v1 v2,
+      return $ constructBinarySpec' Eqv v1 v2,
       return $ constructTernarySpec ITE v1 v2 v3
     ]
 boolonly _ = error "Should never be called"
@@ -168,12 +182,12 @@ boolWithLIA n | n > 0 = do
   v2i <- liaWithBool (n - 1)
   frequency
     [ (1, return $ constructUnarySpec notTerm notb v1),
-      (1, return $ constructBinarySpec And v1 v2),
-      (1, return $ constructBinarySpec Or v1 v2),
-      (1, return $ constructBinarySpec Eqv v1 v2),
-      (5, return $ constructBinarySpec Eqv v1i v2i),
-      (5, return $ constructBinarySpec LTNum v1i v2i),
-      (5, return $ constructBinarySpec LENum v1i v2i),
+      (1, return $ constructBinarySpec andTerm andb v1 v2),
+      (1, return $ constructBinarySpec orTerm orb v1 v2),
+      (1, return $ constructBinarySpec' Eqv v1 v2),
+      (5, return $ constructBinarySpec' Eqv v1i v2i),
+      (5, return $ constructBinarySpec' LTNum v1i v2i),
+      (5, return $ constructBinarySpec' LENum v1i v2i),
       (1, return $ constructTernarySpec ITE v1 v2 v3)
     ]
 boolWithLIA _ = error "Should never be called"
@@ -194,7 +208,7 @@ liaWithBool n | n > 0 = do
     [ return $ constructUnarySpec' UMinusNum v1i,
       return $ constructUnarySpec' AbsNum v1i,
       return $ constructUnarySpec' SignumNum v1i,
-      return $ constructBinarySpec (AddNum @Integer) v1i v2i,
+      return $ constructBinarySpec' (AddNum @Integer) v1i v2i,
       return $ constructTernarySpec ITE v1b v1i v2i
     ]
 liaWithBool _ = error "Should never be called"
@@ -244,12 +258,12 @@ boolWithFSBV p n | n > 0 = do
   v2i <- fsbvWithBool p (n - 1)
   frequency
     [ (1, return $ constructUnarySpec notTerm notb v1),
-      (1, return $ constructBinarySpec And v1 v2),
-      (1, return $ constructBinarySpec Or v1 v2),
-      (1, return $ constructBinarySpec Eqv v1 v2),
-      (5, return $ constructBinarySpec Eqv v1i v2i),
-      (5, return $ constructBinarySpec LTNum v1i v2i),
-      (5, return $ constructBinarySpec LENum v1i v2i),
+      (1, return $ constructBinarySpec andTerm andb v1 v2),
+      (1, return $ constructBinarySpec orTerm orb v1 v2),
+      (1, return $ constructBinarySpec' Eqv v1 v2),
+      (5, return $ constructBinarySpec' Eqv v1i v2i),
+      (5, return $ constructBinarySpec' LTNum v1i v2i),
+      (5, return $ constructBinarySpec' LENum v1i v2i),
       (1, return $ constructTernarySpec ITE v1 v2 v3)
     ]
 boolWithFSBV _ _ = error "Should never be called"
@@ -276,11 +290,11 @@ fsbvWithBool p n | n > 0 = do
     [ return $ constructUnarySpec' UMinusNum v1i,
       return $ constructUnarySpec' AbsNum v1i,
       return $ constructUnarySpec' SignumNum v1i,
-      return $ constructBinarySpec (AddNum @(bv 4)) v1i v2i,
-      return $ constructBinarySpec TimesNum v1i v2i,
-      return $ constructBinarySpec (AndBits @(bv 4)) v1i v2i,
-      return $ constructBinarySpec (OrBits @(bv 4)) v1i v2i,
-      return $ constructBinarySpec (XorBits @(bv 4)) v1i v2i,
+      return $ constructBinarySpec' (AddNum @(bv 4)) v1i v2i,
+      return $ constructBinarySpec' TimesNum v1i v2i,
+      return $ constructBinarySpec' (AndBits @(bv 4)) v1i v2i,
+      return $ constructBinarySpec' (OrBits @(bv 4)) v1i v2i,
+      return $ constructBinarySpec' (XorBits @(bv 4)) v1i v2i,
       return $ constructUnarySpec' (ComplementBits @(bv 4)) v1i,
       return $ constructUnarySpec' (ShiftBits @(bv 4) i) v1i,
       return $ constructUnarySpec' (RotateBits @(bv 4) i) v1i,
@@ -369,11 +383,11 @@ dsbv1 p depth | depth > 0 = do
     [ return $ constructUnarySpec' UMinusNum v1,
       return $ constructUnarySpec' AbsNum v1,
       return $ constructUnarySpec' SignumNum v1,
-      return $ constructBinarySpec (AddNum @(bv 1)) v1 v1',
-      return $ constructBinarySpec TimesNum v1 v1',
-      return $ constructBinarySpec (AndBits @(bv 1)) v1 v1',
-      return $ constructBinarySpec (OrBits @(bv 1)) v1 v1',
-      return $ constructBinarySpec (XorBits @(bv 1)) v1 v1',
+      return $ constructBinarySpec' (AddNum @(bv 1)) v1 v1',
+      return $ constructBinarySpec' TimesNum v1 v1',
+      return $ constructBinarySpec' (AndBits @(bv 1)) v1 v1',
+      return $ constructBinarySpec' (OrBits @(bv 1)) v1 v1',
+      return $ constructBinarySpec' (XorBits @(bv 1)) v1 v1',
       return $ constructUnarySpec' (ComplementBits @(bv 1)) v1,
       return $ constructUnarySpec' (ShiftBits @(bv 1) i) v1,
       return $ constructUnarySpec' (RotateBits @(bv 1) i) v1,
@@ -452,11 +466,11 @@ dsbv2 p depth | depth > 0 = do
     [ return $ constructUnarySpec' UMinusNum v2,
       return $ constructUnarySpec' AbsNum v2,
       return $ constructUnarySpec' SignumNum v2,
-      return $ constructBinarySpec (AddNum @(bv 2)) v2 v2',
-      return $ constructBinarySpec TimesNum v2 v2',
-      return $ constructBinarySpec (AndBits @(bv 2)) v2 v2',
-      return $ constructBinarySpec (OrBits @(bv 2)) v2 v2',
-      return $ constructBinarySpec (XorBits @(bv 2)) v2 v2',
+      return $ constructBinarySpec' (AddNum @(bv 2)) v2 v2',
+      return $ constructBinarySpec' TimesNum v2 v2',
+      return $ constructBinarySpec' (AndBits @(bv 2)) v2 v2',
+      return $ constructBinarySpec' (OrBits @(bv 2)) v2 v2',
+      return $ constructBinarySpec' (XorBits @(bv 2)) v2 v2',
       return $ constructUnarySpec' (ComplementBits @(bv 2)) v2,
       return $ constructUnarySpec' (ShiftBits @(bv 2) i) v2,
       return $ constructUnarySpec' (RotateBits @(bv 2) i) v2,
@@ -466,7 +480,7 @@ dsbv2 p depth | depth > 0 = do
       return $ constructUnarySpec' (BVTSelect @bv @0 @2 @3 Proxy) v3,
       return $ constructUnarySpec' (BVTSelect @bv @1 @2 @3 Proxy) v3,
       return $ constructUnarySpec' (BVTSelect @bv @0 @2 @2 Proxy) v2,
-      return $ constructBinarySpec (BVTConcat @bv @1 @1 @2) v1 v1',
+      return $ constructBinarySpec' (BVTConcat @bv @1 @1 @2) v1 v1',
       return $ constructUnarySpec' (Zext @bv @1 @2) v1,
       return $ constructUnarySpec' (Sext @bv @1 @2) v1
     ]
@@ -533,19 +547,19 @@ dsbv3 p depth | depth > 0 = do
     [ return $ constructUnarySpec' UMinusNum v3,
       return $ constructUnarySpec' AbsNum v3,
       return $ constructUnarySpec' SignumNum v3,
-      return $ constructBinarySpec (AddNum @(bv 3)) v3 v3',
-      return $ constructBinarySpec TimesNum v3 v3',
-      return $ constructBinarySpec (AndBits @(bv 3)) v3 v3',
-      return $ constructBinarySpec (OrBits @(bv 3)) v3 v3',
-      return $ constructBinarySpec (XorBits @(bv 3)) v3 v3',
+      return $ constructBinarySpec' (AddNum @(bv 3)) v3 v3',
+      return $ constructBinarySpec' TimesNum v3 v3',
+      return $ constructBinarySpec' (AndBits @(bv 3)) v3 v3',
+      return $ constructBinarySpec' (OrBits @(bv 3)) v3 v3',
+      return $ constructBinarySpec' (XorBits @(bv 3)) v3 v3',
       return $ constructUnarySpec' (ComplementBits @(bv 3)) v3,
       return $ constructUnarySpec' (ShiftBits @(bv 3) i) v3,
       return $ constructUnarySpec' (RotateBits @(bv 3) i) v3,
       return $ constructUnarySpec' (BVTSelect @bv @0 @3 @4 Proxy) v4,
       return $ constructUnarySpec' (BVTSelect @bv @1 @3 @4 Proxy) v4,
       return $ constructUnarySpec' (BVTSelect @bv @0 @3 @3 Proxy) v3,
-      return $ constructBinarySpec (BVTConcat @bv @1 @2 @3) v1 v2,
-      return $ constructBinarySpec (BVTConcat @bv @2 @1 @3) v2 v1,
+      return $ constructBinarySpec' (BVTConcat @bv @1 @2 @3) v1 v2,
+      return $ constructBinarySpec' (BVTConcat @bv @2 @1 @3) v2 v1,
       return $ constructUnarySpec' (Zext @bv @1 @3) v1,
       return $ constructUnarySpec' (Sext @bv @1 @3) v1,
       return $ constructUnarySpec' (Zext @bv @2 @3) v2,
@@ -615,18 +629,18 @@ dsbv4 p depth | depth > 0 = do
     [ return $ constructUnarySpec' UMinusNum v4,
       return $ constructUnarySpec' AbsNum v4,
       return $ constructUnarySpec' SignumNum v4,
-      return $ constructBinarySpec (AddNum @(bv 4)) v4 v4',
-      return $ constructBinarySpec TimesNum v4 v4',
-      return $ constructBinarySpec (AndBits @(bv 4)) v4 v4',
-      return $ constructBinarySpec (OrBits @(bv 4)) v4 v4',
-      return $ constructBinarySpec (XorBits @(bv 4)) v4 v4',
+      return $ constructBinarySpec' (AddNum @(bv 4)) v4 v4',
+      return $ constructBinarySpec' TimesNum v4 v4',
+      return $ constructBinarySpec' (AndBits @(bv 4)) v4 v4',
+      return $ constructBinarySpec' (OrBits @(bv 4)) v4 v4',
+      return $ constructBinarySpec' (XorBits @(bv 4)) v4 v4',
       return $ constructUnarySpec' (ComplementBits @(bv 4)) v4,
       return $ constructUnarySpec' (ShiftBits @(bv 4) i) v4,
       return $ constructUnarySpec' (RotateBits @(bv 4) i) v4,
       return $ constructUnarySpec' (BVTSelect @bv @0 @4 @4 Proxy) v4,
-      return $ constructBinarySpec (BVTConcat @bv @1 @3 @4) v1 v3,
-      return $ constructBinarySpec (BVTConcat @bv @2 @2 @4) v2 v2',
-      return $ constructBinarySpec (BVTConcat @bv @3 @1 @4) v3 v1,
+      return $ constructBinarySpec' (BVTConcat @bv @1 @3 @4) v1 v3,
+      return $ constructBinarySpec' (BVTConcat @bv @2 @2 @4) v2 v2',
+      return $ constructBinarySpec' (BVTConcat @bv @3 @1 @4) v3 v1,
       return $ constructUnarySpec' (Zext @bv @1 @4) v1,
       return $ constructUnarySpec' (Sext @bv @1 @4) v1,
       return $ constructUnarySpec' (Zext @bv @2 @4) v2,
@@ -705,7 +719,7 @@ binop ::
   GeneralSpec a ->
   GeneralSpec a ->
   GeneralSpec a
-binop = constructBinarySpec
+binop = constructBinarySpec'
 
 times :: (BinaryOp TimesNum a a a, Num a) => GeneralSpec a -> GeneralSpec a -> GeneralSpec a
 times = binop TimesNum

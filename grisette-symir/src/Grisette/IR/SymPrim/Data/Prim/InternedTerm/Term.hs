@@ -179,6 +179,8 @@ data Term t where
     !(Term arg3) ->
     Term t
   NotTerm :: {-# UNPACK #-} !Id -> !(Term Bool) -> Term Bool
+  OrTerm :: {-# UNPACK #-} !Id -> !(Term Bool) -> !(Term Bool) -> Term Bool
+  AndTerm :: {-# UNPACK #-} !Id -> !(Term Bool) -> !(Term Bool) -> Term Bool
 
 instance NFData (Term a) where
   rnf i = identity i `seq` ()
@@ -191,6 +193,8 @@ instance Lift (Term t) where
   liftTyped (BinaryTerm _ tag arg1 arg2) = [||constructBinary tag arg1 arg2||]
   liftTyped (TernaryTerm _ tag arg1 arg2 arg3) = [||constructTernary tag arg1 arg2 arg3||]
   liftTyped (NotTerm _ arg) = [||notTerm arg||]
+  liftTyped (OrTerm _ arg1 arg2) = [||orTerm arg1 arg2||]
+  liftTyped (AndTerm _ arg1 arg2) = [||andTerm arg1 arg2||]
 
 instance Show (Term ty) where
   show (ConcTerm i v) = "ConcTerm{id=" ++ show i ++ ", v=" ++ show v ++ "}"
@@ -212,6 +216,8 @@ instance Show (Term ty) where
       ++ show arg3
       ++ "}"
   show (NotTerm i arg) = "Not{id=" ++ show i ++ ", arg=" ++ show arg ++ "}"
+  show (OrTerm i arg1 arg2) = "Or{id=" ++ show i ++ ", arg1=" ++ show arg1 ++ ", arg2=" ++ show arg2 ++ "}"
+  show (AndTerm i arg1 arg2) = "And{id=" ++ show i ++ ", arg1=" ++ show arg1 ++ ", arg2=" ++ show arg2 ++ "}"
 
 instance (SupportedPrim t) => Eq (Term t) where
   (==) = (==) `on` identity
@@ -237,6 +243,8 @@ data UTerm t where
     !(Term arg3) ->
     UTerm t
   UNotTerm :: !(Term Bool) -> UTerm Bool
+  UOrTerm :: !(Term Bool) -> !(Term Bool) -> UTerm Bool
+  UAndTerm :: !(Term Bool) -> !(Term Bool) -> UTerm Bool
 
 instance (SupportedPrim t) => Interned (Term t) where
   type Uninterned (Term t) = UTerm t
@@ -258,6 +266,8 @@ instance (SupportedPrim t) => Interned (Term t) where
       (TypeRep, Id) ->
       Description (Term t)
     DNotTerm :: {-# UNPACK #-} !Id -> Description (Term Bool)
+    DOrTerm :: {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term Bool)
+    DAndTerm :: {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term Bool)
   describe (UConcTerm v) = DConcTerm v
   describe ((USymbTerm name) :: UTerm t) = DSymbTerm @t name
   describe ((UUnaryTerm (tag :: tagt) (tm :: Term arg)) :: UTerm t) = DUnaryTerm @tagt @arg @t tag (typeRep (Proxy @arg), identity tm)
@@ -266,6 +276,8 @@ instance (SupportedPrim t) => Interned (Term t) where
   describe ((UTernaryTerm (tag :: tagt) (tm1 :: Term arg1) (tm2 :: Term arg2) (tm3 :: Term arg3)) :: UTerm t) =
     DTernaryTerm @tagt @arg1 @arg2 @arg3 @t tag (typeRep (Proxy @arg1), identity tm1) (typeRep (Proxy @arg2), identity tm2) (typeRep (Proxy @arg3), identity tm3)
   describe (UNotTerm arg) = DNotTerm (identity arg)
+  describe (UOrTerm arg1 arg2) = DOrTerm (identity arg1) (identity arg2)
+  describe (UAndTerm arg1 arg2) = DAndTerm (identity arg1) (identity arg2)
   identify i = go
     where
       go (UConcTerm v) = ConcTerm i v
@@ -274,6 +286,8 @@ instance (SupportedPrim t) => Interned (Term t) where
       go (UBinaryTerm tag tm1 tm2) = BinaryTerm i tag tm1 tm2
       go (UTernaryTerm tag tm1 tm2 tm3) = TernaryTerm i tag tm1 tm2 tm3
       go (UNotTerm arg) = NotTerm i arg
+      go (UOrTerm arg1 arg2) = OrTerm i arg1 arg2
+      go (UAndTerm arg1 arg2) = AndTerm i arg1 arg2
   cache = termCache
 
 instance (SupportedPrim t) => Eq (Description (Term t)) where
@@ -292,6 +306,8 @@ instance (SupportedPrim t) => Eq (Description (Term t)) where
       Just Refl -> tagl == tagr && li1 == ri1 && li2 == ri2 && li3 == ri3
       Nothing -> False
   DNotTerm li == DNotTerm ri = li == ri
+  DOrTerm li1 li2 == DOrTerm ri1 ri2 = li1 == ri1 && li2 == ri2
+  DAndTerm li1 li2 == DAndTerm ri1 ri2 = li1 == ri1 && li2 == ri2
   _ == _ = False
 
 instance (SupportedPrim t) => Hashable (Description (Term t)) where
@@ -303,6 +319,8 @@ instance (SupportedPrim t) => Hashable (Description (Term t)) where
   hashWithSalt s (DTernaryTerm tag id1 id2 id3) =
     s `hashWithSalt` (4 :: Int) `hashWithSalt` tag `hashWithSalt` id1 `hashWithSalt` id2 `hashWithSalt` id3
   hashWithSalt s (DNotTerm id1) = s `hashWithSalt` (5 :: Int) `hashWithSalt` id1
+  hashWithSalt s (DOrTerm id1 id2) = s `hashWithSalt` (6 :: Int) `hashWithSalt` id1 `hashWithSalt` id2
+  hashWithSalt s (DAndTerm id1 id2) = s `hashWithSalt` (7 :: Int) `hashWithSalt` id1 `hashWithSalt` id2
 
 -- Basic Bool
 defaultValueForBool :: Bool

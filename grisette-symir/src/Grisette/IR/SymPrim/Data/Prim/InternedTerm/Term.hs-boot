@@ -113,6 +113,8 @@ data Term t where
     !(Term arg3) ->
     Term t
   NotTerm :: {-# UNPACK #-} !Id -> !(Term Bool) -> Term Bool
+  OrTerm :: {-# UNPACK #-} !Id -> !(Term Bool) -> !(Term Bool) -> Term Bool
+  AndTerm :: {-# UNPACK #-} !Id -> !(Term Bool) -> !(Term Bool) -> Term Bool
 
 data UTerm t where
   UConcTerm :: (SupportedPrim t) => !t -> UTerm t
@@ -132,3 +134,5 @@ data UTerm t where
     !(Term arg3) ->
     UTerm t
   UNotTerm :: !(Term Bool) -> UTerm Bool
+  UOrTerm :: !(Term Bool) -> !(Term Bool) -> UTerm Bool
+  UAndTerm :: !(Term Bool) -> !(Term Bool) -> UTerm Bool

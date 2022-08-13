@@ -115,7 +115,7 @@ spec = do
         orb (concTerm False) (concTerm False) `shouldBe` concTerm False
       it "Or on general symbolic" $ do
         orb (ssymbTerm "a") (ssymbTerm "b")
-          `shouldBe` constructBinary Or (ssymbTerm "a" :: Term Bool) (ssymbTerm "b" :: Term Bool)
+          `shouldBe` orTerm (ssymbTerm "a" :: Term Bool) (ssymbTerm "b" :: Term Bool)
       it "Or(x, y) -> True" $ do
         orb (concTerm True) (ssymbTerm "b") `shouldBe` concTerm True
         orb (ssymbTerm "a") (concTerm True) `shouldBe` concTerm True
@@ -255,10 +255,10 @@ spec = do
     describe "Or pattern" $ do
       it "Or pattern should work" $ do
         case ssymbTerm "a" :: Term Bool of
-          OrTerm (_ :: Term Bool) _ -> expectationFailure "Bad pattern matching"
+          OrTerm _ (_ :: Term Bool) _ -> expectationFailure "Bad pattern matching"
           _ -> return ()
         case orb (ssymbTerm "a" :: Term Bool) (ssymbTerm "b") of
-          OrTerm v1 v2 -> do
+          OrTerm _ v1 v2 -> do
             v1 `shouldBe` ssymbTerm "a"
             v2 `shouldBe` ssymbTerm "b"
           _ -> return ()
@@ -272,7 +272,7 @@ spec = do
         andb (concTerm False) (concTerm False) `shouldBe` concTerm False
       it "And on general symbolic" $ do
         andb (ssymbTerm "a") (ssymbTerm "b")
-          `shouldBe` constructBinary And (ssymbTerm "a" :: Term Bool) (ssymbTerm "b" :: Term Bool)
+          `shouldBe` andTerm (ssymbTerm "a" :: Term Bool) (ssymbTerm "b" :: Term Bool)
       it "And(x, y) -> False" $ do
         andb (concTerm False) (ssymbTerm "b") `shouldBe` concTerm False
         andb (ssymbTerm "a") (concTerm False) `shouldBe` concTerm False
@@ -411,10 +411,10 @@ spec = do
     describe "And pattern" $ do
       it "And pattern should work" $ do
         case ssymbTerm "a" :: Term Bool of
-          AndTerm (_ :: Term Bool) _ -> expectationFailure "Bad pattern matching"
+          AndTerm _ (_ :: Term Bool) _ -> expectationFailure "Bad pattern matching"
           _ -> return ()
         case andb (ssymbTerm "a" :: Term Bool) (ssymbTerm "b") of
-          AndTerm v1 v2 -> do
+          AndTerm _ v1 v2 -> do
             v1 `shouldBe` ssymbTerm "a"
             v2 `shouldBe` ssymbTerm "b"
           _ -> return ()
