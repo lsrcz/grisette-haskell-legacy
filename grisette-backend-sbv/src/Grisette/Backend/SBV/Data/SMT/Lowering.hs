@@ -299,7 +299,7 @@ lowerSinglePrimImpl' config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) =
     boolType :: Maybe (State SymBiMap (TermTy integerBitWidth a))
     boolType = case R.typeRep @a of
       BoolType -> case t of
-        NotTerm t1 -> Just $ lowerUnaryTerm' config t t1 SBV.sNot
+        -- NotTerm t1 -> Just $ lowerUnaryTerm' config t t1 SBV.sNot
         _ -> Nothing
       _ -> Nothing
     extBV :: Maybe (State SymBiMap (TermTy integerBitWidth a))
@@ -490,6 +490,11 @@ lowerSinglePrimImpl' config@ResolvedConfig {} t@(TernaryTerm _ op (_ :: Term x) 
           ++ show (R.typeRep @z)
           ++ " -> "
           ++ show (R.typeRep @a)
+lowerSinglePrimImpl' config t@(NotTerm _ arg) = do
+  l1 <- lowerSinglePrimCached' config arg
+  let g = SBV.sNot l1
+  addResult @integerBitWidth t g
+  return g
 lowerSinglePrimImpl' _ _ = undefined
 
 buildUTFunc11 ::
@@ -689,7 +694,7 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) m 
     boolType :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
     boolType = case R.typeRep @a of
       BoolType -> case t of
-        NotTerm t1 -> Just $ lowerUnaryTerm config t t1 SBV.sNot m
+        -- NotTerm t1 -> Just $ lowerUnaryTerm config t t1 SBV.sNot m
         _ -> Nothing
       _ -> Nothing
     extBV :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
@@ -888,6 +893,10 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(TernaryTerm _ op (_ :: Term x) (
           ++ show (R.typeRep @z)
           ++ " -> "
           ++ show (R.typeRep @a)
+lowerSinglePrimImpl config t@(NotTerm _ arg) m = do
+  (m1, l1) <- lowerSinglePrimCached config arg m
+  let g = SBV.sNot l1
+  return (addBiMapIntermediate (SomeTerm t) (toDyn g) m1, g)
 lowerSinglePrimImpl _ _ _ = error "Should never happen"
 
 unsafeMkNatRepr :: Int -> NatRepr w

@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Grisette.IR.SymPrim.Data.Prim.BoolSpec where
@@ -18,7 +19,7 @@ spec = do
         notb (concTerm True) `shouldBe` concTerm False
         notb (concTerm True) `shouldBe` concTerm False
       it "Not on general symbolic" $ do
-        notb (ssymbTerm "a") `shouldBe` constructUnary Not (ssymbTerm "a" :: Term Bool)
+        notb (ssymbTerm "a") `shouldBe` notTerm (ssymbTerm "a" :: Term Bool)
       it "Not on Not" $ do
         notb (notb (ssymbTerm "a")) `shouldBe` ssymbTerm "a"
       it "Not on Or Not" $ do
@@ -34,10 +35,10 @@ spec = do
     describe "Not pattern" $ do
       it "Not pattern should work" $ do
         case ssymbTerm "a" :: Term Bool of
-          NotTerm _ -> expectationFailure "Bad pattern matching"
+          NotTerm _ _ -> expectationFailure "Bad pattern matching"
           _ -> return ()
         case notb (ssymbTerm "a" :: Term Bool) of
-          NotTerm v -> v `shouldBe` ssymbTerm "a"
+          NotTerm _ v -> v `shouldBe` ssymbTerm "a"
           _ -> return ()
   describe "Eqv & NEqv" $ do
     describe "Eqv construction" $ do

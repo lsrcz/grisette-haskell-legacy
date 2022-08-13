@@ -2,6 +2,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE GADTs #-}
 
 module Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
   ( identity,
@@ -29,6 +30,7 @@ identity (SymbTerm i _) = i
 identity (UnaryTerm i _ _) = i
 identity (BinaryTerm i _ _ _) = i
 identity (TernaryTerm i _ _ _ _) = i
+identity (NotTerm i _) = i
 {-# INLINE identity #-}
 
 identityWithTypeRep :: forall t. Term t -> (TypeRep, Id)
@@ -37,6 +39,7 @@ identityWithTypeRep (SymbTerm i _) = (typeRep (Proxy @t), i)
 identityWithTypeRep (UnaryTerm i _ _) = (typeRep (Proxy @t), i)
 identityWithTypeRep (BinaryTerm i _ _ _) = (typeRep (Proxy @t), i)
 identityWithTypeRep (TernaryTerm i _ _ _ _) = (typeRep (Proxy @t), i)
+identityWithTypeRep (NotTerm i _) = (typeRep (Proxy @Bool), i)
 {-# INLINE identityWithTypeRep #-}
 
 introSupportedPrimConstraint :: forall t a. Term t -> ((SupportedPrim t) => a) -> a
@@ -45,6 +48,7 @@ introSupportedPrimConstraint SymbTerm {} x = x
 introSupportedPrimConstraint UnaryTerm {} x = x
 introSupportedPrimConstraint BinaryTerm {} x = x
 introSupportedPrimConstraint TernaryTerm {} x = x
+introSupportedPrimConstraint NotTerm {} x = x
 {-# INLINE introSupportedPrimConstraint #-}
 
 extractSymbolicsSomeTerm :: SomeTerm -> S.HashSet TermSymbol
@@ -73,6 +77,7 @@ extractSymbolicsSomeTerm t1 = evalState (gocached t1) M.empty
       r2 <- gocached (SomeTerm arg2)
       r3 <- gocached (SomeTerm arg3)
       return $ r1 <> r2 <> r3
+    go (SomeTerm (NotTerm _ arg)) = gocached (SomeTerm arg)
 {-# INLINEABLE extractSymbolicsSomeTerm #-}
 
 extractSymbolicsTerm :: (SupportedPrim a) => Term a -> S.HashSet TermSymbol
@@ -85,6 +90,7 @@ castTerm t@SymbTerm {} = cast t
 castTerm t@UnaryTerm {} = cast t
 castTerm t@BinaryTerm {} = cast t
 castTerm t@TernaryTerm {} = cast t
+castTerm t@NotTerm {} = cast t
 {-# INLINE castTerm #-}
 
 pformat :: forall t. (SupportedPrim t) => Term t -> String
@@ -93,6 +99,7 @@ pformat (SymbTerm _ (TermSymbol _ symb)) = pformatSymb (Proxy @t) symb
 pformat (UnaryTerm _ tag arg1) = pformatUnary tag arg1
 pformat (BinaryTerm _ tag arg1 arg2) = pformatBinary tag arg1 arg2
 pformat (TernaryTerm _ tag arg1 arg2 arg3) = pformatTernary tag arg1 arg2 arg3
+pformat (NotTerm _ arg) = "(! " ++ pformat arg ++ ")"
 {-# INLINE pformat #-}
 
 termsSize :: [Term a] -> Int
@@ -103,13 +110,7 @@ termsSize terms = S.size $ execState (traverse go terms) S.empty
     go :: forall b. Term b -> State (S.HashSet SomeTerm) ()
     go t@ConcTerm {} = add t
     go t@SymbTerm {} = add t
-    go t@(UnaryTerm _ _ arg) = do
-      b <- exists t
-      if b
-        then return ()
-        else do
-          add t
-          go arg
+    go t@(UnaryTerm _ _ arg) = goUnary t arg
     go t@(BinaryTerm _ _ arg1 arg2) = do
       b <- exists t
       if b
@@ -127,6 +128,15 @@ termsSize terms = S.size $ execState (traverse go terms) S.empty
           go arg1
           go arg2
           go arg3
+    go t@(NotTerm _ arg) = goUnary t arg
+    goUnary :: forall a b. (SupportedPrim a) => Term a -> Term b -> State (S.HashSet SomeTerm) ()
+    goUnary t arg = do
+      b <- exists t
+      if b
+        then return ()
+        else do
+          add t
+          go arg
 {-# INLINEABLE termsSize #-}
 
 termSize :: Term a -> Int

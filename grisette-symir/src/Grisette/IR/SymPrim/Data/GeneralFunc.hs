@@ -25,6 +25,7 @@ import Unsafe.Coerce
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.SomeTerm
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
+import Grisette.IR.SymPrim.Data.Prim.Bool
 
 data FuncArg = FuncArg deriving (Show, Eq, Generic, Ord, Lift, Hashable, NFData)
 
@@ -82,3 +83,4 @@ subst sym@(TermSymbol (_ :: Proxy c) _) term input = case eqT @c @a of
         UnaryTerm _ tag te -> SomeTerm $ partialEvalUnary tag (gov te)
         BinaryTerm _ tag te te' -> SomeTerm $ partialEvalBinary tag (gov te) (gov te')
         TernaryTerm _ tag op1 op2 op3 -> SomeTerm $ partialEvalTernary tag (gov op1) (gov op2) (gov op3)
+        NotTerm _ op -> SomeTerm $ notb (gov op)

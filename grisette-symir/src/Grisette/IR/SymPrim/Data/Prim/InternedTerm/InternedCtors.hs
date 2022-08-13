@@ -13,6 +13,7 @@ module Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
     isymbTerm,
     sinfosymbTerm,
     iinfosymbTerm,
+    notTerm,
   )
 where
 
@@ -29,9 +30,7 @@ import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Language.Haskell.TH.Syntax
 
 internTerm :: forall t. (SupportedPrim t) => Uninterned (Term t) -> Term t
-internTerm !bt = unsafeDupablePerformIO $ do
-  t <- atomicModifyIORef' slot go
-  return t
+internTerm !bt = unsafeDupablePerformIO $ atomicModifyIORef' slot go
   where
     slot = getCache cache ! r
     !dt = describe bt
@@ -95,3 +94,7 @@ sinfosymbTerm s info = symbTerm $ WithInfo (SimpleSymbol s) info
 iinfosymbTerm :: (SupportedPrim t, Typeable t, Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) => String -> Int -> a -> Term t
 iinfosymbTerm str idx info = symbTerm $ WithInfo (IndexedSymbol str idx) info
 {-# INLINE iinfosymbTerm #-}
+
+notTerm :: Term Bool -> Term Bool
+notTerm = internTerm . UNotTerm
+{-# INLINE notTerm #-}

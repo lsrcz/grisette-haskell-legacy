@@ -19,9 +19,9 @@ module Grisette.IR.SymPrim.Data.Prim.Bool
     pattern TrueTerm,
     pattern FalseTerm,
     pattern BoolTerm,
-    Not (..),
+    -- Not (..),
     notb,
-    pattern NotTerm,
+    -- pattern NotTerm,
     Eqv (..),
     eqterm,
     neterm,
@@ -80,23 +80,34 @@ pattern BoolTerm :: Term Bool -> Term a
 pattern BoolTerm b <- (castTerm -> Just b)
 
 -- Not
-data Not = Not deriving (Generic, Show, Lift, NFData, Eq, Hashable)
+-- data Not = Not deriving (Generic, Show, Lift, NFData, Eq, Hashable)
+
+{-notb :: Term Bool -> Term Bool
+notb = partialEvalUnary Not-}
 
 notb :: Term Bool -> Term Bool
-notb = partialEvalUnary Not
+notb (NotTerm _ tm) = tm
+notb (ConcTerm _ a) = if a then falseTerm else trueTerm
+notb (OrTerm (NotTerm _ n1) n2) = andb n1 (notb n2)
+notb (OrTerm n1 (NotTerm _ n2)) = andb (notb n1) n2
+notb (AndTerm (NotTerm _ n1) n2) = orb n1 (notb n2)
+notb (AndTerm n1 (NotTerm _ n2)) = orb (notb n1) n2
+notb tm = notTerm tm
 
+{-
 instance UnaryOp Not Bool Bool where
-  partialEvalUnary _ (NotTerm tm) = tm
+  partialEvalUnary _ (NotTerm _ tm) = tm
   partialEvalUnary _ (ConcTerm _ a) = if a then falseTerm else trueTerm
-  partialEvalUnary _ (OrTerm (NotTerm n1) n2) = andb n1 (notb n2)
-  partialEvalUnary _ (OrTerm n1 (NotTerm n2)) = andb (notb n1) n2
-  partialEvalUnary _ (AndTerm (NotTerm n1) n2) = orb n1 (notb n2)
-  partialEvalUnary _ (AndTerm n1 (NotTerm n2)) = orb (notb n1) n2
+  partialEvalUnary _ (OrTerm (NotTerm _ n1) n2) = andb n1 (notb n2)
+  partialEvalUnary _ (OrTerm n1 (NotTerm _ n2)) = andb (notb n1) n2
+  partialEvalUnary _ (AndTerm (NotTerm _ n1) n2) = orb n1 (notb n2)
+  partialEvalUnary _ (AndTerm n1 (NotTerm _ n2)) = orb (notb n1) n2
   partialEvalUnary _ tm = constructUnary Not tm
   pformatUnary _ t = "(! " ++ pformat t ++ ")"
 
 pattern NotTerm :: Term Bool -> Term a
-pattern NotTerm t <- UnsafeUnaryTermPatt Not t
+pattern NotTerm _ t <- UnsafeUnaryTermPatt Not t
+-}
 
 -- Eqv
 data Eqv = Eqv deriving (Show, Lift, Generic, NFData, Eq, Hashable)
@@ -111,9 +122,9 @@ instance SupportedPrim a => BinaryOp Eqv a a Bool where
   partialEvalBinary _ l@ConcTerm {} r@ConcTerm {} = concTerm $ l == r
   partialEvalBinary _ l@ConcTerm {} r = eqterm r l
   partialEvalBinary _ l (BoolConcTerm rv) = if rv then unsafeCoerce l else notb $ unsafeCoerce l
-  partialEvalBinary _ (NotTerm lv) r
+  partialEvalBinary _ (NotTerm _ lv) r
     | lv == unsafeCoerce r = falseTerm
-  partialEvalBinary _ l (NotTerm rv)
+  partialEvalBinary _ l (NotTerm _ rv)
     | unsafeCoerce l == rv = falseTerm
   {-
   partialEvalBinary _ (ConcTerm l) (ConcTerm r) =
@@ -154,11 +165,11 @@ pattern EqvTerm :: (Typeable a) => Term a -> Term a -> Term Bool
 pattern EqvTerm l r <- Unsafe1t21BinaryTermPatt Eqv l r
 
 impliesTerm :: Term Bool -> Term Bool -> Bool
-impliesTerm TrueTerm _ = True
-impliesTerm _ FalseTerm = True
+impliesTerm (ConcTerm _ True) _ = True
+impliesTerm _ (ConcTerm _ False) = True
 impliesTerm
   (BinaryTerm _ (Dyn Eqv) (e1 :: Term a) (ec1@(ConcTerm _ _) :: Term b))
-  (NotTerm (BinaryTerm _ (Dyn Eqv) (Dyn (e2 :: Term a)) (Dyn (ec2@(ConcTerm _ _) :: Term b))))
+  (NotTerm _ (BinaryTerm _ (Dyn Eqv) (Dyn (e2 :: Term a)) (Dyn (ec2@(ConcTerm _ _) :: Term b))))
     | e1 == e2 && ec1 /= ec2 = True
 impliesTerm a b
   | a == b = True
@@ -166,9 +177,9 @@ impliesTerm a b
 {-# INLINE impliesTerm #-}
 
 orEqFirst :: Term Bool -> Term Bool -> Bool
-orEqFirst _ FalseTerm = True
+orEqFirst _ (ConcTerm _ False) = True
 orEqFirst
-  (NotTerm (BinaryTerm _ (Dyn Eqv) (e1 :: Term a) (ec1@(ConcTerm _ _) :: Term b)))
+  (NotTerm _ (BinaryTerm _ (Dyn Eqv) (e1 :: Term a) (ec1@(ConcTerm _ _) :: Term b)))
   (BinaryTerm _ (Dyn Eqv) (Dyn (e2 :: Term a)) (Dyn (ec2@(ConcTerm _ _) :: Term b)))
     | e1 == e2 && ec1 /= ec2 = True
 orEqFirst x y
@@ -177,24 +188,24 @@ orEqFirst x y
 {-# INLINE orEqFirst #-}
 
 orEqTrue :: Term Bool -> Term Bool -> Bool
-orEqTrue TrueTerm _ = True
-orEqTrue _ TrueTerm = True
---orEqTrue (NotTerm e1) (NotTerm e2) = andEqFalse e1 e2
+orEqTrue (ConcTerm _ True) _ = True
+orEqTrue _ (ConcTerm _ True) = True
+--orEqTrue (NotTerm _ e1) (NotTerm _ e2) = andEqFalse e1 e2
 orEqTrue
-  (NotTerm (BinaryTerm _ (Dyn Eqv) (e1 :: Term a) (ec1@(ConcTerm _ _) :: Term b)))
-  (NotTerm (BinaryTerm _ (Dyn Eqv) (Dyn (e2 :: Term a)) (Dyn (ec2@(ConcTerm _ _) :: Term b))))
+  (NotTerm _ (BinaryTerm _ (Dyn Eqv) (e1 :: Term a) (ec1@(ConcTerm _ _) :: Term b)))
+  (NotTerm _ (BinaryTerm _ (Dyn Eqv) (Dyn (e2 :: Term a)) (Dyn (ec2@(ConcTerm _ _) :: Term b))))
     | e1 == e2 && ec1 /= ec2 = True
-orEqTrue (NotTerm l) r | l == r = True
-orEqTrue l (NotTerm r) | l == r = True
+orEqTrue (NotTerm _ l) r | l == r = True
+orEqTrue l (NotTerm _ r) | l == r = True
 orEqTrue _ _ = False
 {-# INLINE orEqTrue #-}
 
 andEqFirst :: Term Bool -> Term Bool -> Bool
-andEqFirst _ TrueTerm = True
---andEqFirst x (NotTerm y) = andEqFalse x y
+andEqFirst _ (ConcTerm _ True) = True
+--andEqFirst x (NotTerm _ y) = andEqFalse x y
 andEqFirst
   (BinaryTerm _ (Dyn Eqv) (e1 :: Term a) (ec1@(ConcTerm _ _) :: Term b))
-  (NotTerm (BinaryTerm _ (Dyn Eqv) (Dyn (e2 :: Term a)) (Dyn (ec2@(ConcTerm _ _) :: Term b))))
+  (NotTerm _ (BinaryTerm _ (Dyn Eqv) (Dyn (e2 :: Term a)) (Dyn (ec2@(ConcTerm _ _) :: Term b))))
     | e1 == e2 && ec1 /= ec2 = True
 andEqFirst x y
   | x == y = True
@@ -202,15 +213,15 @@ andEqFirst x y
 {-# INLINE andEqFirst #-}
 
 andEqFalse :: Term Bool -> Term Bool -> Bool
-andEqFalse FalseTerm _ = True
-andEqFalse _ FalseTerm = True
--- andEqFalse (NotTerm e1) (NotTerm e2) = orEqTrue e1 e2
+andEqFalse (ConcTerm _ False) _ = True
+andEqFalse _ (ConcTerm _ False) = True
+-- andEqFalse (NotTerm _ e1) (NotTerm _ e2) = orEqTrue e1 e2
 andEqFalse
   (BinaryTerm _ (Dyn Eqv) (e1 :: Term a) (ec1@(ConcTerm _ _) :: Term b))
   (BinaryTerm _ (Dyn Eqv) (Dyn (e2 :: Term a)) (Dyn (ec2@(ConcTerm _ _) :: Term b)))
     | e1 == e2 && ec1 /= ec2 = True
-andEqFalse (NotTerm x) y | x == y = True
-andEqFalse x (NotTerm y) | x == y = True
+andEqFalse (NotTerm _ x) y | x == y = True
+andEqFalse x (NotTerm _ y) | x == y = True
 andEqFalse _ _ = False
 {-# INLINE andEqFalse #-}
 
@@ -249,7 +260,7 @@ instance BinaryOp Or Bool Bool Bool where
     | orEqFirst r l2 = r
     | orEqTrue l1 r = orb l2 r
     | orEqTrue l2 r = orb l1 r
-  partialEvalBinary _ (NotTerm nl) (NotTerm nr) = notb $ andb nl nr
+  partialEvalBinary _ (NotTerm _ nl) (NotTerm _ nr) = notb $ andb nl nr
   partialEvalBinary _ l r = constructBinary Or l r
   pformatBinary _ l r = "(|| " ++ pformat l ++ " " ++ pformat r ++ ")"
 
@@ -291,7 +302,7 @@ instance BinaryOp And Bool Bool Bool where
     | andEqFirst r l2 = r
     | andEqFalse l1 r = andb l2 r
     | andEqFalse l2 r = andb l1 r
-  partialEvalBinary _ (NotTerm nl) (NotTerm nr) = notb $ orb nl nr
+  partialEvalBinary _ (NotTerm _ nl) (NotTerm _ nr) = notb $ orb nl nr
   partialEvalBinary _ l r = constructBinary And l r
   pformatBinary _ l r = "(&& " ++ pformat l ++ " " ++ pformat r ++ ")"
 
@@ -319,7 +330,7 @@ simpleImpliesNotTerm
   (BinaryTerm _ (Dyn Eqv) (e1 :: Term a) (ec1@(ConcTerm _ _) :: Term b))
   (BinaryTerm _ (Dyn Eqv) (Dyn (e2 :: Term a)) (Dyn (ec2@(ConcTerm _ _) :: Term b)))
     | e1 == e2 && ec1 /= ec2 = True
-simpleImpliesNotTerm a (NotTerm b)
+simpleImpliesNotTerm _ a (NotTerm _ b)
   | a == b = True
 simpleImpliesNotTerm _ _ = False
 {-# INLINE simpleImpliesNotTerm #-}
@@ -352,7 +363,7 @@ partialEvalITEBoolRightNot cond ifTrue nIfFalse
   | otherwise = Nothing -- need work
 
 partialEvalInferImplies :: Term Bool -> Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
-partialEvalInferImplies cond (NotTerm nt1) trueRes falseRes
+partialEvalInferImplies cond (NotTerm _ nt1) trueRes falseRes
   | cond == nt1 = Just falseRes
   | otherwise = case (cond, nt1) of
     ( BinaryTerm _ (Dyn Eqv) (e1 :: Term a) (ec1@(ConcTerm _ _) :: Term b),
@@ -435,11 +446,11 @@ partialEvalITEBoolLeft cond (OrTerm t1 t2) ifFalse =
         OrTerm f1 f2 -> partialEvalITEBoolBothOr cond t1 t2 f1 f2
         _ -> Nothing
     ]
-partialEvalITEBoolLeft cond (NotTerm nIfTrue) ifFalse =
+partialEvalITEBoolLeft cond (NotTerm _ nIfTrue) ifFalse =
   msum
     [ partialEvalITEBoolLeftNot cond nIfTrue ifFalse,
       case ifFalse of
-        NotTerm nIfFalse ->
+        NotTerm _ nIfFalse ->
           partialEvalITEBoolBothNot cond nIfTrue nIfFalse
         _ -> Nothing
     ]
@@ -448,13 +459,13 @@ partialEvalITEBoolLeft _ _ _ = Nothing
 partialEvalITEBoolNoLeft :: Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
 partialEvalITEBoolNoLeft cond ifTrue (AndTerm f1 f2) = partialEvalITEBoolRightAnd cond ifTrue f1 f2
 partialEvalITEBoolNoLeft cond ifTrue (OrTerm f1 f2) = partialEvalITEBoolRightOr cond ifTrue f1 f2
-partialEvalITEBoolNoLeft cond ifTrue (NotTerm nIfFalse) = partialEvalITEBoolRightNot cond ifTrue nIfFalse
+partialEvalITEBoolNoLeft cond ifTrue (NotTerm _ nIfFalse) = partialEvalITEBoolRightNot cond ifTrue nIfFalse
 partialEvalITEBoolNoLeft _ _ _ = Nothing
 
 partialEvalITEBasic :: (SupportedPrim a) => Term Bool -> Term a -> Term a -> Maybe (Term a)
-partialEvalITEBasic TrueTerm ifTrue _ = Just ifTrue
-partialEvalITEBasic FalseTerm _ ifFalse = Just ifFalse
-partialEvalITEBasic (NotTerm ncond) ifTrue ifFalse = Just $ partialEvalITE ncond ifFalse ifTrue
+partialEvalITEBasic (ConcTerm _ True) ifTrue _ = Just ifTrue
+partialEvalITEBasic (ConcTerm _ False) _ ifFalse = Just ifFalse
+partialEvalITEBasic (NotTerm _ ncond) ifTrue ifFalse = Just $ partialEvalITE ncond ifFalse ifTrue
 partialEvalITEBasic _ ifTrue ifFalse | ifTrue == ifFalse = Just ifTrue
 partialEvalITEBasic (ITETerm cc ct cf) (ITETerm tc tt tf) (ITETerm fc ft ff) -- later
   | cc == tc && cc == fc = Just $ iteterm cc (iteterm ct tt ft) (iteterm cf tf ff)
@@ -519,7 +530,7 @@ instance (SupportedPrim a) => TernaryOp ITE Bool a a a where
   {-
   partialEvalTernary _ TrueTerm ifTrue _ = ifTrue
   partialEvalTernary _ FalseTerm _ ifFalse = ifFalse
-  partialEvalTernary _ (NotTerm ncond) ifTrue ifFalse = partialEvalTernary ITE ncond ifFalse ifTrue
+  partialEvalTernary _ (NotTerm _ ncond) ifTrue ifFalse = partialEvalTernary ITE ncond ifFalse ifTrue
   partialEvalTernary _ _ ifTrue ifFalse | ifTrue == ifFalse = ifTrue
   partialEvalTernary _ (ITETerm cc ct cf) (ITETerm tc tt tf) (ITETerm fc ft ff) -- later
     | cc == tc && cc == fc = iteterm cc (iteterm ct tt ft) (iteterm cf tf ff)
@@ -532,7 +543,7 @@ instance (SupportedPrim a) => TernaryOp ITE Bool a a a where
     | cond == fc = iteterm cond ifTrue ff
     | ifTrue == ft = iteterm (orb cond fc) ifTrue ff
     | ifTrue == ff = iteterm (orb cond (notb fc)) ifTrue ft
-  partialEvalTernary _ cond (NotTerm nifTrue) (NotTerm nifFalse) =
+  partialEvalTernary _ cond (NotTerm _ nifTrue) (NotTerm _ nifFalse) =
     unsafeCoerce $ notb $ partialEvalTernary ITE cond nifTrue nifFalse
   partialEvalTernary _ cond (AndTerm t1 t2) (AndTerm f1 f2)
     | t1 == f1 = unsafeCoerce $ andb t1 $ iteterm cond t2 f2

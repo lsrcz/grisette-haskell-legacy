@@ -178,6 +178,7 @@ data Term t where
     !(Term arg2) ->
     !(Term arg3) ->
     Term t
+  NotTerm :: {-# UNPACK #-} !Id -> !(Term Bool) -> Term Bool
 
 instance NFData (Term a) where
   rnf i = identity i `seq` ()
@@ -189,6 +190,7 @@ instance Lift (Term t) where
   liftTyped (UnaryTerm _ tag arg) = [||constructUnary tag arg||]
   liftTyped (BinaryTerm _ tag arg1 arg2) = [||constructBinary tag arg1 arg2||]
   liftTyped (TernaryTerm _ tag arg1 arg2 arg3) = [||constructTernary tag arg1 arg2 arg3||]
+  liftTyped (NotTerm _ arg) = [||notTerm arg||]
 
 instance Show (Term ty) where
   show (ConcTerm i v) = "ConcTerm{id=" ++ show i ++ ", v=" ++ show v ++ "}"
@@ -209,6 +211,7 @@ instance Show (Term ty) where
       ++ ", arg3="
       ++ show arg3
       ++ "}"
+  show (NotTerm i arg) = "Not{id=" ++ show i ++ ", arg=" ++ show arg ++ "}"
 
 instance (SupportedPrim t) => Eq (Term t) where
   (==) = (==) `on` identity
@@ -233,6 +236,7 @@ data UTerm t where
     !(Term arg2) ->
     !(Term arg3) ->
     UTerm t
+  UNotTerm :: !(Term Bool) -> UTerm Bool
 
 instance (SupportedPrim t) => Interned (Term t) where
   type Uninterned (Term t) = UTerm t
@@ -253,6 +257,7 @@ instance (SupportedPrim t) => Interned (Term t) where
       (TypeRep, Id) ->
       (TypeRep, Id) ->
       Description (Term t)
+    DNotTerm :: {-# UNPACK #-} !Id -> Description (Term Bool)
   describe (UConcTerm v) = DConcTerm v
   describe ((USymbTerm name) :: UTerm t) = DSymbTerm @t name
   describe ((UUnaryTerm (tag :: tagt) (tm :: Term arg)) :: UTerm t) = DUnaryTerm @tagt @arg @t tag (typeRep (Proxy @arg), identity tm)
@@ -260,6 +265,7 @@ instance (SupportedPrim t) => Interned (Term t) where
     DBinaryTerm @tagt @arg1 @arg2 @t tag (typeRep (Proxy @arg1), identity tm1) (typeRep (Proxy @arg2), identity tm2)
   describe ((UTernaryTerm (tag :: tagt) (tm1 :: Term arg1) (tm2 :: Term arg2) (tm3 :: Term arg3)) :: UTerm t) =
     DTernaryTerm @tagt @arg1 @arg2 @arg3 @t tag (typeRep (Proxy @arg1), identity tm1) (typeRep (Proxy @arg2), identity tm2) (typeRep (Proxy @arg3), identity tm3)
+  describe (UNotTerm arg) = DNotTerm (identity arg)
   identify i = go
     where
       go (UConcTerm v) = ConcTerm i v
@@ -267,6 +273,7 @@ instance (SupportedPrim t) => Interned (Term t) where
       go (UUnaryTerm tag tm) = UnaryTerm i tag tm
       go (UBinaryTerm tag tm1 tm2) = BinaryTerm i tag tm1 tm2
       go (UTernaryTerm tag tm1 tm2 tm3) = TernaryTerm i tag tm1 tm2 tm3
+      go (UNotTerm arg) = NotTerm i arg
   cache = termCache
 
 instance (SupportedPrim t) => Eq (Description (Term t)) where
@@ -284,6 +291,7 @@ instance (SupportedPrim t) => Eq (Description (Term t)) where
     case eqT @tagl @tagr of
       Just Refl -> tagl == tagr && li1 == ri1 && li2 == ri2 && li3 == ri3
       Nothing -> False
+  DNotTerm li == DNotTerm ri = li == ri
   _ == _ = False
 
 instance (SupportedPrim t) => Hashable (Description (Term t)) where
@@ -294,6 +302,7 @@ instance (SupportedPrim t) => Hashable (Description (Term t)) where
     s `hashWithSalt` (3 :: Int) `hashWithSalt` tag `hashWithSalt` id1 `hashWithSalt` id2
   hashWithSalt s (DTernaryTerm tag id1 id2 id3) =
     s `hashWithSalt` (4 :: Int) `hashWithSalt` tag `hashWithSalt` id1 `hashWithSalt` id2 `hashWithSalt` id3
+  hashWithSalt s (DNotTerm id1) = s `hashWithSalt` (5 :: Int) `hashWithSalt` id1
 
 -- Basic Bool
 defaultValueForBool :: Bool

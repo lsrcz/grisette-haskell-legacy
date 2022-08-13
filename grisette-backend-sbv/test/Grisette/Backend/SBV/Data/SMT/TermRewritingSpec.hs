@@ -14,8 +14,6 @@ import Grisette.Backend.SBV.Data.SMT.TermRewritingGen
 import Grisette.Core.Data.Class.Solver
 import Grisette.IR.SymPrim.Data.BV
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm.SomeTerm
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
 import Grisette.IR.SymPrim.Data.SymPrim
 import Test.Hspec

@@ -3,6 +3,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE GADTs #-}
 
 module Grisette.IR.SymPrim.Data.Prim.Model
   ( Model (..),
@@ -130,8 +131,7 @@ evaluateSomeTerm fillDefault (Model ma) = gomemo
     go c@(SomeTerm ((SymbTerm _ sym@(TermSymbol (_ :: Proxy t) _)) :: Term a)) = case M.lookup sym ma of
       Nothing -> if fillDefault then SomeTerm $ concTerm (defaultValue @t) else c
       Just dy -> SomeTerm $ concTerm (unsafeFromModelValue @a dy)
-    go (SomeTerm (UnaryTerm _ tag (arg :: Term a))) = do
-      SomeTerm $ partialEvalUnary tag (gotyped arg)
+    go (SomeTerm (UnaryTerm _ tag (arg :: Term a))) = goUnary (partialEvalUnary tag) arg
     go (SomeTerm (BinaryTerm _ tag (arg1 :: Term a1) (arg2 :: Term a2))) =
           SomeTerm $
             partialEvalBinary
@@ -145,6 +145,9 @@ evaluateSomeTerm fillDefault (Model ma) = gomemo
               (gotyped arg1)
               (gotyped arg2)
               (gotyped arg3)
+    go (SomeTerm (NotTerm _ arg)) = goUnary notb arg
+    goUnary :: (SupportedPrim a, SupportedPrim b) => (Term a -> Term b) -> Term a -> SomeTerm
+    goUnary f a = SomeTerm $ f (gotyped a)
 
 evaluateTerm :: forall a. (SupportedPrim a) => Bool -> Model -> Term a -> Term a
 evaluateTerm fillDefault m t = case evaluateSomeTerm fillDefault m $ SomeTerm t of
