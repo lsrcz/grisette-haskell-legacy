@@ -18,10 +18,13 @@ import Data.Typeable
 import GHC.Generics
 import Grisette.Core.Data.Class.Function
 import Grisette.Core.Data.MemoUtils
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Language.Haskell.TH.Syntax
 import qualified Type.Reflection as R
 import Unsafe.Coerce
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.SomeTerm
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 
 data FuncArg = FuncArg deriving (Show, Eq, Generic, Ord, Lift, Hashable, NFData)
 

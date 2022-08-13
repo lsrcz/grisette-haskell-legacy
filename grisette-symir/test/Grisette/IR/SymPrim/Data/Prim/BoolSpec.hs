@@ -5,7 +5,8 @@ module Grisette.IR.SymPrim.Data.Prim.BoolSpec where
 
 import Grisette.IR.SymPrim.Data.BV
 import Grisette.IR.SymPrim.Data.Prim.Bool
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 import Grisette.IR.SymPrim.Data.Prim.Num
 import Test.Hspec
 

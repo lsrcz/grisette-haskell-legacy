@@ -25,9 +25,11 @@ import Data.Typeable
 import GHC.Generics
 import Grisette.Core.Data.MemoUtils
 import Grisette.IR.SymPrim.Data.Prim.Bool
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.ModelValue
 import Unsafe.Coerce
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.SomeTerm
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 
 newtype Model = Model (M.HashMap TermSymbol ModelValue) deriving (Show, Eq, Generic, Hashable)
 
@@ -66,7 +68,7 @@ extendTo (Model m) s =
     S.foldl'
       ( \acc sym@(TermSymbol (_ :: Proxy t) _) -> case M.lookup sym acc of
           Just _ -> acc
-          Nothing -> M.insert sym (defaultValueDynamic @t) acc
+          Nothing -> M.insert sym (defaultValueDynamic (Proxy @t)) acc
       )
       m
       s

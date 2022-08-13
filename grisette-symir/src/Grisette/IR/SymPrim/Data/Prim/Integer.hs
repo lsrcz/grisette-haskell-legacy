@@ -25,7 +25,9 @@ import Data.Typeable
 import GHC.Generics
 import Grisette.IR.SymPrim.Data.Prim.Bool
 import Grisette.IR.SymPrim.Data.Prim.Helpers
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
 import Language.Haskell.TH.Syntax
 import Data.Hashable
 

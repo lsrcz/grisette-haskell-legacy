@@ -38,7 +38,9 @@ import GHC.TypeNats
 import Grisette.Core.Data.Class.BitVector
 import Grisette.IR.SymPrim.Data.Prim.Bool
 import Grisette.IR.SymPrim.Data.Prim.Helpers
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
 import Language.Haskell.TH.Syntax hiding (Type)
 import Language.Haskell.TH.Syntax.Compat
 import Type.Reflection

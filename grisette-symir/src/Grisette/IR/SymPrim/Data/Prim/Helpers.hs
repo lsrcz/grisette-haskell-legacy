@@ -32,8 +32,9 @@ where
 
 import Control.Monad.Except
 import Data.Typeable
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Unsafe.Coerce
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
 
 unsafeUnaryTermView :: forall a b tag. (Typeable tag) => Term a -> Maybe (tag, Term b)
 unsafeUnaryTermView (UnaryTerm _ (tag :: tagt) t1) =

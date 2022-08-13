@@ -46,13 +46,16 @@ import Grisette.IR.SymPrim.Data.Prim.Bits
 import Grisette.IR.SymPrim.Data.Prim.Bool
 import Grisette.IR.SymPrim.Data.Prim.GeneralFunc
 import Grisette.IR.SymPrim.Data.Prim.Integer
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.Model as PM
 import Grisette.IR.SymPrim.Data.Prim.Num
 import Grisette.IR.SymPrim.Data.Prim.TabularFunc
 import Grisette.IR.SymPrim.Data.TabularFunc
 import qualified Type.Reflection as R
 import Unsafe.Coerce
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.SomeTerm
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 
 newtype NatRepr (n :: Nat) = NatRepr Natural
 
@@ -1024,7 +1027,7 @@ signedBVTypeView t = case t of
   R.App s (n :: R.TypeRep w) ->
     case (R.eqTypeRep s (R.typeRep @IntN), R.eqTypeRep (R.typeRepKind n) (R.typeRep @Nat)) of
       (Just R.HRefl, Just R.HRefl) ->
-        Just $ unsafeBVIsNonZero @w $ withPrim @t (BVTypeContainer Proxy)
+        Just $ unsafeBVIsNonZero @w $ withPrim (Proxy @t) (BVTypeContainer Proxy)
       _ -> Nothing
   _ -> Nothing
   where
@@ -1046,7 +1049,7 @@ unsignedBVTypeView t = case t of
   R.App s (n :: R.TypeRep w) ->
     case (R.eqTypeRep s (R.typeRep @WordN), R.eqTypeRep (R.typeRepKind n) (R.typeRep @Nat)) of
       (Just R.HRefl, Just R.HRefl) ->
-        Just $ unsafeBVIsNonZero @w $ withPrim @t (BVTypeContainer Proxy)
+        Just $ unsafeBVIsNonZero @w $ withPrim (Proxy @t) (BVTypeContainer Proxy)
       _ -> Nothing
   _ -> Nothing
   where
@@ -1070,7 +1073,7 @@ tFunTypeView :: forall t. (SupportedPrim t) => R.TypeRep t -> Maybe (TFunTypeCon
 tFunTypeView t = case t of
   R.App (R.App arr (ta2' :: R.TypeRep a2)) (tr2' :: R.TypeRep r2) ->
     case R.eqTypeRep arr (R.typeRep @(=->)) of
-      Just R.HRefl -> Just $ withPrim @t $ TFunTypeContainer ta2' tr2'
+      Just R.HRefl -> Just $ withPrim (Proxy @t) $ TFunTypeContainer ta2' tr2'
       Nothing -> Nothing
   _ -> Nothing
 
@@ -1105,7 +1108,7 @@ gFunTypeView :: forall t. (SupportedPrim t) => R.TypeRep t -> Maybe (GFunTypeCon
 gFunTypeView t = case t of
   R.App (R.App arr (ta2' :: R.TypeRep a2)) (tr2' :: R.TypeRep r2) ->
     case R.eqTypeRep arr (R.typeRep @(-->)) of
-      Just R.HRefl -> Just $ withPrim @t $ GFunTypeContainer ta2' tr2'
+      Just R.HRefl -> Just $ withPrim (Proxy @t) $ GFunTypeContainer ta2' tr2'
       Nothing -> Nothing
   _ -> Nothing
 

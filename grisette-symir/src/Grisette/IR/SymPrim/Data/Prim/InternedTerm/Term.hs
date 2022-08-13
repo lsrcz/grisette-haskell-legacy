@@ -1,69 +1,40 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DefaultSignatures #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Grisette.IR.SymPrim.Data.Prim.InternedTerm
-  ( UnaryOp (..),
+module Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
+  ( SupportedPrim (..),
+    UnaryOp (..),
     BinaryOp (..),
     TernaryOp (..),
-    Term (..),
-    introSupportedPrimConstraint,
-    SomeTerm (..),
-    SupportedPrim (..),
     Symbol (..),
-    castTerm,
-    identity,
-    identityWithTypeRep,
-    pformat,
-    constructUnary,
-    constructBinary,
-    constructTernary,
-    concTerm,
-    symbTerm,
-    ssymbTerm,
-    isymbTerm,
-    sinfosymbTerm,
-    iinfosymbTerm,
-    extractSymbolicsTerm,
     TermSymbol (..),
-    termSize,
-    termsSize,
+    Term (..),
+    UTerm (..),
   )
 where
 
 import Control.DeepSeq
-import Control.Monad.State
-import Data.Array
-import Data.Dynamic
 import Data.Function (on)
-import qualified Data.HashMap.Strict as M
-import Data.HashSet as S
-import Data.Hashable (Hashable (hash, hashWithSalt))
-import Data.IORef (atomicModifyIORef')
+import Data.Hashable
 import Data.Interned
-import Data.Interned.Internal
+import Data.Kind
 import Data.Typeable
-import GHC.Exts (Constraint)
-import GHC.IO (unsafeDupablePerformIO)
 import GHC.TypeNats
 import Grisette.IR.SymPrim.Data.BV
-import Grisette.IR.SymPrim.Data.Prim.Caches
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Caches
+import {-# SOURCE #-} Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
+import {-# SOURCE #-} Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
 import Grisette.IR.SymPrim.Data.Prim.ModelValue
 import Language.Haskell.TH.Syntax
 import Language.Haskell.TH.Syntax.Compat
@@ -71,9 +42,9 @@ import Language.Haskell.TH.Syntax.Compat
 class (Lift t, Typeable t, Hashable t, Eq t, Show t, NFData t) => SupportedPrim t where
   type PrimConstraint t :: Constraint
   type PrimConstraint t = ()
-  default withPrim :: PrimConstraint t => (PrimConstraint t => a) -> a
-  withPrim :: (PrimConstraint t => a) -> a
-  withPrim i = i
+  default withPrim :: PrimConstraint t => proxy t -> (PrimConstraint t => a) -> a
+  withPrim :: proxy t -> (PrimConstraint t => a) -> a
+  withPrim _ i = i
   termCache :: Cache (Term t)
   termCache = typeMemoizedCache
 
@@ -82,11 +53,11 @@ class (Lift t, Typeable t, Hashable t, Eq t, Show t, NFData t) => SupportedPrim 
   pformatConc :: t -> String
   default pformatConc :: (Show t) => t -> String
   pformatConc = show
-  pformatSymb :: Symbol -> String
-  pformatSymb = show
+  pformatSymb :: proxy t -> Symbol -> String
+  pformatSymb _ = show
   defaultValue :: t
-  defaultValueDynamic :: ModelValue
-  defaultValueDynamic = toModelValue (defaultValue @t)
+  defaultValueDynamic :: proxy t -> ModelValue
+  defaultValueDynamic _ = toModelValue (defaultValue @t)
 
 class
   (SupportedPrim arg, SupportedPrim t, Lift tag, NFData tag, Show tag, Typeable tag, Eq tag, Hashable tag) =>
@@ -219,16 +190,6 @@ instance Lift (Term t) where
   liftTyped (BinaryTerm _ tag arg1 arg2) = [||constructBinary tag arg1 arg2||]
   liftTyped (TernaryTerm _ tag arg1 arg2 arg3) = [||constructTernary tag arg1 arg2 arg3||]
 
-introSupportedPrimConstraint :: forall t a. Term t -> ((SupportedPrim t) => a) -> a
-introSupportedPrimConstraint ConcTerm {} x = x
-introSupportedPrimConstraint SymbTerm {} x = x
-introSupportedPrimConstraint UnaryTerm {} x = x
-introSupportedPrimConstraint BinaryTerm {} x = x
-introSupportedPrimConstraint TernaryTerm {} x = x
-
-data SomeTerm where
-  SomeTerm :: forall a. (SupportedPrim a) => Term a -> SomeTerm
-
 instance Show (Term ty) where
   show (ConcTerm i v) = "ConcTerm{id=" ++ show i ++ ", v=" ++ show v ++ "}"
   show (SymbTerm i name) =
@@ -248,6 +209,12 @@ instance Show (Term ty) where
       ++ ", arg3="
       ++ show arg3
       ++ "}"
+
+instance (SupportedPrim t) => Eq (Term t) where
+  (==) = (==) `on` identity
+
+instance (SupportedPrim t) => Hashable (Term t) where
+  hashWithSalt s t = hashWithSalt s $ identity t
 
 data UTerm t where
   UConcTerm :: (SupportedPrim t) => !t -> UTerm t
@@ -302,20 +269,6 @@ instance (SupportedPrim t) => Interned (Term t) where
       go (UTernaryTerm tag tm1 tm2 tm3) = TernaryTerm i tag tm1 tm2 tm3
   cache = termCache
 
-identity :: Term t -> Id
-identity (ConcTerm i _) = i
-identity (SymbTerm i _) = i
-identity (UnaryTerm i _ _) = i
-identity (BinaryTerm i _ _ _) = i
-identity (TernaryTerm i _ _ _ _) = i
-
-identityWithTypeRep :: forall t. Term t -> (TypeRep, Id)
-identityWithTypeRep (ConcTerm i _) = (typeRep (Proxy @t), i)
-identityWithTypeRep (SymbTerm i _) = (typeRep (Proxy @t), i)
-identityWithTypeRep (UnaryTerm i _ _) = (typeRep (Proxy @t), i)
-identityWithTypeRep (BinaryTerm i _ _ _) = (typeRep (Proxy @t), i)
-identityWithTypeRep (TernaryTerm i _ _ _ _) = (typeRep (Proxy @t), i)
-
 instance (SupportedPrim t) => Eq (Description (Term t)) where
   DConcTerm (l :: tyl) == DConcTerm (r :: tyr) = cast @tyl @tyr l == Just r
   DSymbTerm ls == DSymbTerm rs = ls == rs
@@ -342,151 +295,6 @@ instance (SupportedPrim t) => Hashable (Description (Term t)) where
   hashWithSalt s (DTernaryTerm tag id1 id2 id3) =
     s `hashWithSalt` (4 :: Int) `hashWithSalt` tag `hashWithSalt` id1 `hashWithSalt` id2 `hashWithSalt` id3
 
-instance (SupportedPrim t) => Eq (Term t) where
-  (==) = (==) `on` identity
-
-instance (SupportedPrim t) => Hashable (Term t) where
-  hashWithSalt s t = hashWithSalt s $ identity t
-
-{-
-addTermToReverseCache :: forall t. (SupportedPrim t) => Term t -> IO ()
-addTermToReverseCache t = addToReverseCache (identity t) t (termReverseCache @t)
-
-findTermInReverseCache :: forall t. (SupportedPrim t) => Id -> Maybe (Term t)
-findTermInReverseCache i = unsafeDupablePerformIO $ findInReverseCache i (termReverseCache @t)
--}
-
-instance Eq SomeTerm where
-  (SomeTerm t1) == (SomeTerm t2) = identityWithTypeRep t1 == identityWithTypeRep t2
-
-instance Hashable SomeTerm where
-  hashWithSalt s (SomeTerm t) = hashWithSalt s $ identityWithTypeRep t
-
-instance Show SomeTerm where
-  show (SomeTerm t) = show t
-
-castTerm :: forall a b. (Typeable b) => Term a -> Maybe (Term b)
-castTerm t@ConcTerm {} = cast t
-castTerm t@SymbTerm {} = cast t
-castTerm t@UnaryTerm {} = cast t
-castTerm t@BinaryTerm {} = cast t
-castTerm t@TernaryTerm {} = cast t
-
-pformat :: forall t. (SupportedPrim t) => Term t -> String
-pformat (ConcTerm _ t) = pformatConc t
-pformat (SymbTerm _ (TermSymbol _ symb)) = pformatSymb @t symb
-pformat (UnaryTerm _ tag arg1) = pformatUnary tag arg1
-pformat (BinaryTerm _ tag arg1 arg2) = pformatBinary tag arg1 arg2
-pformat (TernaryTerm _ tag arg1 arg2 arg3) = pformatTernary tag arg1 arg2 arg3
-
-internTerm :: forall t. (SupportedPrim t) => Uninterned (Term t) -> Term t
-internTerm !bt = unsafeDupablePerformIO $ do
-  t <- atomicModifyIORef' slot go
-  -- (b, t) <- atomicModifyIORef' slot go
-  -- when b $ addTermToReverseCache t
-  {-
-    atomicModifyIORef' (getReverseCache (termReverseCache @t)) $ \m ->
-      (M.insert (identity t) t m, ())
-      -}
-  return t
-  where
-    slot = getCache cache ! r
-    !dt = describe bt
-    !hdt = hash dt
-    !wid = cacheWidth dt
-    r = hdt `mod` wid
-    go (CacheState i m) = case M.lookup dt m of
-      Nothing -> let t = identify (wid * i + r) bt in (CacheState (i + 1) (M.insert dt t m), t)
-      Just t -> (CacheState i m, t)
-
-constructUnary ::
-  forall tag arg t.
-  (SupportedPrim t, UnaryOp tag arg t, Typeable tag, Typeable t, Show tag) =>
-  tag ->
-  Term arg ->
-  Term t
-constructUnary tag tm = let x = internTerm $ UUnaryTerm tag tm in x
-
-constructBinary ::
-  forall tag arg1 arg2 t.
-  (SupportedPrim t, BinaryOp tag arg1 arg2 t, Typeable tag, Typeable t, Show tag) =>
-  tag ->
-  Term arg1 ->
-  Term arg2 ->
-  Term t
-constructBinary tag tm1 tm2 = internTerm $ UBinaryTerm tag tm1 tm2
-
-constructTernary ::
-  forall tag arg1 arg2 arg3 t.
-  (SupportedPrim t, TernaryOp tag arg1 arg2 arg3 t, Typeable tag, Typeable t, Show tag) =>
-  tag ->
-  Term arg1 ->
-  Term arg2 ->
-  Term arg3 ->
-  Term t
-constructTernary tag tm1 tm2 tm3 = internTerm $ UTernaryTerm tag tm1 tm2 tm3
-
-concTerm :: (SupportedPrim t, Typeable t, Hashable t, Eq t, Show t) => t -> Term t
-concTerm t = internTerm $ UConcTerm t
-
-symbTerm :: forall t. (SupportedPrim t, Typeable t) => Symbol -> Term t
-symbTerm t = internTerm $ USymbTerm (TermSymbol (Proxy @t) t)
-
-ssymbTerm :: (SupportedPrim t, Typeable t) => String -> Term t
-ssymbTerm = symbTerm . SimpleSymbol
-
-isymbTerm :: (SupportedPrim t, Typeable t) => String -> Int -> Term t
-isymbTerm str idx = symbTerm $ IndexedSymbol str idx
-
-sinfosymbTerm :: (SupportedPrim t, Typeable t, Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) => String -> a -> Term t
-sinfosymbTerm s info = symbTerm $ WithInfo (SimpleSymbol s) info
-
-iinfosymbTerm :: (SupportedPrim t, Typeable t, Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) => String -> Int -> a -> Term t
-iinfosymbTerm str idx info = symbTerm $ WithInfo (IndexedSymbol str idx) info
-
-extractSymbolicsSomeTerm :: SomeTerm -> S.HashSet TermSymbol
-extractSymbolicsSomeTerm t1 = evalState (gocached t1) M.empty
-  where
-    gocached :: SomeTerm -> State (M.HashMap SomeTerm (S.HashSet TermSymbol)) (S.HashSet TermSymbol)
-    gocached t = do
-      v <- gets (M.lookup t)
-      case v of
-        Just x -> return x
-        Nothing -> do
-          res <- go t
-          st <- get
-          put $ M.insert t res st
-          return res
-    go :: SomeTerm -> State (M.HashMap SomeTerm (S.HashSet TermSymbol)) (S.HashSet TermSymbol)
-    go (SomeTerm ConcTerm {}) = return $ S.empty
-    go (SomeTerm (SymbTerm _ symb)) = return $ S.singleton symb
-    go (SomeTerm (UnaryTerm _ _ arg)) = gocached (SomeTerm arg)
-    go (SomeTerm (BinaryTerm _ _ arg1 arg2)) = do
-      r1 <- gocached (SomeTerm arg1)
-      r2 <- gocached (SomeTerm arg2)
-      return $ r1 <> r2
-    go (SomeTerm (TernaryTerm _ _ arg1 arg2 arg3)) = do
-      r1 <- gocached (SomeTerm arg1)
-      r2 <- gocached (SomeTerm arg2)
-      r3 <- gocached (SomeTerm arg3)
-      return $ r1 <> r2 <> r3
-
-extractSymbolicsTerm :: (SupportedPrim a) => Term a -> S.HashSet TermSymbol
-extractSymbolicsTerm t = extractSymbolicsSomeTerm (SomeTerm t)
-
-{-
-To prove that we are doing interning correctly, we ensured that:
-1. For two terms with the same type t, if sub term has different type, the id must not be identical.
-2. For two terms with the same type t, identical id means that same term. This could be proved by induction
-  a. (Base case) concrete nodes (trivial)
-  b. (Base case) symbolic nodes (trivial)
-  c. (Induction) unary node. If the ids are identical, the sub-terms must have the same type (by 1).
-     By the induction hypothesis, the sub-terms must be identical, then the proof is trivial.
-  d. ...
-  e. ...
-QED
--}
-
 -- Basic Bool
 defaultValueForBool :: Bool
 defaultValueForBool = False
@@ -498,7 +306,7 @@ instance SupportedPrim Bool where
   pformatConc True = "true"
   pformatConc False = "false"
   defaultValue = defaultValueForBool
-  defaultValueDynamic = defaultValueForBoolDyn
+  defaultValueDynamic _ = defaultValueForBoolDyn
 
 defaultValueForInteger :: Integer
 defaultValueForInteger = 0
@@ -510,7 +318,7 @@ defaultValueForIntegerDyn = toModelValue defaultValueForInteger
 instance SupportedPrim Integer where
   pformatConc i = show i ++ "I"
   defaultValue = defaultValueForInteger
-  defaultValueDynamic = defaultValueForIntegerDyn
+  defaultValueDynamic _ = defaultValueForIntegerDyn
 
 -- Signed BV
 {-
@@ -537,39 +345,3 @@ instance (KnownNat w, 1 <= w) => SupportedPrim (WordN w) where
   type PrimConstraint (WordN w) = (KnownNat w, 1 <= w)
   pformatConc i = show i
   defaultValue = 0
-
-termsSize :: [Term a] -> Int
-termsSize terms = S.size $ execState (traverse go terms) S.empty
-  where
-    exists t = gets (S.member (SomeTerm t))
-    add t = modify' (S.insert (SomeTerm t))
-    go :: forall b. Term b -> State (S.HashSet SomeTerm) ()
-    go t@ConcTerm {} = add t
-    go t@SymbTerm {} = add t
-    go t@(UnaryTerm _ _ arg) = do
-      b <- exists t
-      if b
-        then return ()
-        else do
-          add t
-          go arg
-    go t@(BinaryTerm _ _ arg1 arg2) = do
-      b <- exists t
-      if b
-        then return ()
-        else do
-          add t
-          go arg1
-          go arg2
-    go t@(TernaryTerm _ _ arg1 arg2 arg3) = do
-      b <- exists t
-      if b
-        then return ()
-        else do
-          add t
-          go arg1
-          go arg2
-          go arg3
-
-termSize :: Term a -> Int
-termSize term = termsSize [term]

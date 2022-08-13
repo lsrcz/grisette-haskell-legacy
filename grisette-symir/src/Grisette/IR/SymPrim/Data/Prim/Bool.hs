@@ -49,11 +49,13 @@ import Data.Maybe
 import Data.Typeable
 import GHC.Generics
 import Grisette.IR.SymPrim.Data.Prim.Helpers
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import {-# SOURCE #-} Grisette.IR.SymPrim.Data.Prim.Num
 import Grisette.IR.SymPrim.Data.Prim.Utils
 import Language.Haskell.TH.Syntax
 import Unsafe.Coerce
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
 
 trueTerm :: Term Bool
 trueTerm = concTerm True

@@ -14,11 +14,13 @@ import Language.Haskell.TH.Syntax
 import GHC.Generics
 import Control.DeepSeq
 import Data.Hashable
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.Helpers
 import Grisette.IR.SymPrim.Data.GeneralFunc
 import Data.Typeable
 import Grisette.Core.Data.Class.Function
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 
 generalFuncConcTermView :: forall a b c. (Typeable b, Typeable c) => Term a -> Maybe (b --> c)
 generalFuncConcTermView (ConcTerm _ b) = cast b

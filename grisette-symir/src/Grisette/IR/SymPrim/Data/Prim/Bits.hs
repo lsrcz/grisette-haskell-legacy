@@ -35,10 +35,12 @@ import Data.Bits
 import Data.Typeable
 import Grisette.IR.SymPrim.Data.Prim.Bool
 import Grisette.IR.SymPrim.Data.Prim.Helpers
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Language.Haskell.TH.Syntax
 import Data.Hashable
 import Language.Haskell.TH.Syntax.Compat
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
 
 bitsConcTermView :: (Bits b, Typeable b) => Term a -> Maybe b
 bitsConcTermView (ConcTerm _ b) = cast b

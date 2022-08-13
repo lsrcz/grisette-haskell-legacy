@@ -38,11 +38,14 @@ library
       Grisette.IR.SymPrim.Data.Prim.Bits
       Grisette.IR.SymPrim.Data.Prim.Bool
       Grisette.IR.SymPrim.Data.Prim.BV
-      Grisette.IR.SymPrim.Data.Prim.Caches
       Grisette.IR.SymPrim.Data.Prim.GeneralFunc
       Grisette.IR.SymPrim.Data.Prim.Helpers
       Grisette.IR.SymPrim.Data.Prim.Integer
-      Grisette.IR.SymPrim.Data.Prim.InternedTerm
+      Grisette.IR.SymPrim.Data.Prim.InternedTerm.Caches
+      Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
+      Grisette.IR.SymPrim.Data.Prim.InternedTerm.SomeTerm
+      Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
+      Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
       Grisette.IR.SymPrim.Data.Prim.Model
       Grisette.IR.SymPrim.Data.Prim.ModelValue
       Grisette.IR.SymPrim.Data.Prim.Num

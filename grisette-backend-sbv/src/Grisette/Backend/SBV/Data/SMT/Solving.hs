@@ -24,13 +24,14 @@ import Grisette.Core.Data.Class.Evaluate
 import Grisette.Core.Data.Class.ExtractSymbolics
 import Grisette.Core.Data.Class.Solver
 import Grisette.IR.SymPrim.Data.Prim.Bool
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.Model as PM
 import Grisette.Backend.SBV.Data.SMT.Config
 import Grisette.Backend.SBV.Data.SMT.Lowering
 import Grisette.IR.SymPrim.Data.SymPrim
 import Grisette.Core.Control.Exception
 import Grisette.Core.Data.Class.PrimWrapper
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 
 solveTermWith ::
   forall integerBitWidth.

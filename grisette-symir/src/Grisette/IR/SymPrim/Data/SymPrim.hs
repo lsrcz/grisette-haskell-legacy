@@ -59,13 +59,15 @@ import Grisette.IR.SymPrim.Data.Prim.Bits
 import Grisette.IR.SymPrim.Data.Prim.Bool
 import Grisette.IR.SymPrim.Data.Prim.GeneralFunc
 import Grisette.IR.SymPrim.Data.Prim.Integer
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.Model
 import Grisette.IR.SymPrim.Data.Prim.Num
 import Grisette.IR.SymPrim.Data.Prim.TabularFunc
 import Grisette.IR.SymPrim.Data.TabularFunc
 import Grisette.Lib.Control.Monad
 import Language.Haskell.TH.Syntax
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
 
 newtype Sym a = Sym {underlyingTerm :: Term a} deriving (Lift, Generic)
 
@@ -153,12 +155,12 @@ instance (SupportedPrim (type)) => SEq (Sym Bool) (Sym (type)) where \
 
 #define SORD_SYM(type) \
 instance (SupportedPrim (type)) => SOrd (Sym Bool) (Sym (type)) where \
-  (Sym a) <=~ (Sym b) = Sym $ withPrim @(type) $ leNum a b; \
-  (Sym a) <~ (Sym b) = Sym $ withPrim @(type) $ ltNum a b; \
-  (Sym a) >=~ (Sym b) = Sym $ withPrim @(type) $ geNum a b; \
-  (Sym a) >~ (Sym b) = Sym $ withPrim @(type) $ gtNum a b; \
+  (Sym a) <=~ (Sym b) = Sym $ withPrim (Proxy @(type)) $ leNum a b; \
+  (Sym a) <~ (Sym b) = Sym $ withPrim (Proxy @(type)) $ ltNum a b; \
+  (Sym a) >=~ (Sym b) = Sym $ withPrim (Proxy @(type)) $ geNum a b; \
+  (Sym a) >~ (Sym b) = Sym $ withPrim (Proxy @(type)) $ gtNum a b; \
   a `symCompare` b = \
-    withPrim @(type) $ mrgIf \
+    withPrim (Proxy @(type)) $ mrgIf \
       (a <~ b) \
       (mrgReturn LT) \
       (mrgIf (a ==~ b) (mrgReturn EQ) (mrgReturn GT))
@@ -224,28 +226,28 @@ instance SymIntegerOp (Sym Bool) (Sym Integer)
 type SymIntN n = Sym (IntN n)
 
 instance (SupportedPrim (IntN n)) => Num (Sym (IntN n)) where
-  (Sym l) + (Sym r) = Sym $ withPrim @(IntN n) $ addNum l r
-  (Sym l) - (Sym r) = Sym $ withPrim @(IntN n) $ minusNum l r
-  (Sym l) * (Sym r) = Sym $ withPrim @(IntN n) $ timesNum l r
-  negate (Sym v) = Sym $ withPrim @(IntN n) $ uminusNum v
-  abs (Sym v) = Sym $ withPrim @(IntN n) $ absNum v
-  signum (Sym v) = Sym $ withPrim @(IntN n) $ signumNum v
-  fromInteger i = withPrim @(IntN n) $ conc $ fromInteger i
+  (Sym l) + (Sym r) = Sym $ withPrim (Proxy @(IntN n)) $ addNum l r
+  (Sym l) - (Sym r) = Sym $ withPrim (Proxy @(IntN n)) $ minusNum l r
+  (Sym l) * (Sym r) = Sym $ withPrim (Proxy @(IntN n)) $ timesNum l r
+  negate (Sym v) = Sym $ withPrim (Proxy @(IntN n)) $ uminusNum v
+  abs (Sym v) = Sym $ withPrim (Proxy @(IntN n)) $ absNum v
+  signum (Sym v) = Sym $ withPrim (Proxy @(IntN n)) $ signumNum v
+  fromInteger i = withPrim (Proxy @(IntN n)) $ conc $ fromInteger i
 
 instance (SupportedPrim (IntN n)) => Bits (Sym (IntN n)) where
-  Sym l .&. Sym r = Sym $ withPrim @(IntN n) $ bitand l r
-  Sym l .|. Sym r = Sym $ withPrim @(IntN n) $ bitor l r
-  Sym l `xor` Sym r = Sym $ withPrim @(IntN n) $ bitxor l r
-  complement (Sym n) = Sym $ withPrim @(IntN n) $ bitneg n
-  shift (Sym n) i = Sym $ withPrim @(IntN n) $ bitshift n i
-  rotate (Sym n) i = Sym $ withPrim @(IntN n) $ bitrotate n i
-  bitSize _ = fromInteger $ withPrim @(IntN n) $ natVal (Proxy @n)
-  bitSizeMaybe _ = Just $ fromInteger $ withPrim @(IntN n) $ natVal (Proxy @n)
+  Sym l .&. Sym r = Sym $ withPrim (Proxy @(IntN n)) $ bitand l r
+  Sym l .|. Sym r = Sym $ withPrim (Proxy @(IntN n)) $ bitor l r
+  Sym l `xor` Sym r = Sym $ withPrim (Proxy @(IntN n)) $ bitxor l r
+  complement (Sym n) = Sym $ withPrim (Proxy @(IntN n)) $ bitneg n
+  shift (Sym n) i = Sym $ withPrim (Proxy @(IntN n)) $ bitshift n i
+  rotate (Sym n) i = Sym $ withPrim (Proxy @(IntN n)) $ bitrotate n i
+  bitSize _ = fromInteger $ withPrim (Proxy @(IntN n)) $ natVal (Proxy @n)
+  bitSizeMaybe _ = Just $ fromInteger $ withPrim (Proxy @(IntN n)) $ natVal (Proxy @n)
   isSigned _ = True
-  testBit (Conc n) = withPrim @(IntN n) $ testBit n
+  testBit (Conc n) = withPrim (Proxy @(IntN n)) $ testBit n
   testBit _ = error "You cannot call testBit on symbolic variables"
-  bit = withPrim @(IntN n) $ conc . bit
-  popCount (Conc n) = withPrim @(IntN n) $ popCount n
+  bit = withPrim (Proxy @(IntN n)) $ conc . bit
+  popCount (Conc n) = withPrim (Proxy @(IntN n)) $ popCount n
   popCount _ = error "You cannot call popCount on symbolic variables"
 
 instance
@@ -317,13 +319,13 @@ TOCON_MACHINE_INTEGER (WordN, $(intBitwidthQ), Word)
 type SymWordN n = Sym (WordN n)
 
 instance (SupportedPrim (WordN n)) => Num (Sym (WordN n)) where
-  (Sym l) + (Sym r) = Sym $ withPrim @(WordN n) $ addNum l r
-  (Sym l) - (Sym r) = Sym $ withPrim @(WordN n) $ minusNum l r
-  (Sym l) * (Sym r) = Sym $ withPrim @(WordN n) $ timesNum l r
-  negate (Sym v) = Sym $ withPrim @(WordN n) $ uminusNum v
-  abs (Sym v) = Sym $ withPrim @(WordN n) $ absNum v
-  signum (Sym v) = Sym $ withPrim @(WordN n) $ signumNum v
-  fromInteger i = withPrim @(WordN n) $ conc $ fromInteger i
+  (Sym l) + (Sym r) = Sym $ withPrim (Proxy @(WordN n)) $ addNum l r
+  (Sym l) - (Sym r) = Sym $ withPrim (Proxy @(WordN n)) $ minusNum l r
+  (Sym l) * (Sym r) = Sym $ withPrim (Proxy @(WordN n)) $ timesNum l r
+  negate (Sym v) = Sym $ withPrim (Proxy @(WordN n)) $ uminusNum v
+  abs (Sym v) = Sym $ withPrim (Proxy @(WordN n)) $ absNum v
+  signum (Sym v) = Sym $ withPrim (Proxy @(WordN n)) $ signumNum v
+  fromInteger i = withPrim (Proxy @(WordN n)) $ conc $ fromInteger i
 
 instance
   (KnownNat w', KnownNat n, KnownNat w, w' ~ (n + w), 1 <= n, 1 <= w, 1 <= w') =>
@@ -360,19 +362,19 @@ instance
   bvselect pix pw (Sym v) = Sym $ bvtselect pix pw v
 
 instance (SupportedPrim (WordN n)) => Bits (Sym (WordN n)) where
-  Sym l .&. Sym r = Sym $ withPrim @(WordN n) $ bitand l r
-  Sym l .|. Sym r = Sym $ withPrim @(WordN n) $ bitor l r
-  Sym l `xor` Sym r = Sym $ withPrim @(WordN n) $ bitxor l r
-  complement (Sym n) = Sym $ withPrim @(WordN n) $ bitneg n
-  shift (Sym n) i = Sym $ withPrim @(WordN n) $ bitshift n i
-  rotate (Sym n) i = Sym $ withPrim @(WordN n) $ bitrotate n i
-  bitSize _ = fromInteger $ withPrim @(WordN n) $ natVal (Proxy @n)
-  bitSizeMaybe _ = Just $ fromInteger $ withPrim @(WordN n) $ natVal (Proxy @n)
+  Sym l .&. Sym r = Sym $ withPrim (Proxy @(WordN n)) $ bitand l r
+  Sym l .|. Sym r = Sym $ withPrim (Proxy @(WordN n)) $ bitor l r
+  Sym l `xor` Sym r = Sym $ withPrim (Proxy @(WordN n)) $ bitxor l r
+  complement (Sym n) = Sym $ withPrim (Proxy @(WordN n)) $ bitneg n
+  shift (Sym n) i = Sym $ withPrim (Proxy @(WordN n)) $ bitshift n i
+  rotate (Sym n) i = Sym $ withPrim (Proxy @(WordN n)) $ bitrotate n i
+  bitSize _ = fromInteger $ withPrim (Proxy @(WordN n)) $ natVal (Proxy @n)
+  bitSizeMaybe _ = Just $ fromInteger $ withPrim (Proxy @(WordN n)) $ natVal (Proxy @n)
   isSigned _ = False
-  testBit (Conc n) = withPrim @(WordN n) $ testBit n
+  testBit (Conc n) = withPrim (Proxy @(WordN n)) $ testBit n
   testBit _ = error "You cannot call testBit on symbolic variables"
-  bit = withPrim @(WordN n) $ conc . bit
-  popCount (Conc n) = withPrim @(WordN n) $ popCount n
+  bit = withPrim (Proxy @(WordN n)) $ conc . bit
+  popCount (Conc n) = withPrim (Proxy @(WordN n)) $ popCount n
   popCount _ = error "You cannot call popCount on symbolic variables"
 
 -- tabular func
