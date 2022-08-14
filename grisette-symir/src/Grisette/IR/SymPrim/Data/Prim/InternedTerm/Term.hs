@@ -19,6 +19,7 @@ module Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
     TernaryOp (..),
     Symbol (..),
     TermSymbol (..),
+    termSymbol,
     Term (..),
     UTerm (..),
   )
@@ -29,13 +30,15 @@ import Data.Function (on)
 import Data.Hashable
 import Data.Interned
 import Data.Kind
-import Data.Typeable
+import Type.Reflection
+import Data.Typeable (cast)
 import GHC.TypeNats
 import Grisette.IR.SymPrim.Data.BV
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Caches
 import {-# SOURCE #-} Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 import {-# SOURCE #-} Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
 import Grisette.IR.SymPrim.Data.Prim.ModelValue
+import Grisette.IR.SymPrim.Data.Prim.Utils
 import Language.Haskell.TH.Syntax
 import Language.Haskell.TH.Syntax.Compat
 
@@ -103,16 +106,16 @@ data Symbol where
 instance Eq Symbol where
   SimpleSymbol x == SimpleSymbol y = x == y
   IndexedSymbol x i == IndexedSymbol y j = i == j && x == y
-  WithInfo s1 (i1 :: a) == WithInfo s2 (i2 :: b) = case eqT @a @b of
-    Just Refl -> i1 == i2 && s1 == s2
+  WithInfo s1 (i1 :: a) == WithInfo s2 (i2 :: b) = case eqTypeRep (typeRep @a) (typeRep @b) of
+    Just HRefl -> i1 == i2 && s1 == s2
     _ -> False
   _ == _ = False
 
 instance Ord Symbol where
   SimpleSymbol x <= SimpleSymbol y = x <= y
   IndexedSymbol x i <= IndexedSymbol y j = i < j || (i == j && x <= y)
-  WithInfo s1 (i1 :: a) <= WithInfo s2 (i2 :: b) = case eqT @a @b of
-    Just Refl -> s1 < s2 || (s1 == s2 && i1 <= i2)
+  WithInfo s1 (i1 :: a) <= WithInfo s2 (i2 :: b) = case eqTypeRep (typeRep @a) (typeRep @b) of
+    Just HRefl -> s1 < s2 || (s1 == s2 && i1 <= i2)
     _ -> False
   _ <= _ = False
 
@@ -137,22 +140,25 @@ instance NFData Symbol where
   rnf (WithInfo s info) = rnf s `seq` rnf info
 
 data TermSymbol where
-  TermSymbol :: forall t. (SupportedPrim t) => Proxy t -> Symbol -> TermSymbol
+  TermSymbol :: forall t. (SupportedPrim t) => TypeRep t -> Symbol -> TermSymbol
+
+termSymbol :: forall proxy t. (SupportedPrim t) => proxy t -> Symbol -> TermSymbol
+termSymbol _ = TermSymbol (typeRep @t)
 
 instance NFData TermSymbol where
-  rnf (TermSymbol p s) = rnf p `seq` rnf s
+  rnf (TermSymbol p s) = rnf (SomeTypeRep p) `seq` rnf s
 
 instance Eq TermSymbol where
-  (TermSymbol p1 s1) == (TermSymbol p2 s2) = s1 == s2 && typeRep p1 == typeRep p2
+  (TermSymbol t1 s1) == (TermSymbol t2 s2) = s1 == s2 && eqTypeRepBool t1 t2
 
 instance Ord TermSymbol where
-  (TermSymbol p1 s1) <= (TermSymbol p2 s2) = typeRep p1 < typeRep p2 || (typeRep p1 == typeRep p2 && s1 <= s2)
+  (TermSymbol t1 s1) <= (TermSymbol t2 s2) = SomeTypeRep t1 < SomeTypeRep t2 || (eqTypeRepBool t1 t2 && s1 <= s2)
 
 instance Hashable TermSymbol where
-  hashWithSalt s (TermSymbol p1 s1) = s `hashWithSalt` s1 `hashWithSalt` typeRep p1
+  hashWithSalt s (TermSymbol t1 s1) = s `hashWithSalt` s1 `hashWithSalt` t1
 
 instance Show TermSymbol where
-  show (TermSymbol t s) = show s ++ " :: " ++ show (typeRep t)
+  show (TermSymbol t s) = show s ++ " :: " ++ show t
 
 data Term t where
   ConcTerm :: (SupportedPrim t) => {-# UNPACK #-} !Id -> !t -> Term t
@@ -204,7 +210,7 @@ instance Show (Term ty) where
   show (ConcTerm i v) = "ConcTerm{id=" ++ show i ++ ", v=" ++ show v ++ "}"
   show (SymbTerm i name) =
     "SymbTerm{id=" ++ show i ++ ", name=" ++ show name ++ ", type="
-      ++ show (typeRep (Proxy @ty))
+      ++ show (typeRep @ty)
       ++ "}"
   show (UnaryTerm i tag arg) = "Unary{id=" ++ show i ++ ", tag=" ++ show tag ++ ", arg=" ++ show arg ++ "}"
   show (BinaryTerm i tag arg1 arg2) =
@@ -254,42 +260,46 @@ data UTerm t where
   UEqvTerm :: SupportedPrim t => !(Term t) -> !(Term t) -> UTerm Bool
   UITETerm :: SupportedPrim t => !(Term Bool) -> !(Term t) -> !(Term t) -> UTerm t
 
+eqTypedId :: (TypeRep a, Id) -> (TypeRep b, Id) -> Bool
+eqTypedId (a, i1) (b, i2) = i1 == i2 && eqTypeRepBool a b
+{-# INLINE eqTypedId #-}
+
 instance (SupportedPrim t) => Interned (Term t) where
   type Uninterned (Term t) = UTerm t
   data Description (Term t) where
     DConcTerm :: t -> Description (Term t)
     DSymbTerm :: TermSymbol -> Description (Term t)
-    DUnaryTerm :: (UnaryOp tag arg t) => !tag -> (TypeRep, Id) -> Description (Term t)
+    DUnaryTerm :: (UnaryOp tag arg t) => !tag -> {-# UNPACK #-} !(TypeRep arg, Id) -> Description (Term t)
     DBinaryTerm ::
       (BinaryOp tag arg1 arg2 t) =>
-      tag ->
-      (TypeRep, Id) ->
-      (TypeRep, Id) ->
+      !tag ->
+      {-# UNPACK #-} !(TypeRep arg1, Id) ->
+      {-# UNPACK #-} !(TypeRep arg2, Id) ->
       Description (Term t)
     DTernaryTerm ::
       (TernaryOp tag arg1 arg2 arg3 t) =>
-      tag ->
-      (TypeRep, Id) ->
-      (TypeRep, Id) ->
-      (TypeRep, Id) ->
+      !tag ->
+      {-# UNPACK #-} !(TypeRep arg1, Id) ->
+      {-# UNPACK #-} !(TypeRep arg2, Id) ->
+      {-# UNPACK #-} !(TypeRep arg3, Id) ->
       Description (Term t)
     DNotTerm :: {-# UNPACK #-} !Id -> Description (Term Bool)
     DOrTerm :: {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term Bool)
     DAndTerm :: {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term Bool)
-    DEqvTerm :: TypeRep -> {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term Bool)
-    DITETerm :: TypeRep -> {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term t)
+    DEqvTerm :: TypeRep args -> {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term Bool)
+    DITETerm :: {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term t)
   describe (UConcTerm v) = DConcTerm v
   describe ((USymbTerm name) :: UTerm t) = DSymbTerm @t name
-  describe ((UUnaryTerm (tag :: tagt) (tm :: Term arg)) :: UTerm t) = DUnaryTerm @tagt @arg @t tag (typeRep (Proxy @arg), identity tm)
+  describe ((UUnaryTerm (tag :: tagt) (tm :: Term arg)) :: UTerm t) = DUnaryTerm tag (typeRep :: TypeRep arg, identity tm)
   describe ((UBinaryTerm (tag :: tagt) (tm1 :: Term arg1) (tm2 :: Term arg2)) :: UTerm t) =
-    DBinaryTerm @tagt @arg1 @arg2 @t tag (typeRep (Proxy @arg1), identity tm1) (typeRep (Proxy @arg2), identity tm2)
+    DBinaryTerm @tagt @arg1 @arg2 @t tag (typeRep, identity tm1) (typeRep, identity tm2)
   describe ((UTernaryTerm (tag :: tagt) (tm1 :: Term arg1) (tm2 :: Term arg2) (tm3 :: Term arg3)) :: UTerm t) =
-    DTernaryTerm @tagt @arg1 @arg2 @arg3 @t tag (typeRep (Proxy @arg1), identity tm1) (typeRep (Proxy @arg2), identity tm2) (typeRep (Proxy @arg3), identity tm3)
+    DTernaryTerm @tagt @arg1 @arg2 @arg3 @t tag (typeRep, identity tm1) (typeRep, identity tm2) (typeRep, identity tm3)
   describe (UNotTerm arg) = DNotTerm (identity arg)
   describe (UOrTerm arg1 arg2) = DOrTerm (identity arg1) (identity arg2)
   describe (UAndTerm arg1 arg2) = DAndTerm (identity arg1) (identity arg2)
-  describe (UEqvTerm (arg1 :: Term arg) arg2) = DEqvTerm (typeRep (Proxy @arg)) (identity arg1) (identity arg2)
-  describe (UITETerm cond (l :: Term arg) r) = DITETerm (typeRep (Proxy @arg)) (identity cond) (identity l) (identity r)
+  describe (UEqvTerm (arg1 :: Term arg) arg2) = DEqvTerm (typeRep :: TypeRep arg) (identity arg1) (identity arg2)
+  describe (UITETerm cond (l :: Term arg) r) = DITETerm (identity cond) (identity l) (identity r)
   identify i = go
     where
       go (UConcTerm v) = ConcTerm i v
@@ -307,23 +317,16 @@ instance (SupportedPrim t) => Interned (Term t) where
 instance (SupportedPrim t) => Eq (Description (Term t)) where
   DConcTerm (l :: tyl) == DConcTerm (r :: tyr) = cast @tyl @tyr l == Just r
   DSymbTerm ls == DSymbTerm rs = ls == rs
-  DUnaryTerm (tagl :: tagl) li == DUnaryTerm (tagr :: tagr) ri =
-    case eqT @tagl @tagr of
-      Just Refl -> tagl == tagr && li == ri
-      Nothing -> False
+  DUnaryTerm (tagl :: tagl) li == DUnaryTerm (tagr :: tagr) ri = eqHetero tagl tagr && eqTypedId li ri
   DBinaryTerm (tagl :: tagl) li1 li2 == DBinaryTerm (tagr :: tagr) ri1 ri2 =
-    case eqT @tagl @tagr of
-      Just Refl -> tagl == tagr && li1 == ri1 && li2 == ri2
-      Nothing -> False
+    eqHetero tagl tagr && eqTypedId li1 ri1 && eqTypedId li2 ri2
   DTernaryTerm (tagl :: tagl) li1 li2 li3 == DTernaryTerm (tagr :: tagr) ri1 ri2 ri3 =
-    case eqT @tagl @tagr of
-      Just Refl -> tagl == tagr && li1 == ri1 && li2 == ri2 && li3 == ri3
-      Nothing -> False
+    eqHetero tagl tagr && eqTypedId li1 ri1 && eqTypedId li2 ri2 && eqTypedId li3 ri3
   DNotTerm li == DNotTerm ri = li == ri
   DOrTerm li1 li2 == DOrTerm ri1 ri2 = li1 == ri1 && li2 == ri2
   DAndTerm li1 li2 == DAndTerm ri1 ri2 = li1 == ri1 && li2 == ri2
-  DEqvTerm lrep li1 li2 == DEqvTerm rrep ri1 ri2 = lrep == rrep && li1 == ri1 && li2 == ri2
-  DITETerm lrep lc li1 li2 == DITETerm rrep rc ri1 ri2 = lrep == rrep && lc == rc && li1 == ri1 && li2 == ri2
+  DEqvTerm lrep li1 li2 == DEqvTerm rrep ri1 ri2 = eqTypeRepBool lrep rrep && li1 == ri1 && li2 == ri2
+  DITETerm lc li1 li2 == DITETerm rc ri1 ri2 = lc == rc && li1 == ri1 && li2 == ri2
   _ == _ = False
 
 instance (SupportedPrim t) => Hashable (Description (Term t)) where
@@ -340,8 +343,8 @@ instance (SupportedPrim t) => Hashable (Description (Term t)) where
   hashWithSalt s (DEqvTerm rep id1 id2) =
     s `hashWithSalt` (8 :: Int) `hashWithSalt` rep `hashWithSalt` id1
       `hashWithSalt` id2
-  hashWithSalt s (DITETerm rep idc id1 id2) =
-    s `hashWithSalt` (9 :: Int) `hashWithSalt` rep `hashWithSalt` idc
+  hashWithSalt s (DITETerm idc id1 id2) =
+    s `hashWithSalt` (9 :: Int) `hashWithSalt` idc
       `hashWithSalt` id1
       `hashWithSalt` id2
 

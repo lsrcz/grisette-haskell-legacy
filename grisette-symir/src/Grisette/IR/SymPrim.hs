@@ -18,6 +18,7 @@ module Grisette.IR.SymPrim
     Model (..),
     Symbol (..),
     TermSymbol (..),
+    termSymbol,
     empty,
     valueOf,
     exceptFor,

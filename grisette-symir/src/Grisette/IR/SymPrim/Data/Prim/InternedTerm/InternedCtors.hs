@@ -28,7 +28,7 @@ import Data.Hashable
 import Data.IORef (atomicModifyIORef')
 import Data.Interned
 import Data.Interned.Internal
-import Data.Typeable
+import Type.Reflection
 import GHC.IO (unsafeDupablePerformIO)
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Language.Haskell.TH.Syntax
@@ -80,7 +80,7 @@ concTerm t = internTerm $ UConcTerm t
 {-# INLINE concTerm #-}
 
 symbTerm :: forall t. (SupportedPrim t, Typeable t) => Symbol -> Term t
-symbTerm t = internTerm $ USymbTerm (TermSymbol (Proxy @t) t)
+symbTerm t = internTerm $ USymbTerm (TermSymbol (typeRep @t) t)
 {-# INLINE symbTerm #-}
 
 ssymbTerm :: (SupportedPrim t, Typeable t) => String -> Term t

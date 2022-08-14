@@ -13,14 +13,13 @@ module Grisette.IR.SymPrim.Data.GeneralFunc where
 
 import Control.DeepSeq
 import Data.Hashable
-import Data.Proxy
-import Data.Typeable
+-- import Data.Typeable
 import GHC.Generics
 import Grisette.Core.Data.Class.Function
 import Grisette.Core.Data.MemoUtils
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Language.Haskell.TH.Syntax
-import qualified Type.Reflection as R
+import Type.Reflection
 import Unsafe.Coerce
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.SomeTerm
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
@@ -30,7 +29,7 @@ import Grisette.IR.SymPrim.Data.Prim.Bool
 data FuncArg = FuncArg deriving (Show, Eq, Generic, Ord, Lift, Hashable, NFData)
 
 data (-->) a b where
-  GeneralFunc :: (SupportedPrim a, SupportedPrim b) => Proxy a -> Symbol -> Term b -> (a --> b)
+  GeneralFunc :: (SupportedPrim a, SupportedPrim b) => TypeRep a -> Symbol -> Term b -> (a --> b)
 
 infixr 0 -->
 
@@ -38,29 +37,29 @@ instance Eq (a --> b) where
   GeneralFunc _ sym1 tm1 == GeneralFunc _ sym2 tm2 = sym1 == sym2 && tm1 == tm2
 
 instance Show (a --> b) where
-  show (GeneralFunc _ sym tm) = "\\(" ++ show (TermSymbol (Proxy @a) sym) ++ ") -> " ++ pformat tm
+  show (GeneralFunc ta sym tm) = "\\(" ++ show (TermSymbol ta sym) ++ ") -> " ++ pformat tm
 
 instance Lift (a --> b) where
-  liftTyped (GeneralFunc _ sym tm) = [||GeneralFunc Proxy sym tm||]
+  liftTyped (GeneralFunc _ sym tm) = [||GeneralFunc (typeRep @a) sym tm||]
 
 instance Hashable (a --> b) where
   s `hashWithSalt` (GeneralFunc _ sym tm) = s `hashWithSalt` sym `hashWithSalt` tm
 
 instance NFData (a --> b) where
-  rnf (GeneralFunc p sym tm) = rnf p `seq` rnf sym `seq` rnf tm
+  rnf (GeneralFunc p sym tm) = rnf (SomeTypeRep p) `seq` rnf sym `seq` rnf tm
 
 instance (SupportedPrim a, SupportedPrim b) => SupportedPrim (a --> b) where
   type PrimConstraint (a --> b) = (SupportedPrim a, SupportedPrim b)
-  defaultValue = GeneralFunc Proxy (WithInfo (SimpleSymbol "a") FuncArg) (concTerm defaultValue)
+  defaultValue = GeneralFunc typeRep (WithInfo (SimpleSymbol "a") FuncArg) (concTerm defaultValue)
 
 instance (SupportedPrim a, SupportedPrim b) => Function (a --> b) where
   type Arg (a --> b) = Term a
   type Ret (a --> b) = Term b
-  (GeneralFunc _ arg tm) # v = subst (TermSymbol (Proxy @a) arg) v tm
+  (GeneralFunc ta arg tm) # v = subst (TermSymbol ta arg) v tm
 
 subst :: forall a b. (SupportedPrim a, SupportedPrim b) => TermSymbol -> Term a -> Term b -> Term b
-subst sym@(TermSymbol (_ :: Proxy c) _) term input = case eqT @c @a of
-  Just Refl -> gov input
+subst sym@(TermSymbol tc _) term input = case eqTypeRep tc (typeRep @a) of
+  Just HRefl -> gov input
   Nothing -> error "Bad symbol type"
   where
     gov :: (SupportedPrim x) => Term x -> Term x
@@ -69,10 +68,10 @@ subst sym@(TermSymbol (_ :: Proxy c) _) term input = case eqT @c @a of
     go :: SomeTerm -> SomeTerm
     go = htmemo $ \stm@(SomeTerm (tm :: Term v)) ->
       case tm of
-        ConcTerm _ cv -> case (R.typeRep :: R.TypeRep v) of
-          R.App (R.App gf _) _ ->
-            case R.eqTypeRep gf (R.typeRep @(-->)) of
-              Just R.HRefl -> case cv of
+        ConcTerm _ cv -> case (typeRep :: TypeRep v) of
+          App (App gf _) _ ->
+            case eqTypeRep gf (typeRep @(-->)) of
+              Just HRefl -> case cv of
                 GeneralFunc p1 sym1 tm1 ->
                   if TermSymbol p1 sym1 == sym
                     then stm

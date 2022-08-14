@@ -3,7 +3,7 @@
 
 module Grisette.IR.SymPrim.Data.Prim.ModelSpec where
 
-import Data.Data
+import Type.Reflection
 import Data.HashMap.Strict as M
 import qualified Data.HashSet as S
 import Grisette.IR.SymPrim.Data.BV
@@ -18,12 +18,12 @@ import Test.Hspec
 spec :: Spec
 spec = do
   describe "empty model" $ do
-    let asymbol = TermSymbol (Proxy @Integer) (SimpleSymbol "a")
-    let bsymbol = TermSymbol (Proxy @Bool) (SimpleSymbol "b")
-    let csymbol = TermSymbol (Proxy @Integer) (SimpleSymbol "c")
-    let dsymbol = TermSymbol (Proxy @Bool) $ SimpleSymbol "d"
-    let esymbol = TermSymbol (Proxy @(WordN 4)) $ SimpleSymbol "e"
-    let fsymbol = TermSymbol (Proxy @(IntN 4)) $ SimpleSymbol "f"
+    let asymbol = TermSymbol (typeRep @Integer) (SimpleSymbol "a")
+    let bsymbol = TermSymbol (typeRep @Bool) (SimpleSymbol "b")
+    let csymbol = TermSymbol (typeRep @Integer) (SimpleSymbol "c")
+    let dsymbol = TermSymbol (typeRep @Bool) $ SimpleSymbol "d"
+    let esymbol = TermSymbol (typeRep @(WordN 4)) $ SimpleSymbol "e"
+    let fsymbol = TermSymbol (typeRep @(IntN 4)) $ SimpleSymbol "f"
     let m1 = Model.empty
     let m2 = Model.insert m1 asymbol (1 :: Integer)
     let m3 = Model.insert m2 bsymbol True

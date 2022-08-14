@@ -812,7 +812,7 @@ parseModel _ (SBVI.SMTModel _ _ assoc uifuncs) mp = foldr gouifuncs (foldr goass
   where
     goassoc :: (String, SBVI.CV) -> PM.Model -> PM.Model
     goassoc (name, cv) m = case findStringToSymbol name mp of
-      Just s@(TermSymbol (_ :: Proxy t) _) ->
+      Just s@(TermSymbol (_ :: R.TypeRep t) _) ->
         PM.insert m s (resolveSingle (R.typeRep @t) cv)
       Nothing -> error "Bad"
     resolveSingle :: R.TypeRep a -> SBVI.CV -> a
@@ -879,13 +879,13 @@ parseModel _ (SBVI.SMTModel _ _ assoc uifuncs) mp = foldr gouifuncs (foldr goass
               funs = second (\r -> gougfuncResolve (idx + 1) ta2' tr2' (r, s)) <$> partition ta1 l
               def = gougfuncResolve (idx + 1) ta2' tr2' ([], s)
               body = foldl' (\acc (v, f) -> pevalITETerm (pevalEqvTerm (iinfosymbTerm "arg" idx FuncArg) (concTerm v)) (concTerm f) acc) (concTerm def) funs
-           in GeneralFunc Proxy symb body
+           in GeneralFunc R.typeRep symb body
         _ ->
           let symb = WithInfo (IndexedSymbol "arg" idx) FuncArg
               vs = bimap (resolveSingle ta1 . head) (resolveSingle ta2) <$> l
               def = resolveSingle ta2 s
               body = foldl' (\acc (v, a) -> pevalITETerm (pevalEqvTerm (iinfosymbTerm "arg" idx FuncArg) (concTerm v)) (concTerm a) acc) (concTerm def) vs
-           in GeneralFunc Proxy symb body
+           in GeneralFunc R.typeRep symb body
     partition :: R.TypeRep a -> [([SBVI.CV], SBVI.CV)] -> [(a, [([SBVI.CV], SBVI.CV)])]
     partition t = case (R.eqTypeRep t (R.typeRep @Bool), R.eqTypeRep t (R.typeRep @Integer)) of
       (Just R.HRefl, _) -> partitionWithOrd . resolveFirst t
@@ -912,7 +912,7 @@ parseModel _ (SBVI.SMTModel _ _ assoc uifuncs) mp = foldr gouifuncs (foldr goass
 
     gouifuncs :: (String, (SBVI.SBVType, ([([SBVI.CV], SBVI.CV)], SBVI.CV))) -> PM.Model -> PM.Model
     gouifuncs (name, (SBVI.SBVType _, l)) m = case findStringToSymbol name mp of
-      Just s@(TermSymbol (_ :: Proxy t) _) -> case R.typeRep @t of
+      Just s@(TermSymbol (_ :: R.TypeRep t) _) -> case R.typeRep @t of
         t@(TFunType a r) -> R.withTypeable t $ PM.insert m s $ goutfuncResolve a r l
         t@(GFunType a r) -> R.withTypeable t $ PM.insert m s $ gougfuncResolve 0 a r l
         _ -> error "Bad"

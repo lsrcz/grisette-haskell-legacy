@@ -22,7 +22,7 @@ import Control.DeepSeq
 import Data.Hashable
 import Data.Interned
 import Data.Kind
-import Data.Typeable
+import Type.Reflection
 import Grisette.IR.SymPrim.Data.Prim.ModelValue
 import Language.Haskell.TH.Syntax
 
@@ -86,7 +86,7 @@ data Symbol where
   WithInfo :: forall a. (Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) => Symbol -> a -> Symbol
 
 data TermSymbol where
-  TermSymbol :: forall t. (SupportedPrim t) => Proxy t -> Symbol -> TermSymbol
+  TermSymbol :: forall t. (SupportedPrim t) => TypeRep t -> Symbol -> TermSymbol
 
 data Term t where
   ConcTerm :: (SupportedPrim t) => {-# UNPACK #-} !Id -> !t -> Term t

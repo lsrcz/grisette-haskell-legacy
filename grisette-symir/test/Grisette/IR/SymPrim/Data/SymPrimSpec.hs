@@ -40,6 +40,7 @@ import Grisette.IR.SymPrim.Data.SymPrim
 import Grisette.IR.SymPrim.Data.TabularFunc
 import Test.Hspec
 import Test.Hspec.QuickCheck
+import Type.Reflection
 
 spec :: Spec
 spec = do
@@ -88,8 +89,8 @@ spec = do
   describe "Evaluate for SymPrim" $ do
     it "evaluate for SymPrim should work" $ do
       let m1 = Model.empty
-      let m2 = Model.insert m1 (TermSymbol (Proxy @Integer) (SimpleSymbol "a")) (1 :: Integer)
-      let m3 = Model.insert m2 (TermSymbol (Proxy @Bool) (SimpleSymbol "b")) True
+      let m2 = Model.insert m1 (TermSymbol (typeRep @Integer) (SimpleSymbol "a")) (1 :: Integer)
+      let m3 = Model.insert m2 (TermSymbol (typeRep @Bool) (SimpleSymbol "b")) True
       evaluate False m3 (ites ("c" :: Sym Bool) "a" ("a" + "a" :: Sym Integer))
         `shouldBe` ites ("c" :: Sym Bool) 1 2
       evaluate True m3 (ites ("c" :: Sym Bool) "a" ("a" + "a" :: Sym Integer)) `shouldBe` 2
@@ -97,9 +98,9 @@ spec = do
     it "extractSymbolics for SymPrim should work" $ do
       extractSymbolics (ites ("c" :: Sym Bool) ("a" :: Sym Integer) ("b" :: Sym Integer))
         `shouldBe` S.fromList
-          [ TermSymbol (Proxy @Bool) (SimpleSymbol "c"),
-            TermSymbol (Proxy @Integer) (SimpleSymbol "a"),
-            TermSymbol (Proxy @Integer) (SimpleSymbol "b")
+          [ TermSymbol (typeRep @Bool) (SimpleSymbol "c"),
+            TermSymbol (typeRep @Integer) (SimpleSymbol "a"),
+            TermSymbol (typeRep @Integer) (SimpleSymbol "b")
           ]
   describe "GenSym" $ do
     it "GenSym for SymPrim should work" $ do
