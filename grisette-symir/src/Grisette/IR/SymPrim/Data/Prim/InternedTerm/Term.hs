@@ -292,21 +292,29 @@ eqTypedId :: (TypeRep a, Id) -> (TypeRep b, Id) -> Bool
 eqTypedId (a, i1) (b, i2) = i1 == i2 && eqTypeRepBool a b
 {-# INLINE eqTypedId #-}
 
+eqHeteroTag :: Eq a => (TypeRep a, a) -> (TypeRep b, b) -> Bool
+eqHeteroTag (tpa, taga) (tpb, tagb) = eqHeteroRep tpa tpb taga tagb
+{-# INLINE eqHeteroTag #-}
+
 instance (SupportedPrim t) => Interned (Term t) where
   type Uninterned (Term t) = UTerm t
   data Description (Term t) where
     DConcTerm :: t -> Description (Term t)
     DSymbTerm :: TermSymbol -> Description (Term t)
-    DUnaryTerm :: (UnaryOp tag arg t) => !tag -> {-# UNPACK #-} !(TypeRep arg, Id) -> Description (Term t)
+    DUnaryTerm ::
+      (Eq tag, Hashable tag) =>
+      {-# UNPACK #-} !(TypeRep tag, tag) ->
+      {-# UNPACK #-} !(TypeRep arg, Id) ->
+      Description (Term t)
     DBinaryTerm ::
-      (BinaryOp tag arg1 arg2 t) =>
-      !tag ->
+      (Eq tag, Hashable tag) =>
+      {-# UNPACK #-} !(TypeRep tag, tag) ->
       {-# UNPACK #-} !(TypeRep arg1, Id) ->
       {-# UNPACK #-} !(TypeRep arg2, Id) ->
       Description (Term t)
     DTernaryTerm ::
-      (TernaryOp tag arg1 arg2 arg3 t) =>
-      !tag ->
+      (Eq tag, Hashable tag) =>
+      {-# UNPACK #-} !(TypeRep tag, tag) ->
       {-# UNPACK #-} !(TypeRep arg1, Id) ->
       {-# UNPACK #-} !(TypeRep arg2, Id) ->
       {-# UNPACK #-} !(TypeRep arg3, Id) ->
@@ -316,20 +324,21 @@ instance (SupportedPrim t) => Interned (Term t) where
     DAndTerm :: {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term Bool)
     DEqvTerm :: TypeRep args -> {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term Bool)
     DITETerm :: {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term t)
-    DAddNumTerm :: (SupportedPrim t, Num t) => {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term t)
-    DUMinusNumTerm :: (SupportedPrim t, Num t) => {-# UNPACK #-} !Id -> Description (Term t)
-    DTimesNumTerm :: (SupportedPrim t, Num t) => {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term t)
-    DAbsNumTerm :: (SupportedPrim t, Num t) => {-# UNPACK #-} !Id -> Description (Term t)
-    DSignumNumTerm :: (SupportedPrim t, Num t) => {-# UNPACK #-} !Id -> Description (Term t)
+    DAddNumTerm :: {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term t)
+    DUMinusNumTerm :: {-# UNPACK #-} !Id -> Description (Term t)
+    DTimesNumTerm :: {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term t)
+    DAbsNumTerm :: {-# UNPACK #-} !Id -> Description (Term t)
+    DSignumNumTerm :: {-# UNPACK #-} !Id -> Description (Term t)
     DLTNumTerm :: TypeRep args -> {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term Bool)
     DLENumTerm :: TypeRep args -> {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term Bool)
   describe (UConcTerm v) = DConcTerm v
   describe ((USymbTerm name) :: UTerm t) = DSymbTerm @t name
-  describe ((UUnaryTerm (tag :: tagt) (tm :: Term arg)) :: UTerm t) = DUnaryTerm tag (typeRep :: TypeRep arg, identity tm)
+  describe ((UUnaryTerm (tag :: tagt) (tm :: Term arg)) :: UTerm t) =
+    DUnaryTerm (typeRep, tag) (typeRep :: TypeRep arg, identity tm)
   describe ((UBinaryTerm (tag :: tagt) (tm1 :: Term arg1) (tm2 :: Term arg2)) :: UTerm t) =
-    DBinaryTerm @tagt @arg1 @arg2 @t tag (typeRep, identity tm1) (typeRep, identity tm2)
+    DBinaryTerm @tagt @arg1 @arg2 @t (typeRep, tag) (typeRep, identity tm1) (typeRep, identity tm2)
   describe ((UTernaryTerm (tag :: tagt) (tm1 :: Term arg1) (tm2 :: Term arg2) (tm3 :: Term arg3)) :: UTerm t) =
-    DTernaryTerm @tagt @arg1 @arg2 @arg3 @t tag (typeRep, identity tm1) (typeRep, identity tm2) (typeRep, identity tm3)
+    DTernaryTerm @tagt @arg1 @arg2 @arg3 @t (typeRep, tag) (typeRep, identity tm1) (typeRep, identity tm2) (typeRep, identity tm3)
   describe (UNotTerm arg) = DNotTerm (identity arg)
   describe (UOrTerm arg1 arg2) = DOrTerm (identity arg1) (identity arg2)
   describe (UAndTerm arg1 arg2) = DAndTerm (identity arg1) (identity arg2)
@@ -366,11 +375,11 @@ instance (SupportedPrim t) => Interned (Term t) where
 instance (SupportedPrim t) => Eq (Description (Term t)) where
   DConcTerm (l :: tyl) == DConcTerm (r :: tyr) = cast @tyl @tyr l == Just r
   DSymbTerm ls == DSymbTerm rs = ls == rs
-  DUnaryTerm (tagl :: tagl) li == DUnaryTerm (tagr :: tagr) ri = eqHetero tagl tagr && eqTypedId li ri
+  DUnaryTerm (tagl :: tagl) li == DUnaryTerm (tagr :: tagr) ri = eqHeteroTag tagl tagr && eqTypedId li ri
   DBinaryTerm (tagl :: tagl) li1 li2 == DBinaryTerm (tagr :: tagr) ri1 ri2 =
-    eqHetero tagl tagr && eqTypedId li1 ri1 && eqTypedId li2 ri2
+    eqHeteroTag tagl tagr && eqTypedId li1 ri1 && eqTypedId li2 ri2
   DTernaryTerm (tagl :: tagl) li1 li2 li3 == DTernaryTerm (tagr :: tagr) ri1 ri2 ri3 =
-    eqHetero tagl tagr && eqTypedId li1 ri1 && eqTypedId li2 ri2 && eqTypedId li3 ri3
+    eqHeteroTag tagl tagr && eqTypedId li1 ri1 && eqTypedId li2 ri2 && eqTypedId li3 ri3
   DNotTerm li == DNotTerm ri = li == ri
   DOrTerm li1 li2 == DOrTerm ri1 ri2 = li1 == ri1 && li2 == ri2
   DAndTerm li1 li2 == DAndTerm ri1 ri2 = li1 == ri1 && li2 == ri2
