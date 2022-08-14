@@ -181,6 +181,8 @@ data Term t where
   NotTerm :: {-# UNPACK #-} !Id -> !(Term Bool) -> Term Bool
   OrTerm :: {-# UNPACK #-} !Id -> !(Term Bool) -> !(Term Bool) -> Term Bool
   AndTerm :: {-# UNPACK #-} !Id -> !(Term Bool) -> !(Term Bool) -> Term Bool
+  EqvTerm :: SupportedPrim t => {-# UNPACK #-} !Id -> !(Term t) -> !(Term t) -> Term Bool
+  ITETerm :: SupportedPrim t => {-# UNPACK #-} !Id -> !(Term Bool) -> !(Term t) -> !(Term t) -> Term t
 
 instance NFData (Term a) where
   rnf i = identity i `seq` ()
@@ -195,6 +197,8 @@ instance Lift (Term t) where
   liftTyped (NotTerm _ arg) = [||notTerm arg||]
   liftTyped (OrTerm _ arg1 arg2) = [||orTerm arg1 arg2||]
   liftTyped (AndTerm _ arg1 arg2) = [||andTerm arg1 arg2||]
+  liftTyped (EqvTerm _ arg1 arg2) = [||eqvTerm arg1 arg2||]
+  liftTyped (ITETerm _ cond arg1 arg2) = [||iteTerm cond arg1 arg2||]
 
 instance Show (Term ty) where
   show (ConcTerm i v) = "ConcTerm{id=" ++ show i ++ ", v=" ++ show v ++ "}"
@@ -218,6 +222,8 @@ instance Show (Term ty) where
   show (NotTerm i arg) = "Not{id=" ++ show i ++ ", arg=" ++ show arg ++ "}"
   show (OrTerm i arg1 arg2) = "Or{id=" ++ show i ++ ", arg1=" ++ show arg1 ++ ", arg2=" ++ show arg2 ++ "}"
   show (AndTerm i arg1 arg2) = "And{id=" ++ show i ++ ", arg1=" ++ show arg1 ++ ", arg2=" ++ show arg2 ++ "}"
+  show (EqvTerm i arg1 arg2) = "Eqv{id=" ++ show i ++ ", arg1=" ++ show arg1 ++ ", arg2=" ++ show arg2 ++ "}"
+  show (ITETerm i cond l r) = "ITE{id=" ++ show i ++ ", cond=" ++ show cond ++ ", then=" ++ show l ++ ", else=" ++ show r ++ "}"
 
 instance (SupportedPrim t) => Eq (Term t) where
   (==) = (==) `on` identity
@@ -245,6 +251,8 @@ data UTerm t where
   UNotTerm :: !(Term Bool) -> UTerm Bool
   UOrTerm :: !(Term Bool) -> !(Term Bool) -> UTerm Bool
   UAndTerm :: !(Term Bool) -> !(Term Bool) -> UTerm Bool
+  UEqvTerm :: SupportedPrim t => !(Term t) -> !(Term t) -> UTerm Bool
+  UITETerm :: SupportedPrim t => !(Term Bool) -> !(Term t) -> !(Term t) -> UTerm t
 
 instance (SupportedPrim t) => Interned (Term t) where
   type Uninterned (Term t) = UTerm t
@@ -268,6 +276,8 @@ instance (SupportedPrim t) => Interned (Term t) where
     DNotTerm :: {-# UNPACK #-} !Id -> Description (Term Bool)
     DOrTerm :: {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term Bool)
     DAndTerm :: {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term Bool)
+    DEqvTerm :: TypeRep -> {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term Bool)
+    DITETerm :: TypeRep -> {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term t)
   describe (UConcTerm v) = DConcTerm v
   describe ((USymbTerm name) :: UTerm t) = DSymbTerm @t name
   describe ((UUnaryTerm (tag :: tagt) (tm :: Term arg)) :: UTerm t) = DUnaryTerm @tagt @arg @t tag (typeRep (Proxy @arg), identity tm)
@@ -278,6 +288,8 @@ instance (SupportedPrim t) => Interned (Term t) where
   describe (UNotTerm arg) = DNotTerm (identity arg)
   describe (UOrTerm arg1 arg2) = DOrTerm (identity arg1) (identity arg2)
   describe (UAndTerm arg1 arg2) = DAndTerm (identity arg1) (identity arg2)
+  describe (UEqvTerm (arg1 :: Term arg) arg2) = DEqvTerm (typeRep (Proxy @arg)) (identity arg1) (identity arg2)
+  describe (UITETerm cond (l :: Term arg) r) = DITETerm (typeRep (Proxy @arg)) (identity cond) (identity l) (identity r)
   identify i = go
     where
       go (UConcTerm v) = ConcTerm i v
@@ -288,6 +300,8 @@ instance (SupportedPrim t) => Interned (Term t) where
       go (UNotTerm arg) = NotTerm i arg
       go (UOrTerm arg1 arg2) = OrTerm i arg1 arg2
       go (UAndTerm arg1 arg2) = AndTerm i arg1 arg2
+      go (UEqvTerm arg1 arg2) = EqvTerm i arg1 arg2
+      go (UITETerm cond l r) = ITETerm i cond l r
   cache = termCache
 
 instance (SupportedPrim t) => Eq (Description (Term t)) where
@@ -308,6 +322,8 @@ instance (SupportedPrim t) => Eq (Description (Term t)) where
   DNotTerm li == DNotTerm ri = li == ri
   DOrTerm li1 li2 == DOrTerm ri1 ri2 = li1 == ri1 && li2 == ri2
   DAndTerm li1 li2 == DAndTerm ri1 ri2 = li1 == ri1 && li2 == ri2
+  DEqvTerm lrep li1 li2 == DEqvTerm rrep ri1 ri2 = lrep == rrep && li1 == ri1 && li2 == ri2
+  DITETerm lrep lc li1 li2 == DITETerm rrep rc ri1 ri2 = lrep == rrep && lc == rc && li1 == ri1 && li2 == ri2
   _ == _ = False
 
 instance (SupportedPrim t) => Hashable (Description (Term t)) where
@@ -321,6 +337,13 @@ instance (SupportedPrim t) => Hashable (Description (Term t)) where
   hashWithSalt s (DNotTerm id1) = s `hashWithSalt` (5 :: Int) `hashWithSalt` id1
   hashWithSalt s (DOrTerm id1 id2) = s `hashWithSalt` (6 :: Int) `hashWithSalt` id1 `hashWithSalt` id2
   hashWithSalt s (DAndTerm id1 id2) = s `hashWithSalt` (7 :: Int) `hashWithSalt` id1 `hashWithSalt` id2
+  hashWithSalt s (DEqvTerm rep id1 id2) =
+    s `hashWithSalt` (8 :: Int) `hashWithSalt` rep `hashWithSalt` id1
+      `hashWithSalt` id2
+  hashWithSalt s (DITETerm rep idc id1 id2) =
+    s `hashWithSalt` (9 :: Int) `hashWithSalt` rep `hashWithSalt` idc
+      `hashWithSalt` id1
+      `hashWithSalt` id2
 
 -- Basic Bool
 defaultValueForBool :: Bool
@@ -348,26 +371,12 @@ instance SupportedPrim Integer where
   defaultValueDynamic _ = defaultValueForIntegerDyn
 
 -- Signed BV
-{-
-instance (KnownNat w, 1 <= w) => SupportedPrim (SignedBV w) where
-  type PrimConstraint (SignedBV w) = (KnownNat w, 1 <= w)
-  pformatConc i = show i
-  defaultValue = mkSignedBV knownNat 0
-  -}
-
 instance (KnownNat w, 1 <= w) => SupportedPrim (IntN w) where
   type PrimConstraint (IntN w) = (KnownNat w, 1 <= w)
   pformatConc i = show i
   defaultValue = 0
 
 -- Unsigned BV
-{-
-instance (KnownNat w, 1 <= w) => SupportedPrim (UnsignedBV w) where
-  type PrimConstraint (UnsignedBV w) = (KnownNat w, 1 <= w)
-  pformatConc i = show i
-  defaultValue = mkUnsignedBV knownNat 0
-  -}
-
 instance (KnownNat w, 1 <= w) => SupportedPrim (WordN w) where
   type PrimConstraint (WordN w) = (KnownNat w, 1 <= w)
   pformatConc i = show i

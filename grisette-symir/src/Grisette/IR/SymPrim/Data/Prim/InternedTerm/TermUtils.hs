@@ -33,6 +33,8 @@ identity (TernaryTerm i _ _ _ _) = i
 identity (NotTerm i _) = i
 identity (OrTerm i _ _) = i
 identity (AndTerm i _ _) = i
+identity (EqvTerm i _ _) = i
+identity (ITETerm i _ _ _) = i
 {-# INLINE identity #-}
 
 identityWithTypeRep :: forall t. Term t -> (TypeRep, Id)
@@ -44,6 +46,8 @@ identityWithTypeRep (TernaryTerm i _ _ _ _) = (typeRep (Proxy @t), i)
 identityWithTypeRep (NotTerm i _) = (typeRep (Proxy @Bool), i)
 identityWithTypeRep (OrTerm i _ _) = (typeRep (Proxy @Bool), i)
 identityWithTypeRep (AndTerm i _ _) = (typeRep (Proxy @Bool), i)
+identityWithTypeRep (EqvTerm i _ _) = (typeRep (Proxy @Bool), i)
+identityWithTypeRep (ITETerm i _ _ _) = (typeRep (Proxy @t), i)
 {-# INLINE identityWithTypeRep #-}
 
 introSupportedPrimConstraint :: forall t a. Term t -> ((SupportedPrim t) => a) -> a
@@ -55,6 +59,8 @@ introSupportedPrimConstraint TernaryTerm {} x = x
 introSupportedPrimConstraint NotTerm {} x = x
 introSupportedPrimConstraint OrTerm {} x = x
 introSupportedPrimConstraint AndTerm {} x = x
+introSupportedPrimConstraint EqvTerm {} x = x
+introSupportedPrimConstraint ITETerm {} x = x
 {-# INLINE introSupportedPrimConstraint #-}
 
 extractSymbolicsSomeTerm :: SomeTerm -> S.HashSet TermSymbol
@@ -71,27 +77,26 @@ extractSymbolicsSomeTerm t1 = evalState (gocached t1) M.empty
           put $ M.insert t res st
           return res
     go :: SomeTerm -> State (M.HashMap SomeTerm (S.HashSet TermSymbol)) (S.HashSet TermSymbol)
-    go (SomeTerm ConcTerm {}) = return $ S.empty
+    go (SomeTerm ConcTerm {}) = return S.empty
     go (SomeTerm (SymbTerm _ symb)) = return $ S.singleton symb
-    go (SomeTerm (UnaryTerm _ _ arg)) = gocached (SomeTerm arg)
-    go (SomeTerm (BinaryTerm _ _ arg1 arg2)) = do
+    go (SomeTerm (UnaryTerm _ _ arg)) = goUnary arg
+    go (SomeTerm (BinaryTerm _ _ arg1 arg2)) = goBinary arg1 arg2
+    go (SomeTerm (TernaryTerm _ _ arg1 arg2 arg3)) = goTernary arg1 arg2 arg3
+    go (SomeTerm (NotTerm _ arg)) = gocached (SomeTerm arg)
+    go (SomeTerm (OrTerm _ arg1 arg2)) = goBinary arg1 arg2
+    go (SomeTerm (AndTerm _ arg1 arg2)) = goBinary arg1 arg2
+    go (SomeTerm (EqvTerm _ arg1 arg2)) = goBinary arg1 arg2
+    go (SomeTerm (ITETerm _ cond arg1 arg2)) = goTernary cond arg1 arg2
+    goUnary arg = gocached (SomeTerm arg)
+    goBinary arg1 arg2 = do
       r1 <- gocached (SomeTerm arg1)
       r2 <- gocached (SomeTerm arg2)
       return $ r1 <> r2
-    go (SomeTerm (TernaryTerm _ _ arg1 arg2 arg3)) = do
+    goTernary arg1 arg2 arg3 = do
       r1 <- gocached (SomeTerm arg1)
       r2 <- gocached (SomeTerm arg2)
       r3 <- gocached (SomeTerm arg3)
       return $ r1 <> r2 <> r3
-    go (SomeTerm (NotTerm _ arg)) = gocached (SomeTerm arg)
-    go (SomeTerm (OrTerm _ arg1 arg2)) = do
-      r1 <- gocached (SomeTerm arg1)
-      r2 <- gocached (SomeTerm arg2)
-      return $ r1 <> r2
-    go (SomeTerm (AndTerm _ arg1 arg2)) = do
-      r1 <- gocached (SomeTerm arg1)
-      r2 <- gocached (SomeTerm arg2)
-      return $ r1 <> r2
 {-# INLINEABLE extractSymbolicsSomeTerm #-}
 
 extractSymbolicsTerm :: (SupportedPrim a) => Term a -> S.HashSet TermSymbol
@@ -107,6 +112,8 @@ castTerm t@TernaryTerm {} = cast t
 castTerm t@NotTerm {} = cast t
 castTerm t@OrTerm {} = cast t
 castTerm t@AndTerm {} = cast t
+castTerm t@EqvTerm {} = cast t
+castTerm t@ITETerm {} = cast t
 {-# INLINE castTerm #-}
 
 pformat :: forall t. (SupportedPrim t) => Term t -> String
@@ -118,6 +125,8 @@ pformat (TernaryTerm _ tag arg1 arg2 arg3) = pformatTernary tag arg1 arg2 arg3
 pformat (NotTerm _ arg) = "(! " ++ pformat arg ++ ")"
 pformat (OrTerm _ arg1 arg2) = "(|| " ++ pformat arg1 ++ " " ++ pformat arg2 ++ ")"
 pformat (AndTerm _ arg1 arg2) = "(&& " ++ pformat arg1 ++ " " ++ pformat arg2 ++ ")"
+pformat (EqvTerm _ arg1 arg2) = "(= " ++ pformat arg1 ++ " " ++ pformat arg2 ++ ")"
+pformat (ITETerm _ cond arg1 arg2) = "(ite " ++ pformat cond ++ " " ++ pformat arg1 ++ " " ++ pformat arg2 ++ ")"
 {-# INLINE pformat #-}
 
 termsSize :: [Term a] -> Int
@@ -130,18 +139,12 @@ termsSize terms = S.size $ execState (traverse go terms) S.empty
     go t@SymbTerm {} = add t
     go t@(UnaryTerm _ _ arg) = goUnary t arg
     go t@(BinaryTerm _ _ arg1 arg2) = goBinary t arg1 arg2
-    go t@(TernaryTerm _ _ arg1 arg2 arg3) = do
-      b <- exists t
-      if b
-        then return ()
-        else do
-          add t
-          go arg1
-          go arg2
-          go arg3
+    go t@(TernaryTerm _ _ arg1 arg2 arg3) = goTernary t arg1 arg2 arg3
     go t@(NotTerm _ arg) = goUnary t arg
     go t@(OrTerm _ arg1 arg2) = goBinary t arg1 arg2
     go t@(AndTerm _ arg1 arg2) = goBinary t arg1 arg2
+    go t@(EqvTerm _ arg1 arg2) = goBinary t arg1 arg2
+    go t@(ITETerm _ cond arg1 arg2) = goTernary t cond arg1 arg2
     goUnary :: forall a b. (SupportedPrim a) => Term a -> Term b -> State (S.HashSet SomeTerm) ()
     goUnary t arg = do
       b <- exists t
@@ -160,6 +163,17 @@ termsSize terms = S.size $ execState (traverse go terms) S.empty
           add t
           go arg1
           go arg2
+    goTernary :: forall a b c d. (SupportedPrim a, SupportedPrim b, SupportedPrim c) =>
+      Term a -> Term b -> Term c -> Term d -> State (S.HashSet SomeTerm) ()
+    goTernary t arg1 arg2 arg3 = do
+      b <- exists t
+      if b
+        then return ()
+        else do
+          add t
+          go arg1
+          go arg2
+          go arg3
 {-# INLINEABLE termsSize #-}
 
 termSize :: Term a -> Int

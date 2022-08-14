@@ -86,3 +86,5 @@ subst sym@(TermSymbol (_ :: Proxy c) _) term input = case eqT @c @a of
         NotTerm _ op -> SomeTerm $ notb (gov op)
         OrTerm _ op1 op2 -> SomeTerm $ orb (gov op1) (gov op2)
         AndTerm _ op1 op2 -> SomeTerm $ andb (gov op1) (gov op2)
+        EqvTerm _ op1 op2 -> SomeTerm $ eqterm (gov op1) (gov op2)
+        ITETerm _ c op1 op2 -> SomeTerm $ iteterm (gov c) (gov op1) (gov op2)

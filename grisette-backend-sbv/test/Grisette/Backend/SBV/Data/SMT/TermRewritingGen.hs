@@ -92,6 +92,25 @@ constructBinarySpec' ::
 constructBinarySpec' tag = constructBinarySpec @a @av @b @bv @c @cv (constructBinary tag) (partialEvalBinary tag)
 
 constructTernarySpec ::
+  forall a av b bv c cv d dv.
+  ( TermRewritingSpec a av,
+    TermRewritingSpec b bv,
+    TermRewritingSpec c cv,
+    TermRewritingSpec d dv
+  ) =>
+  (Term av -> Term bv -> Term cv -> Term dv) ->
+  (Term av -> Term bv -> Term cv -> Term dv) ->
+  a ->
+  b ->
+  c ->
+  d
+constructTernarySpec construct partial a b c =
+  wrap
+    (construct (norewriteVer a) (norewriteVer b) (norewriteVer c))
+    (partial (rewriteVer a) (rewriteVer b) (rewriteVer c))
+
+constructTernarySpec' ::
+  forall a av b bv c cv d dv tag.
   ( TermRewritingSpec a av,
     TermRewritingSpec b bv,
     TermRewritingSpec c cv,
@@ -103,10 +122,8 @@ constructTernarySpec ::
   b ->
   c ->
   d
-constructTernarySpec tag a b c =
-  wrap
-    (constructTernary tag (norewriteVer a) (norewriteVer b) (norewriteVer c))
-    (partialEvalTernary tag (rewriteVer a) (rewriteVer b) (rewriteVer c))
+constructTernarySpec' tag = constructTernarySpec @a @av @b @bv @c @cv @d @dv
+  (constructTernary tag) (partialEvalTernary tag)
 
 data BoolOnlySpec = BoolOnlySpec (Term Bool) (Term Bool)
 
@@ -117,7 +134,7 @@ instance TermRewritingSpec BoolOnlySpec Bool where
   norewriteVer (BoolOnlySpec n _) = n
   rewriteVer (BoolOnlySpec _ r) = r
   wrap = BoolOnlySpec
-  same s = constructBinary Eqv (norewriteVer s) (rewriteVer s)
+  same s = eqvTerm (norewriteVer s) (rewriteVer s)
 
 boolonly :: Int -> Gen BoolOnlySpec
 boolonly 0 =
@@ -135,8 +152,8 @@ boolonly n | n > 0 = do
     [ return $ constructUnarySpec notTerm notb v1,
       return $ constructBinarySpec andTerm andb v1 v2,
       return $ constructBinarySpec orTerm orb v1 v2,
-      return $ constructBinarySpec' Eqv v1 v2,
-      return $ constructTernarySpec ITE v1 v2 v3
+      return $ constructBinarySpec eqvTerm eqterm v1 v2,
+      return $ constructTernarySpec iteTerm iteterm v1 v2 v3
     ]
 boolonly _ = error "Should never be called"
 
@@ -152,7 +169,7 @@ instance TermRewritingSpec BoolWithLIASpec Bool where
   norewriteVer (BoolWithLIASpec n _) = n
   rewriteVer (BoolWithLIASpec _ r) = r
   wrap = BoolWithLIASpec
-  same s = constructBinary Eqv (norewriteVer s) (rewriteVer s)
+  same s = eqvTerm (norewriteVer s) (rewriteVer s)
 
 data LIAWithBoolSpec = LIAWithBoolSpec (Term Integer) (Term Integer)
 
@@ -164,7 +181,7 @@ instance TermRewritingSpec LIAWithBoolSpec Integer where
   norewriteVer (LIAWithBoolSpec n _) = n
   rewriteVer (LIAWithBoolSpec _ r) = r
   wrap = LIAWithBoolSpec
-  same s = constructBinary Eqv (norewriteVer s) (rewriteVer s)
+  same s = eqvTerm (norewriteVer s) (rewriteVer s)
 
 boolWithLIA :: Int -> Gen BoolWithLIASpec
 boolWithLIA 0 =
@@ -184,11 +201,11 @@ boolWithLIA n | n > 0 = do
     [ (1, return $ constructUnarySpec notTerm notb v1),
       (1, return $ constructBinarySpec andTerm andb v1 v2),
       (1, return $ constructBinarySpec orTerm orb v1 v2),
-      (1, return $ constructBinarySpec' Eqv v1 v2),
-      (5, return $ constructBinarySpec' Eqv v1i v2i),
+      (1, return $ constructBinarySpec eqvTerm eqterm v1 v2),
+      (5, return $ constructBinarySpec eqvTerm eqterm v1i v2i),
       (5, return $ constructBinarySpec' LTNum v1i v2i),
       (5, return $ constructBinarySpec' LENum v1i v2i),
-      (1, return $ constructTernarySpec ITE v1 v2 v3)
+      (1, return $ constructTernarySpec iteTerm iteterm v1 v2 v3)
     ]
 boolWithLIA _ = error "Should never be called"
 
@@ -209,7 +226,7 @@ liaWithBool n | n > 0 = do
       return $ constructUnarySpec' AbsNum v1i,
       return $ constructUnarySpec' SignumNum v1i,
       return $ constructBinarySpec' (AddNum @Integer) v1i v2i,
-      return $ constructTernarySpec ITE v1b v1i v2i
+      return $ constructTernarySpec iteTerm iteterm v1b v1i v2i
     ]
 liaWithBool _ = error "Should never be called"
 
@@ -228,7 +245,7 @@ instance (SupportedPrim (bv 4)) => TermRewritingSpec (FixedSizedBVWithBoolSpec b
   norewriteVer (FixedSizedBVWithBoolSpec n _) = n
   rewriteVer (FixedSizedBVWithBoolSpec _ r) = r
   wrap = FixedSizedBVWithBoolSpec
-  same s = constructBinary Eqv (norewriteVer s) (rewriteVer s)
+  same s = eqvTerm (norewriteVer s) (rewriteVer s)
 
 data BoolWithFixedSizedBVSpec (bv :: Nat -> Type) = BoolWithFixedSizedBVSpec (Term Bool) (Term Bool)
 
@@ -240,7 +257,7 @@ instance TermRewritingSpec (BoolWithFixedSizedBVSpec bv) Bool where
   norewriteVer (BoolWithFixedSizedBVSpec n _) = n
   rewriteVer (BoolWithFixedSizedBVSpec _ r) = r
   wrap = BoolWithFixedSizedBVSpec
-  same s = constructBinary Eqv (norewriteVer s) (rewriteVer s)
+  same s = eqvTerm (norewriteVer s) (rewriteVer s)
 
 boolWithFSBV :: forall proxy bv. (SupportedPrim (bv 4), Ord (bv 4), Num (bv 4), Bits (bv 4)) => proxy bv -> Int -> Gen (BoolWithFixedSizedBVSpec bv)
 boolWithFSBV _ 0 =
@@ -260,11 +277,11 @@ boolWithFSBV p n | n > 0 = do
     [ (1, return $ constructUnarySpec notTerm notb v1),
       (1, return $ constructBinarySpec andTerm andb v1 v2),
       (1, return $ constructBinarySpec orTerm orb v1 v2),
-      (1, return $ constructBinarySpec' Eqv v1 v2),
-      (5, return $ constructBinarySpec' Eqv v1i v2i),
+      (1, return $ constructBinarySpec eqvTerm eqterm v1 v2),
+      (5, return $ constructBinarySpec eqvTerm eqterm v1i v2i),
       (5, return $ constructBinarySpec' LTNum v1i v2i),
       (5, return $ constructBinarySpec' LENum v1i v2i),
-      (1, return $ constructTernarySpec ITE v1 v2 v3)
+      (1, return $ constructTernarySpec iteTerm iteterm v1 v2 v3)
     ]
 boolWithFSBV _ _ = error "Should never be called"
 
@@ -298,7 +315,7 @@ fsbvWithBool p n | n > 0 = do
       return $ constructUnarySpec' (ComplementBits @(bv 4)) v1i,
       return $ constructUnarySpec' (ShiftBits @(bv 4) i) v1i,
       return $ constructUnarySpec' (RotateBits @(bv 4) i) v1i,
-      return $ constructTernarySpec ITE v1b v1i v2i
+      return $ constructTernarySpec iteTerm iteterm v1b v1i v2i
     ]
 fsbvWithBool _ _ = error "Should never be called"
 
@@ -317,7 +334,7 @@ instance (SupportedPrim (bv n)) => TermRewritingSpec (DifferentSizeBVSpec bv n) 
   norewriteVer (DifferentSizeBVSpec n _) = n
   rewriteVer (DifferentSizeBVSpec _ r) = r
   wrap = DifferentSizeBVSpec
-  same s = constructBinary Eqv (norewriteVer s) (rewriteVer s)
+  same s = eqvTerm (norewriteVer s) (rewriteVer s)
 
 type SupportedBV bv (n :: Nat) =
   (SupportedPrim (bv n), Ord (bv n), Num (bv n), Bits (bv n))
@@ -702,7 +719,7 @@ instance (SupportedPrim s) => TermRewritingSpec (GeneralSpec s) s where
   norewriteVer (GeneralSpec n _) = n
   rewriteVer (GeneralSpec _ r) = r
   wrap = GeneralSpec
-  same s = constructBinary Eqv (norewriteVer s) (rewriteVer s)
+  same s = eqvTerm (norewriteVer s) (rewriteVer s)
 
 unop ::
   forall tag a.

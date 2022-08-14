@@ -33,6 +33,7 @@ library
       Grisette.Backend.SBV.Data.SMT.Config
       Grisette.Backend.SBV.Data.SMT.Lowering
       Grisette.Backend.SBV.Data.SMT.Solving
+      Grisette.Backend.SBV.Data.SMT.SymBiMap
       Grisette.Internal.Backend.SBV
   other-modules:
       Paths_grisette_backend_sbv

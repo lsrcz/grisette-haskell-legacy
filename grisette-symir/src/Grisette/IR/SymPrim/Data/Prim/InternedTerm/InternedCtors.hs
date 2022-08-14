@@ -16,6 +16,8 @@ module Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
     notTerm,
     orTerm,
     andTerm,
+    eqvTerm,
+    iteTerm,
   )
 where
 
@@ -108,3 +110,11 @@ orTerm l r = internTerm $ UOrTerm l r
 andTerm :: Term Bool -> Term Bool -> Term Bool
 andTerm l r = internTerm $ UAndTerm l r
 {-# INLINE andTerm #-}
+
+eqvTerm :: SupportedPrim a => Term a -> Term a -> Term Bool
+eqvTerm l r = internTerm $ UEqvTerm l r
+{-# INLINE eqvTerm #-}
+
+iteTerm :: SupportedPrim a => Term Bool -> Term a -> Term a -> Term a
+iteTerm c l r = internTerm $ UITETerm c l r
+{-# INLINE iteTerm #-}

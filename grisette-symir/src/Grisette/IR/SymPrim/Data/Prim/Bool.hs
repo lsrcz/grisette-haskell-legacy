@@ -1,7 +1,4 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -19,20 +16,12 @@ module Grisette.IR.SymPrim.Data.Prim.Bool
     pattern TrueTerm,
     pattern FalseTerm,
     pattern BoolTerm,
-    -- Not (..),
     notb,
-    -- pattern NotTerm,
-    Eqv (..),
     eqterm,
     neterm,
-    pattern EqvTerm,
     orb,
-    pattern OrTerm,
     andb,
-    pattern AndTerm,
-    ITE (..),
     iteterm,
-    pattern ITETerm,
     implyb,
     xorb,
     unaryUnfoldOnce,
@@ -40,17 +29,13 @@ module Grisette.IR.SymPrim.Data.Prim.Bool
   )
 where
 
-import Control.DeepSeq
 import Control.Monad.Except
-import Data.Hashable
 import Data.Maybe
 import Data.Typeable
-import GHC.Generics
 import Grisette.IR.SymPrim.Data.Prim.Helpers
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import {-# SOURCE #-} Grisette.IR.SymPrim.Data.Prim.Num
 import Grisette.IR.SymPrim.Data.Prim.Utils
-import Language.Haskell.TH.Syntax
 import Unsafe.Coerce
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
@@ -81,11 +66,6 @@ pattern BoolTerm :: Term Bool -> Term a
 pattern BoolTerm b <- (castTerm -> Just b)
 
 -- Not
--- data Not = Not deriving (Generic, Show, Lift, NFData, Eq, Hashable)
-
-{-notb :: Term Bool -> Term Bool
-notb = partialEvalUnary Not-}
-
 notb :: Term Bool -> Term Bool
 notb (NotTerm _ tm) = tm
 notb (ConcTerm _ a) = if a then falseTerm else trueTerm
@@ -96,44 +76,20 @@ notb (AndTerm _ n1 (NotTerm _ n2)) = orb (notb n1) n2
 notb tm = notTerm tm
 {-# INLINABLE notb #-}
 
-{-
-instance UnaryOp Not Bool Bool where
-  partialEvalUnary _ (NotTerm _ tm) = tm
-  partialEvalUnary _ (ConcTerm _ a) = if a then falseTerm else trueTerm
-  partialEvalUnary _ (OrTerm (NotTerm _ n1) n2) = andb n1 (notb n2)
-  partialEvalUnary _ (OrTerm n1 (NotTerm _ n2)) = andb (notb n1) n2
-  partialEvalUnary _ (AndTerm (NotTerm _ n1) n2) = orb n1 (notb n2)
-  partialEvalUnary _ (AndTerm n1 (NotTerm _ n2)) = orb (notb n1) n2
-  partialEvalUnary _ tm = constructUnary Not tm
-  pformatUnary _ t = "(! " ++ pformat t ++ ")"
-
-pattern NotTerm :: Term Bool -> Term a
-pattern NotTerm _ t <- UnsafeUnaryTermPatt Not t
--}
-
 -- Eqv
-data Eqv = Eqv deriving (Show, Lift, Generic, NFData, Eq, Hashable)
-
-eqterm :: (SupportedPrim a) => Term a -> Term a -> Term Bool
-eqterm = partialEvalBinary Eqv
-
-neterm :: (SupportedPrim a) => Term a -> Term a -> Term Bool
-neterm l r = notb $ eqterm l r
-
-instance SupportedPrim a => BinaryOp Eqv a a Bool where
-  partialEvalBinary _ l@ConcTerm {} r@ConcTerm {} = concTerm $ l == r
-  partialEvalBinary _ l@ConcTerm {} r = eqterm r l
-  partialEvalBinary _ l (BoolConcTerm rv) = if rv then unsafeCoerce l else notb $ unsafeCoerce l
-  partialEvalBinary _ (NotTerm _ lv) r
+eqterm :: forall a. (SupportedPrim a) => Term a -> Term a -> Term Bool
+eqterm l@ConcTerm {} r@ConcTerm {} = concTerm $ l == r
+eqterm l@ConcTerm {} r = eqterm r l
+eqterm l (BoolConcTerm rv) = if rv then unsafeCoerce l else notb $ unsafeCoerce l
+eqterm (NotTerm _ lv) r
     | lv == unsafeCoerce r = falseTerm
-  partialEvalBinary _ l (NotTerm _ rv)
+eqterm l (NotTerm _ rv)
     | unsafeCoerce l == rv = falseTerm
   {-
   partialEvalBinary _ (ConcTerm l) (ConcTerm r) =
     if l == r then trueTerm else falseTerm
     -}
-  partialEvalBinary
-    _
+eqterm
     ( BinaryTerm
         _
         (Dyn (AddNum :: AddNum a))
@@ -142,8 +98,7 @@ instance SupportedPrim a => BinaryOp Eqv a a Bool where
       )
     (Dyn (ConcTerm _ c2 :: Term a)) =
       eqterm v (concTerm $ c2 - c)
-  partialEvalBinary
-    _
+eqterm
     (Dyn (ConcTerm _ c2 :: Term a))
     ( BinaryTerm
         _
@@ -152,26 +107,25 @@ instance SupportedPrim a => BinaryOp Eqv a a Bool where
         (Dyn (v :: Term a))
       ) =
       eqterm v (concTerm $ c2 - c)
-  partialEvalBinary _ l (ITETerm c t f)
+eqterm l (ITETerm _ c t f)
     | l == t = orb c (eqterm l f)
     | l == f = orb (notb c) (eqterm l t)
-  partialEvalBinary _ (ITETerm c t f) r
+eqterm (ITETerm _ c t f) r
     | t == r = orb c (eqterm f r)
     | f == r = orb (notb c) (eqterm t r)
-  partialEvalBinary _ l r
+eqterm l r
     | l == r = trueTerm
-    | otherwise = constructBinary Eqv l r
-  pformatBinary _ l r = "(== " ++ pformat l ++ " " ++ pformat r ++ ")"
+    | otherwise = eqvTerm l r
 
-pattern EqvTerm :: (Typeable a) => Term a -> Term a -> Term Bool
-pattern EqvTerm l r <- Unsafe1t21BinaryTermPatt Eqv l r
+neterm :: (SupportedPrim a) => Term a -> Term a -> Term Bool
+neterm l r = notb $ eqterm l r
 
 impliesTerm :: Term Bool -> Term Bool -> Bool
 impliesTerm (ConcTerm _ True) _ = True
 impliesTerm _ (ConcTerm _ False) = True
 impliesTerm
-  (BinaryTerm _ (Dyn Eqv) (e1 :: Term a) (ec1@(ConcTerm _ _) :: Term b))
-  (NotTerm _ (BinaryTerm _ (Dyn Eqv) (Dyn (e2 :: Term a)) (Dyn (ec2@(ConcTerm _ _) :: Term b))))
+  (EqvTerm _ (e1 :: Term a) (ec1@(ConcTerm _ _) :: Term b))
+  (NotTerm _ (EqvTerm _ (Dyn (e2 :: Term a)) (Dyn (ec2@(ConcTerm _ _) :: Term b))))
     | e1 == e2 && ec1 /= ec2 = True
 impliesTerm a b
   | a == b = True
@@ -181,8 +135,8 @@ impliesTerm a b
 orEqFirst :: Term Bool -> Term Bool -> Bool
 orEqFirst _ (ConcTerm _ False) = True
 orEqFirst
-  (NotTerm _ (BinaryTerm _ (Dyn Eqv) (e1 :: Term a) (ec1@(ConcTerm _ _) :: Term b)))
-  (BinaryTerm _ (Dyn Eqv) (Dyn (e2 :: Term a)) (Dyn (ec2@(ConcTerm _ _) :: Term b)))
+  (NotTerm _ (EqvTerm _ (e1 :: Term a) (ec1@(ConcTerm _ _) :: Term b)))
+  (EqvTerm _ (Dyn (e2 :: Term a)) (Dyn (ec2@(ConcTerm _ _) :: Term b)))
     | e1 == e2 && ec1 /= ec2 = True
 orEqFirst x y
   | x == y = True
@@ -194,8 +148,8 @@ orEqTrue (ConcTerm _ True) _ = True
 orEqTrue _ (ConcTerm _ True) = True
 --orEqTrue (NotTerm _ e1) (NotTerm _ e2) = andEqFalse e1 e2
 orEqTrue
-  (NotTerm _ (BinaryTerm _ (Dyn Eqv) (e1 :: Term a) (ec1@(ConcTerm _ _) :: Term b)))
-  (NotTerm _ (BinaryTerm _ (Dyn Eqv) (Dyn (e2 :: Term a)) (Dyn (ec2@(ConcTerm _ _) :: Term b))))
+  (NotTerm _ (EqvTerm _ (e1 :: Term a) (ec1@(ConcTerm _ _) :: Term b)))
+  (NotTerm _ (EqvTerm _ (Dyn (e2 :: Term a)) (Dyn (ec2@(ConcTerm _ _) :: Term b))))
     | e1 == e2 && ec1 /= ec2 = True
 orEqTrue (NotTerm _ l) r | l == r = True
 orEqTrue l (NotTerm _ r) | l == r = True
@@ -206,8 +160,8 @@ andEqFirst :: Term Bool -> Term Bool -> Bool
 andEqFirst _ (ConcTerm _ True) = True
 --andEqFirst x (NotTerm _ y) = andEqFalse x y
 andEqFirst
-  (BinaryTerm _ (Dyn Eqv) (e1 :: Term a) (ec1@(ConcTerm _ _) :: Term b))
-  (NotTerm _ (BinaryTerm _ (Dyn Eqv) (Dyn (e2 :: Term a)) (Dyn (ec2@(ConcTerm _ _) :: Term b))))
+  (EqvTerm _ (e1 :: Term a) (ec1@(ConcTerm _ _) :: Term b))
+  (NotTerm _ (EqvTerm _ (Dyn (e2 :: Term a)) (Dyn (ec2@(ConcTerm _ _) :: Term b))))
     | e1 == e2 && ec1 /= ec2 = True
 andEqFirst x y
   | x == y = True
@@ -219,8 +173,8 @@ andEqFalse (ConcTerm _ False) _ = True
 andEqFalse _ (ConcTerm _ False) = True
 -- andEqFalse (NotTerm _ e1) (NotTerm _ e2) = orEqTrue e1 e2
 andEqFalse
-  (BinaryTerm _ (Dyn Eqv) (e1 :: Term a) (ec1@(ConcTerm _ _) :: Term b))
-  (BinaryTerm _ (Dyn Eqv) (Dyn (e2 :: Term a)) (Dyn (ec2@(ConcTerm _ _) :: Term b)))
+  (EqvTerm _ (e1 :: Term a) (ec1@(ConcTerm _ _) :: Term b))
+  (EqvTerm _ (Dyn (e2 :: Term a)) (Dyn (ec2@(ConcTerm _ _) :: Term b)))
     | e1 == e2 && ec1 /= ec2 = True
 andEqFalse (NotTerm _ x) y | x == y = True
 andEqFalse x (NotTerm _ y) | x == y = True
@@ -263,12 +217,6 @@ orb (NotTerm _ nl) (NotTerm _ nr) = notb $ andb nl nr
 orb l r = orTerm l r
 {-# INLINABLE orb #-}
 
--- pattern OrTerm :: Term Bool -> Term Bool -> Term a
--- pattern OrTerm l r <- UnsafeBinaryTermPatt Or l r
-
--- And
--- data And = And deriving (Show, Lift, Generic, NFData, Eq, Hashable)
-
 andb :: Term Bool -> Term Bool -> Term Bool
 andb l r
     | andEqFalse l r = falseTerm
@@ -302,36 +250,6 @@ andb (NotTerm _ nl) (NotTerm _ nr) = notb $ orb nl nr
 andb l r = andTerm l r
 {-# INLINABLE andb #-}
 
--- pattern AndTerm :: Term Bool -> Term Bool -> Term a
--- pattern AndTerm l r <- UnsafeBinaryTermPatt And l r
-
-data ITE = ITE deriving (Show, Lift, Generic, NFData, Eq, Hashable)
-
-{-
-iteHelper :: (Typeable a) => (Term Bool -> Term Bool) -> Term a -> Term a
-iteHelper f a = fromJust $ castTerm a >>= castTerm . f
-
-simpleImpliesTerm :: Term Bool -> Term Bool -> Bool
-simpleImpliesTerm
-  (BinaryTerm _ (Dyn Eqv) (e1 :: Term a) (ec1@(ConcTerm _ _) :: Term b))
-  (NotTerm (BinaryTerm _ (Dyn Eqv) (Dyn (e2 :: Term a)) (Dyn (ec2@(ConcTerm _ _) :: Term b))))
-    | e1 == e2 && ec1 /= ec2 = True
-simpleImpliesTerm a b
-  | a == b = True
-  | otherwise = False
-{-# INLINE simpleImpliesTerm #-}
-
-simpleImpliesNotTerm :: Term Bool -> Term Bool -> Bool
-simpleImpliesNotTerm
-  (BinaryTerm _ (Dyn Eqv) (e1 :: Term a) (ec1@(ConcTerm _ _) :: Term b))
-  (BinaryTerm _ (Dyn Eqv) (Dyn (e2 :: Term a)) (Dyn (ec2@(ConcTerm _ _) :: Term b)))
-    | e1 == e2 && ec1 /= ec2 = True
-simpleImpliesNotTerm _ a (NotTerm _ b)
-  | a == b = True
-simpleImpliesNotTerm _ _ = False
-{-# INLINE simpleImpliesNotTerm #-}
--}
-
 partialEvalITEBoolLeftNot :: Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
 partialEvalITEBoolLeftNot cond nIfTrue ifFalse
   | cond == nIfTrue = Just $ andb (notb cond) ifFalse -- need test
@@ -362,14 +280,14 @@ partialEvalInferImplies :: Term Bool -> Term Bool -> Term Bool -> Term Bool -> M
 partialEvalInferImplies cond (NotTerm _ nt1) trueRes falseRes
   | cond == nt1 = Just falseRes
   | otherwise = case (cond, nt1) of
-    ( BinaryTerm _ (Dyn Eqv) (e1 :: Term a) (ec1@(ConcTerm _ _) :: Term b),
-      BinaryTerm _ (Dyn Eqv) (Dyn (e2 :: Term a)) (Dyn (ec2@(ConcTerm _ _) :: Term b))
+    ( EqvTerm _ (e1 :: Term a) (ec1@(ConcTerm _ _) :: Term b),
+      EqvTerm _ (Dyn (e2 :: Term a)) (Dyn (ec2@(ConcTerm _ _) :: Term b))
       )
         | e1 == e2 && ec1 /= ec2 -> Just trueRes
     _ -> Nothing
 partialEvalInferImplies
-  (BinaryTerm _ (Dyn Eqv) (e1 :: Term a) (ec1@(ConcTerm _ _) :: Term b))
-  (BinaryTerm _ (Dyn Eqv) (Dyn (e2 :: Term a)) (Dyn (ec2@(ConcTerm _ _) :: Term b)))
+  (EqvTerm _ (e1 :: Term a) (ec1@(ConcTerm _ _) :: Term b))
+  (EqvTerm _ (Dyn (e2 :: Term a)) (Dyn (ec2@(ConcTerm _ _) :: Term b)))
   _
   falseRes
     | e1 == e2 && ec1 /= ec2 = Just falseRes
@@ -463,21 +381,21 @@ partialEvalITEBasic (ConcTerm _ True) ifTrue _ = Just ifTrue
 partialEvalITEBasic (ConcTerm _ False) _ ifFalse = Just ifFalse
 partialEvalITEBasic (NotTerm _ ncond) ifTrue ifFalse = Just $ partialEvalITE ncond ifFalse ifTrue
 partialEvalITEBasic _ ifTrue ifFalse | ifTrue == ifFalse = Just ifTrue
-partialEvalITEBasic (ITETerm cc ct cf) (ITETerm tc tt tf) (ITETerm fc ft ff) -- later
+partialEvalITEBasic (ITETerm _ cc ct cf) (ITETerm _ tc tt tf) (ITETerm _ fc ft ff) -- later
   | cc == tc && cc == fc = Just $ iteterm cc (iteterm ct tt ft) (iteterm cf tf ff)
-partialEvalITEBasic cond (ITETerm tc tt tf) ifFalse -- later
+partialEvalITEBasic cond (ITETerm _ tc tt tf) ifFalse -- later
   | cond == tc = Just $ iteterm cond tt ifFalse
   | tt == ifFalse = Just $ iteterm (orb (notb cond) tc) tt tf
   | tf == ifFalse = Just $ iteterm (andb cond tc) tt tf
   | impliesTerm cond (notb tc) = Just $ iteterm cond tf ifFalse
-partialEvalITEBasic cond ifTrue (ITETerm fc ft ff) -- later
+partialEvalITEBasic cond ifTrue (ITETerm _ fc ft ff) -- later
   | cond == fc = Just $ iteterm cond ifTrue ff
   | ifTrue == ft = Just $ iteterm (orb cond fc) ifTrue ff
   | ifTrue == ff = Just $ iteterm (orb cond (notb fc)) ifTrue ft
 partialEvalITEBasic _ _ _ = Nothing
 
 partialEvalITE :: forall a. (SupportedPrim a) => Term Bool -> Term a -> Term a -> Term a
-partialEvalITE cond ifTrue ifFalse = fromMaybe (constructTernary ITE cond ifTrue ifFalse) $
+partialEvalITE cond ifTrue ifFalse = fromMaybe (iteTerm cond ifTrue ifFalse) $
   case eqT @a @Bool of
     Nothing -> partialEvalITEBasic cond ifTrue ifFalse
     Just Refl -> partialEvalITEBool cond ifTrue ifFalse
@@ -503,103 +421,8 @@ partialEvalITEBool cond ifTrue ifFalse =
       partialEvalITEBoolNoLeft cond ifTrue ifFalse
     ]
 
-{-
-
-  partialEvalTernary _ cond TrueTerm ifFalse =
-    iteHelper (orb cond) ifFalse
-  partialEvalTernary _ cond FalseTerm ifFalse =
-    iteHelper (andb (notb cond)) ifFalse
-  partialEvalTernary _ cond ifTrue TrueTerm =
-    iteHelper (implyb cond) ifTrue
-  partialEvalTernary _ cond ifTrue FalseTerm =
-    iteHelper (andb cond) ifTrue
-  partialEvalTernary _ cond ifTrue ifFalse
-    | Just cond == castTerm ifTrue = iteHelper (orb cond) ifFalse
-  partialEvalTernary _ cond ifTrue ifFalse
-    | Just cond == castTerm ifFalse = iteHelper (andb cond) ifTrue
-
--}
-
-instance (SupportedPrim a) => TernaryOp ITE Bool a a a where
-  partialEvalTernary _ cond ifTrue ifFalse = partialEvalITE cond ifTrue ifFalse
-
-  {-
-  partialEvalTernary _ TrueTerm ifTrue _ = ifTrue
-  partialEvalTernary _ FalseTerm _ ifFalse = ifFalse
-  partialEvalTernary _ (NotTerm _ ncond) ifTrue ifFalse = partialEvalTernary ITE ncond ifFalse ifTrue
-  partialEvalTernary _ _ ifTrue ifFalse | ifTrue == ifFalse = ifTrue
-  partialEvalTernary _ (ITETerm cc ct cf) (ITETerm tc tt tf) (ITETerm fc ft ff) -- later
-    | cc == tc && cc == fc = iteterm cc (iteterm ct tt ft) (iteterm cf tf ff)
-  partialEvalTernary _ cond (ITETerm tc tt tf) ifFalse -- later
-    | cond == tc = iteterm cond tt ifFalse
-    | impliesTerm cond (notb tc) = iteterm cond tf ifFalse
-    | tt == ifFalse = iteterm (orb (notb cond) tc) tt tf
-    | tf == ifFalse = iteterm (andb cond tc) tt tf
-  partialEvalTernary _ cond ifTrue (ITETerm fc ft ff) -- later
-    | cond == fc = iteterm cond ifTrue ff
-    | ifTrue == ft = iteterm (orb cond fc) ifTrue ff
-    | ifTrue == ff = iteterm (orb cond (notb fc)) ifTrue ft
-  partialEvalTernary _ cond (NotTerm _ nifTrue) (NotTerm _ nifFalse) =
-    unsafeCoerce $ notb $ partialEvalTernary ITE cond nifTrue nifFalse
-  partialEvalTernary _ cond (AndTerm t1 t2) (AndTerm f1 f2)
-    | t1 == f1 = unsafeCoerce $ andb t1 $ iteterm cond t2 f2
-    | t1 == f2 = unsafeCoerce $ andb t1 $ iteterm cond t2 f1
-    | t2 == f1 = unsafeCoerce $ andb t2 $ iteterm cond t1 f2
-    | t2 == f2 = unsafeCoerce $ andb t2 $ iteterm cond t1 f1
-  partialEvalTernary _ cond (AndTerm t1 t2) ifFalse
-    | t1 == unsafeCoerce ifFalse = unsafeCoerce $ andb t1 $ implyb cond t2
-    | t2 == unsafeCoerce ifFalse = unsafeCoerce $ andb t2 $ implyb cond t1
-    | impliesTerm cond t1 = unsafeCoerce $ iteterm cond t2 $ unsafeCoerce ifFalse
-    | impliesTerm cond t2 = unsafeCoerce $ iteterm cond t1 $ unsafeCoerce ifFalse
-    | impliesTerm cond (notb t1) = unsafeCoerce $ andb (notb cond) $ unsafeCoerce ifFalse
-    | impliesTerm cond (notb t2) = unsafeCoerce $ andb (notb cond) $ unsafeCoerce ifFalse
-  partialEvalTernary _ cond ifTrue (AndTerm f1 f2)
-    | f1 == unsafeCoerce ifTrue = unsafeCoerce $ andb f1 $ orb cond f2
-    | f2 == unsafeCoerce ifTrue = unsafeCoerce $ andb f2 $ orb cond f1
-  partialEvalTernary _ cond (OrTerm t1 t2) (OrTerm f1 f2)
-    | t1 == f1 = unsafeCoerce $ orb t1 $ iteterm cond t2 f2
-    | t1 == f2 = unsafeCoerce $ orb t1 $ iteterm cond t2 f1
-    | t2 == f1 = unsafeCoerce $ orb t2 $ iteterm cond t1 f2
-    | t2 == f2 = unsafeCoerce $ orb t2 $ iteterm cond t1 f1
-  partialEvalTernary _ cond (OrTerm t1 t2) ifFalse
-    | t1 == unsafeCoerce ifFalse = unsafeCoerce $ orb t1 $ andb cond t2
-    | t2 == unsafeCoerce ifFalse = unsafeCoerce $ orb t2 $ andb cond t1
-    | impliesTerm cond t1 = unsafeCoerce $ orb cond $ unsafeCoerce ifFalse
-    | impliesTerm cond t2 = unsafeCoerce $ orb cond $ unsafeCoerce ifFalse
-    | impliesTerm cond (notb t1) = unsafeCoerce $ iteterm cond t2 $ unsafeCoerce ifFalse
-    | impliesTerm cond (notb t2) = unsafeCoerce $ iteterm cond t1 $ unsafeCoerce ifFalse
-  partialEvalTernary _ cond ifTrue (OrTerm f1 f2)
-    | f1 == unsafeCoerce ifTrue = unsafeCoerce $ orb f1 $ andb (notb cond) f2
-    | f2 == unsafeCoerce ifTrue = unsafeCoerce $ orb f2 $ andb (notb cond) f1
-  partialEvalTernary _ cond TrueTerm ifFalse =
-    iteHelper (orb cond) ifFalse
-  partialEvalTernary _ cond FalseTerm ifFalse =
-    iteHelper (andb (notb cond)) ifFalse
-  partialEvalTernary _ cond ifTrue TrueTerm =
-    iteHelper (implyb cond) ifTrue
-  partialEvalTernary _ cond ifTrue FalseTerm =
-    iteHelper (andb cond) ifTrue
-  partialEvalTernary _ cond ifTrue ifFalse
-    | Just cond == castTerm ifTrue = iteHelper (orb cond) ifFalse
-  partialEvalTernary _ cond ifTrue ifFalse
-    | Just cond == castTerm ifFalse = iteHelper (andb cond) ifTrue
-  partialEvalTernary _ cond (NotTerm (AndTerm t1 t2)) ifFalse
-    | impliesTerm cond t1 = unsafeCoerce $ iteterm cond (notb t2) $ unsafeCoerce ifFalse
-    | impliesTerm cond t2 = unsafeCoerce $ iteterm cond (notb t1) $ unsafeCoerce ifFalse
-    | impliesTerm cond (notb t1) || impliesTerm cond (notb t2) = unsafeCoerce $ orb cond $ unsafeCoerce ifFalse
-  partialEvalTernary _ cond (NotTerm (OrTerm t1 t2)) ifFalse
-    | impliesTerm cond t1 || impliesTerm cond t2 = unsafeCoerce $ andb (notb cond) $ unsafeCoerce ifFalse
-    | impliesTerm cond (notb t1) = unsafeCoerce $ iteterm cond (notb t2) $ unsafeCoerce ifFalse
-    | impliesTerm cond (notb t2) = unsafeCoerce $ iteterm cond (notb t1) $ unsafeCoerce ifFalse
-  partialEvalTernary _ cond ifTrue ifFalse = constructTernary ITE cond ifTrue ifFalse
-  -}
-  pformatTernary _ cond l r = "(ite " ++ pformat cond ++ " " ++ pformat l ++ " " ++ pformat r ++ ")"
-
 iteterm :: (SupportedPrim a) => Term Bool -> Term a -> Term a -> Term a
-iteterm = partialEvalTernary ITE
-
-pattern ITETerm :: (Typeable a) => Term Bool -> Term a -> Term a -> Term a
-pattern ITETerm cond ifTrue ifFalse <- Unsafe1u2t32TernaryTermPatt ITE cond ifTrue ifFalse
+iteterm = partialEvalITE
 
 implyb :: Term Bool -> Term Bool -> Term Bool
 implyb l = orb (notb l)
@@ -617,7 +440,7 @@ unaryPartialUnfoldOnce partial fallback = ret
   where
     oneLevel :: TotalRuleUnary a b -> PartialRuleUnary a b
     oneLevel fallback' x = case (x, partial x) of
-      (ITETerm cond vt vf, pr) ->
+      (ITETerm _ cond vt vf, pr) ->
         let pt = partial vt
             pf = partial vf
          in case (pt, pf) of
@@ -653,11 +476,11 @@ binaryPartialUnfoldOnce partial fallback = ret
         ( \_ ->
             catchError
               ( case x of
-                  ITETerm cond vt vf -> left cond vt vf y partial' fallback'
+                  ITETerm _ cond vt vf -> left cond vt vf y partial' fallback'
                   _ -> Nothing
               )
               ( \_ -> case y of
-                  ITETerm cond vt vf -> left cond vt vf x (flip partial') (flip fallback')
+                  ITETerm _ cond vt vf -> left cond vt vf x (flip partial') (flip fallback')
                   _ -> Nothing
               )
         )

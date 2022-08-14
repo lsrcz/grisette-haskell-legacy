@@ -10,6 +10,7 @@ import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 import Grisette.IR.SymPrim.Data.Prim.Num
 import Test.Hspec
+import Data.Typeable
 
 spec :: Spec
 spec = do
@@ -55,12 +56,12 @@ spec = do
         eqterm (concTerm (1 :: WordN 4)) (concTerm 2) `shouldBe` concTerm False
       it "Eqv with single concrete always put concrete ones in the right" $ do
         eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1)
-          `shouldBe` constructBinary Eqv (ssymbTerm "a" :: Term Integer) (concTerm 1 :: Term Integer)
+          `shouldBe` eqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1 :: Term Integer)
         eqterm (concTerm 1) (ssymbTerm "a" :: Term Integer)
-          `shouldBe` constructBinary Eqv (ssymbTerm "a" :: Term Integer) (concTerm 1 :: Term Integer)
+          `shouldBe` eqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1 :: Term Integer)
       it "Eqv on general symbolic" $ do
         eqterm (ssymbTerm "a" :: Term Integer) (ssymbTerm "b")
-          `shouldBe` constructBinary Eqv (ssymbTerm "a" :: Term Integer) (ssymbTerm "b" :: Term Integer)
+          `shouldBe` eqvTerm (ssymbTerm "a" :: Term Integer) (ssymbTerm "b" :: Term Integer)
       it "Eqv on Bool with single concrete" $ do
         eqterm (concTerm True) (ssymbTerm "a") `shouldBe` ssymbTerm "a"
         eqterm (ssymbTerm "a") (concTerm True) `shouldBe` ssymbTerm "a"
@@ -98,13 +99,12 @@ spec = do
     describe "Eqv pattern" $ do
       it "Eqv pattern should work" $ do
         case ssymbTerm "a" :: Term Bool of
-          EqvTerm (_ :: Term Bool) _ -> expectationFailure "Bad pattern matching"
+          EqvTerm _ _ _ -> expectationFailure "Bad pattern matching"
           _ -> return ()
         case eqterm (ssymbTerm "a" :: Term Bool) (ssymbTerm "b") of
-          EqvTerm (_ :: Term Integer) _ -> expectationFailure "EqvTerm pattern should check type"
-          EqvTerm (v1 :: Term Bool) v2 -> do
-            v1 `shouldBe` ssymbTerm "a"
-            v2 `shouldBe` ssymbTerm "b"
+          EqvTerm _ v1 v2 -> do
+            (cast v1 :: Maybe (Term Bool)) `shouldBe` Just (ssymbTerm "a")
+            (cast v2 :: Maybe (Term Bool)) `shouldBe` Just (ssymbTerm "b")
           _ -> return ()
   describe "Or" $ do
     describe "Or construction" $ do

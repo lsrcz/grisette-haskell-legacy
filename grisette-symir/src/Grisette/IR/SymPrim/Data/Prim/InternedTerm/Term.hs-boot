@@ -115,6 +115,8 @@ data Term t where
   NotTerm :: {-# UNPACK #-} !Id -> !(Term Bool) -> Term Bool
   OrTerm :: {-# UNPACK #-} !Id -> !(Term Bool) -> !(Term Bool) -> Term Bool
   AndTerm :: {-# UNPACK #-} !Id -> !(Term Bool) -> !(Term Bool) -> Term Bool
+  EqvTerm :: SupportedPrim t => {-# UNPACK #-} !Id -> !(Term t) -> !(Term t) -> Term Bool
+  ITETerm :: SupportedPrim t => {-# UNPACK #-} !Id -> !(Term Bool) -> !(Term t) -> !(Term t) -> Term t
 
 data UTerm t where
   UConcTerm :: (SupportedPrim t) => !t -> UTerm t
@@ -136,3 +138,5 @@ data UTerm t where
   UNotTerm :: !(Term Bool) -> UTerm Bool
   UOrTerm :: !(Term Bool) -> !(Term Bool) -> UTerm Bool
   UAndTerm :: !(Term Bool) -> !(Term Bool) -> UTerm Bool
+  UEqvTerm :: SupportedPrim t => !(Term t) -> !(Term t) -> UTerm Bool
+  UITETerm :: SupportedPrim t => !(Term Bool) -> !(Term t) -> !(Term t) -> UTerm t

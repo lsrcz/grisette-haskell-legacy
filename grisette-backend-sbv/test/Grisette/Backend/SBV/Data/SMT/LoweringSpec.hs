@@ -17,10 +17,10 @@ import qualified Data.SBV as SBV
 import qualified Data.SBV.Control as SBV
 import Grisette.Backend.SBV.Data.SMT.Config
 import Grisette.Backend.SBV.Data.SMT.Lowering
+import Grisette.Backend.SBV.Data.SMT.SymBiMap
 import Grisette.IR.SymPrim.Data.BV
 import Grisette.IR.SymPrim.Data.Prim.BV
 import Grisette.IR.SymPrim.Data.Prim.Bits
-import Grisette.IR.SymPrim.Data.Prim.Bool
 import Grisette.IR.SymPrim.Data.Prim.Integer
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
@@ -270,16 +270,16 @@ spec = do
         orTerm "or"
         (\x y -> (x SBV..<+> y) SBV..|| (x SBV..&& y))
     it "Eqv lowering should work" $ do
-      testBinaryOpLowering' @Bool @Bool @Bool unboundedConfig Eqv (SBV..==)
-      testBinaryOpLowering' @Bool @Bool @Bool
+      testBinaryOpLowering @Bool @Bool @Bool unboundedConfig eqvTerm "eqv" (SBV..==)
+      testBinaryOpLowering @Bool @Bool @Bool
         unboundedConfig
-        Eqv
+        eqvTerm "eqv"
         (\x y -> SBV.sNot (x SBV..<+> y))
     it "ITE lowering should work" $ do
-      testTernaryOpLowering' @Bool @Bool @Bool @Bool unboundedConfig ITE SBV.ite
-      testTernaryOpLowering' @Bool @Bool @Bool @Bool
+      testTernaryOpLowering @Bool @Bool @Bool @Bool unboundedConfig iteTerm "ite" SBV.ite
+      testTernaryOpLowering @Bool @Bool @Bool @Bool
         unboundedConfig
-        ITE
+        iteTerm "ite"
         (\c x y -> (c SBV..=> x) SBV..&& (SBV.sNot c SBV..=> y))
   describe "Test Integer Lowering" $ do
     it "Add lowering should work" $ do

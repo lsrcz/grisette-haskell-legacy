@@ -17,12 +17,11 @@ module Grisette.Backend.SBV.Data.SMT.Lowering
   ( lowerSinglePrim,
     lowerSinglePrim',
     parseModel,
-    SymBiMap (..),
-    -- collectPrims,
-    -- emptySymBiMap,
+    SymBiMap,
   )
 where
 
+import GHC.Stack
 import Control.Monad.State.Strict
 import Data.Bifunctor
 import Data.Bits
@@ -46,16 +45,17 @@ import Grisette.IR.SymPrim.Data.Prim.Bits
 import Grisette.IR.SymPrim.Data.Prim.Bool
 import Grisette.IR.SymPrim.Data.Prim.GeneralFunc
 import Grisette.IR.SymPrim.Data.Prim.Integer
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.SomeTerm
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
 import Grisette.IR.SymPrim.Data.Prim.Model as PM
 import Grisette.IR.SymPrim.Data.Prim.Num
 import Grisette.IR.SymPrim.Data.Prim.TabularFunc
 import Grisette.IR.SymPrim.Data.TabularFunc
 import qualified Type.Reflection as R
 import Unsafe.Coerce
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm.SomeTerm
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
+import Grisette.Backend.SBV.Data.SMT.SymBiMap
 
 newtype NatRepr (n :: Nat) = NatRepr Natural
 
@@ -78,116 +78,13 @@ unsafeAxiom :: forall a b. a :~: b
 unsafeAxiom = unsafeCoerce (Refl @a)
 {-# NOINLINE unsafeAxiom #-} -- Note [Mark unsafe axioms as NOINLINE]
 
-data SymBiMap = SymBiMap
-  { biMapToSBV :: M.HashMap SomeTerm Dynamic,
-    biMapFromSBV :: M.HashMap String TermSymbol
-  }
-  deriving (Show)
-
-sizeBiMap :: SymBiMap -> Int
-sizeBiMap = M.size . biMapToSBV
-
-{-
-emptySymBiMap :: SymBiMap
-emptySymBiMap = SymBiMap M.empty M.empty
--}
-
-addBiMap :: SomeTerm -> Dynamic -> String -> TermSymbol -> SymBiMap -> SymBiMap
-addBiMap s d n sb (SymBiMap t f) = SymBiMap (M.insert s d t) (M.insert n sb f)
-
-addBiMapIntermediate :: SomeTerm -> Dynamic -> SymBiMap -> SymBiMap
-addBiMapIntermediate s d (SymBiMap t f) = SymBiMap (M.insert s d t) f
-
-findStringToSymbol :: String -> SymBiMap -> Maybe TermSymbol
-findStringToSymbol s (SymBiMap _ f) = M.lookup s f
-
-{-
-visited :: (SupportedPrim a) => Term a -> StateT (S.HashSet SomeTerm, SymBiMap) SBV.Symbolic Bool
-visited tm = gets $ \(s, _) -> S.member (SomeTerm tm) s
-
-visit :: (SupportedPrim a) => Term a -> StateT (S.HashSet SomeTerm, SymBiMap) SBV.Symbolic ()
-visit tm = modify $ \(s, m) -> (S.insert (SomeTerm tm) s, m)
-
-addPrim ::
-  forall integerBitWidth a.
-  (SupportedPrim a, Typeable (TermTy integerBitWidth a)) =>
-  String ->
-  TermSymbol ->
-  Term a ->
-  TermTy integerBitWidth a ->
-  StateT (S.HashSet SomeTerm, SymBiMap) SBV.Symbolic ()
-addPrim name ts tm sbvtm = modify $ second (addBiMap (SomeTerm tm) (toDyn sbvtm) name ts)
-
-collectPrims ::
-  forall integerBitWidth a.
-  (SupportedPrim a) =>
-  GrisetteSMTConfig integerBitWidth ->
-  Term a ->
-  SBV.Symbolic SymBiMap
-collectPrims config t = snd <$> execStateT (collectPrimsImpl config t) (S.empty, emptySymBiMap)
-
-collectPrimsImpl ::
-  forall integerBitWidth a.
-  (SupportedPrim a) =>
-  GrisetteSMTConfig integerBitWidth ->
-  Term a ->
-  StateT (S.HashSet SomeTerm, SymBiMap) SBV.Symbolic ()
-collectPrimsImpl config term = do
-  v <- visited term
-  if v
-    then return ()
-    else do
-      visit term
-      case term of
-        ConcTerm {} -> return ()
-        SymbTerm _ ts -> fromMaybe errorMsg $ asum [simple, ufunc]
-          where
-            errorMsg :: forall x. x
-            errorMsg = error $ "Don't know how to translate the type " ++ show (typeRep (Proxy @a)) ++ " to SMT"
-            simple :: Maybe (StateT (S.HashSet SomeTerm, SymBiMap) SBV.Symbolic ())
-            simple = case (config, R.typeRep @a) of
-              ResolvedSimpleType -> Just $ do
-                let name = show ts
-                StateT $ \(s, m) -> do
-                  (g :: TermTy integerBitWidth a) <- SBV.free name
-                  return ((), (s, addBiMap (SomeTerm term) (toDyn g) name ts m))
-              _ -> Nothing
-            ufunc :: Maybe (StateT (S.HashSet SomeTerm, SymBiMap) SBV.Symbolic ())
-            ufunc = case R.typeRep @a of
-              TFun3Type (t1 :: R.TypeRep a1) (t2 :: R.TypeRep a2) (t3 :: R.TypeRep a3) ->
-                case ((config, t1), (config, t2), (config, t3)) of
-                  (ResolvedSimpleType, ResolvedSimpleType, ResolvedSimpleType) ->
-                    let name = "ufunc_" ++ show ts
-                        f =
-                          SBV.uninterpret
-                            @( TermTy integerBitWidth a1 ->
-                               TermTy integerBitWidth a2 ->
-                               TermTy integerBitWidth a3
-                             )
-                            name
-                     in Just $ addPrim @integerBitWidth name ts term f
-                  _ -> Nothing
-              TFunType (ta :: R.TypeRep b) (tb :: R.TypeRep b1) -> case ((config, ta), (config, tb)) of
-                (ResolvedSimpleType, ResolvedSimpleType) ->
-                  let name = "ufunc_" ++ show ts
-                      f = SBV.uninterpret @(TermTy integerBitWidth b -> TermTy integerBitWidth b1) name
-                   in Just $ addPrim @integerBitWidth name ts term f
-                _ -> Nothing
-              _ -> Nothing
-        UnaryTerm _ _ t1 -> collectPrimsImpl config t1
-        BinaryTerm _ _ t1 t2 -> collectPrimsImpl config t1 >> collectPrimsImpl config t2
-        TernaryTerm _ _ t1 t2 t3 ->
-          collectPrimsImpl config t1 >> collectPrimsImpl config t2
-            >> collectPrimsImpl config t3
--}
-
 cachedResult ::
   forall integerBitWidth a.
   (SupportedPrim a, Typeable (TermTy integerBitWidth a)) =>
   Term a ->
   State SymBiMap (Maybe (TermTy integerBitWidth a))
 cachedResult t = gets $ \m -> do
-  d <- M.lookup (SomeTerm t) (biMapToSBV m)
+  d <- lookupTerm (SomeTerm t) m
   Just $ fromDyn d undefined
 
 addResult ::
@@ -371,7 +268,7 @@ lowerSinglePrimImpl' config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) =
                     withEquality (unsafeAxiom :: ((((w + ix) - 1) - ix) + 1) :~: w) $
                       withLeqProof ev1 r
 lowerSinglePrimImpl' config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_ :: Term y)) =
-  fromMaybe errorMsg $ asum [numType, numOrdCmp, bitsType, eqTerm, concatBV, funcApply]
+  fromMaybe errorMsg $ asum [numType, numOrdCmp, bitsType, concatBV, funcApply]
   where
     errorMsg :: forall t1. t1
     errorMsg =
@@ -382,12 +279,6 @@ lowerSinglePrimImpl' config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (
           ++ show (R.typeRep @y)
           ++ " -> "
           ++ show (R.typeRep @a)
-    eqTerm :: Maybe (State SymBiMap (TermTy integerBitWidth a))
-    eqTerm = case ((config, R.typeRep @x), R.typeRep @a) of
-      (ResolvedSimpleType, BoolType) -> case t of
-        EqvTerm (t1' :: Term x) t2' -> Just $ lowerBinaryTerm' config t t1' t2' (SBV..==)
-        _ -> Nothing
-      _ -> Nothing
     numOrdCmp :: Maybe (State SymBiMap (TermTy integerBitWidth a))
     numOrdCmp = case (R.typeRep @a, (config, R.typeRep @x)) of
       (BoolType, ResolvedNumOrdType) -> case t of
@@ -452,19 +343,8 @@ lowerSinglePrimImpl' config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (
                 )
           _ -> Nothing
       _ -> Nothing
-lowerSinglePrimImpl' config@ResolvedConfig {} t@(TernaryTerm _ op (_ :: Term x) (_ :: Term y) (_ :: Term z)) =
-  case (config, R.typeRep @a) of
-    ResolvedDeepType ->
-      case t of
-        ITETerm c t1 f1 -> do
-          l1 <- lowerSinglePrimCached' config c
-          l2 <- lowerSinglePrimCached' config t1
-          l3 <- lowerSinglePrimCached' config f1
-          let g = SBV.ite l1 l2 l3
-          addResult @integerBitWidth t g
-          return g
-        _ -> errorMsg
-    _ -> errorMsg
+lowerSinglePrimImpl' ResolvedConfig {} (TernaryTerm _ op (_ :: Term x) (_ :: Term y) (_ :: Term z)) =
+  errorMsg
   where
     errorMsg :: forall t1. t1
     errorMsg =
@@ -477,23 +357,39 @@ lowerSinglePrimImpl' config@ResolvedConfig {} t@(TernaryTerm _ op (_ :: Term x) 
           ++ show (R.typeRep @z)
           ++ " -> "
           ++ show (R.typeRep @a)
-lowerSinglePrimImpl' config t@(NotTerm _ arg) = do
-  l1 <- lowerSinglePrimCached' config arg
-  let g = SBV.sNot l1
-  addResult @integerBitWidth t g
-  return g
-lowerSinglePrimImpl' config t@(OrTerm _ arg1 arg2) = do
-  l1 <- lowerSinglePrimCached' config arg1
-  l2 <- lowerSinglePrimCached' config arg2
-  let g = l1 SBV..|| l2
-  addResult @integerBitWidth t g
-  return g
-lowerSinglePrimImpl' config t@(AndTerm _ arg1 arg2) = do
-  l1 <- lowerSinglePrimCached' config arg1
-  l2 <- lowerSinglePrimCached' config arg2
-  let g = l1 SBV..&& l2
-  addResult @integerBitWidth t g
-  return g
+lowerSinglePrimImpl' config t@(NotTerm _ arg) = lowerUnaryTerm' config t arg SBV.sNot
+lowerSinglePrimImpl' config t@(OrTerm _ arg1 arg2) = lowerBinaryTerm' config t arg1 arg2 (SBV..||)
+lowerSinglePrimImpl' config t@(AndTerm _ arg1 arg2) = lowerBinaryTerm' config t arg1 arg2 (SBV..&&)
+lowerSinglePrimImpl' config t@(EqvTerm _ (arg1 :: Term x) arg2) =
+  case (config, R.typeRep @x) of
+    ResolvedSimpleType -> lowerBinaryTerm' config t arg1 arg2 (SBV..==)
+    _ ->
+      error $
+        "Don't know how to translate the op (==) :: "
+          ++ show (R.typeRep @x)
+          ++ " -> "
+          ++ show (R.typeRep @x)
+          ++ " -> "
+          ++ show (R.typeRep @a)
+lowerSinglePrimImpl' config t@(ITETerm _ cond arg1 arg2) =
+  case (config, R.typeRep @a) of
+    ResolvedSimpleType -> do
+          l1 <- lowerSinglePrimCached' config cond
+          l2 <- lowerSinglePrimCached' config arg1
+          l3 <- lowerSinglePrimCached' config arg2
+          let g = SBV.ite l1 l2 l3
+          addResult @integerBitWidth t g
+          return g
+    _ ->
+      error $
+        "Don't know how to translate the op ite :: "
+          ++ show (R.typeRep @Bool)
+          ++ " -> "
+          ++ show (R.typeRep @a)
+          ++ " -> "
+          ++ show (R.typeRep @a)
+          ++ " -> "
+          ++ show (R.typeRep @a)
 lowerSinglePrimImpl' _ _ = undefined
 
 buildUTFunc11 ::
@@ -582,8 +478,8 @@ lowerSinglePrimUFunc config t@(SymbTerm _ _) m =
 lowerSinglePrimUFunc _ _ _ = error "Should not call this function"
 
 lowerUnaryTerm ::
-  forall integerBitWidth a a1 x x1.
-  (Typeable x1, a1 ~ TermTy integerBitWidth a, SupportedPrim x) =>
+  forall integerBitWidth a a1 x x1. 
+  (Typeable x1, a1 ~ TermTy integerBitWidth a, SupportedPrim x, HasCallStack) =>
   GrisetteSMTConfig integerBitWidth ->
   Term x ->
   Term a ->
@@ -597,7 +493,7 @@ lowerUnaryTerm config orig t1 f m = do
 
 lowerBinaryTerm ::
   forall integerBitWidth a b a1 b1 x x1.
-  (Typeable x1, a1 ~ TermTy integerBitWidth a, b1 ~ TermTy integerBitWidth b, SupportedPrim x) =>
+  (Typeable x1, a1 ~ TermTy integerBitWidth a, b1 ~ TermTy integerBitWidth b, SupportedPrim x, HasCallStack) =>
   GrisetteSMTConfig integerBitWidth ->
   Term x ->
   Term a ->
@@ -612,7 +508,7 @@ lowerBinaryTerm config orig t1 t2 f m = do
   return (addBiMapIntermediate (SomeTerm orig) (toDyn g) m2, g)
 
 lowerSinglePrimCached ::
-  forall integerBitWidth a.
+  forall integerBitWidth a. HasCallStack =>
   GrisetteSMTConfig integerBitWidth ->
   Term a ->
   SymBiMap ->
@@ -621,20 +517,20 @@ lowerSinglePrimCached config t m =
   introSupportedPrimConstraint t $
     case (config, R.typeRep @a) of
       ResolvedDeepType ->
-        case M.lookup (SomeTerm t) (biMapToSBV m) of
+        case lookupTerm (SomeTerm t) m of
           Just x -> return (m, fromDyn x undefined)
           Nothing -> lowerSinglePrimImpl config t m
       _ -> error $ "Don't know how to translate the type " ++ show (typeRep (Proxy @a)) ++ " to SMT"
 
 lowerSinglePrim ::
-  forall integerBitWidth a.
+  forall integerBitWidth a. HasCallStack =>
   GrisetteSMTConfig integerBitWidth ->
   Term a ->
   SBV.Symbolic (SymBiMap, TermTy integerBitWidth a)
-lowerSinglePrim config t = lowerSinglePrimCached config t (SymBiMap M.empty M.empty)
+lowerSinglePrim config t = lowerSinglePrimCached config t emptySymBiMap
 
 lowerSinglePrimImpl ::
-  forall integerBitWidth a.
+  forall integerBitWidth a. HasCallStack =>
   GrisetteSMTConfig integerBitWidth ->
   Term a ->
   SymBiMap ->
@@ -767,7 +663,7 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) m 
                     withEquality (unsafeAxiom :: ((((w + ix) - 1) - ix) + 1) :~: w) $
                       withLeqProof ev1 r
 lowerSinglePrimImpl config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_ :: Term y)) m =
-  fromMaybe errorMsg $ asum [numType, numOrdCmp, bitsType, eqTerm, concatBV, integerType, funcApply]
+  fromMaybe errorMsg $ asum [numType, numOrdCmp, bitsType, concatBV, integerType, funcApply]
   where
     errorMsg :: forall t1. t1
     errorMsg =
@@ -778,12 +674,6 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_
           ++ show (R.typeRep @y)
           ++ " -> "
           ++ show (R.typeRep @a)
-    eqTerm :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
-    eqTerm = case ((config, R.typeRep @x), R.typeRep @a) of
-      (ResolvedSimpleType, BoolType) -> case t of
-        EqvTerm (t1' :: Term x) t2' -> Just $ lowerBinaryTerm config t t1' t2' (SBV..==) m
-        _ -> Nothing
-      _ -> Nothing
     numOrdCmp :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
     numOrdCmp = case (R.typeRep @a, (config, R.typeRep @x)) of
       (BoolType, ResolvedNumOrdType) -> case t of
@@ -855,18 +745,7 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_
                 m
           _ -> Nothing
       _ -> Nothing
-lowerSinglePrimImpl config@ResolvedConfig {} t@(TernaryTerm _ op (_ :: Term x) (_ :: Term y) (_ :: Term z)) m =
-  case (config, R.typeRep @a) of
-    ResolvedDeepType ->
-      case t of
-        ITETerm c t1 f1 -> do
-          (m1, l1) <- lowerSinglePrimCached config c m
-          (m2, l2) <- lowerSinglePrimCached config t1 m1
-          (m3, l3) <- lowerSinglePrimCached config f1 m2
-          let g = SBV.ite l1 l2 l3
-          return (addBiMapIntermediate (SomeTerm t) (toDyn g) m3, g)
-        _ -> errorMsg
-    _ -> errorMsg
+lowerSinglePrimImpl ResolvedConfig {} (TernaryTerm _ op (_ :: Term x) (_ :: Term y) (_ :: Term z)) _ = errorMsg
   where
     errorMsg :: forall t1. t1
     errorMsg =
@@ -879,20 +758,38 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(TernaryTerm _ op (_ :: Term x) (
           ++ show (R.typeRep @z)
           ++ " -> "
           ++ show (R.typeRep @a)
-lowerSinglePrimImpl config t@(NotTerm _ arg) m = do
-  (m1, l1) <- lowerSinglePrimCached config arg m
-  let g = SBV.sNot l1
-  return (addBiMapIntermediate (SomeTerm t) (toDyn g) m1, g)
-lowerSinglePrimImpl config t@(OrTerm _ arg1 arg2) m = do
-  (m1, l1) <- lowerSinglePrimCached config arg1 m
-  (m2, l2) <- lowerSinglePrimCached config arg2 m1
-  let g = l1 SBV..|| l2
-  return (addBiMapIntermediate (SomeTerm t) (toDyn g) m2, g)
-lowerSinglePrimImpl config t@(AndTerm _ arg1 arg2) m = do
-  (m1, l1) <- lowerSinglePrimCached config arg1 m
-  (m2, l2) <- lowerSinglePrimCached config arg2 m1
-  let g = l1 SBV..&& l2
-  return (addBiMapIntermediate (SomeTerm t) (toDyn g) m2, g)
+lowerSinglePrimImpl config t@(NotTerm _ arg) m = lowerUnaryTerm config t arg SBV.sNot m
+lowerSinglePrimImpl config t@(OrTerm _ arg1 arg2) m = lowerBinaryTerm config t arg1 arg2 (SBV..||) m
+lowerSinglePrimImpl config t@(AndTerm _ arg1 arg2) m = lowerBinaryTerm config t arg1 arg2 (SBV..&&) m
+lowerSinglePrimImpl config t@(EqvTerm _ (arg1 :: Term x) arg2) m =
+  case (config, R.typeRep @x) of
+    ResolvedSimpleType -> lowerBinaryTerm config t arg1 arg2 (SBV..==) m
+    _ ->
+      error $
+        "Don't know how to translate the op (==) :: "
+          ++ show (R.typeRep @x)
+          ++ " -> "
+          ++ show (R.typeRep @x)
+          ++ " -> "
+          ++ show (R.typeRep @a)
+lowerSinglePrimImpl config t@(ITETerm _ cond arg1 arg2) m =
+  case (config, R.typeRep @a) of
+    ResolvedSimpleType -> do
+      (m1, l1) <- lowerSinglePrimCached config cond m
+      (m2, l2) <- lowerSinglePrimCached config arg1 m1
+      (m3, l3) <- lowerSinglePrimCached config arg2 m2
+      let g = SBV.ite l1 l2 l3
+      return (addBiMapIntermediate (SomeTerm t) (toDyn g) m3, g)
+    _ ->
+      error $
+        "Don't know how to translate the op ite :: "
+          ++ show (R.typeRep @Bool)
+          ++ " -> "
+          ++ show (R.typeRep @a)
+          ++ " -> "
+          ++ show (R.typeRep @a)
+          ++ " -> "
+          ++ show (R.typeRep @a)
 lowerSinglePrimImpl _ _ _ = error "Should never happen"
 
 unsafeMkNatRepr :: Int -> NatRepr w

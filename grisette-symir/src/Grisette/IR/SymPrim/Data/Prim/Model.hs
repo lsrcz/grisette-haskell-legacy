@@ -98,22 +98,24 @@ evaluateSomeTerm fillDefault (Model ma) = gomemo
     go (SomeTerm (BinaryTerm _ tag (arg1 :: Term a1) (arg2 :: Term a2))) =
       goBinary (partialEvalBinary tag) arg1 arg2
     go (SomeTerm (TernaryTerm _ tag (arg1 :: Term a1) (arg2 :: Term a2) (arg3 :: Term a3))) = do
-          SomeTerm $
-            partialEvalTernary
-              tag
-              (gotyped arg1)
-              (gotyped arg2)
-              (gotyped arg3)
+      goTernary (partialEvalTernary tag) arg1 arg2 arg3
     go (SomeTerm (NotTerm _ arg)) = goUnary notb arg
     go (SomeTerm (OrTerm _ arg1 arg2)) =
       goBinary orb arg1 arg2
     go (SomeTerm (AndTerm _ arg1 arg2)) =
       goBinary andb arg1 arg2
+    go (SomeTerm (EqvTerm _ arg1 arg2)) =
+      goBinary eqterm arg1 arg2
+    go (SomeTerm (ITETerm _ cond arg1 arg2)) =
+      goTernary iteterm cond arg1 arg2
     goUnary :: (SupportedPrim a, SupportedPrim b) => (Term a -> Term b) -> Term a -> SomeTerm
     goUnary f a = SomeTerm $ f (gotyped a)
     goBinary :: (SupportedPrim a, SupportedPrim b, SupportedPrim c) =>
       (Term a -> Term b -> Term c) -> Term a -> Term b -> SomeTerm
     goBinary f a b = SomeTerm $ f (gotyped a) (gotyped b)
+    goTernary :: (SupportedPrim a, SupportedPrim b, SupportedPrim c, SupportedPrim d) =>
+      (Term a -> Term b -> Term c -> Term d) -> Term a -> Term b -> Term c -> SomeTerm
+    goTernary f a b c = SomeTerm $ f (gotyped a) (gotyped b) (gotyped c)
 
 evaluateTerm :: forall a. (SupportedPrim a) => Bool -> Model -> Term a -> Term a
 evaluateTerm fillDefault m t = case evaluateSomeTerm fillDefault m $ SomeTerm t of
