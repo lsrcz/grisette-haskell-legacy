@@ -62,7 +62,7 @@ spec = do
   describe "ITEOp for SymPrim" $ do
     it "ites should work" $
       ites (ssymb "a" :: Sym Bool) (ssymb "b" :: Sym Integer) (ssymb "c")
-        `shouldBe` Sym (iteterm (ssymbTerm "a") (ssymbTerm "b") (ssymbTerm "c"))
+        `shouldBe` Sym (pevalITETerm (ssymbTerm "a") (ssymbTerm "b") (ssymbTerm "c"))
   describe "Mergeable for SymPrim" $ do
     it "Mergeable should work" $ do
       let SimpleStrategy s = mergingStrategy :: MergingStrategy (Sym Bool) (Sym Integer)
@@ -111,20 +111,20 @@ spec = do
       (genSymSimple () (nameWithInfo "a" True) :: Sym Bool) `shouldBe` iinfosymb "a" 0 True
   describe "SEq" $ do
     it "SEq for SymPrim should work" $ do
-      (ssymb "a" :: Sym Bool) ==~ ssymb "b" `shouldBe` Sym (eqterm (ssymbTerm "a" :: Term Bool) (ssymbTerm "b"))
-      (ssymb "a" :: Sym Bool) /=~ ssymb "b" `shouldBe` Sym (notb $ eqterm (ssymbTerm "a" :: Term Bool) (ssymbTerm "b"))
+      (ssymb "a" :: Sym Bool) ==~ ssymb "b" `shouldBe` Sym (pevalEqvTerm (ssymbTerm "a" :: Term Bool) (ssymbTerm "b"))
+      (ssymb "a" :: Sym Bool) /=~ ssymb "b" `shouldBe` Sym (pevalNotTerm $ pevalEqvTerm (ssymbTerm "a" :: Term Bool) (ssymbTerm "b"))
   describe "Sym Bool" $ do
     describe "LogicalOp for Sym Bool" $ do
       it "||~ for SymPrim should work" $ do
-        ssymb "a" ||~ ssymb "b" `shouldBe` Sym (orb (ssymbTerm "a") (ssymbTerm "b"))
+        ssymb "a" ||~ ssymb "b" `shouldBe` Sym (pevalOrTerm (ssymbTerm "a") (ssymbTerm "b"))
       it "&&~ for SymPrim should work" $ do
-        ssymb "a" &&~ ssymb "b" `shouldBe` Sym (andb (ssymbTerm "a") (ssymbTerm "b"))
+        ssymb "a" &&~ ssymb "b" `shouldBe` Sym (pevalAndTerm (ssymbTerm "a") (ssymbTerm "b"))
       it "nots for SymPrim should work" $ do
-        nots (ssymb "a") `shouldBe` Sym (notb (ssymbTerm "a"))
+        nots (ssymb "a") `shouldBe` Sym (pevalNotTerm (ssymbTerm "a"))
       it "xors for SymPrim should work" $ do
-        xors (ssymb "a") (ssymb "b") `shouldBe` Sym (xorb (ssymbTerm "a") (ssymbTerm "b"))
+        xors (ssymb "a") (ssymb "b") `shouldBe` Sym (pevalXorTerm (ssymbTerm "a") (ssymbTerm "b"))
       it "implies for SymPrim should work" $ do
-        implies (ssymb "a") (ssymb "b") `shouldBe` Sym (implyb (ssymbTerm "a") (ssymbTerm "b"))
+        implies (ssymb "a") (ssymb "b") `shouldBe` Sym (pevalImplyTerm (ssymbTerm "a") (ssymbTerm "b"))
   describe "Sym Integer" $ do
     describe "Num for Sym Integer" $ do
       it "fromInteger should work" $ do

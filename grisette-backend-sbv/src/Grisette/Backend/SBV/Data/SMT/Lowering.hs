@@ -27,7 +27,6 @@ import Data.Bifunctor
 import Data.Bits
 import Data.Dynamic
 import Data.Foldable
-import qualified Data.HashMap.Strict as M
 import Data.Kind
 import Data.Maybe
 import qualified Data.SBV as SBV
@@ -93,7 +92,7 @@ addResult ::
   Term a ->
   TermTy integerBitWidth a ->
   State SymBiMap ()
-addResult tm sbvtm = modify $ (addBiMapIntermediate (SomeTerm tm) (toDyn sbvtm))
+addResult tm sbvtm = modify $ addBiMapIntermediate (SomeTerm tm) (toDyn sbvtm)
 
 lowerSinglePrim' ::
   forall integerBitWidth a.
@@ -101,7 +100,7 @@ lowerSinglePrim' ::
   Term a ->
   SymBiMap ->
   (TermTy integerBitWidth a, SymBiMap)
-lowerSinglePrim' config t m = runState (lowerSinglePrimCached' config t) m
+lowerSinglePrim' config t = runState (lowerSinglePrimCached' config t)
 
 lowerSinglePrimCached' ::
   forall integerBitWidth a.
@@ -879,13 +878,13 @@ parseModel _ (SBVI.SMTModel _ _ assoc uifuncs) mp = foldr gouifuncs (foldr goass
           let symb = WithInfo (IndexedSymbol "arg" idx) FuncArg
               funs = second (\r -> gougfuncResolve (idx + 1) ta2' tr2' (r, s)) <$> partition ta1 l
               def = gougfuncResolve (idx + 1) ta2' tr2' ([], s)
-              body = foldl' (\acc (v, f) -> iteterm (eqterm (iinfosymbTerm "arg" idx FuncArg) (concTerm v)) (concTerm f) acc) (concTerm def) funs
+              body = foldl' (\acc (v, f) -> pevalITETerm (pevalEqvTerm (iinfosymbTerm "arg" idx FuncArg) (concTerm v)) (concTerm f) acc) (concTerm def) funs
            in GeneralFunc Proxy symb body
         _ ->
           let symb = WithInfo (IndexedSymbol "arg" idx) FuncArg
               vs = bimap (resolveSingle ta1 . head) (resolveSingle ta2) <$> l
               def = resolveSingle ta2 s
-              body = foldl' (\acc (v, a) -> iteterm (eqterm (iinfosymbTerm "arg" idx FuncArg) (concTerm v)) (concTerm a) acc) (concTerm def) vs
+              body = foldl' (\acc (v, a) -> pevalITETerm (pevalEqvTerm (iinfosymbTerm "arg" idx FuncArg) (concTerm v)) (concTerm a) acc) (concTerm def) vs
            in GeneralFunc Proxy symb body
     partition :: R.TypeRep a -> [([SBVI.CV], SBVI.CV)] -> [(a, [([SBVI.CV], SBVI.CV)])]
     partition t = case (R.eqTypeRep t (R.typeRep @Bool), R.eqTypeRep t (R.typeRep @Integer)) of

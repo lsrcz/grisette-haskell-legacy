@@ -64,12 +64,12 @@ spec = do
       it "Add unfold 1" $ do
         addNum
           (concTerm 3)
-          (iteterm (ssymbTerm "a") (concTerm 1 :: Term Integer) (ssymbTerm "a"))
-          `shouldBe` iteterm (ssymbTerm "a") (concTerm 4) (addNum (concTerm 3) (ssymbTerm "a"))
+          (pevalITETerm (ssymbTerm "a") (concTerm 1 :: Term Integer) (ssymbTerm "a"))
+          `shouldBe` pevalITETerm (ssymbTerm "a") (concTerm 4) (addNum (concTerm 3) (ssymbTerm "a"))
         addNum
-          (iteterm (ssymbTerm "a") (concTerm 1 :: Term Integer) (ssymbTerm "a"))
+          (pevalITETerm (ssymbTerm "a") (concTerm 1 :: Term Integer) (ssymbTerm "a"))
           (concTerm 3)
-          `shouldBe` iteterm (ssymbTerm "a") (concTerm 4) (addNum (ssymbTerm "a") (concTerm 3))
+          `shouldBe` pevalITETerm (ssymbTerm "a") (concTerm 4) (addNum (ssymbTerm "a") (concTerm 3))
     describe "Add pattern" $ do
       it "Add pattern should work" $ do
         case ssymbTerm "a" :: Term Bool of
@@ -187,12 +187,12 @@ spec = do
       it "Times unfold 1" $ do
         timesNum
           (concTerm 3)
-          (iteterm (ssymbTerm "a") (concTerm 5 :: Term Integer) (ssymbTerm "a"))
-          `shouldBe` iteterm (ssymbTerm "a") (concTerm 15) (timesNum (concTerm 3) (ssymbTerm "a"))
+          (pevalITETerm (ssymbTerm "a") (concTerm 5 :: Term Integer) (ssymbTerm "a"))
+          `shouldBe` pevalITETerm (ssymbTerm "a") (concTerm 15) (timesNum (concTerm 3) (ssymbTerm "a"))
         timesNum
-          (iteterm (ssymbTerm "a") (concTerm 5 :: Term Integer) (ssymbTerm "a"))
+          (pevalITETerm (ssymbTerm "a") (concTerm 5 :: Term Integer) (ssymbTerm "a"))
           (concTerm 3)
-          `shouldBe` iteterm (ssymbTerm "a") (concTerm 15) (timesNum (ssymbTerm "a") (concTerm 3))
+          `shouldBe` pevalITETerm (ssymbTerm "a") (concTerm 15) (timesNum (ssymbTerm "a") (concTerm 3))
     describe "Times pattern" $ do
       it "Times pattern should work" $ do
         case ssymbTerm "a" :: Term Bool of

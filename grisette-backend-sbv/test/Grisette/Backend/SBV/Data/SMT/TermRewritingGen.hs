@@ -149,11 +149,11 @@ boolonly n | n > 0 = do
   v2 <- boolonly (n - 1)
   v3 <- boolonly (n - 1)
   oneof
-    [ return $ constructUnarySpec notTerm notb v1,
-      return $ constructBinarySpec andTerm andb v1 v2,
-      return $ constructBinarySpec orTerm orb v1 v2,
-      return $ constructBinarySpec eqvTerm eqterm v1 v2,
-      return $ constructTernarySpec iteTerm iteterm v1 v2 v3
+    [ return $ constructUnarySpec notTerm pevalNotTerm v1,
+      return $ constructBinarySpec andTerm pevalAndTerm v1 v2,
+      return $ constructBinarySpec orTerm pevalOrTerm v1 v2,
+      return $ constructBinarySpec eqvTerm pevalEqvTerm v1 v2,
+      return $ constructTernarySpec iteTerm pevalITETerm v1 v2 v3
     ]
 boolonly _ = error "Should never be called"
 
@@ -198,14 +198,14 @@ boolWithLIA n | n > 0 = do
   v1i <- liaWithBool (n - 1)
   v2i <- liaWithBool (n - 1)
   frequency
-    [ (1, return $ constructUnarySpec notTerm notb v1),
-      (1, return $ constructBinarySpec andTerm andb v1 v2),
-      (1, return $ constructBinarySpec orTerm orb v1 v2),
-      (1, return $ constructBinarySpec eqvTerm eqterm v1 v2),
-      (5, return $ constructBinarySpec eqvTerm eqterm v1i v2i),
+    [ (1, return $ constructUnarySpec notTerm pevalNotTerm v1),
+      (1, return $ constructBinarySpec andTerm pevalAndTerm v1 v2),
+      (1, return $ constructBinarySpec orTerm pevalOrTerm v1 v2),
+      (1, return $ constructBinarySpec eqvTerm pevalEqvTerm v1 v2),
+      (5, return $ constructBinarySpec eqvTerm pevalEqvTerm v1i v2i),
       (5, return $ constructBinarySpec' LTNum v1i v2i),
       (5, return $ constructBinarySpec' LENum v1i v2i),
-      (1, return $ constructTernarySpec iteTerm iteterm v1 v2 v3)
+      (1, return $ constructTernarySpec iteTerm pevalITETerm v1 v2 v3)
     ]
 boolWithLIA _ = error "Should never be called"
 
@@ -226,7 +226,7 @@ liaWithBool n | n > 0 = do
       return $ constructUnarySpec' AbsNum v1i,
       return $ constructUnarySpec' SignumNum v1i,
       return $ constructBinarySpec' (AddNum @Integer) v1i v2i,
-      return $ constructTernarySpec iteTerm iteterm v1b v1i v2i
+      return $ constructTernarySpec iteTerm pevalITETerm v1b v1i v2i
     ]
 liaWithBool _ = error "Should never be called"
 
@@ -274,14 +274,14 @@ boolWithFSBV p n | n > 0 = do
   v1i <- fsbvWithBool p (n - 1)
   v2i <- fsbvWithBool p (n - 1)
   frequency
-    [ (1, return $ constructUnarySpec notTerm notb v1),
-      (1, return $ constructBinarySpec andTerm andb v1 v2),
-      (1, return $ constructBinarySpec orTerm orb v1 v2),
-      (1, return $ constructBinarySpec eqvTerm eqterm v1 v2),
-      (5, return $ constructBinarySpec eqvTerm eqterm v1i v2i),
+    [ (1, return $ constructUnarySpec notTerm pevalNotTerm v1),
+      (1, return $ constructBinarySpec andTerm pevalAndTerm v1 v2),
+      (1, return $ constructBinarySpec orTerm pevalOrTerm v1 v2),
+      (1, return $ constructBinarySpec eqvTerm pevalEqvTerm v1 v2),
+      (5, return $ constructBinarySpec eqvTerm pevalEqvTerm v1i v2i),
       (5, return $ constructBinarySpec' LTNum v1i v2i),
       (5, return $ constructBinarySpec' LENum v1i v2i),
-      (1, return $ constructTernarySpec iteTerm iteterm v1 v2 v3)
+      (1, return $ constructTernarySpec iteTerm pevalITETerm v1 v2 v3)
     ]
 boolWithFSBV _ _ = error "Should never be called"
 
@@ -315,7 +315,7 @@ fsbvWithBool p n | n > 0 = do
       return $ constructUnarySpec' (ComplementBits @(bv 4)) v1i,
       return $ constructUnarySpec' (ShiftBits @(bv 4) i) v1i,
       return $ constructUnarySpec' (RotateBits @(bv 4) i) v1i,
-      return $ constructTernarySpec iteTerm iteterm v1b v1i v2i
+      return $ constructTernarySpec iteTerm pevalITETerm v1b v1i v2i
     ]
 fsbvWithBool _ _ = error "Should never be called"
 

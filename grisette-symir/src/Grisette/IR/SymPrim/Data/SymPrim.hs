@@ -86,7 +86,7 @@ pattern SymConc c <-
     -}
 
 instance (SupportedPrim a) => ITEOp (Sym Bool) (Sym a) where
-  ites (Sym c) (Sym t) (Sym f) = Sym $ iteterm c t f
+  ites (Sym c) (Sym t) (Sym f) = Sym $ pevalITETerm c t f
 
 instance (SupportedPrim a) => Mergeable (Sym Bool) (Sym a) where
   mergingStrategy = SimpleStrategy ites
@@ -151,7 +151,7 @@ instance (SupportedPrim a) => Eq (Sym a) where
 
 #define SEQ_SYM(type) \
 instance (SupportedPrim (type)) => SEq (Sym Bool) (Sym (type)) where \
-  (Sym l) ==~ (Sym r) = Sym $ eqterm l r
+  (Sym l) ==~ (Sym r) = Sym $ pevalEqvTerm l r
 
 #define SORD_SYM(type) \
 instance (SupportedPrim (type)) => SOrd (Sym Bool) (Sym (type)) where \
@@ -188,11 +188,11 @@ instance SOrd (Sym Bool) (Sym Bool) where
       (mrgIf (l ==~ r) (mrgReturn EQ) (mrgReturn GT))
 
 instance LogicalOp (Sym Bool) where
-  (Sym l) ||~ (Sym r) = Sym $ orb l r
-  (Sym l) &&~ (Sym r) = Sym $ andb l r
-  nots (Sym v) = Sym $ notb v
-  (Sym l) `xors` (Sym r) = Sym $ xorb l r
-  (Sym l) `implies` (Sym r) = Sym $ implyb l r
+  (Sym l) ||~ (Sym r) = Sym $ pevalOrTerm l r
+  (Sym l) &&~ (Sym r) = Sym $ pevalAndTerm l r
+  nots (Sym v) = Sym $ pevalNotTerm v
+  (Sym l) `xors` (Sym r) = Sym $ pevalXorTerm l r
+  (Sym l) `implies` (Sym r) = Sym $ pevalImplyTerm l r
 
 instance SymBoolOp (Sym Bool)
 

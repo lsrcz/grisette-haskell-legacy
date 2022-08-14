@@ -68,7 +68,7 @@ instance Solver (GrisetteSMTConfig n) SymBool (S.HashSet TermSymbol) SBVC.CheckS
       allSymbols = extractSymbolics s :: S.HashSet TermSymbol
       next :: PM.Model -> SymBiMap -> Query (SymBiMap, Either SBVC.CheckSatResult PM.Model)
       next md origm = do
-        let newtm = S.foldl' (\acc v -> orb acc (notb (fromJust $ equation md v))) (concTerm False) allSymbols
+        let newtm = S.foldl' (\acc v -> pevalOrTerm acc (pevalNotTerm (fromJust $ equation md v))) (concTerm False) allSymbols
         let (lowered, newm) = lowerSinglePrim' config newtm origm
         SBV.constrain lowered
         r <- SBVC.checkSat

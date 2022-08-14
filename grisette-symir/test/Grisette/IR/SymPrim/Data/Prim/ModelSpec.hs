@@ -38,8 +38,8 @@ spec = do
               ]
           )
     it "equation" $ do
-      equation m3 asymbol `shouldBe` Just (eqterm (ssymbTerm "a") (concTerm 1 :: Term Integer))
-      equation m3 bsymbol `shouldBe` Just (eqterm (ssymbTerm "b") (concTerm True))
+      equation m3 asymbol `shouldBe` Just (pevalEqvTerm (ssymbTerm "a") (concTerm 1 :: Term Integer))
+      equation m3 bsymbol `shouldBe` Just (pevalEqvTerm (ssymbTerm "b") (concTerm True))
       equation m3 csymbol `shouldBe` Nothing
     it "valueOf" $ do
       valueOf m3 asymbol `shouldBe` Just (1 :: Integer)
@@ -114,19 +114,19 @@ spec = do
       evaluateTerm True m3 (addNum (ssymbTerm "x") (ssymbTerm "a") :: Term Integer) `shouldBe` concTerm 1
       evaluateTerm False m3 (addNum (ssymbTerm "x") (ssymbTerm "y") :: Term Integer) `shouldBe` addNum (ssymbTerm "x") (ssymbTerm "y")
       evaluateTerm True m3 (addNum (ssymbTerm "x") (ssymbTerm "y") :: Term Integer) `shouldBe` concTerm 0
-      evaluateTerm False m3 (iteterm (ssymbTerm "b") (addNum (ssymbTerm "a") (ssymbTerm "a")) (ssymbTerm "a") :: Term Integer)
+      evaluateTerm False m3 (pevalITETerm (ssymbTerm "b") (addNum (ssymbTerm "a") (ssymbTerm "a")) (ssymbTerm "a") :: Term Integer)
         `shouldBe` concTerm 2
-      evaluateTerm True m3 (iteterm (ssymbTerm "b") (addNum (ssymbTerm "a") (ssymbTerm "a")) (ssymbTerm "a") :: Term Integer)
+      evaluateTerm True m3 (pevalITETerm (ssymbTerm "b") (addNum (ssymbTerm "a") (ssymbTerm "a")) (ssymbTerm "a") :: Term Integer)
         `shouldBe` concTerm 2
-      evaluateTerm False m3 (iteterm (ssymbTerm "x") (addNum (ssymbTerm "a") (ssymbTerm "a")) (ssymbTerm "a") :: Term Integer)
-        `shouldBe` iteterm (ssymbTerm "x") (concTerm 2) (concTerm 1)
-      evaluateTerm True m3 (iteterm (ssymbTerm "x") (addNum (ssymbTerm "a") (ssymbTerm "a")) (ssymbTerm "a") :: Term Integer)
+      evaluateTerm False m3 (pevalITETerm (ssymbTerm "x") (addNum (ssymbTerm "a") (ssymbTerm "a")) (ssymbTerm "a") :: Term Integer)
+        `shouldBe` pevalITETerm (ssymbTerm "x") (concTerm 2) (concTerm 1)
+      evaluateTerm True m3 (pevalITETerm (ssymbTerm "x") (addNum (ssymbTerm "a") (ssymbTerm "a")) (ssymbTerm "a") :: Term Integer)
         `shouldBe` concTerm 1
-      evaluateTerm False m3 (iteterm (ssymbTerm "b") (ssymbTerm "x") (addNum (concTerm 1) (ssymbTerm "y")) :: Term Integer)
+      evaluateTerm False m3 (pevalITETerm (ssymbTerm "b") (ssymbTerm "x") (addNum (concTerm 1) (ssymbTerm "y")) :: Term Integer)
         `shouldBe` ssymbTerm "x"
-      evaluateTerm True m3 (iteterm (ssymbTerm "b") (ssymbTerm "x") (addNum (concTerm 1) (ssymbTerm "y")) :: Term Integer)
+      evaluateTerm True m3 (pevalITETerm (ssymbTerm "b") (ssymbTerm "x") (addNum (concTerm 1) (ssymbTerm "y")) :: Term Integer)
         `shouldBe` concTerm 0
-      evaluateTerm False m3 (iteterm (ssymbTerm "z") (ssymbTerm "x") (addNum (concTerm 1) (ssymbTerm "y")) :: Term Integer)
-        `shouldBe` iteterm (ssymbTerm "z") (ssymbTerm "x") (addNum (concTerm 1) (ssymbTerm "y"))
-      evaluateTerm True m3 (iteterm (ssymbTerm "z") (ssymbTerm "x") (addNum (concTerm 1) (ssymbTerm "y")) :: Term Integer)
+      evaluateTerm False m3 (pevalITETerm (ssymbTerm "z") (ssymbTerm "x") (addNum (concTerm 1) (ssymbTerm "y")) :: Term Integer)
+        `shouldBe` pevalITETerm (ssymbTerm "z") (ssymbTerm "x") (addNum (concTerm 1) (ssymbTerm "y"))
+      evaluateTerm True m3 (pevalITETerm (ssymbTerm "z") (ssymbTerm "x") (addNum (concTerm 1) (ssymbTerm "y")) :: Term Integer)
         `shouldBe` concTerm 1

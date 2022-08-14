@@ -24,11 +24,11 @@ spec = do
       let f :: Integer =-> Integer =
             TabularFunc [(1, 2), (3, 4)] 5
       applyf (concTerm f) (ssymbTerm "b")
-        `shouldBe` iteterm
-          (eqterm (concTerm 1 :: Term Integer) (ssymbTerm "b"))
+        `shouldBe` pevalITETerm
+          (pevalEqvTerm (concTerm 1 :: Term Integer) (ssymbTerm "b"))
           (concTerm 2)
-          ( iteterm
-              (eqterm (concTerm 3 :: Term Integer) (ssymbTerm "b"))
+          ( pevalITETerm
+              (pevalEqvTerm (concTerm 3 :: Term Integer) (ssymbTerm "b"))
               (concTerm 4)
               (concTerm 5)
           )

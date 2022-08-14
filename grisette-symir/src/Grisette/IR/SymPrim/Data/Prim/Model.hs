@@ -37,7 +37,7 @@ newtype Model = Model (M.HashMap TermSymbol ModelValue) deriving (Show, Eq, Gene
 equation :: Model -> TermSymbol -> Maybe (Term Bool)
 equation m tsym@(TermSymbol (_ :: Proxy a) sym) =
   case valueOf m tsym of
-    Just (v :: a) -> Just $ eqterm (symbTerm sym) (concTerm v)
+    Just (v :: a) -> Just $ pevalEqvTerm (symbTerm sym) (concTerm v)
     Nothing -> Nothing
 
 empty :: Model
@@ -99,15 +99,15 @@ evaluateSomeTerm fillDefault (Model ma) = gomemo
       goBinary (partialEvalBinary tag) arg1 arg2
     go (SomeTerm (TernaryTerm _ tag (arg1 :: Term a1) (arg2 :: Term a2) (arg3 :: Term a3))) = do
       goTernary (partialEvalTernary tag) arg1 arg2 arg3
-    go (SomeTerm (NotTerm _ arg)) = goUnary notb arg
+    go (SomeTerm (NotTerm _ arg)) = goUnary pevalNotTerm arg
     go (SomeTerm (OrTerm _ arg1 arg2)) =
-      goBinary orb arg1 arg2
+      goBinary pevalOrTerm arg1 arg2
     go (SomeTerm (AndTerm _ arg1 arg2)) =
-      goBinary andb arg1 arg2
+      goBinary pevalAndTerm arg1 arg2
     go (SomeTerm (EqvTerm _ arg1 arg2)) =
-      goBinary eqterm arg1 arg2
+      goBinary pevalEqvTerm arg1 arg2
     go (SomeTerm (ITETerm _ cond arg1 arg2)) =
-      goTernary iteterm cond arg1 arg2
+      goTernary pevalITETerm cond arg1 arg2
     goUnary :: (SupportedPrim a, SupportedPrim b) => (Term a -> Term b) -> Term a -> SomeTerm
     goUnary f a = SomeTerm $ f (gotyped a)
     goBinary :: (SupportedPrim a, SupportedPrim b, SupportedPrim c) =>

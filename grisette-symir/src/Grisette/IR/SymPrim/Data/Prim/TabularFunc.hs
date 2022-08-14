@@ -56,7 +56,7 @@ instance (Show a, Show b, SupportedPrim a, SupportedPrim b) => BinaryPartialStra
   leftConstantHandler _ (TabularFunc f d) a = Just $ go f
     where
       go [] = concTerm d
-      go ((x, y) : xs) = iteterm (eqterm a (concTerm x)) (concTerm y) (go xs)
+      go ((x, y) : xs) = pevalITETerm (pevalEqvTerm a (concTerm x)) (concTerm y) (go xs)
   rightConstantHandler _ _ _ = Nothing
   nonBinaryConstantHandler _ _ _ = Nothing
 

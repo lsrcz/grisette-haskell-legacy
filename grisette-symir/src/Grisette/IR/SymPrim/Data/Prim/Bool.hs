@@ -16,14 +16,14 @@ module Grisette.IR.SymPrim.Data.Prim.Bool
     pattern TrueTerm,
     pattern FalseTerm,
     pattern BoolTerm,
-    notb,
-    eqterm,
-    neterm,
-    orb,
-    andb,
-    iteterm,
-    implyb,
-    xorb,
+    pevalNotTerm,
+    pevalEqvTerm,
+    pevalNotEqvTerm,
+    pevalOrTerm,
+    pevalAndTerm,
+    pevalITETerm,
+    pevalImplyTerm,
+    pevalXorTerm,
     unaryUnfoldOnce,
     binaryUnfoldOnce,
   )
@@ -66,30 +66,30 @@ pattern BoolTerm :: Term Bool -> Term a
 pattern BoolTerm b <- (castTerm -> Just b)
 
 -- Not
-notb :: Term Bool -> Term Bool
-notb (NotTerm _ tm) = tm
-notb (ConcTerm _ a) = if a then falseTerm else trueTerm
-notb (OrTerm _ (NotTerm _ n1) n2) = andb n1 (notb n2)
-notb (OrTerm _ n1 (NotTerm _ n2)) = andb (notb n1) n2
-notb (AndTerm _ (NotTerm _ n1) n2) = orb n1 (notb n2)
-notb (AndTerm _ n1 (NotTerm _ n2)) = orb (notb n1) n2
-notb tm = notTerm tm
-{-# INLINABLE notb #-}
+pevalNotTerm :: Term Bool -> Term Bool
+pevalNotTerm (NotTerm _ tm) = tm
+pevalNotTerm (ConcTerm _ a) = if a then falseTerm else trueTerm
+pevalNotTerm (OrTerm _ (NotTerm _ n1) n2) = pevalAndTerm n1 (pevalNotTerm n2)
+pevalNotTerm (OrTerm _ n1 (NotTerm _ n2)) = pevalAndTerm (pevalNotTerm n1) n2
+pevalNotTerm (AndTerm _ (NotTerm _ n1) n2) = pevalOrTerm n1 (pevalNotTerm n2)
+pevalNotTerm (AndTerm _ n1 (NotTerm _ n2)) = pevalOrTerm (pevalNotTerm n1) n2
+pevalNotTerm tm = notTerm tm
+{-# INLINABLE pevalNotTerm #-}
 
 -- Eqv
-eqterm :: forall a. (SupportedPrim a) => Term a -> Term a -> Term Bool
-eqterm l@ConcTerm {} r@ConcTerm {} = concTerm $ l == r
-eqterm l@ConcTerm {} r = eqterm r l
-eqterm l (BoolConcTerm rv) = if rv then unsafeCoerce l else notb $ unsafeCoerce l
-eqterm (NotTerm _ lv) r
+pevalEqvTerm :: forall a. (SupportedPrim a) => Term a -> Term a -> Term Bool
+pevalEqvTerm l@ConcTerm {} r@ConcTerm {} = concTerm $ l == r
+pevalEqvTerm l@ConcTerm {} r = pevalEqvTerm r l
+pevalEqvTerm l (BoolConcTerm rv) = if rv then unsafeCoerce l else pevalNotTerm $ unsafeCoerce l
+pevalEqvTerm (NotTerm _ lv) r
     | lv == unsafeCoerce r = falseTerm
-eqterm l (NotTerm _ rv)
+pevalEqvTerm l (NotTerm _ rv)
     | unsafeCoerce l == rv = falseTerm
   {-
-  partialEvalBinary _ (ConcTerm l) (ConcTerm r) =
+  pevalBinary _ (ConcTerm l) (ConcTerm r) =
     if l == r then trueTerm else falseTerm
     -}
-eqterm
+pevalEqvTerm
     ( BinaryTerm
         _
         (Dyn (AddNum :: AddNum a))
@@ -97,8 +97,8 @@ eqterm
         (Dyn (v :: Term a))
       )
     (Dyn (ConcTerm _ c2 :: Term a)) =
-      eqterm v (concTerm $ c2 - c)
-eqterm
+      pevalEqvTerm v (concTerm $ c2 - c)
+pevalEqvTerm
     (Dyn (ConcTerm _ c2 :: Term a))
     ( BinaryTerm
         _
@@ -106,31 +106,33 @@ eqterm
         (Dyn (ConcTerm _ c :: Term a))
         (Dyn (v :: Term a))
       ) =
-      eqterm v (concTerm $ c2 - c)
-eqterm l (ITETerm _ c t f)
-    | l == t = orb c (eqterm l f)
-    | l == f = orb (notb c) (eqterm l t)
-eqterm (ITETerm _ c t f) r
-    | t == r = orb c (eqterm f r)
-    | f == r = orb (notb c) (eqterm t r)
-eqterm l r
+      pevalEqvTerm v (concTerm $ c2 - c)
+pevalEqvTerm l (ITETerm _ c t f)
+    | l == t = pevalOrTerm c (pevalEqvTerm l f)
+    | l == f = pevalOrTerm (pevalNotTerm c) (pevalEqvTerm l t)
+pevalEqvTerm (ITETerm _ c t f) r
+    | t == r = pevalOrTerm c (pevalEqvTerm f r)
+    | f == r = pevalOrTerm (pevalNotTerm c) (pevalEqvTerm t r)
+pevalEqvTerm l r
     | l == r = trueTerm
     | otherwise = eqvTerm l r
+{-# INLINABLE pevalEqvTerm #-}
 
-neterm :: (SupportedPrim a) => Term a -> Term a -> Term Bool
-neterm l r = notb $ eqterm l r
+pevalNotEqvTerm :: (SupportedPrim a) => Term a -> Term a -> Term Bool
+pevalNotEqvTerm l r = pevalNotTerm $ pevalEqvTerm l r
+{-# INLINE pevalNotEqvTerm #-}
 
-impliesTerm :: Term Bool -> Term Bool -> Bool
-impliesTerm (ConcTerm _ True) _ = True
-impliesTerm _ (ConcTerm _ False) = True
-impliesTerm
+pevalImpliesTerm :: Term Bool -> Term Bool -> Bool
+pevalImpliesTerm (ConcTerm _ True) _ = True
+pevalImpliesTerm _ (ConcTerm _ False) = True
+pevalImpliesTerm
   (EqvTerm _ (e1 :: Term a) (ec1@(ConcTerm _ _) :: Term b))
   (NotTerm _ (EqvTerm _ (Dyn (e2 :: Term a)) (Dyn (ec2@(ConcTerm _ _) :: Term b))))
     | e1 == e2 && ec1 /= ec2 = True
-impliesTerm a b
+pevalImpliesTerm a b
   | a == b = True
   | otherwise = False
-{-# INLINE impliesTerm #-}
+{-# INLINE pevalImpliesTerm #-}
 
 orEqFirst :: Term Bool -> Term Bool -> Bool
 orEqFirst _ (ConcTerm _ False) = True
@@ -182,102 +184,100 @@ andEqFalse _ _ = False
 {-# INLINE andEqFalse #-}
 
 -- Or
--- data Or = Or deriving (Show, Lift, Generic, NFData, Eq, Hashable)
-
-orb :: Term Bool -> Term Bool -> Term Bool
-orb l r
+pevalOrTerm :: Term Bool -> Term Bool -> Term Bool
+pevalOrTerm l r
     | orEqTrue l r = trueTerm
     | orEqFirst l r = l
     | orEqFirst r l = r
-orb l r@(OrTerm _ r1 r2)
+pevalOrTerm l r@(OrTerm _ r1 r2)
     | orEqTrue l r1 = trueTerm
     | orEqTrue l r2 = trueTerm
     | orEqFirst r1 l = r
     | orEqFirst r2 l = r
-    | orEqFirst l r1 = orb l r2
-    | orEqFirst l r2 = orb l r1
-orb l@(OrTerm _ l1 l2) r
+    | orEqFirst l r1 = pevalOrTerm l r2
+    | orEqFirst l r2 = pevalOrTerm l r1
+pevalOrTerm l@(OrTerm _ l1 l2) r
     | orEqTrue l1 r = trueTerm
     | orEqTrue l2 r = trueTerm
     | orEqFirst l1 r = l
     | orEqFirst l2 r = l
-    | orEqFirst r l1 = orb l2 r
-    | orEqFirst r l2 = orb l1 r
-orb l (AndTerm _ r1 r2)
+    | orEqFirst r l1 = pevalOrTerm l2 r
+    | orEqFirst r l2 = pevalOrTerm l1 r
+pevalOrTerm l (AndTerm _ r1 r2)
     | orEqFirst l r1 = l
     | orEqFirst l r2 = l
-    | orEqTrue l r1 = orb l r2
-    | orEqTrue l r2 = orb l r1
-orb (AndTerm _ l1 l2) r
+    | orEqTrue l r1 = pevalOrTerm l r2
+    | orEqTrue l r2 = pevalOrTerm l r1
+pevalOrTerm (AndTerm _ l1 l2) r
     | orEqFirst r l1 = r
     | orEqFirst r l2 = r
-    | orEqTrue l1 r = orb l2 r
-    | orEqTrue l2 r = orb l1 r
-orb (NotTerm _ nl) (NotTerm _ nr) = notb $ andb nl nr
-orb l r = orTerm l r
-{-# INLINABLE orb #-}
+    | orEqTrue l1 r = pevalOrTerm l2 r
+    | orEqTrue l2 r = pevalOrTerm l1 r
+pevalOrTerm (NotTerm _ nl) (NotTerm _ nr) = pevalNotTerm $ pevalAndTerm nl nr
+pevalOrTerm l r = orTerm l r
+{-# INLINABLE pevalOrTerm #-}
 
-andb :: Term Bool -> Term Bool -> Term Bool
-andb l r
+pevalAndTerm :: Term Bool -> Term Bool -> Term Bool
+pevalAndTerm l r
     | andEqFalse l r = falseTerm
     | andEqFirst l r = l
     | andEqFirst r l = r
-andb l r@(AndTerm _ r1 r2)
+pevalAndTerm l r@(AndTerm _ r1 r2)
     | andEqFalse l r1 = falseTerm
     | andEqFalse l r2 = falseTerm
     | andEqFirst r1 l = r
     | andEqFirst r2 l = r
-    | andEqFirst l r1 = andb l r2
-    | andEqFirst l r2 = andb l r1
-andb l@(AndTerm _ l1 l2) r
+    | andEqFirst l r1 = pevalAndTerm l r2
+    | andEqFirst l r2 = pevalAndTerm l r1
+pevalAndTerm l@(AndTerm _ l1 l2) r
     | andEqFalse l1 r = falseTerm
     | andEqFalse l2 r = falseTerm
     | andEqFirst l1 r = l
     | andEqFirst l2 r = l
-    | andEqFirst r l1 = andb l2 r
-    | andEqFirst r l2 = andb l1 r
-andb l (OrTerm _ r1 r2)
+    | andEqFirst r l1 = pevalAndTerm l2 r
+    | andEqFirst r l2 = pevalAndTerm l1 r
+pevalAndTerm l (OrTerm _ r1 r2)
     | andEqFirst l r1 = l
     | andEqFirst l r2 = l
-    | andEqFalse l r1 = andb l r2
-    | andEqFalse l r2 = andb l r1
-andb (OrTerm _ l1 l2) r
+    | andEqFalse l r1 = pevalAndTerm l r2
+    | andEqFalse l r2 = pevalAndTerm l r1
+pevalAndTerm (OrTerm _ l1 l2) r
     | andEqFirst r l1 = r
     | andEqFirst r l2 = r
-    | andEqFalse l1 r = andb l2 r
-    | andEqFalse l2 r = andb l1 r
-andb (NotTerm _ nl) (NotTerm _ nr) = notb $ orb nl nr
-andb l r = andTerm l r
-{-# INLINABLE andb #-}
+    | andEqFalse l1 r = pevalAndTerm l2 r
+    | andEqFalse l2 r = pevalAndTerm l1 r
+pevalAndTerm (NotTerm _ nl) (NotTerm _ nr) = pevalNotTerm $ pevalOrTerm nl nr
+pevalAndTerm l r = andTerm l r
+{-# INLINABLE pevalAndTerm #-}
 
-partialEvalITEBoolLeftNot :: Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
-partialEvalITEBoolLeftNot cond nIfTrue ifFalse
-  | cond == nIfTrue = Just $ andb (notb cond) ifFalse -- need test
+pevalITEBoolLeftNot :: Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
+pevalITEBoolLeftNot cond nIfTrue ifFalse
+  | cond == nIfTrue = Just $ pevalAndTerm (pevalNotTerm cond) ifFalse -- need test
   | otherwise = case nIfTrue of
     AndTerm _ nt1 nt2 -> ra
       where
-        ra | impliesTerm cond nt1 = Just $ iteterm cond (notb nt2) ifFalse
-           | impliesTerm cond nt2 = Just $ iteterm cond (notb nt1) ifFalse
-           | impliesTerm cond (notb nt1) || impliesTerm cond (notb nt2) = Just $ orb cond ifFalse
+        ra | pevalImpliesTerm cond nt1 = Just $ pevalITETerm cond (pevalNotTerm nt2) ifFalse
+           | pevalImpliesTerm cond nt2 = Just $ pevalITETerm cond (pevalNotTerm nt1) ifFalse
+           | pevalImpliesTerm cond (pevalNotTerm nt1) || pevalImpliesTerm cond (pevalNotTerm nt2) = Just $ pevalOrTerm cond ifFalse
            | otherwise = Nothing
     OrTerm _ nt1 nt2 -> ra
       where
-        ra | impliesTerm cond nt1 || impliesTerm cond nt2 = Just $ andb (notb cond) ifFalse
-           | impliesTerm cond (notb nt1) = Just $ iteterm cond (notb nt2) ifFalse
-           | impliesTerm cond (notb nt2) = Just $ iteterm cond (notb nt1) ifFalse
+        ra | pevalImpliesTerm cond nt1 || pevalImpliesTerm cond nt2 = Just $ pevalAndTerm (pevalNotTerm cond) ifFalse
+           | pevalImpliesTerm cond (pevalNotTerm nt1) = Just $ pevalITETerm cond (pevalNotTerm nt2) ifFalse
+           | pevalImpliesTerm cond (pevalNotTerm nt2) = Just $ pevalITETerm cond (pevalNotTerm nt1) ifFalse
            | otherwise = Nothing
     _ -> Nothing
 
-partialEvalITEBoolBothNot :: Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
-partialEvalITEBoolBothNot cond nIfTrue nIfFalse = Just $ notb $ partialEvalITE cond nIfTrue nIfFalse
+pevalITEBoolBothNot :: Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
+pevalITEBoolBothNot cond nIfTrue nIfFalse = Just $ pevalNotTerm $ pevalITETerm cond nIfTrue nIfFalse
 
-partialEvalITEBoolRightNot :: Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
-partialEvalITEBoolRightNot cond ifTrue nIfFalse
-  | cond == nIfFalse = Just $ orb (notb cond) ifTrue -- need test
+pevalITEBoolRightNot :: Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
+pevalITEBoolRightNot cond ifTrue nIfFalse
+  | cond == nIfFalse = Just $ pevalOrTerm (pevalNotTerm cond) ifTrue -- need test
   | otherwise = Nothing -- need work
 
-partialEvalInferImplies :: Term Bool -> Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
-partialEvalInferImplies cond (NotTerm _ nt1) trueRes falseRes
+pevalInferImplies :: Term Bool -> Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
+pevalInferImplies cond (NotTerm _ nt1) trueRes falseRes
   | cond == nt1 = Just falseRes
   | otherwise = case (cond, nt1) of
     ( EqvTerm _ (e1 :: Term a) (ec1@(ConcTerm _ _) :: Term b),
@@ -285,150 +285,147 @@ partialEvalInferImplies cond (NotTerm _ nt1) trueRes falseRes
       )
         | e1 == e2 && ec1 /= ec2 -> Just trueRes
     _ -> Nothing
-partialEvalInferImplies
+pevalInferImplies
   (EqvTerm _ (e1 :: Term a) (ec1@(ConcTerm _ _) :: Term b))
   (EqvTerm _ (Dyn (e2 :: Term a)) (Dyn (ec2@(ConcTerm _ _) :: Term b)))
   _
   falseRes
     | e1 == e2 && ec1 /= ec2 = Just falseRes
-partialEvalInferImplies _ _ _ _ = Nothing
+pevalInferImplies _ _ _ _ = Nothing
 
-partialEvalITEBoolLeftAnd :: Term Bool -> Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
-partialEvalITEBoolLeftAnd cond t1 t2 ifFalse
-  | t1 == ifFalse = Just $ andb t1 $ implyb cond t2
-  | t2 == ifFalse = Just $ andb t2 $ implyb cond t1
-  | cond == t1 = Just $ iteterm cond t2 ifFalse
-  | cond == t2 = Just $ iteterm cond t1 ifFalse
+pevalITEBoolLeftAnd :: Term Bool -> Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
+pevalITEBoolLeftAnd cond t1 t2 ifFalse
+  | t1 == ifFalse = Just $ pevalAndTerm t1 $ pevalImplyTerm cond t2
+  | t2 == ifFalse = Just $ pevalAndTerm t2 $ pevalImplyTerm cond t1
+  | cond == t1 = Just $ pevalITETerm cond t2 ifFalse
+  | cond == t2 = Just $ pevalITETerm cond t1 ifFalse
   | otherwise =
     msum
-      [ partialEvalInferImplies cond t1 (iteterm cond t2 ifFalse) (andb (notb cond) ifFalse),
-        partialEvalInferImplies cond t2 (iteterm cond t1 ifFalse) (andb (notb cond) ifFalse)
+      [ pevalInferImplies cond t1 (pevalITETerm cond t2 ifFalse) (pevalAndTerm (pevalNotTerm cond) ifFalse),
+        pevalInferImplies cond t2 (pevalITETerm cond t1 ifFalse) (pevalAndTerm (pevalNotTerm cond) ifFalse)
       ]
 
-partialEvalITEBoolBothAnd :: Term Bool -> Term Bool -> Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
-partialEvalITEBoolBothAnd cond t1 t2 f1 f2
-  | t1 == f1 = Just $ andb t1 $ iteterm cond t2 f2
-  | t1 == f2 = Just $ andb t1 $ iteterm cond t2 f1
-  | t2 == f1 = Just $ andb t2 $ iteterm cond t1 f2
-  | t2 == f2 = Just $ andb t2 $ iteterm cond t1 f1
+pevalITEBoolBothAnd :: Term Bool -> Term Bool -> Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
+pevalITEBoolBothAnd cond t1 t2 f1 f2
+  | t1 == f1 = Just $ pevalAndTerm t1 $ pevalITETerm cond t2 f2
+  | t1 == f2 = Just $ pevalAndTerm t1 $ pevalITETerm cond t2 f1
+  | t2 == f1 = Just $ pevalAndTerm t2 $ pevalITETerm cond t1 f2
+  | t2 == f2 = Just $ pevalAndTerm t2 $ pevalITETerm cond t1 f1
   | otherwise = Nothing
 
-partialEvalITEBoolRightAnd :: Term Bool -> Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
-partialEvalITEBoolRightAnd cond ifTrue f1 f2
-  | f1 == ifTrue = Just $ andb f1 $ orb cond f2
-  | f2 == ifTrue = Just $ andb f2 $ orb cond f1
+pevalITEBoolRightAnd :: Term Bool -> Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
+pevalITEBoolRightAnd cond ifTrue f1 f2
+  | f1 == ifTrue = Just $ pevalAndTerm f1 $ pevalOrTerm cond f2
+  | f2 == ifTrue = Just $ pevalAndTerm f2 $ pevalOrTerm cond f1
   | otherwise = Nothing
 
-partialEvalITEBoolLeftOr :: Term Bool -> Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
-partialEvalITEBoolLeftOr cond t1 t2 ifFalse
-  | t1 == ifFalse = Just $ orb t1 $ andb cond t2
-  | t2 == ifFalse = Just $ orb t2 $ andb cond t1
-  | cond == t1 = Just $ orb cond ifFalse
-  | cond == t2 = Just $ orb cond ifFalse
+pevalITEBoolLeftOr :: Term Bool -> Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
+pevalITEBoolLeftOr cond t1 t2 ifFalse
+  | t1 == ifFalse = Just $ pevalOrTerm t1 $ pevalAndTerm cond t2
+  | t2 == ifFalse = Just $ pevalOrTerm t2 $ pevalAndTerm cond t1
+  | cond == t1 = Just $ pevalOrTerm cond ifFalse
+  | cond == t2 = Just $ pevalOrTerm cond ifFalse
   | otherwise =
     msum
-      [ partialEvalInferImplies cond t1 (orb cond ifFalse) (iteterm cond t2 ifFalse),
-        partialEvalInferImplies cond t2 (orb cond ifFalse) (iteterm cond t1 ifFalse)
+      [ pevalInferImplies cond t1 (pevalOrTerm cond ifFalse) (pevalITETerm cond t2 ifFalse),
+        pevalInferImplies cond t2 (pevalOrTerm cond ifFalse) (pevalITETerm cond t1 ifFalse)
       ]
 
-partialEvalITEBoolBothOr :: Term Bool -> Term Bool -> Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
-partialEvalITEBoolBothOr cond t1 t2 f1 f2
-  | t1 == f1 = Just $ orb t1 $ iteterm cond t2 f2
-  | t1 == f2 = Just $ orb t1 $ iteterm cond t2 f1
-  | t2 == f1 = Just $ orb t2 $ iteterm cond t1 f2
-  | t2 == f2 = Just $ orb t2 $ iteterm cond t1 f1
+pevalITEBoolBothOr :: Term Bool -> Term Bool -> Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
+pevalITEBoolBothOr cond t1 t2 f1 f2
+  | t1 == f1 = Just $ pevalOrTerm t1 $ pevalITETerm cond t2 f2
+  | t1 == f2 = Just $ pevalOrTerm t1 $ pevalITETerm cond t2 f1
+  | t2 == f1 = Just $ pevalOrTerm t2 $ pevalITETerm cond t1 f2
+  | t2 == f2 = Just $ pevalOrTerm t2 $ pevalITETerm cond t1 f1
   | otherwise = Nothing
 
-partialEvalITEBoolRightOr :: Term Bool -> Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
-partialEvalITEBoolRightOr cond ifTrue f1 f2
-  | f1 == ifTrue = Just $ orb f1 $ andb (notb cond) f2
-  | f2 == ifTrue = Just $ orb f2 $ andb (notb cond) f1
+pevalITEBoolRightOr :: Term Bool -> Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
+pevalITEBoolRightOr cond ifTrue f1 f2
+  | f1 == ifTrue = Just $ pevalOrTerm f1 $ pevalAndTerm (pevalNotTerm cond) f2
+  | f2 == ifTrue = Just $ pevalOrTerm f2 $ pevalAndTerm (pevalNotTerm cond) f1
   | otherwise = Nothing
 
-partialEvalITEBoolLeft :: Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
-partialEvalITEBoolLeft cond (AndTerm _ t1 t2) ifFalse =
+pevalITEBoolLeft :: Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
+pevalITEBoolLeft cond (AndTerm _ t1 t2) ifFalse =
   msum
-    [ partialEvalITEBoolLeftAnd cond t1 t2 ifFalse,
+    [ pevalITEBoolLeftAnd cond t1 t2 ifFalse,
       case ifFalse of
-        AndTerm _ f1 f2 -> partialEvalITEBoolBothAnd cond t1 t2 f1 f2
+        AndTerm _ f1 f2 -> pevalITEBoolBothAnd cond t1 t2 f1 f2
         _ -> Nothing
     ]
-partialEvalITEBoolLeft cond (OrTerm _ t1 t2) ifFalse =
+pevalITEBoolLeft cond (OrTerm _ t1 t2) ifFalse =
   msum
-    [ partialEvalITEBoolLeftOr cond t1 t2 ifFalse,
+    [ pevalITEBoolLeftOr cond t1 t2 ifFalse,
       case ifFalse of
-        OrTerm _ f1 f2 -> partialEvalITEBoolBothOr cond t1 t2 f1 f2
+        OrTerm _ f1 f2 -> pevalITEBoolBothOr cond t1 t2 f1 f2
         _ -> Nothing
     ]
-partialEvalITEBoolLeft cond (NotTerm _ nIfTrue) ifFalse =
+pevalITEBoolLeft cond (NotTerm _ nIfTrue) ifFalse =
   msum
-    [ partialEvalITEBoolLeftNot cond nIfTrue ifFalse,
+    [ pevalITEBoolLeftNot cond nIfTrue ifFalse,
       case ifFalse of
         NotTerm _ nIfFalse ->
-          partialEvalITEBoolBothNot cond nIfTrue nIfFalse
+          pevalITEBoolBothNot cond nIfTrue nIfFalse
         _ -> Nothing
     ]
-partialEvalITEBoolLeft _ _ _ = Nothing
+pevalITEBoolLeft _ _ _ = Nothing
 
-partialEvalITEBoolNoLeft :: Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
-partialEvalITEBoolNoLeft cond ifTrue (AndTerm _ f1 f2) = partialEvalITEBoolRightAnd cond ifTrue f1 f2
-partialEvalITEBoolNoLeft cond ifTrue (OrTerm _ f1 f2) = partialEvalITEBoolRightOr cond ifTrue f1 f2
-partialEvalITEBoolNoLeft cond ifTrue (NotTerm _ nIfFalse) = partialEvalITEBoolRightNot cond ifTrue nIfFalse
-partialEvalITEBoolNoLeft _ _ _ = Nothing
+pevalITEBoolNoLeft :: Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
+pevalITEBoolNoLeft cond ifTrue (AndTerm _ f1 f2) = pevalITEBoolRightAnd cond ifTrue f1 f2
+pevalITEBoolNoLeft cond ifTrue (OrTerm _ f1 f2) = pevalITEBoolRightOr cond ifTrue f1 f2
+pevalITEBoolNoLeft cond ifTrue (NotTerm _ nIfFalse) = pevalITEBoolRightNot cond ifTrue nIfFalse
+pevalITEBoolNoLeft _ _ _ = Nothing
 
-partialEvalITEBasic :: (SupportedPrim a) => Term Bool -> Term a -> Term a -> Maybe (Term a)
-partialEvalITEBasic (ConcTerm _ True) ifTrue _ = Just ifTrue
-partialEvalITEBasic (ConcTerm _ False) _ ifFalse = Just ifFalse
-partialEvalITEBasic (NotTerm _ ncond) ifTrue ifFalse = Just $ partialEvalITE ncond ifFalse ifTrue
-partialEvalITEBasic _ ifTrue ifFalse | ifTrue == ifFalse = Just ifTrue
-partialEvalITEBasic (ITETerm _ cc ct cf) (ITETerm _ tc tt tf) (ITETerm _ fc ft ff) -- later
-  | cc == tc && cc == fc = Just $ iteterm cc (iteterm ct tt ft) (iteterm cf tf ff)
-partialEvalITEBasic cond (ITETerm _ tc tt tf) ifFalse -- later
-  | cond == tc = Just $ iteterm cond tt ifFalse
-  | tt == ifFalse = Just $ iteterm (orb (notb cond) tc) tt tf
-  | tf == ifFalse = Just $ iteterm (andb cond tc) tt tf
-  | impliesTerm cond (notb tc) = Just $ iteterm cond tf ifFalse
-partialEvalITEBasic cond ifTrue (ITETerm _ fc ft ff) -- later
-  | cond == fc = Just $ iteterm cond ifTrue ff
-  | ifTrue == ft = Just $ iteterm (orb cond fc) ifTrue ff
-  | ifTrue == ff = Just $ iteterm (orb cond (notb fc)) ifTrue ft
-partialEvalITEBasic _ _ _ = Nothing
+pevalITEBasic :: (SupportedPrim a) => Term Bool -> Term a -> Term a -> Maybe (Term a)
+pevalITEBasic (ConcTerm _ True) ifTrue _ = Just ifTrue
+pevalITEBasic (ConcTerm _ False) _ ifFalse = Just ifFalse
+pevalITEBasic (NotTerm _ ncond) ifTrue ifFalse = Just $ pevalITETerm ncond ifFalse ifTrue
+pevalITEBasic _ ifTrue ifFalse | ifTrue == ifFalse = Just ifTrue
+pevalITEBasic (ITETerm _ cc ct cf) (ITETerm _ tc tt tf) (ITETerm _ fc ft ff) -- later
+  | cc == tc && cc == fc = Just $ pevalITETerm cc (pevalITETerm ct tt ft) (pevalITETerm cf tf ff)
+pevalITEBasic cond (ITETerm _ tc tt tf) ifFalse -- later
+  | cond == tc = Just $ pevalITETerm cond tt ifFalse
+  | tt == ifFalse = Just $ pevalITETerm (pevalOrTerm (pevalNotTerm cond) tc) tt tf
+  | tf == ifFalse = Just $ pevalITETerm (pevalAndTerm cond tc) tt tf
+  | pevalImpliesTerm cond (pevalNotTerm tc) = Just $ pevalITETerm cond tf ifFalse
+pevalITEBasic cond ifTrue (ITETerm _ fc ft ff) -- later
+  | cond == fc = Just $ pevalITETerm cond ifTrue ff
+  | ifTrue == ft = Just $ pevalITETerm (pevalOrTerm cond fc) ifTrue ff
+  | ifTrue == ff = Just $ pevalITETerm (pevalOrTerm cond (pevalNotTerm fc)) ifTrue ft
+pevalITEBasic _ _ _ = Nothing
 
-partialEvalITE :: forall a. (SupportedPrim a) => Term Bool -> Term a -> Term a -> Term a
-partialEvalITE cond ifTrue ifFalse = fromMaybe (iteTerm cond ifTrue ifFalse) $
-  case eqT @a @Bool of
-    Nothing -> partialEvalITEBasic cond ifTrue ifFalse
-    Just Refl -> partialEvalITEBool cond ifTrue ifFalse
+pevalITEBoolBasic :: Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
+pevalITEBoolBasic cond ifTrue ifFalse
+  | cond == ifTrue = Just $ pevalOrTerm cond ifFalse
+  | cond == ifFalse = Just $ pevalAndTerm cond ifTrue
+pevalITEBoolBasic cond (ConcTerm _ v) ifFalse
+  | v = Just $ pevalOrTerm cond ifFalse
+  | otherwise = Just $ pevalAndTerm (pevalNotTerm cond) ifFalse
+pevalITEBoolBasic cond ifTrue (ConcTerm _ v)
+  | v = Just $ pevalOrTerm (pevalNotTerm cond) ifTrue
+  | otherwise = Just $ pevalAndTerm cond ifTrue
+pevalITEBoolBasic _ _ _ = Nothing
 
-partialEvalITEBoolBasic :: Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
-partialEvalITEBoolBasic cond ifTrue ifFalse
-  | cond == ifTrue = Just $ orb cond ifFalse
-  | cond == ifFalse = Just $ andb cond ifTrue
-partialEvalITEBoolBasic cond (ConcTerm _ v) ifFalse
-  | v = Just $ orb cond ifFalse
-  | otherwise = Just $ andb (notb cond) ifFalse
-partialEvalITEBoolBasic cond ifTrue (ConcTerm _ v)
-  | v = Just $ orb (notb cond) ifTrue
-  | otherwise = Just $ andb cond ifTrue
-partialEvalITEBoolBasic _ _ _ = Nothing
-
-partialEvalITEBool :: Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
-partialEvalITEBool cond ifTrue ifFalse =
+pevalITEBool :: Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
+pevalITEBool cond ifTrue ifFalse =
   msum
-    [ partialEvalITEBasic cond ifTrue ifFalse,
-      partialEvalITEBoolBasic cond ifTrue ifFalse,
-      partialEvalITEBoolLeft cond ifTrue ifFalse,
-      partialEvalITEBoolNoLeft cond ifTrue ifFalse
+    [ pevalITEBasic cond ifTrue ifFalse,
+      pevalITEBoolBasic cond ifTrue ifFalse,
+      pevalITEBoolLeft cond ifTrue ifFalse,
+      pevalITEBoolNoLeft cond ifTrue ifFalse
     ]
 
-iteterm :: (SupportedPrim a) => Term Bool -> Term a -> Term a -> Term a
-iteterm = partialEvalITE
+pevalITETerm :: forall a. (SupportedPrim a) => Term Bool -> Term a -> Term a -> Term a
+pevalITETerm cond ifTrue ifFalse = fromMaybe (iteTerm cond ifTrue ifFalse) $
+  case eqT @a @Bool of
+    Nothing -> pevalITEBasic cond ifTrue ifFalse
+    Just Refl -> pevalITEBool cond ifTrue ifFalse
 
-implyb :: Term Bool -> Term Bool -> Term Bool
-implyb l = orb (notb l)
+pevalImplyTerm :: Term Bool -> Term Bool -> Term Bool
+pevalImplyTerm l = pevalOrTerm (pevalNotTerm l)
 
-xorb :: Term Bool -> Term Bool -> Term Bool
-xorb l r = orb (andb (notb l) r) (andb l (notb r))
+pevalXorTerm :: Term Bool -> Term Bool -> Term Bool
+pevalXorTerm l r = pevalOrTerm (pevalAndTerm (pevalNotTerm l) r) (pevalAndTerm l (pevalNotTerm r))
 
 unaryPartialUnfoldOnce ::
   forall a b.
@@ -446,7 +443,7 @@ unaryPartialUnfoldOnce partial fallback = ret
          in case (pt, pf) of
               (Nothing, Nothing) -> pr
               (mt, mf) ->
-                iteterm cond
+                pevalITETerm cond
                   <$> catchError mt (\_ -> Just $ totalize (oneLevel fallback') fallback' vt)
                   <*> catchError mf (\_ -> Just $ totalize (oneLevel fallback') fallback vf)
       (_, pr) -> pr
@@ -499,7 +496,7 @@ binaryPartialUnfoldOnce partial fallback = ret
        in case (pt, pf) of
             (Nothing, Nothing) -> Nothing
             (mt, mf) ->
-              iteterm cond
+              pevalITETerm cond
                 <$> catchError mt (\_ -> Just $ totalize2 (oneLevel partial' fallback') fallback' vt y)
                 <*> catchError mf (\_ -> Just $ totalize2 (oneLevel partial' fallback') fallback' vf y)
     ret :: PartialRuleBinary a b c
