@@ -10,7 +10,6 @@ import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 import Grisette.IR.SymPrim.Data.Prim.Num
 import Test.Hspec
-import Data.Typeable
 
 spec :: Spec
 spec = do
@@ -33,14 +32,6 @@ spec = do
           `shouldBe` pevalOrTerm (ssymbTerm "a") (pevalNotTerm (ssymbTerm "b"))
         pevalNotTerm (pevalAndTerm (ssymbTerm "a") (pevalNotTerm (ssymbTerm "b")))
           `shouldBe` pevalOrTerm (pevalNotTerm (ssymbTerm "a")) (ssymbTerm "b")
-    describe "Not pattern" $ do
-      it "Not pattern should work" $ do
-        case ssymbTerm "a" :: Term Bool of
-          NotTerm _ _ -> expectationFailure "Bad pattern matching"
-          _ -> return ()
-        case pevalNotTerm (ssymbTerm "a" :: Term Bool) of
-          NotTerm _ v -> v `shouldBe` ssymbTerm "a"
-          _ -> return ()
   describe "Eqv & NEqv" $ do
     describe "Eqv construction" $ do
       it "Eqv with both concrete" $ do
@@ -96,16 +87,6 @@ spec = do
           `shouldBe` pevalOrTerm (ssymbTerm "b") (pevalEqvTerm (ssymbTerm "c") (ssymbTerm "a" :: Term Integer))
         pevalEqvTerm (pevalITETerm (ssymbTerm "b") (ssymbTerm "c") (ssymbTerm "a")) (ssymbTerm "a" :: Term Integer)
           `shouldBe` pevalOrTerm (pevalNotTerm $ ssymbTerm "b") (pevalEqvTerm (ssymbTerm "c") (ssymbTerm "a" :: Term Integer))
-    describe "Eqv pattern" $ do
-      it "Eqv pattern should work" $ do
-        case ssymbTerm "a" :: Term Bool of
-          EqvTerm _ _ _ -> expectationFailure "Bad pattern matching"
-          _ -> return ()
-        case pevalEqvTerm (ssymbTerm "a" :: Term Bool) (ssymbTerm "b") of
-          EqvTerm _ v1 v2 -> do
-            (cast v1 :: Maybe (Term Bool)) `shouldBe` Just (ssymbTerm "a")
-            (cast v2 :: Maybe (Term Bool)) `shouldBe` Just (ssymbTerm "b")
-          _ -> return ()
   describe "Or" $ do
     describe "Or construction" $ do
       it "Or with both concrete" $ do
@@ -252,17 +233,6 @@ spec = do
       it "Or(Not(x), Not(y)) -> Not(And(x, y))" $ do
         pevalOrTerm (pevalNotTerm (ssymbTerm "a")) (pevalNotTerm (ssymbTerm "b"))
           `shouldBe` pevalNotTerm (pevalAndTerm (ssymbTerm "a") (ssymbTerm "b"))
-    describe "Or pattern" $ do
-      it "Or pattern should work" $ do
-        case ssymbTerm "a" :: Term Bool of
-          OrTerm _ (_ :: Term Bool) _ -> expectationFailure "Bad pattern matching"
-          _ -> return ()
-        case pevalOrTerm (ssymbTerm "a" :: Term Bool) (ssymbTerm "b") of
-          OrTerm _ v1 v2 -> do
-            v1 `shouldBe` ssymbTerm "a"
-            v2 `shouldBe` ssymbTerm "b"
-          _ -> return ()
-
   describe "And" $ do
     describe "And construction" $ do
       it "And with both concrete" $ do
@@ -408,16 +378,6 @@ spec = do
       it "And(Not(x), Not(y)) -> Not(Or(x, y))" $ do
         pevalAndTerm (pevalNotTerm (ssymbTerm "a")) (pevalNotTerm (ssymbTerm "b"))
           `shouldBe` pevalNotTerm (pevalOrTerm (ssymbTerm "a") (ssymbTerm "b"))
-    describe "And pattern" $ do
-      it "And pattern should work" $ do
-        case ssymbTerm "a" :: Term Bool of
-          AndTerm _ (_ :: Term Bool) _ -> expectationFailure "Bad pattern matching"
-          _ -> return ()
-        case pevalAndTerm (ssymbTerm "a" :: Term Bool) (ssymbTerm "b") of
-          AndTerm _ v1 v2 -> do
-            v1 `shouldBe` ssymbTerm "a"
-            v2 `shouldBe` ssymbTerm "b"
-          _ -> return ()
   describe "ITE" $ do
     describe "ITE construction" $ do
       it "ITE with concrete condition" $ do

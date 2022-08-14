@@ -36,6 +36,10 @@ identity (AndTerm i _ _) = i
 identity (EqvTerm i _ _) = i
 identity (ITETerm i _ _ _) = i
 identity (AddNumTerm i _ _) = i
+identity (UMinusNumTerm i _) = i
+identity (TimesNumTerm i _ _) = i
+identity (AbsNumTerm i _) = i
+identity (SignumNumTerm i _) = i
 {-# INLINE identity #-}
 
 identityWithTypeRep :: forall t. Term t -> (TypeRep, Id)
@@ -50,6 +54,10 @@ identityWithTypeRep (AndTerm i _ _) = (typeRep (Proxy @Bool), i)
 identityWithTypeRep (EqvTerm i _ _) = (typeRep (Proxy @Bool), i)
 identityWithTypeRep (ITETerm i _ _ _) = (typeRep (Proxy @t), i)
 identityWithTypeRep (AddNumTerm i _ _) = (typeRep (Proxy @t), i)
+identityWithTypeRep (UMinusNumTerm i _) = (typeRep (Proxy @t), i)
+identityWithTypeRep (TimesNumTerm i _ _) = (typeRep (Proxy @t), i)
+identityWithTypeRep (AbsNumTerm i _) = (typeRep (Proxy @t), i)
+identityWithTypeRep (SignumNumTerm i _) = (typeRep (Proxy @t), i)
 {-# INLINE identityWithTypeRep #-}
 
 introSupportedPrimConstraint :: forall t a. Term t -> ((SupportedPrim t) => a) -> a
@@ -64,6 +72,10 @@ introSupportedPrimConstraint AndTerm {} x = x
 introSupportedPrimConstraint EqvTerm {} x = x
 introSupportedPrimConstraint ITETerm {} x = x
 introSupportedPrimConstraint AddNumTerm {} x = x
+introSupportedPrimConstraint UMinusNumTerm {} x = x
+introSupportedPrimConstraint TimesNumTerm {} x = x
+introSupportedPrimConstraint AbsNumTerm {} x = x
+introSupportedPrimConstraint SignumNumTerm {} x = x
 {-# INLINE introSupportedPrimConstraint #-}
 
 extractSymbolicsSomeTerm :: SomeTerm -> S.HashSet TermSymbol
@@ -91,6 +103,10 @@ extractSymbolicsSomeTerm t1 = evalState (gocached t1) M.empty
     go (SomeTerm (EqvTerm _ arg1 arg2)) = goBinary arg1 arg2
     go (SomeTerm (ITETerm _ cond arg1 arg2)) = goTernary cond arg1 arg2
     go (SomeTerm (AddNumTerm _ arg1 arg2)) = goBinary arg1 arg2
+    go (SomeTerm (UMinusNumTerm _ arg)) = gocached (SomeTerm arg)
+    go (SomeTerm (TimesNumTerm _ arg1 arg2)) = goBinary arg1 arg2
+    go (SomeTerm (AbsNumTerm _ arg)) = gocached (SomeTerm arg)
+    go (SomeTerm (SignumNumTerm _ arg)) = gocached (SomeTerm arg)
     goUnary arg = gocached (SomeTerm arg)
     goBinary arg1 arg2 = do
       r1 <- gocached (SomeTerm arg1)
@@ -119,6 +135,10 @@ castTerm t@AndTerm {} = cast t
 castTerm t@EqvTerm {} = cast t
 castTerm t@ITETerm {} = cast t
 castTerm t@AddNumTerm {} = cast t
+castTerm t@UMinusNumTerm {} = cast t
+castTerm t@TimesNumTerm {} = cast t
+castTerm t@AbsNumTerm {} = cast t
+castTerm t@SignumNumTerm {} = cast t
 {-# INLINE castTerm #-}
 
 pformat :: forall t. (SupportedPrim t) => Term t -> String
@@ -133,6 +153,10 @@ pformat (AndTerm _ arg1 arg2) = "(&& " ++ pformat arg1 ++ " " ++ pformat arg2 ++
 pformat (EqvTerm _ arg1 arg2) = "(= " ++ pformat arg1 ++ " " ++ pformat arg2 ++ ")"
 pformat (ITETerm _ cond arg1 arg2) = "(ite " ++ pformat cond ++ " " ++ pformat arg1 ++ " " ++ pformat arg2 ++ ")"
 pformat (AddNumTerm _ arg1 arg2) = "(+ " ++ pformat arg1 ++ " " ++ pformat arg2 ++ ")"
+pformat (UMinusNumTerm _ arg) = "(- " ++ pformat arg ++ ")"
+pformat (TimesNumTerm _ arg1 arg2) = "(* " ++ pformat arg1 ++ " " ++ pformat arg2 ++ ")"
+pformat (AbsNumTerm _ arg) = "(abs " ++ pformat arg ++ ")"
+pformat (SignumNumTerm _ arg) = "(signum " ++ pformat arg ++ ")"
 {-# INLINE pformat #-}
 
 termsSize :: [Term a] -> Int
@@ -152,6 +176,10 @@ termsSize terms = S.size $ execState (traverse go terms) S.empty
     go t@(EqvTerm _ arg1 arg2) = goBinary t arg1 arg2
     go t@(ITETerm _ cond arg1 arg2) = goTernary t cond arg1 arg2
     go t@(AddNumTerm _ arg1 arg2) = goBinary t arg1 arg2
+    go t@(UMinusNumTerm _ arg) = goUnary t arg
+    go t@(TimesNumTerm _ arg1 arg2) = goBinary t arg1 arg2
+    go t@(AbsNumTerm _ arg) = goUnary t arg
+    go t@(SignumNumTerm _ arg) = goUnary t arg
     goUnary :: forall a b. (SupportedPrim a) => Term a -> Term b -> State (S.HashSet SomeTerm) ()
     goUnary t arg = do
       b <- exists t

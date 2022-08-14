@@ -133,15 +133,15 @@ spec = do
       it "(+) for SymPrim should work" $ do
         (ssymb "a" :: Sym Integer) + ssymb "b" `shouldBe` Sym (pevalAddNumTerm (ssymbTerm "a") (ssymbTerm "b"))
       it "(-) for SymPrim should work" $ do
-        (ssymb "a" :: Sym Integer) - ssymb "b" `shouldBe` Sym (minusNum (ssymbTerm "a") (ssymbTerm "b"))
+        (ssymb "a" :: Sym Integer) - ssymb "b" `shouldBe` Sym (pevalMinusNumTerm (ssymbTerm "a") (ssymbTerm "b"))
       it "(*) for SymPrim should work" $ do
-        (ssymb "a" :: Sym Integer) * ssymb "b" `shouldBe` Sym (timesNum (ssymbTerm "a") (ssymbTerm "b"))
+        (ssymb "a" :: Sym Integer) * ssymb "b" `shouldBe` Sym (pevalTimesNumTerm (ssymbTerm "a") (ssymbTerm "b"))
       it "negate for SymPrim should work" $ do
-        negate (ssymb "a" :: Sym Integer) `shouldBe` Sym (uminusNum (ssymbTerm "a"))
+        negate (ssymb "a" :: Sym Integer) `shouldBe` Sym (pevalUMinusNumTerm (ssymbTerm "a"))
       it "abs for SymPrim should work" $ do
-        abs (ssymb "a" :: Sym Integer) `shouldBe` Sym (absNum (ssymbTerm "a"))
+        abs (ssymb "a" :: Sym Integer) `shouldBe` Sym (pevalAbsNumTerm (ssymbTerm "a"))
       it "signum for SymPrim should work" $ do
-        signum (ssymb "a" :: Sym Integer) `shouldBe` Sym (signumNum (ssymbTerm "a"))
+        signum (ssymb "a" :: Sym Integer) `shouldBe` Sym (pevalSignumNumTerm (ssymbTerm "a"))
     describe "SignedDivMod for Sym Integer" $ do
       prop "divs should work on concrete" $ \(i :: Integer, j :: Integer) ->
         divs (conc i :: Sym Integer) (conc j)
@@ -211,20 +211,20 @@ spec = do
         au + bu `shouldBe` Sym (pevalAddNumTerm aut but)
         as + bs `shouldBe` Sym (pevalAddNumTerm ast bst)
       it "(-) for SymPrim should work" $ do
-        au - bu `shouldBe` Sym (minusNum aut but)
-        as - bs `shouldBe` Sym (minusNum ast bst)
+        au - bu `shouldBe` Sym (pevalMinusNumTerm aut but)
+        as - bs `shouldBe` Sym (pevalMinusNumTerm ast bst)
       it "(*) for SymPrim should work" $ do
-        au * bu `shouldBe` Sym (timesNum aut but)
-        as * bs `shouldBe` Sym (timesNum ast bst)
+        au * bu `shouldBe` Sym (pevalTimesNumTerm aut but)
+        as * bs `shouldBe` Sym (pevalTimesNumTerm ast bst)
       it "negate for SymPrim should work" $ do
-        negate au `shouldBe` Sym (uminusNum aut)
-        negate as `shouldBe` Sym (uminusNum ast)
+        negate au `shouldBe` Sym (pevalUMinusNumTerm aut)
+        negate as `shouldBe` Sym (pevalUMinusNumTerm ast)
       it "abs for SymPrim should work" $ do
-        abs au `shouldBe` Sym (absNum aut)
-        abs as `shouldBe` Sym (absNum ast)
+        abs au `shouldBe` Sym (pevalAbsNumTerm aut)
+        abs as `shouldBe` Sym (pevalAbsNumTerm ast)
       it "signum for SymPrim should work" $ do
-        signum au `shouldBe` Sym (signumNum aut)
-        signum as `shouldBe` Sym (signumNum ast)
+        signum au `shouldBe` Sym (pevalSignumNumTerm aut)
+        signum as `shouldBe` Sym (pevalSignumNumTerm ast)
     describe "SOrd for Sym BV" $ do
       prop "SOrd should work on concrete" $ \(i :: Integer, j :: Integer) -> do
         let iu :: WordN 4 = fromInteger i

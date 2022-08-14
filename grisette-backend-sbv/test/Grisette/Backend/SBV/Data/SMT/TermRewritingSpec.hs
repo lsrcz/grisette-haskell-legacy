@@ -53,56 +53,56 @@ spec = do
         prop "Fixed Sized SignedBV random test" $ \(x :: (FixedSizedBVWithBoolSpec IntN)) -> do
           validateSpec unboundedConfig x
 
-  describe "Times on integer" $ do
-    it "Times on both concrete" $ do
+  describe "timesNumSpec on integer" $ do
+    it "times on both concrete" $ do
       traverse_
-        (\(x, y) -> validateSpec unboundedConfig $ times @Integer (concSpec x) (concSpec y))
+        (\(x, y) -> validateSpec @(GeneralSpec Integer) unboundedConfig $ timesNumSpec (concSpec x) (concSpec y))
         [(i, j) | i <- [-3 .. 3], j <- [-3 .. 3]]
-    it "Times on single concrete" $ do
+    it "times on single concrete" $ do
       traverse_
         ( \x -> do
-            validateSpec unboundedConfig $ times @Integer (concSpec x) (symbSpec "a")
-            validateSpec unboundedConfig $ times (symbSpec "a") (concSpec x)
+            validateSpec @(GeneralSpec Integer) unboundedConfig $ timesNumSpec (concSpec x) (symbSpec "a")
+            validateSpec @(GeneralSpec Integer) unboundedConfig $ timesNumSpec (symbSpec "a") (concSpec x)
         )
         [-3 .. 3]
     it "Two times with two concrete combined" $ do
       traverse_
         ( \(x, y) -> do
-            validateSpec unboundedConfig $ times @Integer (concSpec x) $ times (concSpec y) (symbSpec "a")
-            validateSpec unboundedConfig $ times (concSpec x) $ times (symbSpec "a") (concSpec y)
-            validateSpec unboundedConfig $ times (times (concSpec x) (symbSpec "a")) (concSpec y)
-            validateSpec unboundedConfig $ times (times (symbSpec "a") (concSpec x)) (concSpec y)
+            validateSpec @(GeneralSpec Integer) unboundedConfig $ timesNumSpec (concSpec x) $ timesNumSpec (concSpec y) (symbSpec "a")
+            validateSpec @(GeneralSpec Integer) unboundedConfig $ timesNumSpec (concSpec x) $ timesNumSpec (symbSpec "a") (concSpec y)
+            validateSpec @(GeneralSpec Integer) unboundedConfig $ timesNumSpec (timesNumSpec (concSpec x) (symbSpec "a")) (concSpec y)
+            validateSpec @(GeneralSpec Integer) unboundedConfig $ timesNumSpec (timesNumSpec (symbSpec "a") (concSpec x)) (concSpec y)
         )
         [(i, j) | i <- [-3 .. 3], j <- [-3 .. 3]]
     it "Two times with one concrete" $ do
       traverse_
         ( \x -> do
-            validateSpec unboundedConfig $ times @Integer (concSpec x) $ times (symbSpec "b") (symbSpec "a")
-            validateSpec unboundedConfig $ times (symbSpec "b") $ times (symbSpec "a") (concSpec x)
-            validateSpec unboundedConfig $ times (symbSpec "b") $ times (concSpec x) (symbSpec "a")
-            validateSpec unboundedConfig $ times (times (concSpec x) (symbSpec "a")) (symbSpec "b")
-            validateSpec unboundedConfig $ times (times (symbSpec "a") (concSpec x)) (symbSpec "b")
-            validateSpec unboundedConfig $ times (times (symbSpec "a") (symbSpec "b")) (concSpec x)
+            validateSpec @(GeneralSpec Integer) unboundedConfig $ timesNumSpec (concSpec x) $ timesNumSpec (symbSpec "b") (symbSpec "a")
+            validateSpec @(GeneralSpec Integer) unboundedConfig $ timesNumSpec (symbSpec "b") $ timesNumSpec (symbSpec "a") (concSpec x)
+            validateSpec @(GeneralSpec Integer) unboundedConfig $ timesNumSpec (symbSpec "b") $ timesNumSpec (concSpec x) (symbSpec "a")
+            validateSpec @(GeneralSpec Integer) unboundedConfig $ timesNumSpec (timesNumSpec (concSpec x) (symbSpec "a")) (symbSpec "b")
+            validateSpec @(GeneralSpec Integer) unboundedConfig $ timesNumSpec (timesNumSpec (symbSpec "a") (concSpec x)) (symbSpec "b")
+            validateSpec @(GeneralSpec Integer) unboundedConfig $ timesNumSpec (timesNumSpec (symbSpec "a") (symbSpec "b")) (concSpec x)
         )
         [-3 .. 3]
     it "times and add with two concretes combined" $ do
       traverse_
         ( \(x, y) -> do
-            validateSpec unboundedConfig $ times @Integer (concSpec x) $ addNumSpec (concSpec y) (symbSpec "a")
-            validateSpec unboundedConfig $ times (concSpec x) $ addNumSpec (symbSpec "a") (concSpec y)
-            validateSpec unboundedConfig $ times (addNumSpec (concSpec x) (symbSpec "a")) (concSpec y)
-            validateSpec unboundedConfig $ times (addNumSpec (symbSpec "a") (concSpec x)) (concSpec y)
-            validateSpec unboundedConfig $ addNumSpec (concSpec x) $ times (concSpec y) (symbSpec "a")
-            validateSpec unboundedConfig $ addNumSpec (concSpec x) $ times (symbSpec "a") (concSpec y)
-            validateSpec unboundedConfig $ addNumSpec (times (concSpec x) (symbSpec "a")) (concSpec y)
-            validateSpec unboundedConfig $ addNumSpec (times (symbSpec "a") (concSpec x)) (concSpec y)
+            validateSpec @(GeneralSpec Integer) unboundedConfig $ timesNumSpec (concSpec x) $ addNumSpec (concSpec y) (symbSpec "a")
+            validateSpec @(GeneralSpec Integer) unboundedConfig $ timesNumSpec (concSpec x) $ addNumSpec (symbSpec "a") (concSpec y)
+            validateSpec @(GeneralSpec Integer) unboundedConfig $ timesNumSpec (addNumSpec (concSpec x) (symbSpec "a")) (concSpec y)
+            validateSpec @(GeneralSpec Integer) unboundedConfig $ timesNumSpec (addNumSpec (symbSpec "a") (concSpec x)) (concSpec y)
+            validateSpec @(GeneralSpec Integer) unboundedConfig $ addNumSpec (concSpec x) $ timesNumSpec (concSpec y) (symbSpec "a")
+            validateSpec @(GeneralSpec Integer) unboundedConfig $ addNumSpec (concSpec x) $ timesNumSpec (symbSpec "a") (concSpec y)
+            validateSpec @(GeneralSpec Integer) unboundedConfig $ addNumSpec (timesNumSpec (concSpec x) (symbSpec "a")) (concSpec y)
+            validateSpec @(GeneralSpec Integer) unboundedConfig $ addNumSpec (timesNumSpec (symbSpec "a") (concSpec x)) (concSpec y)
         )
         [(i, j) | i <- [-3 .. 3], j <- [-3 .. 3]]
-    it "times concrete with uminus symbolic" $ do
+    it "times concrete with uminusNumSpec symbolic" $ do
       traverse_
         ( \x -> do
-            validateSpec unboundedConfig $ times @Integer (concSpec x) (uminus $ symbSpec "a")
-            validateSpec unboundedConfig $ times (uminus $ symbSpec "a") (concSpec x)
+            validateSpec @(GeneralSpec Integer) unboundedConfig $ timesNumSpec (concSpec x) (uminusNumSpec $ symbSpec "a")
+            validateSpec @(GeneralSpec Integer) unboundedConfig $ timesNumSpec (uminusNumSpec $ symbSpec "a") (concSpec x)
         )
         [-3 .. 3]
   describe "DivI" $ do

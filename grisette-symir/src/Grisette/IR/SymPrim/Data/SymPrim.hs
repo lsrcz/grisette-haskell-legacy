@@ -201,11 +201,11 @@ type SymInteger = Sym Integer
 
 instance Num (Sym Integer) where
   (Sym l) + (Sym r) = Sym $ pevalAddNumTerm l r
-  (Sym l) - (Sym r) = Sym $ minusNum l r
-  (Sym l) * (Sym r) = Sym $ timesNum l r
-  negate (Sym v) = Sym $ uminusNum v
-  abs (Sym v) = Sym $ absNum v
-  signum (Sym v) = Sym $ signumNum v
+  (Sym l) - (Sym r) = Sym $ pevalMinusNumTerm l r
+  (Sym l) * (Sym r) = Sym $ pevalTimesNumTerm l r
+  negate (Sym v) = Sym $ pevalUMinusNumTerm v
+  abs (Sym v) = Sym $ pevalAbsNumTerm v
+  signum (Sym v) = Sym $ pevalSignumNumTerm v
   fromInteger i = conc i
 
 instance SignedDivMod (Sym Bool) (Sym Integer) where
@@ -227,11 +227,11 @@ type SymIntN n = Sym (IntN n)
 
 instance (SupportedPrim (IntN n)) => Num (Sym (IntN n)) where
   (Sym l) + (Sym r) = Sym $ withPrim (Proxy @(IntN n)) $ pevalAddNumTerm l r
-  (Sym l) - (Sym r) = Sym $ withPrim (Proxy @(IntN n)) $ minusNum l r
-  (Sym l) * (Sym r) = Sym $ withPrim (Proxy @(IntN n)) $ timesNum l r
-  negate (Sym v) = Sym $ withPrim (Proxy @(IntN n)) $ uminusNum v
-  abs (Sym v) = Sym $ withPrim (Proxy @(IntN n)) $ absNum v
-  signum (Sym v) = Sym $ withPrim (Proxy @(IntN n)) $ signumNum v
+  (Sym l) - (Sym r) = Sym $ withPrim (Proxy @(IntN n)) $ pevalMinusNumTerm l r
+  (Sym l) * (Sym r) = Sym $ withPrim (Proxy @(IntN n)) $ pevalTimesNumTerm l r
+  negate (Sym v) = Sym $ withPrim (Proxy @(IntN n)) $ pevalUMinusNumTerm v
+  abs (Sym v) = Sym $ withPrim (Proxy @(IntN n)) $ pevalAbsNumTerm v
+  signum (Sym v) = Sym $ withPrim (Proxy @(IntN n)) $ pevalSignumNumTerm v
   fromInteger i = withPrim (Proxy @(IntN n)) $ conc $ fromInteger i
 
 instance (SupportedPrim (IntN n)) => Bits (Sym (IntN n)) where
@@ -320,11 +320,11 @@ type SymWordN n = Sym (WordN n)
 
 instance (SupportedPrim (WordN n)) => Num (Sym (WordN n)) where
   (Sym l) + (Sym r) = Sym $ withPrim (Proxy @(WordN n)) $ pevalAddNumTerm l r
-  (Sym l) - (Sym r) = Sym $ withPrim (Proxy @(WordN n)) $ minusNum l r
-  (Sym l) * (Sym r) = Sym $ withPrim (Proxy @(WordN n)) $ timesNum l r
-  negate (Sym v) = Sym $ withPrim (Proxy @(WordN n)) $ uminusNum v
-  abs (Sym v) = Sym $ withPrim (Proxy @(WordN n)) $ absNum v
-  signum (Sym v) = Sym $ withPrim (Proxy @(WordN n)) $ signumNum v
+  (Sym l) - (Sym r) = Sym $ withPrim (Proxy @(WordN n)) $ pevalMinusNumTerm l r
+  (Sym l) * (Sym r) = Sym $ withPrim (Proxy @(WordN n)) $ pevalTimesNumTerm l r
+  negate (Sym v) = Sym $ withPrim (Proxy @(WordN n)) $ pevalUMinusNumTerm v
+  abs (Sym v) = Sym $ withPrim (Proxy @(WordN n)) $ pevalAbsNumTerm v
+  signum (Sym v) = Sym $ withPrim (Proxy @(WordN n)) $ pevalSignumNumTerm v
   fromInteger i = withPrim (Proxy @(WordN n)) $ conc $ fromInteger i
 
 instance

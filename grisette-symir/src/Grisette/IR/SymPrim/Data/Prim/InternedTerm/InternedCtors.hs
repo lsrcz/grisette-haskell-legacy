@@ -19,6 +19,10 @@ module Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
     eqvTerm,
     iteTerm,
     addNumTerm,
+    uminusNumTerm,
+    timesNumTerm,
+    absNumTerm,
+    signumNumTerm,
   )
 where
 
@@ -123,3 +127,19 @@ iteTerm c l r = internTerm $ UITETerm c l r
 addNumTerm :: (SupportedPrim a, Num a) => Term a -> Term a -> Term a
 addNumTerm l r = internTerm $ UAddNumTerm l r
 {-# INLINE addNumTerm #-}
+
+uminusNumTerm :: (SupportedPrim a, Num a) => Term a -> Term a
+uminusNumTerm = internTerm . UUMinusNumTerm
+{-# INLINE uminusNumTerm #-}
+
+timesNumTerm :: (SupportedPrim a, Num a) => Term a -> Term a -> Term a
+timesNumTerm l r = internTerm $ UTimesNumTerm l r
+{-# INLINE timesNumTerm #-}
+
+absNumTerm :: (SupportedPrim a, Num a) => Term a -> Term a
+absNumTerm = internTerm . UAbsNumTerm
+{-# INLINE absNumTerm #-}
+
+signumNumTerm :: (SupportedPrim a, Num a) => Term a -> Term a
+signumNumTerm = internTerm . USignumNumTerm
+{-# INLINE signumNumTerm #-}

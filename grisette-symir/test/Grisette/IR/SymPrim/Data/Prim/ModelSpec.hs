@@ -104,10 +104,10 @@ spec = do
       evaluateTerm True m3 (ssymbTerm "y" :: Term Bool) `shouldBe` concTerm False
       evaluateTerm False m3 (ssymbTerm "z" :: Term (WordN 4)) `shouldBe` ssymbTerm "z"
       evaluateTerm True m3 (ssymbTerm "z" :: Term (WordN 4)) `shouldBe` concTerm 0
-      evaluateTerm False m3 (uminusNum $ ssymbTerm "a" :: Term Integer) `shouldBe` concTerm (-1)
-      evaluateTerm True m3 (uminusNum $ ssymbTerm "a" :: Term Integer) `shouldBe` concTerm (-1)
-      evaluateTerm False m3 (uminusNum $ ssymbTerm "x" :: Term Integer) `shouldBe` uminusNum (ssymbTerm "x")
-      evaluateTerm True m3 (uminusNum $ ssymbTerm "x" :: Term Integer) `shouldBe` concTerm 0
+      evaluateTerm False m3 (pevalUMinusNumTerm $ ssymbTerm "a" :: Term Integer) `shouldBe` concTerm (-1)
+      evaluateTerm True m3 (pevalUMinusNumTerm $ ssymbTerm "a" :: Term Integer) `shouldBe` concTerm (-1)
+      evaluateTerm False m3 (pevalUMinusNumTerm $ ssymbTerm "x" :: Term Integer) `shouldBe` pevalUMinusNumTerm (ssymbTerm "x")
+      evaluateTerm True m3 (pevalUMinusNumTerm $ ssymbTerm "x" :: Term Integer) `shouldBe` concTerm 0
       evaluateTerm False m3 (pevalAddNumTerm (ssymbTerm "a") (ssymbTerm "a") :: Term Integer) `shouldBe` concTerm 2
       evaluateTerm True m3 (pevalAddNumTerm (ssymbTerm "a") (ssymbTerm "a") :: Term Integer) `shouldBe` concTerm 2
       evaluateTerm False m3 (pevalAddNumTerm (ssymbTerm "x") (ssymbTerm "a") :: Term Integer) `shouldBe` pevalAddNumTerm (concTerm 1) (ssymbTerm "x")

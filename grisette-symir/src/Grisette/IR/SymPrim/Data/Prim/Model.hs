@@ -112,6 +112,11 @@ evaluateSomeTerm fillDefault (Model ma) = gomemo
       goTernary pevalITETerm cond arg1 arg2
     go (SomeTerm (AddNumTerm _ arg1 arg2)) =
       goBinary pevalAddNumTerm arg1 arg2
+    go (SomeTerm (UMinusNumTerm _ arg)) = goUnary pevalUMinusNumTerm arg
+    go (SomeTerm (TimesNumTerm _ arg1 arg2)) =
+      goBinary pevalTimesNumTerm arg1 arg2
+    go (SomeTerm (AbsNumTerm _ arg)) = goUnary pevalAbsNumTerm arg
+    go (SomeTerm (SignumNumTerm _ arg)) = goUnary pevalSignumNumTerm arg
     goUnary :: (SupportedPrim a, SupportedPrim b) => (Term a -> Term b) -> Term a -> SomeTerm
     goUnary f a = SomeTerm $ f (gotyped a)
     goBinary :: (SupportedPrim a, SupportedPrim b, SupportedPrim c) =>

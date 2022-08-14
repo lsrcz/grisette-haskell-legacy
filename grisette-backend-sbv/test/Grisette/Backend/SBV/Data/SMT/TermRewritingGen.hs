@@ -143,6 +143,18 @@ iteSpec = constructTernarySpec iteTerm pevalITETerm
 addNumSpec :: (TermRewritingSpec a av, Num av) => a -> a -> a
 addNumSpec = constructBinarySpec addNumTerm pevalAddNumTerm
 
+uminusNumSpec :: (TermRewritingSpec a av, Num av) => a -> a
+uminusNumSpec = constructUnarySpec uminusNumTerm pevalUMinusNumTerm
+
+timesNumSpec :: (TermRewritingSpec a av, Num av) => a -> a -> a
+timesNumSpec = constructBinarySpec timesNumTerm pevalTimesNumTerm
+
+absNumSpec :: (TermRewritingSpec a av, Num av) => a -> a
+absNumSpec = constructUnarySpec absNumTerm pevalAbsNumTerm
+
+signumNumSpec :: (TermRewritingSpec a av, Num av) => a -> a
+signumNumSpec = constructUnarySpec signumNumTerm pevalSignumNumTerm
+
 data BoolOnlySpec = BoolOnlySpec (Term Bool) (Term Bool)
 
 instance Show BoolOnlySpec where
@@ -240,9 +252,9 @@ liaWithBool n | n > 0 = do
   v1i <- liaWithBool (n - 1)
   v2i <- liaWithBool (n - 1)
   oneof
-    [ return $ constructUnarySpec' UMinusNum v1i,
-      return $ constructUnarySpec' AbsNum v1i,
-      return $ constructUnarySpec' SignumNum v1i,
+    [ return $ uminusNumSpec v1i,
+      return $ absNumSpec v1i,
+      return $ signumNumSpec v1i,
       return $ addNumSpec v1i v2i,
       return $ iteSpec v1b v1i v2i
     ]
@@ -322,11 +334,11 @@ fsbvWithBool p n | n > 0 = do
   v2i <- fsbvWithBool p (n - 1)
   i <- arbitrary
   oneof
-    [ return $ constructUnarySpec' UMinusNum v1i,
-      return $ constructUnarySpec' AbsNum v1i,
-      return $ constructUnarySpec' SignumNum v1i,
+    [ return $ uminusNumSpec v1i,
+      return $ absNumSpec v1i,
+      return $ signumNumSpec v1i,
       return $ addNumSpec  v1i v2i,
-      return $ constructBinarySpec' TimesNum v1i v2i,
+      return $ timesNumSpec v1i v2i,
       return $ constructBinarySpec' (AndBits @(bv 4)) v1i v2i,
       return $ constructBinarySpec' (OrBits @(bv 4)) v1i v2i,
       return $ constructBinarySpec' (XorBits @(bv 4)) v1i v2i,
@@ -415,11 +427,11 @@ dsbv1 p depth | depth > 0 = do
   v4 <- dsbv4 p (depth - 1)
   i <- arbitrary
   oneof
-    [ return $ constructUnarySpec' UMinusNum v1,
-      return $ constructUnarySpec' AbsNum v1,
-      return $ constructUnarySpec' SignumNum v1,
+    [ return $ uminusNumSpec v1,
+      return $ absNumSpec v1,
+      return $ signumNumSpec v1,
       return $ addNumSpec v1 v1',
-      return $ constructBinarySpec' TimesNum v1 v1',
+      return $ timesNumSpec v1 v1',
       return $ constructBinarySpec' (AndBits @(bv 1)) v1 v1',
       return $ constructBinarySpec' (OrBits @(bv 1)) v1 v1',
       return $ constructBinarySpec' (XorBits @(bv 1)) v1 v1',
@@ -498,11 +510,11 @@ dsbv2 p depth | depth > 0 = do
   v4 <- dsbv4 p (depth - 1)
   i <- arbitrary
   oneof
-    [ return $ constructUnarySpec' UMinusNum v2,
-      return $ constructUnarySpec' AbsNum v2,
-      return $ constructUnarySpec' SignumNum v2,
+    [ return $ uminusNumSpec v2,
+      return $ absNumSpec v2,
+      return $ signumNumSpec v2,
       return $ addNumSpec  v2 v2',
-      return $ constructBinarySpec' TimesNum v2 v2',
+      return $ timesNumSpec v2 v2',
       return $ constructBinarySpec' (AndBits @(bv 2)) v2 v2',
       return $ constructBinarySpec' (OrBits @(bv 2)) v2 v2',
       return $ constructBinarySpec' (XorBits @(bv 2)) v2 v2',
@@ -579,11 +591,11 @@ dsbv3 p depth | depth > 0 = do
   v4 <- dsbv4 p (depth - 1)
   i <- arbitrary
   oneof
-    [ return $ constructUnarySpec' UMinusNum v3,
-      return $ constructUnarySpec' AbsNum v3,
-      return $ constructUnarySpec' SignumNum v3,
+    [ return $ uminusNumSpec v3,
+      return $ absNumSpec v3,
+      return $ signumNumSpec v3,
       return $ addNumSpec  v3 v3',
-      return $ constructBinarySpec' TimesNum v3 v3',
+      return $ timesNumSpec v3 v3',
       return $ constructBinarySpec' (AndBits @(bv 3)) v3 v3',
       return $ constructBinarySpec' (OrBits @(bv 3)) v3 v3',
       return $ constructBinarySpec' (XorBits @(bv 3)) v3 v3',
@@ -661,11 +673,11 @@ dsbv4 p depth | depth > 0 = do
   v4' <- dsbv4 p (depth - 1)
   i <- arbitrary
   oneof
-    [ return $ constructUnarySpec' UMinusNum v4,
-      return $ constructUnarySpec' AbsNum v4,
-      return $ constructUnarySpec' SignumNum v4,
+    [ return $ uminusNumSpec v4,
+      return $ absNumSpec v4,
+      return $ signumNumSpec v4,
       return $ addNumSpec v4 v4',
-      return $ constructBinarySpec' TimesNum v4 v4',
+      return $ timesNumSpec v4 v4',
       return $ constructBinarySpec' (AndBits @(bv 4)) v4 v4',
       return $ constructBinarySpec' (OrBits @(bv 4)) v4 v4',
       return $ constructBinarySpec' (XorBits @(bv 4)) v4 v4',
@@ -755,12 +767,6 @@ binop ::
   GeneralSpec a ->
   GeneralSpec a
 binop = constructBinarySpec'
-
-times :: (BinaryOp TimesNum a a a, Num a) => GeneralSpec a -> GeneralSpec a -> GeneralSpec a
-times = binop TimesNum
-
-uminus :: (UnaryOp UMinusNum a a, Num a) => GeneralSpec a -> GeneralSpec a
-uminus = unop UMinusNum
 
 divint :: GeneralSpec Integer -> GeneralSpec Integer -> GeneralSpec Integer
 divint = binop DivI

@@ -165,19 +165,10 @@ lowerSinglePrimImpl' _ t@SymbTerm {} =
     "The symbolic term should have already been lowered " ++ show t ++ " to SMT with collectedPrims.\n"
       ++ "We don't support adding new symbolics after collectedPrims with SBV backend"
 lowerSinglePrimImpl' config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) =
-  fromMaybe errorMsg $ asum [numType, bitsType, extBV, extractBV]
+  fromMaybe errorMsg $ asum [bitsType, extBV, extractBV]
   where
     errorMsg :: forall t1. t1
     errorMsg = translateUnaryError (show op) (R.typeRep @x) (R.typeRep @a)
-    numType :: Maybe (State SymBiMap (TermTy integerBitWidth a))
-    numType = case (config, R.typeRep @a) of
-      ResolvedNumType ->
-        case t of
-          UMinusNumTerm (t1 :: Term a) -> Just $ lowerUnaryTerm' config t t1 (\x -> - x)
-          SignumNumTerm (t1 :: Term a) -> Just $ lowerUnaryTerm' config t t1 signum
-          AbsNumTerm (t1 :: Term a) -> Just $ lowerUnaryTerm' config t t1 abs
-          _ -> Nothing
-      _ -> Nothing
     bitsType :: Maybe (State SymBiMap (TermTy integerBitWidth a))
     bitsType = case (config, R.typeRep @a) of
       ResolvedBitsType ->
@@ -262,7 +253,7 @@ lowerSinglePrimImpl' config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) =
                     withEquality (unsafeAxiom :: ((((w + ix) - 1) - ix) + 1) :~: w) $
                       withLeqProof ev1 r
 lowerSinglePrimImpl' config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_ :: Term y)) =
-  fromMaybe errorMsg $ asum [numType, numOrdCmp, bitsType, concatBV, funcApply]
+  fromMaybe errorMsg $ asum [numOrdCmp, bitsType, concatBV, funcApply]
   where
     errorMsg :: forall t1. t1
     errorMsg = translateBinaryError (show op) (R.typeRep @x) (R.typeRep @y) (R.typeRep @a)
@@ -272,13 +263,6 @@ lowerSinglePrimImpl' config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (
         LTNumTerm (t1' :: Term x) t2' -> Just $ lowerBinaryTerm' config t t1' t2' (SBV..<)
         LENumTerm (t1' :: Term x) t2' -> Just $ lowerBinaryTerm' config t t1' t2' (SBV..<=)
         _ -> Nothing
-      _ -> Nothing
-    numType :: Maybe (State SymBiMap (TermTy integerBitWidth a))
-    numType = case (config, R.typeRep @a) of
-      ResolvedNumType ->
-        case t of
-          TimesNumTerm (t1' :: Term a) t2' -> Just $ lowerBinaryTerm' config t t1' t2' (*)
-          _ -> Nothing
       _ -> Nothing
     bitsType :: Maybe (State SymBiMap (TermTy integerBitWidth a))
     bitsType = case (config, R.typeRep @a) of
@@ -354,6 +338,22 @@ lowerSinglePrimImpl' config t@(AddNumTerm _ arg1 arg2) =
   case (config, R.typeRep @a) of
     ResolvedNumType -> lowerBinaryTerm' config t arg1 arg2 (+)
     _ -> translateBinaryError "(+)" (R.typeRep @a) (R.typeRep @a) (R.typeRep @a)
+lowerSinglePrimImpl' config t@(UMinusNumTerm _ arg) =
+  case (config, R.typeRep @a) of
+    ResolvedNumType -> lowerUnaryTerm' config t arg negate
+    _ -> translateUnaryError "negate" (R.typeRep @a) (R.typeRep @a)
+lowerSinglePrimImpl' config t@(TimesNumTerm _ arg1 arg2) =
+  case (config, R.typeRep @a) of
+    ResolvedNumType -> lowerBinaryTerm' config t arg1 arg2 (*)
+    _ -> translateBinaryError "(*)" (R.typeRep @a) (R.typeRep @a) (R.typeRep @a)
+lowerSinglePrimImpl' config t@(AbsNumTerm _ arg) =
+  case (config, R.typeRep @a) of
+    ResolvedNumType -> lowerUnaryTerm' config t arg abs
+    _ -> translateUnaryError "abs" (R.typeRep @a) (R.typeRep @a)
+lowerSinglePrimImpl' config t@(SignumNumTerm _ arg) =
+  case (config, R.typeRep @a) of
+    ResolvedNumType -> lowerUnaryTerm' config t arg signum
+    _ -> translateUnaryError "signum" (R.typeRep @a) (R.typeRep @a)
 lowerSinglePrimImpl' _ _ = undefined
 
 buildUTFunc11 ::
@@ -542,19 +542,10 @@ lowerSinglePrimImpl config t@(SymbTerm _ ts) m =
     ufunc :: (Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a)))
     ufunc = lowerSinglePrimUFunc config t m
 lowerSinglePrimImpl config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) m =
-  fromMaybe errorMsg $ asum [numType, bitsType, extBV, extractBV]
+  fromMaybe errorMsg $ asum [bitsType, extBV, extractBV]
   where
     errorMsg :: forall t1. t1
     errorMsg = translateUnaryError (show op) (R.typeRep @x) (R.typeRep @a)
-    numType :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
-    numType = case (config, R.typeRep @a) of
-      ResolvedNumType ->
-        case t of
-          UMinusNumTerm (t1 :: Term a) -> Just $ lowerUnaryTerm config t t1 (\x -> - x) m
-          SignumNumTerm (t1 :: Term a) -> Just $ lowerUnaryTerm config t t1 signum m
-          AbsNumTerm (t1 :: Term a) -> Just $ lowerUnaryTerm config t t1 abs m
-          _ -> Nothing
-      _ -> Nothing
     bitsType :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
     bitsType = case (config, R.typeRep @a) of
       ResolvedBitsType ->
@@ -641,7 +632,7 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) m 
                     withEquality (unsafeAxiom :: ((((w + ix) - 1) - ix) + 1) :~: w) $
                       withLeqProof ev1 r
 lowerSinglePrimImpl config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_ :: Term y)) m =
-  fromMaybe errorMsg $ asum [numType, numOrdCmp, bitsType, concatBV, integerType, funcApply]
+  fromMaybe errorMsg $ asum [numOrdCmp, bitsType, concatBV, integerType, funcApply]
   where
     errorMsg :: forall t1. t1
     errorMsg = translateBinaryError (show op) (R.typeRep @x) (R.typeRep @y) (R.typeRep @a)
@@ -651,13 +642,6 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_
         LTNumTerm (t1' :: Term x) t2' -> Just $ lowerBinaryTerm config t t1' t2' (SBV..<) m
         LENumTerm (t1' :: Term x) t2' -> Just $ lowerBinaryTerm config t t1' t2' (SBV..<=) m
         _ -> Nothing
-      _ -> Nothing
-    numType :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
-    numType = case (config, R.typeRep @a) of
-      ResolvedNumType ->
-        case t of
-          TimesNumTerm (t1' :: Term a) t2' -> Just $ lowerBinaryTerm config t t1' t2' (*) m
-          _ -> Nothing
       _ -> Nothing
     integerType :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
     integerType = case (config, R.typeRep @a) of
@@ -739,6 +723,22 @@ lowerSinglePrimImpl config t@(AddNumTerm _ arg1 arg2) m =
   case (config, R.typeRep @a) of
     ResolvedNumType -> lowerBinaryTerm config t arg1 arg2 (+) m
     _ -> translateBinaryError "(+)" (R.typeRep @a) (R.typeRep @a) (R.typeRep @a)
+lowerSinglePrimImpl config t@(UMinusNumTerm _ arg) m =
+  case (config, R.typeRep @a) of
+    ResolvedNumType -> lowerUnaryTerm config t arg negate m
+    _ -> translateUnaryError "negate" (R.typeRep @a) (R.typeRep @a)
+lowerSinglePrimImpl config t@(TimesNumTerm _ arg1 arg2) m =
+  case (config, R.typeRep @a) of
+    ResolvedNumType -> lowerBinaryTerm config t arg1 arg2 (*) m
+    _ -> translateBinaryError "(*)" (R.typeRep @a) (R.typeRep @a) (R.typeRep @a)
+lowerSinglePrimImpl config t@(AbsNumTerm _ arg) m =
+  case (config, R.typeRep @a) of
+    ResolvedNumType -> lowerUnaryTerm config t arg abs m
+    _ -> translateUnaryError "abs" (R.typeRep @a) (R.typeRep @a)
+lowerSinglePrimImpl config t@(SignumNumTerm _ arg) m =
+  case (config, R.typeRep @a) of
+    ResolvedNumType -> lowerUnaryTerm config t arg signum m
+    _ -> translateUnaryError "signum" (R.typeRep @a) (R.typeRep @a)
 lowerSinglePrimImpl _ _ _ = error "Should never happen"
 
 unsafeMkNatRepr :: Int -> NatRepr w

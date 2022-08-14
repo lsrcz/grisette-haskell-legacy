@@ -190,6 +190,10 @@ data Term t where
   EqvTerm :: SupportedPrim t => {-# UNPACK #-} !Id -> !(Term t) -> !(Term t) -> Term Bool
   ITETerm :: SupportedPrim t => {-# UNPACK #-} !Id -> !(Term Bool) -> !(Term t) -> !(Term t) -> Term t
   AddNumTerm :: (SupportedPrim t, Num t) => {-# UNPACK #-} !Id -> !(Term t) -> !(Term t) -> Term t
+  UMinusNumTerm :: (SupportedPrim t, Num t) => {-# UNPACK #-} !Id -> !(Term t) -> Term t
+  TimesNumTerm :: (SupportedPrim t, Num t) => {-# UNPACK #-} !Id -> !(Term t) -> !(Term t) -> Term t
+  AbsNumTerm :: (SupportedPrim t, Num t) => {-# UNPACK #-} !Id -> !(Term t) -> Term t
+  SignumNumTerm :: (SupportedPrim t, Num t) => {-# UNPACK #-} !Id -> !(Term t) -> Term t
 
 instance NFData (Term a) where
   rnf i = identity i `seq` ()
@@ -207,6 +211,10 @@ instance Lift (Term t) where
   liftTyped (EqvTerm _ arg1 arg2) = [||eqvTerm arg1 arg2||]
   liftTyped (ITETerm _ cond arg1 arg2) = [||iteTerm cond arg1 arg2||]
   liftTyped (AddNumTerm _ arg1 arg2) = [||addNumTerm arg1 arg2||]
+  liftTyped (UMinusNumTerm _ arg) = [||uminusNumTerm arg||]
+  liftTyped (TimesNumTerm _ arg1 arg2) = [||timesNumTerm arg1 arg2||]
+  liftTyped (AbsNumTerm _ arg) = [||absNumTerm arg||]
+  liftTyped (SignumNumTerm _ arg) = [||signumNumTerm arg||]
 
 instance Show (Term ty) where
   show (ConcTerm i v) = "ConcTerm{id=" ++ show i ++ ", v=" ++ show v ++ "}"
@@ -233,6 +241,10 @@ instance Show (Term ty) where
   show (EqvTerm i arg1 arg2) = "Eqv{id=" ++ show i ++ ", arg1=" ++ show arg1 ++ ", arg2=" ++ show arg2 ++ "}"
   show (ITETerm i cond l r) = "ITE{id=" ++ show i ++ ", cond=" ++ show cond ++ ", then=" ++ show l ++ ", else=" ++ show r ++ "}"
   show (AddNumTerm i arg1 arg2) = "AddNum{id=" ++ show i ++ ", arg1=" ++ show arg1 ++ ", arg2=" ++ show arg2 ++ "}"
+  show (UMinusNumTerm i arg) = "UMinusNum{id=" ++ show i ++ ", arg=" ++ show arg ++ "}"
+  show (TimesNumTerm i arg1 arg2) = "TimesNum{id=" ++ show i ++ ", arg1=" ++ show arg1 ++ ", arg2=" ++ show arg2 ++ "}"
+  show (AbsNumTerm i arg) = "AbsNum{id=" ++ show i ++ ", arg=" ++ show arg ++ "}"
+  show (SignumNumTerm i arg) = "SignumNum{id=" ++ show i ++ ", arg=" ++ show arg ++ "}"
 
 instance (SupportedPrim t) => Eq (Term t) where
   (==) = (==) `on` identity
@@ -263,6 +275,10 @@ data UTerm t where
   UEqvTerm :: SupportedPrim t => !(Term t) -> !(Term t) -> UTerm Bool
   UITETerm :: SupportedPrim t => !(Term Bool) -> !(Term t) -> !(Term t) -> UTerm t
   UAddNumTerm :: (SupportedPrim t, Num t) => !(Term t) -> !(Term t) -> UTerm t
+  UUMinusNumTerm :: (SupportedPrim t, Num t) => !(Term t) -> UTerm t
+  UTimesNumTerm :: (SupportedPrim t, Num t) => !(Term t) -> !(Term t) -> UTerm t
+  UAbsNumTerm :: (SupportedPrim t, Num t) => !(Term t) -> UTerm t
+  USignumNumTerm :: (SupportedPrim t, Num t) => !(Term t) -> UTerm t
 
 eqTypedId :: (TypeRep a, Id) -> (TypeRep b, Id) -> Bool
 eqTypedId (a, i1) (b, i2) = i1 == i2 && eqTypeRepBool a b
@@ -293,6 +309,10 @@ instance (SupportedPrim t) => Interned (Term t) where
     DEqvTerm :: TypeRep args -> {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term Bool)
     DITETerm :: {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term t)
     DAddNumTerm :: (SupportedPrim t, Num t) => {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term t)
+    DUMinusNumTerm :: (SupportedPrim t, Num t) => {-# UNPACK #-} !Id -> Description (Term t)
+    DTimesNumTerm :: (SupportedPrim t, Num t) => {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term t)
+    DAbsNumTerm :: (SupportedPrim t, Num t) => {-# UNPACK #-} !Id -> Description (Term t)
+    DSignumNumTerm :: (SupportedPrim t, Num t) => {-# UNPACK #-} !Id -> Description (Term t)
   describe (UConcTerm v) = DConcTerm v
   describe ((USymbTerm name) :: UTerm t) = DSymbTerm @t name
   describe ((UUnaryTerm (tag :: tagt) (tm :: Term arg)) :: UTerm t) = DUnaryTerm tag (typeRep :: TypeRep arg, identity tm)
@@ -306,6 +326,10 @@ instance (SupportedPrim t) => Interned (Term t) where
   describe (UEqvTerm (arg1 :: Term arg) arg2) = DEqvTerm (typeRep :: TypeRep arg) (identity arg1) (identity arg2)
   describe (UITETerm cond (l :: Term arg) r) = DITETerm (identity cond) (identity l) (identity r)
   describe (UAddNumTerm arg1 arg2) = DAddNumTerm (identity arg1) (identity arg2)
+  describe (UUMinusNumTerm arg) = DUMinusNumTerm (identity arg)
+  describe (UTimesNumTerm arg1 arg2) = DTimesNumTerm (identity arg1) (identity arg2)
+  describe (UAbsNumTerm arg) = DAbsNumTerm (identity arg)
+  describe (USignumNumTerm arg) = DSignumNumTerm (identity arg)
   identify i = go
     where
       go (UConcTerm v) = ConcTerm i v
@@ -319,6 +343,10 @@ instance (SupportedPrim t) => Interned (Term t) where
       go (UEqvTerm arg1 arg2) = EqvTerm i arg1 arg2
       go (UITETerm cond l r) = ITETerm i cond l r
       go (UAddNumTerm arg1 arg2) = AddNumTerm i arg1 arg2
+      go (UUMinusNumTerm arg) = UMinusNumTerm i arg
+      go (UTimesNumTerm arg1 arg2) = TimesNumTerm i arg1 arg2
+      go (UAbsNumTerm arg) = AbsNumTerm i arg
+      go (USignumNumTerm arg) = SignumNumTerm i arg
   cache = termCache
 
 instance (SupportedPrim t) => Eq (Description (Term t)) where
@@ -335,6 +363,10 @@ instance (SupportedPrim t) => Eq (Description (Term t)) where
   DEqvTerm lrep li1 li2 == DEqvTerm rrep ri1 ri2 = eqTypeRepBool lrep rrep && li1 == ri1 && li2 == ri2
   DITETerm lc li1 li2 == DITETerm rc ri1 ri2 = lc == rc && li1 == ri1 && li2 == ri2
   DAddNumTerm li1 li2 == DAddNumTerm ri1 ri2 = li1 == ri1 && li2 == ri2
+  DUMinusNumTerm li == DUMinusNumTerm ri = li == ri
+  DTimesNumTerm li1 li2 == DTimesNumTerm ri1 ri2 = li1 == ri1 && li2 == ri2
+  DAbsNumTerm li == DAbsNumTerm ri = li == ri
+  DSignumNumTerm li == DSignumNumTerm ri = li == ri
   _ == _ = False
 
 instance (SupportedPrim t) => Hashable (Description (Term t)) where
@@ -356,6 +388,10 @@ instance (SupportedPrim t) => Hashable (Description (Term t)) where
       `hashWithSalt` id1
       `hashWithSalt` id2
   hashWithSalt s (DAddNumTerm id1 id2) = s `hashWithSalt` (10 :: Int) `hashWithSalt` id1 `hashWithSalt` id2
+  hashWithSalt s (DUMinusNumTerm id1) = s `hashWithSalt` (11 :: Int) `hashWithSalt` id1
+  hashWithSalt s (DTimesNumTerm id1 id2) = s `hashWithSalt` (12 :: Int) `hashWithSalt` id1 `hashWithSalt` id2
+  hashWithSalt s (DAbsNumTerm id1) = s `hashWithSalt` (13 :: Int) `hashWithSalt` id1
+  hashWithSalt s (DSignumNumTerm id1) = s `hashWithSalt` (14 :: Int) `hashWithSalt` id1
 
 -- Basic Bool
 defaultValueForBool :: Bool
