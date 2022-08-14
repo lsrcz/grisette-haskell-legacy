@@ -19,30 +19,18 @@ module Grisette.IR.SymPrim.Data.Prim.Num
     pevalUMinusNumTerm,
     pevalAbsNumTerm,
     pevalSignumNumTerm,
-    pattern TimesNumTerm,
-    LTNum (..),
-    ltNum,
-    pattern LTNumTerm,
-    LENum (..),
-    leNum,
-    pattern LENumTerm,
-    gtNum,
-    geNum,
+    pevalLtNumTerm,
+    pevalLeNumTerm,
+    pevalGtNumTerm,
+    pevalGeNumTerm,
   )
 where
 
-import Control.DeepSeq
-import Data.Hashable
 import Data.Typeable
-import GHC.Generics
-import Grisette.IR.SymPrim.Data.Prim.Helpers
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
-import Grisette.IR.SymPrim.Data.Prim.PartialEval
 import Grisette.IR.SymPrim.Data.Prim.Unfold
 import Grisette.IR.SymPrim.Data.Prim.Utils
-import Language.Haskell.TH.Syntax
 import Unsafe.Coerce
 
 numConcTermView :: (Num b, Typeable b) => Term a -> Maybe b
@@ -138,40 +126,6 @@ doPevalTimesNumTermNoConc (TimesNumTerm _ (_ :: Term a) ConcTerm {}) _ = error "
 doPevalTimesNumTermNoConc _ (TimesNumTerm _ (_ :: Term a) ConcTerm {}) = error "Should not happen" -- Just $ addi k $ addi i j
 doPevalTimesNumTermNoConc _ _ = Nothing
 
-{-
-pevalTimesNumTerm :: (Num a, SupportedPrim a) => Term a -> Term a -> Term a
-pevalTimesNumTerm = partialEvalBinary TimesNum
-
-instance (Num a, SupportedPrim a) => BinaryCommPartialStrategy TimesNum a a where
-  singleConstantHandler _ 0 _ = Just $ concTerm 0
-  singleConstantHandler _ 1 k = Just k
-  singleConstantHandler _ (-1) k = Just $ pevalUMinusNumTerm k
-  singleConstantHandler _ l (TimesNumTerm (NumConcTerm j) k) = Just $ pevalTimesNumTerm (concTerm $ l * j) k
-  singleConstantHandler _ l (AddNumTerm _ (NumConcTerm j) k) = Just $ pevalAddNumTerm (concTerm $ l * j) (pevalTimesNumTerm (concTerm l) k)
-  singleConstantHandler _ l (UMinusNumTerm _ j) = Just (pevalTimesNumTerm (concTerm $ - l) j)
-  singleConstantHandler _ _ (TimesNumTerm (_ :: Term a) ConcTerm {}) = error "Should not happen" -- Just $ addi (concTerm $ l + k) j
-  singleConstantHandler _ _ (AddNumTerm _ (_ :: Term a) ConcTerm {}) = error "Should not happen"
-  singleConstantHandler _ _ _ = Nothing
-
-instance (Num a, SupportedPrim a) => BinaryPartialStrategy TimesNum a a a where
-  extractora _ = numConcTermView
-  extractorb _ = numConcTermView
-  allConstantHandler _ i j = Just $ concTerm $ i * j
-
-  nonBinaryConstantHandler _ (TimesNumTerm i@ConcTerm {} j) k = Just $ pevalTimesNumTerm i $ pevalTimesNumTerm j k
-  nonBinaryConstantHandler _ i (TimesNumTerm j@ConcTerm {} k) = Just $ pevalTimesNumTerm j $ pevalTimesNumTerm i k
-  nonBinaryConstantHandler _ (UMinusNumTerm _ i) j = Just $ pevalUMinusNumTerm $ pevalTimesNumTerm i j
-  nonBinaryConstantHandler _ i (UMinusNumTerm _ j) = Just $ pevalUMinusNumTerm $ pevalTimesNumTerm i j
-  nonBinaryConstantHandler _ i j@ConcTerm {} = Just $ pevalTimesNumTerm j i
-  nonBinaryConstantHandler _ (TimesNumTerm (_ :: Term a) ConcTerm {}) _ = error "Should not happen" -- Just $ addi j $ addi i k
-  nonBinaryConstantHandler _ _ (TimesNumTerm (_ :: Term a) ConcTerm {}) = error "Should not happen" -- Just $ addi k $ addi i j
-  nonBinaryConstantHandler _ _ _ = Nothing
-
-instance (Num a, SupportedPrim a) => BinaryOp TimesNum a a a where
-  partialEvalBinary tag l r = binaryUnfoldOnce (binaryPartial tag) (constructBinary tag) l r
-  pformatBinary _ l r = "(* " ++ pformat l ++ " " ++ pformat r ++ ")"
-  -}
-
 -- abs
 pevalAbsNumTerm :: (SupportedPrim a, Num a) => Term a -> Term a
 pevalAbsNumTerm = unaryUnfoldOnce doPevalAbsNumTerm absNumTerm
@@ -186,7 +140,6 @@ doPevalAbsNumTerm (TimesNumTerm _ (Dyn (l :: Term Integer)) r) =
 doPevalAbsNumTerm _ = Nothing
 
 -- signum
-
 pevalSignumNumTerm :: (Num a, SupportedPrim a) => Term a -> Term a
 pevalSignumNumTerm = unaryUnfoldOnce doPevalSignumNumTerm signumNumTerm
 
@@ -201,67 +154,41 @@ doPevalSignumNumTerm (TimesNumTerm _ (Dyn (l :: Term Integer)) r) =
 doPevalSignumNumTerm _ = Nothing
 
 -- lt
-data LTNum = LTNum deriving (Show, Lift, Generic, NFData, Eq, Hashable)
+pevalLtNumTerm :: (Num a, Ord a, SupportedPrim a) => Term a -> Term a -> Term Bool
+pevalLtNumTerm = binaryUnfoldOnce doPevalLtNumTerm ltNumTerm
 
-ltNum :: (Num a, Ord a, SupportedPrim a) => Term a -> Term a -> Term Bool
-ltNum = partialEvalBinary LTNum
-
-instance (Num a, Ord a, SupportedPrim a) => BinaryPartialStrategy LTNum a a Bool where
-  extractora _ = numOrdConcTermView
-  extractorb _ = numOrdConcTermView
-  allConstantHandler _ l r = Just $ concTerm $ l < r
-  leftConstantHandler _ l (AddNumTerm _ (ConcTerm _ (Dyn (j :: Integer))) k) = Just $ ltNum (concTerm $ unsafeCoerce l - j) (unsafeCoerce k)
-  leftConstantHandler _ _ _ = Nothing
-  rightConstantHandler _ (AddNumTerm _ (ConcTerm _ (Dyn (i :: Integer))) j) k = Just $ ltNum (unsafeCoerce j) (concTerm $ unsafeCoerce k - i)
-  rightConstantHandler _ l r =
+doPevalLtNumTerm :: forall a. (Num a, Ord a, SupportedPrim a) => Term a -> Term a -> Maybe (Term Bool)
+doPevalLtNumTerm (ConcTerm _ a) (ConcTerm _ b) = Just $ concTerm $ a < b
+doPevalLtNumTerm (ConcTerm _ l) (AddNumTerm _ (ConcTerm _ (Dyn (j :: Integer))) k) = Just $ pevalLtNumTerm (concTerm $ unsafeCoerce l - j) (unsafeCoerce k)
+doPevalLtNumTerm (AddNumTerm _ (ConcTerm _ (Dyn (i :: Integer))) j) (ConcTerm _ k) = Just $ pevalLtNumTerm (unsafeCoerce j) (concTerm $ unsafeCoerce k - i)
+doPevalLtNumTerm (AddNumTerm _ (ConcTerm _ (Dyn (j :: Integer))) k) l = Just $ pevalLtNumTerm (concTerm j) (pevalMinusNumTerm (unsafeCoerce l) (unsafeCoerce k))
+doPevalLtNumTerm j (AddNumTerm _ (ConcTerm _ (Dyn (k :: Integer))) l) = Just $ pevalLtNumTerm (concTerm $ - k) (pevalMinusNumTerm (unsafeCoerce l) (unsafeCoerce j))
+doPevalLtNumTerm l (ConcTerm _ r) =
     case eqT @a @Integer of
       Just Refl ->
-        Just $ ltNum (concTerm $ - r) (pevalUMinusNumTerm l)
+        Just $ pevalLtNumTerm (concTerm $ - r) (pevalUMinusNumTerm l)
       _ -> Nothing
-
-  nonBinaryConstantHandler _ (AddNumTerm _ (ConcTerm _ (Dyn (j :: Integer))) k) l = Just $ ltNum (concTerm j) (pevalMinusNumTerm (unsafeCoerce l) (unsafeCoerce k))
-  nonBinaryConstantHandler _ j (AddNumTerm _ (ConcTerm _ (Dyn (k :: Integer))) l) = Just $ ltNum (concTerm $ - k) (pevalMinusNumTerm (unsafeCoerce l) (unsafeCoerce j))
-  nonBinaryConstantHandler _ _ _ = Nothing
-
-instance (Num a, Ord a, SupportedPrim a) => BinaryOp LTNum a a Bool where
-  partialEvalBinary tag l r = binaryUnfoldOnce (binaryPartial tag) (constructBinary tag) l r
-  pformatBinary _ l r = "(< " ++ pformat l ++ " " ++ pformat r ++ ")"
-
-pattern LTNumTerm :: (Num a, Ord a, SupportedPrim a) => Term a -> Term a -> Term Bool
-pattern LTNumTerm l r <- BinaryTermPatt LTNum l r
+doPevalLtNumTerm _ _ = Nothing
 
 -- le
-data LENum = LENum deriving (Show, Lift, Generic, NFData, Eq, Hashable)
+pevalLeNumTerm :: (Num a, Ord a, SupportedPrim a) => Term a -> Term a -> Term Bool
+pevalLeNumTerm = binaryUnfoldOnce doPevalLeNumTerm leNumTerm
 
-leNum :: (Num a, Ord a, SupportedPrim a) => Term a -> Term a -> Term Bool
-leNum = partialEvalBinary LENum
-
-instance (Num a, Ord a, SupportedPrim a) => BinaryPartialStrategy LENum a a Bool where
-  extractora _ = numOrdConcTermView
-  extractorb _ = numOrdConcTermView
-  allConstantHandler _ l r = Just $ concTerm $ l <= r
-  leftConstantHandler _ l (AddNumTerm _ (ConcTerm _ (Dyn (j :: Integer))) k) = Just $ leNum (concTerm $ unsafeCoerce l - j) (unsafeCoerce k)
-  leftConstantHandler _ _ _ = Nothing
-  rightConstantHandler _ (AddNumTerm _ (ConcTerm _ (Dyn (i :: Integer))) j) k = Just $ leNum (unsafeCoerce j) (concTerm $ unsafeCoerce k - i)
-  rightConstantHandler _ l r =
+doPevalLeNumTerm :: forall a. (Num a, Ord a, SupportedPrim a) => Term a -> Term a -> Maybe (Term Bool)
+doPevalLeNumTerm (ConcTerm _ a) (ConcTerm _ b) = Just $ concTerm $ a <= b
+doPevalLeNumTerm (ConcTerm _ l) (AddNumTerm _ (ConcTerm _ (Dyn (j :: Integer))) k) = Just $ pevalLeNumTerm (concTerm $ unsafeCoerce l - j) (unsafeCoerce k)
+doPevalLeNumTerm (AddNumTerm _ (ConcTerm _ (Dyn (i :: Integer))) j) (ConcTerm _ k) = Just $ pevalLeNumTerm (unsafeCoerce j) (concTerm $ unsafeCoerce k - i)
+doPevalLeNumTerm (AddNumTerm _ (ConcTerm _ (Dyn (j :: Integer))) k) l = Just $ pevalLeNumTerm (concTerm j) (pevalMinusNumTerm (unsafeCoerce l) (unsafeCoerce k))
+doPevalLeNumTerm j (AddNumTerm _ (ConcTerm _ (Dyn (k :: Integer))) l) = Just $ pevalLeNumTerm (concTerm $ - k) (pevalMinusNumTerm (unsafeCoerce l) (unsafeCoerce j))
+doPevalLeNumTerm l (ConcTerm _ r) =
     case eqT @a @Integer of
       Just Refl ->
-        Just $ leNum (concTerm $ - r) (pevalUMinusNumTerm l)
+        Just $ pevalLeNumTerm (concTerm $ - r) (pevalUMinusNumTerm l)
       _ -> Nothing
+doPevalLeNumTerm _ _ = Nothing
 
-  nonBinaryConstantHandler _ (AddNumTerm _ (ConcTerm _ (Dyn (j :: Integer))) k) l = Just $ leNum (concTerm j) (pevalMinusNumTerm (unsafeCoerce l) (unsafeCoerce k))
-  nonBinaryConstantHandler _ j (AddNumTerm _ (ConcTerm _ (Dyn (k :: Integer))) l) = Just $ leNum (concTerm $ - k) (pevalMinusNumTerm (unsafeCoerce l) (unsafeCoerce j))
-  nonBinaryConstantHandler _ _ _ = Nothing
+pevalGtNumTerm :: (Num a, Ord a, SupportedPrim a) => Term a -> Term a -> Term Bool
+pevalGtNumTerm = flip pevalLtNumTerm
 
-instance (Num a, Ord a, SupportedPrim a) => BinaryOp LENum a a Bool where
-  partialEvalBinary tag l r = binaryUnfoldOnce (binaryPartial tag) (constructBinary tag) l r
-  pformatBinary _ l r = "(<= " ++ pformat l ++ " " ++ pformat r ++ ")"
-
-pattern LENumTerm :: (Num a, Ord a, SupportedPrim a) => Term a -> Term a -> Term Bool
-pattern LENumTerm l r <- BinaryTermPatt LENum l r
-
-gtNum :: (Num a, Ord a, SupportedPrim a) => Term a -> Term a -> Term Bool
-gtNum = flip ltNum
-
-geNum :: (Num a, Ord a, SupportedPrim a) => Term a -> Term a -> Term Bool
-geNum = flip leNum
+pevalGeNumTerm :: (Num a, Ord a, SupportedPrim a) => Term a -> Term a -> Term Bool
+pevalGeNumTerm = flip pevalLeNumTerm

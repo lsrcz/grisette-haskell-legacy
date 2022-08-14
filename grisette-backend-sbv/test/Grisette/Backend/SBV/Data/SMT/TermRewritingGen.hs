@@ -155,6 +155,12 @@ absNumSpec = constructUnarySpec absNumTerm pevalAbsNumTerm
 signumNumSpec :: (TermRewritingSpec a av, Num av) => a -> a
 signumNumSpec = constructUnarySpec signumNumTerm pevalSignumNumTerm
 
+ltNumSpec :: (TermRewritingSpec a av, Num av, Ord av, TermRewritingSpec b Bool) => a -> a -> b
+ltNumSpec = constructBinarySpec ltNumTerm pevalLtNumTerm
+
+leNumSpec :: (TermRewritingSpec a av, Num av, Ord av, TermRewritingSpec b Bool) => a -> a -> b
+leNumSpec = constructBinarySpec leNumTerm pevalLeNumTerm
+
 data BoolOnlySpec = BoolOnlySpec (Term Bool) (Term Bool)
 
 instance Show BoolOnlySpec where
@@ -233,8 +239,8 @@ boolWithLIA n | n > 0 = do
       (1, return $ orSpec v1 v2),
       (1, return $ eqvSpec v1 v2),
       (5, return $ eqvSpec v1i v2i),
-      (5, return $ constructBinarySpec' LTNum v1i v2i),
-      (5, return $ constructBinarySpec' LENum v1i v2i),
+      (5, return $ ltNumSpec v1i v2i),
+      (5, return $ leNumSpec v1i v2i),
       (1, return $ iteSpec v1 v2 v3)
     ]
 boolWithLIA _ = error "Should never be called"
@@ -309,8 +315,8 @@ boolWithFSBV p n | n > 0 = do
       (1, return $ orSpec v1 v2),
       (1, return $ eqvSpec v1 v2),
       (5, return $ eqvSpec v1i v2i),
-      (5, return $ constructBinarySpec' LTNum v1i v2i),
-      (5, return $ constructBinarySpec' LENum v1i v2i),
+      (5, return $ ltNumSpec v1i v2i),
+      (5, return $ leNumSpec v1i v2i),
       (1, return $ iteSpec v1 v2 v3)
     ]
 boolWithFSBV _ _ = error "Should never be called"

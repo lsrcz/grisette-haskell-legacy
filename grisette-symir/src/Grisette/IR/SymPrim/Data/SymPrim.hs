@@ -155,10 +155,10 @@ instance (SupportedPrim (type)) => SEq (Sym Bool) (Sym (type)) where \
 
 #define SORD_SYM(type) \
 instance (SupportedPrim (type)) => SOrd (Sym Bool) (Sym (type)) where \
-  (Sym a) <=~ (Sym b) = Sym $ withPrim (Proxy @(type)) $ leNum a b; \
-  (Sym a) <~ (Sym b) = Sym $ withPrim (Proxy @(type)) $ ltNum a b; \
-  (Sym a) >=~ (Sym b) = Sym $ withPrim (Proxy @(type)) $ geNum a b; \
-  (Sym a) >~ (Sym b) = Sym $ withPrim (Proxy @(type)) $ gtNum a b; \
+  (Sym a) <=~ (Sym b) = Sym $ withPrim (Proxy @(type)) $ pevalLeNumTerm a b; \
+  (Sym a) <~ (Sym b) = Sym $ withPrim (Proxy @(type)) $ pevalLtNumTerm a b; \
+  (Sym a) >=~ (Sym b) = Sym $ withPrim (Proxy @(type)) $ pevalGeNumTerm a b; \
+  (Sym a) >~ (Sym b) = Sym $ withPrim (Proxy @(type)) $ pevalGtNumTerm a b; \
   a `symCompare` b = \
     withPrim (Proxy @(type)) $ mrgIf \
       (a <~ b) \

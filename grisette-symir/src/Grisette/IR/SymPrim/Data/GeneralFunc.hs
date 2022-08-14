@@ -92,3 +92,5 @@ subst sym@(TermSymbol tc _) term input = case eqTypeRep tc (typeRep @a) of
         TimesNumTerm _ op1 op2 -> SomeTerm $ pevalTimesNumTerm (gov op1) (gov op2)
         AbsNumTerm _ op -> SomeTerm $ pevalAbsNumTerm (gov op)
         SignumNumTerm _ op -> SomeTerm $ pevalSignumNumTerm (gov op)
+        LTNumTerm _ op1 op2 -> SomeTerm $ pevalLtNumTerm (gov op1) (gov op2)
+        LENumTerm _ op1 op2 -> SomeTerm $ pevalLeNumTerm (gov op1) (gov op2)

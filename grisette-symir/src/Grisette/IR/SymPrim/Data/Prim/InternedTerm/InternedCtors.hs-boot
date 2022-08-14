@@ -20,6 +20,8 @@ module Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
     timesNumTerm,
     absNumTerm,
     signumNumTerm,
+    ltNumTerm,
+    leNumTerm,
   )
 where
 
@@ -66,3 +68,5 @@ uminusNumTerm :: (SupportedPrim a, Num a) => Term a -> Term a
 timesNumTerm :: (SupportedPrim a, Num a) => Term a -> Term a -> Term a
 absNumTerm :: (SupportedPrim a, Num a) => Term a -> Term a
 signumNumTerm :: (SupportedPrim a, Num a) => Term a -> Term a
+ltNumTerm :: (SupportedPrim a, Num a, Ord a) => Term a -> Term a -> Term Bool
+leNumTerm :: (SupportedPrim a, Num a, Ord a) => Term a -> Term a -> Term Bool

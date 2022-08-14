@@ -188,10 +188,10 @@ spec = do
         let b :: Sym Integer = ssymb "b"
         let at :: Term Integer = ssymbTerm "a"
         let bt :: Term Integer = ssymbTerm "b"
-        a <=~ b `shouldBe` Sym (leNum at bt)
-        a <~ b `shouldBe` Sym (ltNum at bt)
-        a >=~ b `shouldBe` Sym (geNum at bt)
-        a >~ b `shouldBe` Sym (gtNum at bt)
+        a <=~ b `shouldBe` Sym (pevalLeNumTerm at bt)
+        a <~ b `shouldBe` Sym (pevalLtNumTerm at bt)
+        a >=~ b `shouldBe` Sym (pevalGeNumTerm at bt)
+        a >~ b `shouldBe` Sym (pevalGtNumTerm at bt)
         (a `symCompare` ssymb "b" :: UnionM Ordering)
           `shouldBe` mrgIf (a <~ b) (mrgSingle LT) (mrgIf (a ==~ b) (mrgSingle EQ) (mrgSingle (GT)))
   describe "Sym BV" $ do
@@ -246,17 +246,17 @@ spec = do
         (conc is :: Sym (IntN 4)) `symCompare` conc js
           `shouldBe` (normalizes i `symCompare` normalizes j :: UnionM Ordering)
       it "SOrd should work on symbolic" $ do
-        au <=~ bu `shouldBe` Sym (leNum aut but)
-        au <~ bu `shouldBe` Sym (ltNum aut but)
-        au >=~ bu `shouldBe` Sym (geNum aut but)
-        au >~ bu `shouldBe` Sym (gtNum aut but)
+        au <=~ bu `shouldBe` Sym (pevalLeNumTerm aut but)
+        au <~ bu `shouldBe` Sym (pevalLtNumTerm aut but)
+        au >=~ bu `shouldBe` Sym (pevalGeNumTerm aut but)
+        au >~ bu `shouldBe` Sym (pevalGtNumTerm aut but)
         (au `symCompare` bu :: UnionM Ordering)
           `shouldBe` mrgIf (au <~ bu) (mrgSingle LT) (mrgIf (au ==~ bu) (mrgSingle EQ) (mrgSingle GT))
 
-        as <=~ bs `shouldBe` Sym (leNum ast bst)
-        as <~ bs `shouldBe` Sym (ltNum ast bst)
-        as >=~ bs `shouldBe` Sym (geNum ast bst)
-        as >~ bs `shouldBe` Sym (gtNum ast bst)
+        as <=~ bs `shouldBe` Sym (pevalLeNumTerm ast bst)
+        as <~ bs `shouldBe` Sym (pevalLtNumTerm ast bst)
+        as >=~ bs `shouldBe` Sym (pevalGeNumTerm ast bst)
+        as >~ bs `shouldBe` Sym (pevalGtNumTerm ast bst)
         (as `symCompare` bs :: UnionM Ordering)
           `shouldBe` mrgIf (as <~ bs) (mrgSingle LT) (mrgIf (as ==~ bs) (mrgSingle EQ) (mrgSingle GT))
     describe "Bits for Sym BV" $ do
