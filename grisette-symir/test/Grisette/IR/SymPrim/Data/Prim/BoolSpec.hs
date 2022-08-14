@@ -74,18 +74,18 @@ spec = do
         pevalEqvTerm (pevalNotTerm (ssymbTerm "a")) (ssymbTerm "a") `shouldBe` concTerm False
         pevalEqvTerm (ssymbTerm "a") (pevalNotTerm (ssymbTerm "a")) `shouldBe` concTerm False
       it "Eqv(n1+x, n2)" $ do
-        pevalEqvTerm (addNum (concTerm 1 :: Term Integer) (ssymbTerm "a")) (concTerm 3)
+        pevalEqvTerm (pevalAddNumTerm (concTerm 1 :: Term Integer) (ssymbTerm "a")) (concTerm 3)
           `shouldBe` pevalEqvTerm (ssymbTerm "a") (concTerm 2 :: Term Integer)
-        pevalEqvTerm (addNum (concTerm 1 :: Term (IntN 4)) (ssymbTerm "a")) (concTerm 3)
+        pevalEqvTerm (pevalAddNumTerm (concTerm 1 :: Term (IntN 4)) (ssymbTerm "a")) (concTerm 3)
           `shouldBe` pevalEqvTerm (ssymbTerm "a") (concTerm 2 :: Term (IntN 4))
-        pevalEqvTerm (addNum (concTerm 1 :: Term (WordN 4)) (ssymbTerm "a")) (concTerm 3)
+        pevalEqvTerm (pevalAddNumTerm (concTerm 1 :: Term (WordN 4)) (ssymbTerm "a")) (concTerm 3)
           `shouldBe` pevalEqvTerm (ssymbTerm "a") (concTerm 2 :: Term (WordN 4))
       it "Eqv(n1, n2+x)" $ do
-        pevalEqvTerm (concTerm 3) (addNum (concTerm 1 :: Term Integer) (ssymbTerm "a"))
+        pevalEqvTerm (concTerm 3) (pevalAddNumTerm (concTerm 1 :: Term Integer) (ssymbTerm "a"))
           `shouldBe` pevalEqvTerm (ssymbTerm "a") (concTerm 2 :: Term Integer)
-        pevalEqvTerm (concTerm 3) (addNum (concTerm 1 :: Term (IntN 4)) (ssymbTerm "a"))
+        pevalEqvTerm (concTerm 3) (pevalAddNumTerm (concTerm 1 :: Term (IntN 4)) (ssymbTerm "a"))
           `shouldBe` pevalEqvTerm (ssymbTerm "a") (concTerm 2 :: Term (IntN 4))
-        pevalEqvTerm (concTerm 3) (addNum (concTerm 1 :: Term (WordN 4)) (ssymbTerm "a"))
+        pevalEqvTerm (concTerm 3) (pevalAddNumTerm (concTerm 1 :: Term (WordN 4)) (ssymbTerm "a"))
           `shouldBe` pevalEqvTerm (ssymbTerm "a") (concTerm 2 :: Term (WordN 4))
       it "Eqv(l, ITE(c, l, f)) / Eqv(l, ITE(c, t, l) / Eqv(ITE(c, r, f), r) / Eqv(ITE(c, t, r), r)" $ do
         pevalEqvTerm (ssymbTerm "a" :: Term Integer) (pevalITETerm (ssymbTerm "b") (ssymbTerm "a") (ssymbTerm "c"))

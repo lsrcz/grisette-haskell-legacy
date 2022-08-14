@@ -114,7 +114,7 @@ lowerSinglePrimCached' config t = introSupportedPrimConstraint t $
       case r of
         Just v -> return v
         _ -> lowerSinglePrimImpl' config t
-    _ -> error $ "Don't know how to translate the type " ++ show (typeRep (Proxy @a)) ++ " to SMT"
+    _ -> translateTypeError (R.typeRep @a)
 
 lowerUnaryTerm' ::
   forall integerBitWidth a a1 x x1.
@@ -159,7 +159,7 @@ lowerSinglePrimImpl' ResolvedConfig {} (ConcTerm _ v) =
       IntN x -> return $ fromInteger x
     UnsignedBVType _ -> case v of
       WordN x -> return $ fromInteger x
-    _ -> error $ "Don't know how to translate concrete values with the type " ++ show (typeRep (Proxy @a)) ++ " to SMT"
+    _ -> translateTypeError (R.typeRep @a)
 lowerSinglePrimImpl' _ t@SymbTerm {} =
   error $
     "The symbolic term should have already been lowered " ++ show t ++ " to SMT with collectedPrims.\n"
@@ -168,12 +168,7 @@ lowerSinglePrimImpl' config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) =
   fromMaybe errorMsg $ asum [numType, bitsType, extBV, extractBV]
   where
     errorMsg :: forall t1. t1
-    errorMsg =
-      error $
-        "Don't know how to translate the op " ++ show op ++ " :: "
-          ++ show (R.typeRep @x)
-          ++ " -> "
-          ++ show (R.typeRep @a)
+    errorMsg = translateUnaryError (show op) (R.typeRep @x) (R.typeRep @a)
     numType :: Maybe (State SymBiMap (TermTy integerBitWidth a))
     numType = case (config, R.typeRep @a) of
       ResolvedNumType ->
@@ -270,14 +265,7 @@ lowerSinglePrimImpl' config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (
   fromMaybe errorMsg $ asum [numType, numOrdCmp, bitsType, concatBV, funcApply]
   where
     errorMsg :: forall t1. t1
-    errorMsg =
-      error $
-        "Don't know how to translate the op " ++ show op ++ " :: "
-          ++ show (R.typeRep @x)
-          ++ " -> "
-          ++ show (R.typeRep @y)
-          ++ " -> "
-          ++ show (R.typeRep @a)
+    errorMsg = translateBinaryError (show op) (R.typeRep @x) (R.typeRep @y) (R.typeRep @a)
     numOrdCmp :: Maybe (State SymBiMap (TermTy integerBitWidth a))
     numOrdCmp = case (R.typeRep @a, (config, R.typeRep @x)) of
       (BoolType, ResolvedNumOrdType) -> case t of
@@ -289,7 +277,6 @@ lowerSinglePrimImpl' config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (
     numType = case (config, R.typeRep @a) of
       ResolvedNumType ->
         case t of
-          AddNumTerm (t1' :: Term a) t2' -> Just $ lowerBinaryTerm' config t t1' t2' (+)
           TimesNumTerm (t1' :: Term a) t2' -> Just $ lowerBinaryTerm' config t t1' t2' (*)
           _ -> Nothing
       _ -> Nothing
@@ -342,34 +329,17 @@ lowerSinglePrimImpl' config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (
                 )
           _ -> Nothing
       _ -> Nothing
-lowerSinglePrimImpl' ResolvedConfig {} (TernaryTerm _ op (_ :: Term x) (_ :: Term y) (_ :: Term z)) =
-  errorMsg
+lowerSinglePrimImpl' ResolvedConfig {} (TernaryTerm _ op (_ :: Term x) (_ :: Term y) (_ :: Term z)) = errorMsg
   where
     errorMsg :: forall t1. t1
-    errorMsg =
-      error $
-        "Don't know how to translate the op " ++ show op ++ " :: "
-          ++ show (R.typeRep @x)
-          ++ " -> "
-          ++ show (R.typeRep @y)
-          ++ " -> "
-          ++ show (R.typeRep @z)
-          ++ " -> "
-          ++ show (R.typeRep @a)
+    errorMsg = translateTernaryError (show op) (R.typeRep @x) (R.typeRep @y) (R.typeRep @z) (R.typeRep @a)
 lowerSinglePrimImpl' config t@(NotTerm _ arg) = lowerUnaryTerm' config t arg SBV.sNot
 lowerSinglePrimImpl' config t@(OrTerm _ arg1 arg2) = lowerBinaryTerm' config t arg1 arg2 (SBV..||)
 lowerSinglePrimImpl' config t@(AndTerm _ arg1 arg2) = lowerBinaryTerm' config t arg1 arg2 (SBV..&&)
 lowerSinglePrimImpl' config t@(EqvTerm _ (arg1 :: Term x) arg2) =
   case (config, R.typeRep @x) of
     ResolvedSimpleType -> lowerBinaryTerm' config t arg1 arg2 (SBV..==)
-    _ ->
-      error $
-        "Don't know how to translate the op (==) :: "
-          ++ show (R.typeRep @x)
-          ++ " -> "
-          ++ show (R.typeRep @x)
-          ++ " -> "
-          ++ show (R.typeRep @a)
+    _ -> translateBinaryError "(==)" (R.typeRep @x) (R.typeRep @x) (R.typeRep @a)
 lowerSinglePrimImpl' config t@(ITETerm _ cond arg1 arg2) =
   case (config, R.typeRep @a) of
     ResolvedSimpleType -> do
@@ -379,16 +349,11 @@ lowerSinglePrimImpl' config t@(ITETerm _ cond arg1 arg2) =
           let g = SBV.ite l1 l2 l3
           addResult @integerBitWidth t g
           return g
-    _ ->
-      error $
-        "Don't know how to translate the op ite :: "
-          ++ show (R.typeRep @Bool)
-          ++ " -> "
-          ++ show (R.typeRep @a)
-          ++ " -> "
-          ++ show (R.typeRep @a)
-          ++ " -> "
-          ++ show (R.typeRep @a)
+    _ -> translateTernaryError "ite" (R.typeRep @Bool) (R.typeRep @a) (R.typeRep @a) (R.typeRep @a)
+lowerSinglePrimImpl' config t@(AddNumTerm _ arg1 arg2) =
+  case (config, R.typeRep @a) of
+    ResolvedNumType -> lowerBinaryTerm' config t arg1 arg2 (+)
+    _ -> translateBinaryError "(+)" (R.typeRep @a) (R.typeRep @a) (R.typeRep @a)
 lowerSinglePrimImpl' _ _ = undefined
 
 buildUTFunc11 ::
@@ -519,7 +484,7 @@ lowerSinglePrimCached config t m =
         case lookupTerm (SomeTerm t) m of
           Just x -> return (m, fromDyn x undefined)
           Nothing -> lowerSinglePrimImpl config t m
-      _ -> error $ "Don't know how to translate the type " ++ show (typeRep (Proxy @a)) ++ " to SMT"
+      _ -> translateTypeError (R.typeRep @a)
 
 lowerSinglePrim ::
   forall integerBitWidth a. HasCallStack =>
@@ -527,6 +492,25 @@ lowerSinglePrim ::
   Term a ->
   SBV.Symbolic (SymBiMap, TermTy integerBitWidth a)
 lowerSinglePrim config t = lowerSinglePrimCached config t emptySymBiMap
+
+translateTypeError :: HasCallStack => R.TypeRep a -> b
+translateTypeError ta = error $
+  "Don't know how to translate the type " ++ show ta ++ " to SMT"
+
+translateUnaryError :: HasCallStack => String -> R.TypeRep a -> R.TypeRep b -> c
+translateUnaryError op ta tb = error $
+  "Don't know how to translate the op " ++ show op ++ " :: "
+    ++ show ta ++ " -> " ++ show tb ++ " to SMT"
+
+translateBinaryError :: HasCallStack => String -> R.TypeRep a -> R.TypeRep b -> R.TypeRep c -> d
+translateBinaryError op ta tb tc = error $
+  "Don't know how to translate the op " ++ show op ++ " :: "
+    ++ show ta ++ " -> " ++ show tb ++ " -> " ++ show tc ++ " to SMT"
+
+translateTernaryError :: HasCallStack => String -> R.TypeRep a -> R.TypeRep b -> R.TypeRep c -> R.TypeRep d -> e
+translateTernaryError op ta tb tc td = error $
+  "Don't know how to translate the op " ++ show op ++ " :: "
+    ++ show ta ++ " -> " ++ show tb ++ " -> " ++ show tc ++ " -> " ++ show td ++ " to SMT"
 
 lowerSinglePrimImpl ::
   forall integerBitWidth a. HasCallStack =>
@@ -542,12 +526,12 @@ lowerSinglePrimImpl ResolvedConfig {} (ConcTerm _ v) m =
       IntN x -> return (m, fromInteger x)
     UnsignedBVType _ -> case v of
       WordN x -> return (m, fromInteger x)
-    _ -> error $ "Don't know how to translate the type " ++ show (typeRep (Proxy @a)) ++ " to SMT"
+    _ -> translateTypeError (R.typeRep @a)
 lowerSinglePrimImpl config t@(SymbTerm _ ts) m =
   fromMaybe errorMsg $ asum [simple, ufunc]
   where
     errorMsg :: forall x. x
-    errorMsg = error $ "Don't know how to translate the type " ++ show (typeRep (Proxy @a)) ++ " to SMT"
+    errorMsg = translateTypeError (R.typeRep @a)
     simple :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
     simple = case (config, R.typeRep @a) of
       ResolvedSimpleType -> Just $ do
@@ -561,12 +545,7 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) m 
   fromMaybe errorMsg $ asum [numType, bitsType, extBV, extractBV]
   where
     errorMsg :: forall t1. t1
-    errorMsg =
-      error $
-        "Don't know how to translate the op " ++ show op ++ " :: "
-          ++ show (R.typeRep @x)
-          ++ " -> "
-          ++ show (R.typeRep @a)
+    errorMsg = translateUnaryError (show op) (R.typeRep @x) (R.typeRep @a)
     numType :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
     numType = case (config, R.typeRep @a) of
       ResolvedNumType ->
@@ -665,14 +644,7 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_
   fromMaybe errorMsg $ asum [numType, numOrdCmp, bitsType, concatBV, integerType, funcApply]
   where
     errorMsg :: forall t1. t1
-    errorMsg =
-      error $
-        "Don't know how to translate the op " ++ show op ++ " :: "
-          ++ show (R.typeRep @x)
-          ++ " -> "
-          ++ show (R.typeRep @y)
-          ++ " -> "
-          ++ show (R.typeRep @a)
+    errorMsg = translateBinaryError (show op) (R.typeRep @x) (R.typeRep @y) (R.typeRep @a)
     numOrdCmp :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
     numOrdCmp = case (R.typeRep @a, (config, R.typeRep @x)) of
       (BoolType, ResolvedNumOrdType) -> case t of
@@ -684,7 +656,6 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_
     numType = case (config, R.typeRep @a) of
       ResolvedNumType ->
         case t of
-          AddNumTerm (t1' :: Term a) t2' -> Just $ lowerBinaryTerm config t t1' t2' (+) m
           TimesNumTerm (t1' :: Term a) t2' -> Just $ lowerBinaryTerm config t t1' t2' (*) m
           _ -> Nothing
       _ -> Nothing
@@ -747,30 +718,14 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_
 lowerSinglePrimImpl ResolvedConfig {} (TernaryTerm _ op (_ :: Term x) (_ :: Term y) (_ :: Term z)) _ = errorMsg
   where
     errorMsg :: forall t1. t1
-    errorMsg =
-      error $
-        "Don't know how to translate the op " ++ show op ++ " :: "
-          ++ show (R.typeRep @x)
-          ++ " -> "
-          ++ show (R.typeRep @y)
-          ++ " -> "
-          ++ show (R.typeRep @z)
-          ++ " -> "
-          ++ show (R.typeRep @a)
+    errorMsg = translateTernaryError (show op) (R.typeRep @x) (R.typeRep @y) (R.typeRep @z) (R.typeRep @a)
 lowerSinglePrimImpl config t@(NotTerm _ arg) m = lowerUnaryTerm config t arg SBV.sNot m
 lowerSinglePrimImpl config t@(OrTerm _ arg1 arg2) m = lowerBinaryTerm config t arg1 arg2 (SBV..||) m
 lowerSinglePrimImpl config t@(AndTerm _ arg1 arg2) m = lowerBinaryTerm config t arg1 arg2 (SBV..&&) m
 lowerSinglePrimImpl config t@(EqvTerm _ (arg1 :: Term x) arg2) m =
   case (config, R.typeRep @x) of
     ResolvedSimpleType -> lowerBinaryTerm config t arg1 arg2 (SBV..==) m
-    _ ->
-      error $
-        "Don't know how to translate the op (==) :: "
-          ++ show (R.typeRep @x)
-          ++ " -> "
-          ++ show (R.typeRep @x)
-          ++ " -> "
-          ++ show (R.typeRep @a)
+    _ -> translateBinaryError "(==)" (R.typeRep @x) (R.typeRep @x) (R.typeRep @a)
 lowerSinglePrimImpl config t@(ITETerm _ cond arg1 arg2) m =
   case (config, R.typeRep @a) of
     ResolvedSimpleType -> do
@@ -779,16 +734,11 @@ lowerSinglePrimImpl config t@(ITETerm _ cond arg1 arg2) m =
       (m3, l3) <- lowerSinglePrimCached config arg2 m2
       let g = SBV.ite l1 l2 l3
       return (addBiMapIntermediate (SomeTerm t) (toDyn g) m3, g)
-    _ ->
-      error $
-        "Don't know how to translate the op ite :: "
-          ++ show (R.typeRep @Bool)
-          ++ " -> "
-          ++ show (R.typeRep @a)
-          ++ " -> "
-          ++ show (R.typeRep @a)
-          ++ " -> "
-          ++ show (R.typeRep @a)
+    _ -> translateBinaryError "ite" (R.typeRep @Bool) (R.typeRep @a) (R.typeRep @a) (R.typeRep @a)
+lowerSinglePrimImpl config t@(AddNumTerm _ arg1 arg2) m =
+  case (config, R.typeRep @a) of
+    ResolvedNumType -> lowerBinaryTerm config t arg1 arg2 (+) m
+    _ -> translateBinaryError "(+)" (R.typeRep @a) (R.typeRep @a) (R.typeRep @a)
 lowerSinglePrimImpl _ _ _ = error "Should never happen"
 
 unsafeMkNatRepr :: Int -> NatRepr w

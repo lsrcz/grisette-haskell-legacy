@@ -23,8 +23,9 @@ where
 import Control.DeepSeq
 import Data.Typeable
 import GHC.Generics
-import Grisette.IR.SymPrim.Data.Prim.Bool
 import Grisette.IR.SymPrim.Data.Prim.Helpers
+import Grisette.IR.SymPrim.Data.Prim.PartialEval
+import Grisette.IR.SymPrim.Data.Prim.Unfold
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils

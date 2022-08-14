@@ -88,14 +88,14 @@ spec = do
     it "times and add with two concretes combined" $ do
       traverse_
         ( \(x, y) -> do
-            validateSpec unboundedConfig $ times @Integer (concSpec x) $ add (concSpec y) (symbSpec "a")
-            validateSpec unboundedConfig $ times (concSpec x) $ add (symbSpec "a") (concSpec y)
-            validateSpec unboundedConfig $ times (add (concSpec x) (symbSpec "a")) (concSpec y)
-            validateSpec unboundedConfig $ times (add (symbSpec "a") (concSpec x)) (concSpec y)
-            validateSpec unboundedConfig $ add (concSpec x) $ times (concSpec y) (symbSpec "a")
-            validateSpec unboundedConfig $ add (concSpec x) $ times (symbSpec "a") (concSpec y)
-            validateSpec unboundedConfig $ add (times (concSpec x) (symbSpec "a")) (concSpec y)
-            validateSpec unboundedConfig $ add (times (symbSpec "a") (concSpec x)) (concSpec y)
+            validateSpec unboundedConfig $ times @Integer (concSpec x) $ addNumSpec (concSpec y) (symbSpec "a")
+            validateSpec unboundedConfig $ times (concSpec x) $ addNumSpec (symbSpec "a") (concSpec y)
+            validateSpec unboundedConfig $ times (addNumSpec (concSpec x) (symbSpec "a")) (concSpec y)
+            validateSpec unboundedConfig $ times (addNumSpec (symbSpec "a") (concSpec x)) (concSpec y)
+            validateSpec unboundedConfig $ addNumSpec (concSpec x) $ times (concSpec y) (symbSpec "a")
+            validateSpec unboundedConfig $ addNumSpec (concSpec x) $ times (symbSpec "a") (concSpec y)
+            validateSpec unboundedConfig $ addNumSpec (times (concSpec x) (symbSpec "a")) (concSpec y)
+            validateSpec unboundedConfig $ addNumSpec (times (symbSpec "a") (concSpec x)) (concSpec y)
         )
         [(i, j) | i <- [-3 .. 3], j <- [-3 .. 3]]
     it "times concrete with uminus symbolic" $ do

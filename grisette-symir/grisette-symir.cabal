@@ -49,7 +49,9 @@ library
       Grisette.IR.SymPrim.Data.Prim.Model
       Grisette.IR.SymPrim.Data.Prim.ModelValue
       Grisette.IR.SymPrim.Data.Prim.Num
+      Grisette.IR.SymPrim.Data.Prim.PartialEval
       Grisette.IR.SymPrim.Data.Prim.TabularFunc
+      Grisette.IR.SymPrim.Data.Prim.Unfold
       Grisette.IR.SymPrim.Data.Prim.Utils
       Grisette.IR.SymPrim.Data.SymPrim
       Grisette.IR.SymPrim.Data.TabularFunc

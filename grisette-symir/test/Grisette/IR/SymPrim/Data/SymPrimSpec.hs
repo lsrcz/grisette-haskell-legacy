@@ -131,7 +131,7 @@ spec = do
       it "fromInteger should work" $ do
         (1 :: Sym Integer) `shouldBe` Sym (concTerm 1)
       it "(+) for SymPrim should work" $ do
-        (ssymb "a" :: Sym Integer) + ssymb "b" `shouldBe` Sym (addNum (ssymbTerm "a") (ssymbTerm "b"))
+        (ssymb "a" :: Sym Integer) + ssymb "b" `shouldBe` Sym (pevalAddNumTerm (ssymbTerm "a") (ssymbTerm "b"))
       it "(-) for SymPrim should work" $ do
         (ssymb "a" :: Sym Integer) - ssymb "b" `shouldBe` Sym (minusNum (ssymbTerm "a") (ssymbTerm "b"))
       it "(*) for SymPrim should work" $ do
@@ -208,8 +208,8 @@ spec = do
         (1 :: Sym (WordN 4)) `shouldBe` Sym (concTerm 1)
         (1 :: Sym (IntN 4)) `shouldBe` Sym (concTerm 1)
       it "(+) for SymPrim should work" $ do
-        au + bu `shouldBe` Sym (addNum aut but)
-        as + bs `shouldBe` Sym (addNum ast bst)
+        au + bu `shouldBe` Sym (pevalAddNumTerm aut but)
+        as + bs `shouldBe` Sym (pevalAddNumTerm ast bst)
       it "(-) for SymPrim should work" $ do
         au - bu `shouldBe` Sym (minusNum aut but)
         as - bs `shouldBe` Sym (minusNum ast bst)

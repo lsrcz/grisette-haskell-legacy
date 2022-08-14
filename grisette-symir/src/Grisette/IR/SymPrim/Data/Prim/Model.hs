@@ -26,6 +26,7 @@ import Type.Reflection
 import GHC.Generics
 import Grisette.Core.Data.MemoUtils
 import Grisette.IR.SymPrim.Data.Prim.Bool
+import Grisette.IR.SymPrim.Data.Prim.Num
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.ModelValue
 import Unsafe.Coerce
@@ -109,6 +110,8 @@ evaluateSomeTerm fillDefault (Model ma) = gomemo
       goBinary pevalEqvTerm arg1 arg2
     go (SomeTerm (ITETerm _ cond arg1 arg2)) =
       goTernary pevalITETerm cond arg1 arg2
+    go (SomeTerm (AddNumTerm _ arg1 arg2)) =
+      goBinary pevalAddNumTerm arg1 arg2
     goUnary :: (SupportedPrim a, SupportedPrim b) => (Term a -> Term b) -> Term a -> SomeTerm
     goUnary f a = SomeTerm $ f (gotyped a)
     goBinary :: (SupportedPrim a, SupportedPrim b, SupportedPrim c) =>

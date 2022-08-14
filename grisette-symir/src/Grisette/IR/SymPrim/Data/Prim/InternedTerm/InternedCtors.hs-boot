@@ -15,6 +15,7 @@ module Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
     andTerm,
     eqvTerm,
     iteTerm,
+    addNumTerm,
   )
 where
 
@@ -56,3 +57,4 @@ orTerm :: Term Bool -> Term Bool -> Term Bool
 andTerm :: Term Bool -> Term Bool -> Term Bool
 eqvTerm :: SupportedPrim a => Term a -> Term a -> Term Bool
 iteTerm :: SupportedPrim a => Term Bool -> Term a -> Term a -> Term a
+addNumTerm :: (SupportedPrim a, Num a) => Term a -> Term a -> Term a

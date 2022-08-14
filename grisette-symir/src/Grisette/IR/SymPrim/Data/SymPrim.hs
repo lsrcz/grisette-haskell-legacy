@@ -200,7 +200,7 @@ instance SymBoolOp (Sym Bool)
 type SymInteger = Sym Integer
 
 instance Num (Sym Integer) where
-  (Sym l) + (Sym r) = Sym $ addNum l r
+  (Sym l) + (Sym r) = Sym $ pevalAddNumTerm l r
   (Sym l) - (Sym r) = Sym $ minusNum l r
   (Sym l) * (Sym r) = Sym $ timesNum l r
   negate (Sym v) = Sym $ uminusNum v
@@ -226,7 +226,7 @@ instance SymIntegerOp (Sym Bool) (Sym Integer)
 type SymIntN n = Sym (IntN n)
 
 instance (SupportedPrim (IntN n)) => Num (Sym (IntN n)) where
-  (Sym l) + (Sym r) = Sym $ withPrim (Proxy @(IntN n)) $ addNum l r
+  (Sym l) + (Sym r) = Sym $ withPrim (Proxy @(IntN n)) $ pevalAddNumTerm l r
   (Sym l) - (Sym r) = Sym $ withPrim (Proxy @(IntN n)) $ minusNum l r
   (Sym l) * (Sym r) = Sym $ withPrim (Proxy @(IntN n)) $ timesNum l r
   negate (Sym v) = Sym $ withPrim (Proxy @(IntN n)) $ uminusNum v
@@ -319,7 +319,7 @@ TOCON_MACHINE_INTEGER (WordN, $(intBitwidthQ), Word)
 type SymWordN n = Sym (WordN n)
 
 instance (SupportedPrim (WordN n)) => Num (Sym (WordN n)) where
-  (Sym l) + (Sym r) = Sym $ withPrim (Proxy @(WordN n)) $ addNum l r
+  (Sym l) + (Sym r) = Sym $ withPrim (Proxy @(WordN n)) $ pevalAddNumTerm l r
   (Sym l) - (Sym r) = Sym $ withPrim (Proxy @(WordN n)) $ minusNum l r
   (Sym l) * (Sym r) = Sym $ withPrim (Proxy @(WordN n)) $ timesNum l r
   negate (Sym v) = Sym $ withPrim (Proxy @(WordN n)) $ uminusNum v

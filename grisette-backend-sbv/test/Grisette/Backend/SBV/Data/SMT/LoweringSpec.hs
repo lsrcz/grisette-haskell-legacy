@@ -283,15 +283,15 @@ spec = do
         (\c x y -> (c SBV..=> x) SBV..&& (SBV.sNot c SBV..=> y))
   describe "Test Integer Lowering" $ do
     it "Add lowering should work" $ do
-      testBinaryOpLowering' @Integer @Integer @Integer unboundedConfig (AddNum @Integer) (+)
-      testBinaryOpLowering' @Integer @Integer @Integer
+      testBinaryOpLowering @Integer @Integer @Integer unboundedConfig pevalAddNumTerm "(+)" (+)
+      testBinaryOpLowering @Integer @Integer @Integer
         unboundedConfig
-        (AddNum @Integer)
+        pevalAddNumTerm "(+)"
         (\x y -> (x + 1) * (y + 1) - x * y - 1)
-      testBinaryOpLowering' @Integer @Integer @Integer boundedConfig (AddNum @Integer) (+)
-      testBinaryOpLowering' @Integer @Integer @Integer
+      testBinaryOpLowering @Integer @Integer @Integer boundedConfig pevalAddNumTerm "(+)" (+)
+      testBinaryOpLowering @Integer @Integer @Integer
         boundedConfig
-        (AddNum @Integer)
+        pevalAddNumTerm "(+)"
         (\x y -> (x + 1) * (y + 1) - x * y - 1)
     it "Uminus lowering should work" $ do
       testUnaryOpLowering' @Integer @Integer unboundedConfig UMinusNum negate
@@ -351,10 +351,10 @@ spec = do
       testBinaryOpLowering' @Integer @Integer @Integer boundedConfig ModI SBV.sMod
   describe "Test IntN Lowering" $ do
     it "Add lowering should work" $ do
-      testBinaryOpLowering' @(IntN 5) @(IntN 5) unboundedConfig (AddNum @(IntN 5)) (+)
-      testBinaryOpLowering' @(IntN 5) @(IntN 5)
+      testBinaryOpLowering @(IntN 5) @(IntN 5) unboundedConfig pevalAddNumTerm "(+)" (+)
+      testBinaryOpLowering @(IntN 5) @(IntN 5)
         unboundedConfig
-        (AddNum @(IntN 5))
+        pevalAddNumTerm "(+)"
         (\x y -> (x + 1) * (y + 1) - x * y - 1)
     it "Uminus lowering should work" $ do
       testUnaryOpLowering' @(IntN 5) unboundedConfig UMinusNum negate
@@ -514,10 +514,10 @@ spec = do
 
   describe "Test WordN Lowering" $ do
     it "Add lowering should work" $ do
-      testBinaryOpLowering' @(WordN 5) @(WordN 5) unboundedConfig (AddNum @(WordN 5)) (+)
-      testBinaryOpLowering' @(WordN 5) @(WordN 5)
+      testBinaryOpLowering @(WordN 5) @(WordN 5) unboundedConfig pevalAddNumTerm "(+)" (+)
+      testBinaryOpLowering @(WordN 5) @(WordN 5)
         unboundedConfig
-        (AddNum @(WordN 5))
+        pevalAddNumTerm "(+)"
         (\x y -> (x + 1) * (y + 1) - x * y - 1)
     it "Uminus lowering should work" $ do
       testUnaryOpLowering' @(WordN 5) unboundedConfig UMinusNum negate

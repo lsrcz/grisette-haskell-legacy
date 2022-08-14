@@ -67,9 +67,7 @@ module Grisette.Internal.IR.SymPrim
     pattern ModITerm,
     pattern NumConcTerm,
     pattern NumOrdConcTerm,
-    AddNum (..),
-    addNum,
-    pattern AddNumTerm,
+    pevalAddNumTerm,
     minusNum,
     UMinusNum (..),
     uminusNum,
@@ -101,6 +99,8 @@ where
 
 import Grisette.IR.SymPrim.Data.Prim.Bool
 import Grisette.IR.SymPrim.Data.Prim.Helpers
+import Grisette.IR.SymPrim.Data.Prim.PartialEval
+import Grisette.IR.SymPrim.Data.Prim.Unfold
 import Grisette.IR.SymPrim.Data.Prim.Integer
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.Num

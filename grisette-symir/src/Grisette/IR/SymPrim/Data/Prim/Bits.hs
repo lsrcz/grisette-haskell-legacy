@@ -33,8 +33,9 @@ module Grisette.IR.SymPrim.Data.Prim.Bits (
 import Control.DeepSeq
 import Data.Bits
 import Data.Typeable
-import Grisette.IR.SymPrim.Data.Prim.Bool
 import Grisette.IR.SymPrim.Data.Prim.Helpers
+import Grisette.IR.SymPrim.Data.Prim.PartialEval
+import Grisette.IR.SymPrim.Data.Prim.Unfold
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Language.Haskell.TH.Syntax
 import Data.Hashable

@@ -13,7 +13,6 @@ module Grisette.IR.SymPrim.Data.GeneralFunc where
 
 import Control.DeepSeq
 import Data.Hashable
--- import Data.Typeable
 import GHC.Generics
 import Grisette.Core.Data.Class.Function
 import Grisette.Core.Data.MemoUtils
@@ -25,6 +24,7 @@ import Grisette.IR.SymPrim.Data.Prim.InternedTerm.SomeTerm
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 import Grisette.IR.SymPrim.Data.Prim.Bool
+import Grisette.IR.SymPrim.Data.Prim.Num
 
 data FuncArg = FuncArg deriving (Show, Eq, Generic, Ord, Lift, Hashable, NFData)
 
@@ -87,3 +87,4 @@ subst sym@(TermSymbol tc _) term input = case eqTypeRep tc (typeRep @a) of
         AndTerm _ op1 op2 -> SomeTerm $ pevalAndTerm (gov op1) (gov op2)
         EqvTerm _ op1 op2 -> SomeTerm $ pevalEqvTerm (gov op1) (gov op2)
         ITETerm _ c op1 op2 -> SomeTerm $ pevalITETerm (gov c) (gov op1) (gov op2)
+        AddNumTerm _ op1 op2 -> SomeTerm $ pevalAddNumTerm (gov op1) (gov op2)
