@@ -31,7 +31,7 @@ import Data.Function (on)
 import Data.Hashable
 import Data.Interned
 import Data.Kind
-import Data.Typeable (cast, Proxy (..))
+import Data.Typeable (Proxy (..), cast)
 import GHC.TypeNats
 import Grisette.Core.Data.Class.BitVector
 import Grisette.IR.SymPrim.Data.BV
@@ -40,6 +40,7 @@ import {-# SOURCE #-} Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 import {-# SOURCE #-} Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
 import Grisette.IR.SymPrim.Data.Prim.ModelValue
 import Grisette.IR.SymPrim.Data.Prim.Utils
+import {-# SOURCE #-} Grisette.IR.SymPrim.Data.TabularFunc
 import Language.Haskell.TH.Syntax
 import Language.Haskell.TH.Syntax.Compat
 import Type.Reflection
@@ -231,17 +232,26 @@ data Term t where
     !(Term (bv a)) ->
     Term (bv w)
   BVExtendTerm ::
-    (SupportedPrim (bv a),
-     SupportedPrim (bv b),
-     KnownNat a,
-     KnownNat b,
-     KnownNat n,
-     BVExtend (bv a) n (bv b)) =>
+    ( SupportedPrim (bv a),
+      SupportedPrim (bv b),
+      KnownNat a,
+      KnownNat b,
+      KnownNat n,
+      BVExtend (bv a) n (bv b)
+    ) =>
     {-# UNPACK #-} !Id ->
     !Bool ->
     !(TypeRep n) ->
     !(Term (bv a)) ->
     Term (bv b)
+  TabularFuncApplyTerm ::
+    ( SupportedPrim a,
+      SupportedPrim b
+    ) =>
+    {-# UNPACK #-} !Id ->
+    Term (a =-> b) ->
+    Term a ->
+    Term b
 
 instance NFData (Term a) where
   rnf i = identity i `seq` ()
@@ -274,6 +284,7 @@ instance Lift (Term t) where
   liftTyped (BVConcatTerm _ arg1 arg2) = [||bvconcatTerm arg1 arg2||]
   liftTyped (BVSelectTerm _ (_ :: TypeRep ix) (_ :: TypeRep w) arg) = [||bvselectTerm (Proxy @ix) (Proxy @w) arg||]
   liftTyped (BVExtendTerm _ signed (_ :: TypeRep n) arg) = [||bvextendTerm signed (Proxy @n) arg||]
+  liftTyped (TabularFuncApplyTerm _ func arg) = [||tabularFuncApplyTerm func arg||]
 
 instance Show (Term ty) where
   show (ConcTerm i v) = "ConcTerm{id=" ++ show i ++ ", v=" ++ show v ++ "}"
@@ -315,6 +326,7 @@ instance Show (Term ty) where
   show (BVConcatTerm i arg1 arg2) = "BVConcat{id=" ++ show i ++ ", arg1=" ++ show arg1 ++ ", arg2=" ++ show arg2 ++ "}"
   show (BVSelectTerm i ix w arg) = "BVSelect{id=" ++ show i ++ ", ix=" ++ show ix ++ ", w=" ++ show w ++ ", arg=" ++ show arg ++ "}"
   show (BVExtendTerm i signed n arg) = "BVExtend{id=" ++ show i ++ ", signed=" ++ show signed ++ ", n=" ++ show n ++ ", arg=" ++ show arg ++ "}"
+  show (TabularFuncApplyTerm i func arg) = "TabularFuncApply{id=" ++ show i ++ ", func=" ++ show func ++ ", arg=" ++ show arg ++ "}"
 
 instance (SupportedPrim t) => Eq (Term t) where
   (==) = (==) `on` identity
@@ -382,16 +394,24 @@ data UTerm t where
     !(Term (bv a)) ->
     UTerm (bv w)
   UBVExtendTerm ::
-    (SupportedPrim (bv a),
-     SupportedPrim (bv b),
-     KnownNat a,
-     KnownNat b,
-     KnownNat n,
-     BVExtend (bv a) n (bv b)) =>
+    ( SupportedPrim (bv a),
+      SupportedPrim (bv b),
+      KnownNat a,
+      KnownNat b,
+      KnownNat n,
+      BVExtend (bv a) n (bv b)
+    ) =>
     !Bool ->
     !(TypeRep n) ->
     !(Term (bv a)) ->
     UTerm (bv b)
+  UTabularFuncApplyTerm ::
+    ( SupportedPrim a,
+      SupportedPrim b
+    ) =>
+    Term (a =-> b) ->
+    Term a ->
+    UTerm b
 
 eqTypedId :: (TypeRep a, Id) -> (TypeRep b, Id) -> Bool
 eqTypedId (a, i1) (b, i2) = i1 == i2 && eqTypeRepBool a b
@@ -450,10 +470,14 @@ instance (SupportedPrim t) => Interned (Term t) where
       Description (Term (bv w))
     DBVExtendTerm ::
       forall bv (a :: Nat) (b :: Nat) (n :: Nat).
-        !Bool ->
-        !(TypeRep n) ->
-        {-# UNPACK #-} !(TypeRep (bv a), Id) ->
-        Description (Term (bv b))
+      !Bool ->
+      !(TypeRep n) ->
+      {-# UNPACK #-} !(TypeRep (bv a), Id) ->
+      Description (Term (bv b))
+    DTabularFuncApplyTerm ::
+      {-# UNPACK #-} !(TypeRep (a =-> b), Id) ->
+      {-# UNPACK #-} !(TypeRep a, Id) ->
+      Description (Term b)
 
   describe (UConcTerm v) = DConcTerm v
   describe ((USymbTerm name) :: UTerm t) = DSymbTerm @t name
@@ -487,6 +511,8 @@ instance (SupportedPrim t) => Interned (Term t) where
     DBVSelectTerm ix (typeRep :: TypeRep arg, identity arg)
   describe (UBVExtendTerm signed (n :: TypeRep n) (arg :: Term arg)) =
     DBVExtendTerm signed n (typeRep :: TypeRep arg, identity arg)
+  describe (UTabularFuncApplyTerm (func :: Term f) (arg :: Term a)) =
+    DTabularFuncApplyTerm (typeRep :: TypeRep f, identity func) (typeRep :: TypeRep a, identity arg)
   identify i = go
     where
       go (UConcTerm v) = ConcTerm i v
@@ -515,6 +541,7 @@ instance (SupportedPrim t) => Interned (Term t) where
       go (UBVConcatTerm arg1 arg2) = BVConcatTerm i arg1 arg2
       go (UBVSelectTerm ix w arg) = BVSelectTerm i ix w arg
       go (UBVExtendTerm signed n arg) = BVExtendTerm i signed n arg
+      go (UTabularFuncApplyTerm func arg) = TabularFuncApplyTerm i func arg
   cache = termCache
 
 instance (SupportedPrim t) => Eq (Description (Term t)) where
@@ -548,6 +575,7 @@ instance (SupportedPrim t) => Eq (Description (Term t)) where
   DBVSelectTerm lix li == DBVSelectTerm rix ri =
     eqTypeRepBool lix rix && eqTypedId li ri
   DBVExtendTerm lIsSigned ln li == DBVExtendTerm rIsSigned rn ri = lIsSigned == rIsSigned && eqTypeRepBool ln rn && eqTypedId li ri
+  DTabularFuncApplyTerm lf li == DTabularFuncApplyTerm rf ri = eqTypedId lf rf && eqTypedId li ri
   _ == _ = False
 
 instance (SupportedPrim t) => Hashable (Description (Term t)) where
@@ -587,6 +615,7 @@ instance (SupportedPrim t) => Hashable (Description (Term t)) where
     s `hashWithSalt` (23 :: Int) `hashWithSalt` rep1 `hashWithSalt` rep2 `hashWithSalt` id1 `hashWithSalt` id2
   hashWithSalt s (DBVSelectTerm ix id1) = s `hashWithSalt` (24 :: Int) `hashWithSalt` ix `hashWithSalt` id1
   hashWithSalt s (DBVExtendTerm signed n id1) = s `hashWithSalt` (25 :: Int) `hashWithSalt` signed `hashWithSalt` n `hashWithSalt` id1
+  hashWithSalt s (DTabularFuncApplyTerm id1 id2) = s `hashWithSalt` (26 :: Int) `hashWithSalt` id1 `hashWithSalt` id2
 
 -- Basic Bool
 defaultValueForBool :: Bool

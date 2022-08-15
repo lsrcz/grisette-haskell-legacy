@@ -23,6 +23,7 @@ import Data.Interned
 import Data.Typeable
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.SomeTerm
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
+import Grisette.IR.SymPrim.Data.TabularFunc ()
 
 identity :: Term t -> Id
 identity (ConcTerm i _) = i
@@ -51,6 +52,7 @@ identity (RotateBitsTerm i _ _) = i
 identity (BVConcatTerm i _ _) = i
 identity (BVSelectTerm i _ _ _) = i
 identity (BVExtendTerm i _ _ _) = i
+identity (TabularFuncApplyTerm i _ _) = i
 {-# INLINE identity #-}
 
 identityWithTypeRep :: forall t. Term t -> (TypeRep, Id)
@@ -80,6 +82,7 @@ identityWithTypeRep (RotateBitsTerm i _ _) = (typeRep (Proxy @t), i)
 identityWithTypeRep (BVConcatTerm i _ _) = (typeRep (Proxy @t), i)
 identityWithTypeRep (BVSelectTerm i _ _ _) = (typeRep (Proxy @t), i)
 identityWithTypeRep (BVExtendTerm i _ _ _) = (typeRep (Proxy @t), i)
+identityWithTypeRep (TabularFuncApplyTerm i _ _) = (typeRep (Proxy @t), i)
 {-# INLINE identityWithTypeRep #-}
 
 introSupportedPrimConstraint :: forall t a. Term t -> ((SupportedPrim t) => a) -> a
@@ -109,6 +112,7 @@ introSupportedPrimConstraint RotateBitsTerm {} x = x
 introSupportedPrimConstraint BVConcatTerm {} x = x
 introSupportedPrimConstraint BVSelectTerm {} x = x
 introSupportedPrimConstraint BVExtendTerm {} x = x
+introSupportedPrimConstraint TabularFuncApplyTerm {} x = x
 {-# INLINE introSupportedPrimConstraint #-}
 
 extractSymbolicsSomeTerm :: SomeTerm -> S.HashSet TermSymbol
@@ -151,6 +155,7 @@ extractSymbolicsSomeTerm t1 = evalState (gocached t1) M.empty
     go (SomeTerm (BVConcatTerm _ arg1 arg2)) = goBinary arg1 arg2
     go (SomeTerm (BVSelectTerm _ _ _ arg)) = goUnary arg
     go (SomeTerm (BVExtendTerm _ _ _ arg)) = goUnary arg
+    go (SomeTerm (TabularFuncApplyTerm _ func arg)) = goBinary func arg
     goUnary arg = gocached (SomeTerm arg)
     goBinary arg1 arg2 = do
       r1 <- gocached (SomeTerm arg1)
@@ -194,6 +199,7 @@ castTerm t@RotateBitsTerm {} = cast t
 castTerm t@BVConcatTerm {} = cast t
 castTerm t@BVSelectTerm {} = cast t
 castTerm t@BVExtendTerm {} = cast t
+castTerm t@TabularFuncApplyTerm {} = cast t
 {-# INLINE castTerm #-}
 
 pformat :: forall t. (SupportedPrim t) => Term t -> String
@@ -223,6 +229,7 @@ pformat (RotateBitsTerm _ arg n) = "(rotate " ++ pformat arg ++ " " ++ show n ++
 pformat (BVConcatTerm _ arg1 arg2) = "(bvconcat " ++ pformat arg1 ++ " " ++ pformat arg2 ++ ")"
 pformat (BVSelectTerm _ ix w arg) = "(bvselect " ++ show ix ++ " " ++ show w ++ " " ++ pformat arg ++ ")"
 pformat (BVExtendTerm _ signed n arg) = (if signed then "(bvsext " else "(bvzext") ++ show n ++ " " ++ pformat arg ++ ")"
+pformat (TabularFuncApplyTerm _ func arg) = "(apply " ++ pformat func ++ " " ++ pformat arg ++ ")"
 {-# INLINE pformat #-}
 
 termsSize :: [Term a] -> Int
@@ -257,6 +264,7 @@ termsSize terms = S.size $ execState (traverse go terms) S.empty
     go t@(BVConcatTerm _ arg1 arg2) = goBinary t arg1 arg2
     go t@(BVSelectTerm _ _ _ arg) = goUnary t arg
     go t@(BVExtendTerm _ _ _ arg) = goUnary t arg
+    go t@(TabularFuncApplyTerm _ func arg) = goBinary t func arg
     goUnary :: forall a b. (SupportedPrim a) => Term a -> Term b -> State (S.HashSet SomeTerm) ()
     goUnary t arg = do
       b <- exists t

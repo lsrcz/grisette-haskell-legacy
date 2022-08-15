@@ -27,6 +27,7 @@ import Grisette.IR.SymPrim.Data.Prim.Bool
 import Grisette.IR.SymPrim.Data.Prim.Num
 import Grisette.IR.SymPrim.Data.Prim.Bits
 import Grisette.IR.SymPrim.Data.Prim.BV
+import Grisette.IR.SymPrim.Data.Prim.TabularFunc
 
 data FuncArg = FuncArg deriving (Show, Eq, Generic, Ord, Lift, Hashable, NFData)
 
@@ -105,3 +106,4 @@ subst sym@(TermSymbol tc _) term input = case eqTypeRep tc (typeRep @a) of
         BVConcatTerm _ op1 op2 -> SomeTerm $ pevalBVConcatTerm (gov op1) (gov op2)
         BVSelectTerm _ ix w op -> SomeTerm $ pevalBVSelectTerm ix w (gov op)
         BVExtendTerm _ n signed op -> SomeTerm $ pevalBVExtendTerm n signed (gov op)
+        TabularFuncApplyTerm _ f op -> SomeTerm $ pevalTabularFuncApplyTerm (gov f) (gov op)

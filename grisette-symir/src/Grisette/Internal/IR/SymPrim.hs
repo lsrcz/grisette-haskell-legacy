@@ -77,11 +77,7 @@ module Grisette.Internal.IR.SymPrim
     pevalLeNumTerm,
     pevalGtNumTerm,
     pevalGeNumTerm,
-    pattern TabularFuncConcTerm,
-    pattern TabularFuncTerm,
-    ApplyF (..),
-    applyf,
-    pattern ApplyFTerm,
+    pevalTabularFuncApplyTerm,
   )
 where
 

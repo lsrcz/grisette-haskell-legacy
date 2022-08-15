@@ -346,7 +346,7 @@ spec = do
   describe "TabularFunc" $ do
     it "apply" $ do
       (ssymb "a" :: Integer =~> Integer) # ssymb "b"
-        `shouldBe` Sym (applyf (ssymbTerm "a" :: Term (Integer =-> Integer)) (ssymbTerm "b"))
+        `shouldBe` Sym (pevalTabularFuncApplyTerm (ssymbTerm "a" :: Term (Integer =-> Integer)) (ssymbTerm "b"))
   describe "Symbolic size" $ do
     it "symSize" $ do
       symSize (ssymb "a" :: Sym Integer) `shouldBe` 1

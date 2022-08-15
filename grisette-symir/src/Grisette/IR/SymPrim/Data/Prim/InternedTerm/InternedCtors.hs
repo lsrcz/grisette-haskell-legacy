@@ -3,6 +3,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeOperators #-}
 
 module Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
   ( constructUnary,
@@ -37,6 +38,7 @@ module Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
     bvextendTerm,
     bvsignExtendTerm,
     bvzeroExtendTerm,
+    tabularFuncApplyTerm ,
   )
 where
 
@@ -54,6 +56,7 @@ import Grisette.Core.Data.Class.BitVector
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Language.Haskell.TH.Syntax
 import Type.Reflection
+import {-# SOURCE #-} Grisette.IR.SymPrim.Data.TabularFunc
 
 internTerm :: forall t. (SupportedPrim t) => Uninterned (Term t) -> Term t
 internTerm !bt = unsafeDupablePerformIO $ atomicModifyIORef' slot go
@@ -259,3 +262,7 @@ bvzeroExtendTerm ::
     ) => proxy n -> Term (bv a) -> Term (bv w)
 bvzeroExtendTerm _ v = internTerm $ UBVExtendTerm False (typeRep @n) v
 {-# INLINE bvzeroExtendTerm #-}
+
+tabularFuncApplyTerm :: (SupportedPrim a, SupportedPrim b) => Term (a =-> b) -> Term a -> Term b
+tabularFuncApplyTerm f a = internTerm $ UTabularFuncApplyTerm f a
+{-# INLINE tabularFuncApplyTerm #-}

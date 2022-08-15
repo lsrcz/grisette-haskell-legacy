@@ -1,4 +1,5 @@
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TypeOperators #-}
 
 module Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
   ( constructUnary,
@@ -33,6 +34,7 @@ module Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
     bvextendTerm,
     bvsignExtendTerm,
     bvzeroExtendTerm,
+    tabularFuncApplyTerm ,
   )
 where
 
@@ -44,6 +46,7 @@ import Language.Haskell.TH.Syntax
 import Data.Bits
 import Grisette.Core.Data.Class.BitVector
 import GHC.TypeNats
+import {-# SOURCE #-} Grisette.IR.SymPrim.Data.TabularFunc
 
 constructUnary ::
   forall tag arg t.
@@ -145,3 +148,5 @@ bvzeroExtendTerm ::
       KnownNat w,
       BVExtend (bv a) n (bv w)
     ) => proxy n -> Term (bv a) -> Term (bv w)
+
+tabularFuncApplyTerm :: (SupportedPrim a, SupportedPrim b) => Term (a =-> b) -> Term a -> Term b

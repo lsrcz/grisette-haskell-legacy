@@ -28,6 +28,7 @@ import Data.Kind
 import GHC.TypeNats
 import Grisette.Core
 import Grisette.IR.SymPrim.Data.Prim.ModelValue
+import {-# SOURCE #-} Grisette.IR.SymPrim.Data.TabularFunc
 import Language.Haskell.TH.Syntax
 import Type.Reflection
 
@@ -149,29 +150,39 @@ data Term t where
     !(Term (bv b)) ->
     Term (bv c)
   BVSelectTerm ::
-    (SupportedPrim (bv a),
-     SupportedPrim (bv w),
-     KnownNat a,
-     KnownNat w,
-     KnownNat ix,
-     BVSelect (bv a) ix w (bv w)) =>
-     {-# UNPACK #-} !Id ->
-      !(TypeRep ix) ->
-      !(TypeRep w) ->
-      !(Term (bv a)) ->
-      Term (bv w)
+    ( SupportedPrim (bv a),
+      SupportedPrim (bv w),
+      KnownNat a,
+      KnownNat w,
+      KnownNat ix,
+      BVSelect (bv a) ix w (bv w)
+    ) =>
+    {-# UNPACK #-} !Id ->
+    !(TypeRep ix) ->
+    !(TypeRep w) ->
+    !(Term (bv a)) ->
+    Term (bv w)
   BVExtendTerm ::
-    (SupportedPrim (bv a),
-     SupportedPrim (bv b),
-     KnownNat a,
-     KnownNat b,
-     KnownNat n,
-     BVExtend (bv a) n (bv b)) =>
+    ( SupportedPrim (bv a),
+      SupportedPrim (bv b),
+      KnownNat a,
+      KnownNat b,
+      KnownNat n,
+      BVExtend (bv a) n (bv b)
+    ) =>
     {-# UNPACK #-} !Id ->
     !Bool ->
     !(TypeRep n) ->
     !(Term (bv a)) ->
     Term (bv b)
+  TabularFuncApplyTerm ::
+    ( SupportedPrim a,
+      SupportedPrim b
+    ) =>
+    {-# UNPACK #-} !Id ->
+    Term (a =-> b) ->
+    Term a ->
+    Term b
 
 data UTerm t where
   UConcTerm :: (SupportedPrim t) => !t -> UTerm t
@@ -221,26 +232,33 @@ data UTerm t where
     !(Term (bv b)) ->
     UTerm (bv c)
   UBVSelectTerm ::
-    (SupportedPrim (bv a),
-     SupportedPrim (bv w),
-     KnownNat a,
-     KnownNat ix,
-     KnownNat w,
-     BVSelect (bv a) ix w (bv w)) =>
-      !(TypeRep ix) ->
-      !(TypeRep w) ->
-      !(Term (bv a)) ->
-      UTerm (bv w)
+    ( SupportedPrim (bv a),
+      SupportedPrim (bv w),
+      KnownNat a,
+      KnownNat ix,
+      KnownNat w,
+      BVSelect (bv a) ix w (bv w)
+    ) =>
+    !(TypeRep ix) ->
+    !(TypeRep w) ->
+    !(Term (bv a)) ->
+    UTerm (bv w)
   UBVExtendTerm ::
-    (SupportedPrim (bv a),
-     SupportedPrim (bv b),
-     KnownNat a,
-     KnownNat b,
-     KnownNat n,
-     BVExtend (bv a) n (bv b)) =>
-     !Bool ->
+    ( SupportedPrim (bv a),
+      SupportedPrim (bv b),
+      KnownNat a,
+      KnownNat b,
+      KnownNat n,
+      BVExtend (bv a) n (bv b)
+    ) =>
+    !Bool ->
     !(TypeRep n) ->
     !(Term (bv a)) ->
     UTerm (bv b)
-
-
+  UTabularFuncApplyTerm ::
+    ( SupportedPrim a,
+      SupportedPrim b
+    ) =>
+    Term (a =-> b) ->
+    Term a ->
+    UTerm b

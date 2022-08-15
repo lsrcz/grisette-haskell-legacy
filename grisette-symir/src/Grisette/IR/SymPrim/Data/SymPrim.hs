@@ -385,7 +385,7 @@ infixr 0 =~>
 instance (SupportedPrim a, SupportedPrim b) => Function (a =~> b) where
   type Arg (a =~> b) = Sym a
   type Ret (a =~> b) = Sym b
-  (Sym f) # (Sym t) = Sym $ applyf f t
+  (Sym f) # (Sym t) = Sym $ pevalTabularFuncApplyTerm f t
 
 -- general func
 type a -~> b = Sym (a --> b)

@@ -48,7 +48,6 @@ import Grisette.IR.SymPrim.Data.Prim.InternedTerm.SomeTerm
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
 import Grisette.IR.SymPrim.Data.Prim.Model as PM
-import Grisette.IR.SymPrim.Data.Prim.TabularFunc
 import Grisette.IR.SymPrim.Data.TabularFunc
 import qualified Type.Reflection as R
 import Unsafe.Coerce
@@ -175,12 +174,6 @@ lowerSinglePrimImpl' config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (
     funcApply = case (config, R.typeRep @a) of
       ResolvedDeepType -> Just $
         case t of
-          ApplyFTerm (t1' :: Term (y =-> a)) (t2' :: Term y) -> do
-            l1 <- lowerSinglePrimCached' config t1'
-            l2 <- lowerSinglePrimCached' config t2'
-            let g = l1 l2
-            addResult @integerBitWidth t g
-            return g
           ApplyGTerm (t1' :: Term (y --> a)) (t2' :: Term y) -> do
             l1 <- lowerSinglePrimCached' config t1'
             l2 <- lowerSinglePrimCached' config t2'
@@ -323,6 +316,15 @@ lowerSinglePrimImpl' config t@(BVExtendTerm _ signed (n :: R.TypeRep n) (bv :: T
                         (SBV.zeroExtend (SBV.sFromIntegral x :: SBV.SBV (SBV.WordN nx)) :: SBV.SBV (SBV.WordN na))
                 )
     _ -> translateTernaryError "bvextend" (R.typeRep @Bool) n (R.typeRep @x) (R.typeRep @a)
+lowerSinglePrimImpl' config t@(TabularFuncApplyTerm _ (f :: Term (b =-> a)) (arg :: Term b)) =
+  case (config, R.typeRep @a) of
+    ResolvedDeepType -> do
+      l1 <- lowerSinglePrimCached' config f
+      l2 <- lowerSinglePrimCached' config arg
+      let g = l1 l2
+      addResult @integerBitWidth t g
+      return g
+    _ -> translateBinaryError "tabularApply" (R.typeRep @(b =-> a)) (R.typeRep @b) (R.typeRep @a)
 lowerSinglePrimImpl' _ _ = undefined
 
 buildUTFunc11 ::
@@ -553,11 +555,6 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_
     funcApply = case (config, R.typeRep @a) of
       ResolvedDeepType -> Just $
         case t of
-          ApplyFTerm (t1' :: Term (y =-> a)) (t2' :: Term y) -> do
-            (m1, l1) <- lowerSinglePrimCached config t1' m
-            (m2, l2) <- lowerSinglePrimCached config t2' m1
-            let g = l1 l2
-            return (addBiMapIntermediate (SomeTerm t) (toDyn g) m2, g)
           ApplyGTerm (t1' :: Term (y --> a)) (t2' :: Term y) -> do
             (m1, l1) <- lowerSinglePrimCached config t1' m
             (m2, l2) <- lowerSinglePrimCached config t2' m1
@@ -700,6 +697,14 @@ lowerSinglePrimImpl config t@(BVExtendTerm _ signed (n :: R.TypeRep n) (bv :: Te
                 )
                 m
     _ -> translateTernaryError "bvextend" (R.typeRep @Bool) n (R.typeRep @x) (R.typeRep @a)
+lowerSinglePrimImpl config t@(TabularFuncApplyTerm _ (f :: Term (b =-> a)) (arg :: Term b)) m =
+  case (config, R.typeRep @a) of
+    ResolvedDeepType -> do
+      (m1, l1) <- lowerSinglePrimCached config f m
+      (m2, l2) <- lowerSinglePrimCached config arg m1
+      let g = l1 l2
+      return (addBiMapIntermediate (SomeTerm t) (toDyn g) m2, g)
+    _ -> translateBinaryError "tabularApply" (R.typeRep @(b =-> a)) (R.typeRep @b) (R.typeRep @a)
 lowerSinglePrimImpl _ _ _ = error "Should never happen"
 
 unsafeMkNatRepr :: Int -> NatRepr w
