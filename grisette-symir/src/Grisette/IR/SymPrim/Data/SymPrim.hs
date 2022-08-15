@@ -268,8 +268,8 @@ instance
   ) =>
   BVExtend (Sym (IntN w)) w' (Sym (IntN w'))
   where
-  bvzeroExtend _ (Sym v) = Sym $ bvtext (Proxy @w') False v
-  bvsignExtend _ (Sym v) = Sym $ bvtext (Proxy @w') True v
+  bvzeroExtend _ (Sym v) = Sym $ pevalBVExtendTerm False (Proxy @w') v
+  bvsignExtend _ (Sym v) = Sym $ pevalBVExtendTerm True (Proxy @w') v
   bvextend = bvsignExtend
 
 instance
@@ -345,8 +345,8 @@ instance
   ) =>
   BVExtend (Sym (WordN w)) w' (Sym (WordN w'))
   where
-  bvzeroExtend _ (Sym v) = Sym $ bvtext (Proxy @w') False v
-  bvsignExtend _ (Sym v) = Sym $ bvtext (Proxy @w') True v
+  bvzeroExtend _ (Sym v) = Sym $ pevalBVExtendTerm False (Proxy @w') v
+  bvsignExtend _ (Sym v) = Sym $ pevalBVExtendTerm True (Proxy @w') v
   bvextend = bvzeroExtend
 
 instance

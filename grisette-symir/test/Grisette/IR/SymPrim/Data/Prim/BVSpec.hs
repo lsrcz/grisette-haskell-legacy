@@ -76,31 +76,19 @@ spec = do
   describe "Extension" $ do
     describe "Extension construction" $ do
       it "Extension on concrete" $ do
-        bvtext (Proxy @6) True (concTerm 15 :: Term (WordN 4))
+        pevalBVExtendTerm True (Proxy @6) (concTerm 15 :: Term (WordN 4))
           `shouldBe` (concTerm 63 :: Term (WordN 6))
-        bvtext (Proxy @6) False (concTerm 15 :: Term (WordN 4))
+        pevalBVExtendTerm False (Proxy @6) (concTerm 15 :: Term (WordN 4))
           `shouldBe` (concTerm 15 :: Term (WordN 6))
-        bvtext (Proxy @6) True (concTerm 15 :: Term (IntN 4))
+        pevalBVExtendTerm True (Proxy @6) (concTerm 15 :: Term (IntN 4))
           `shouldBe` (concTerm 63 :: Term (IntN 6))
-        bvtext (Proxy @6) False (concTerm 15 :: Term (IntN 4))
+        pevalBVExtendTerm False (Proxy @6) (concTerm 15 :: Term (IntN 4))
           `shouldBe` (concTerm 15 :: Term (IntN 6))
       it "Extension on symbolic" $ do
-        bvtext (Proxy @6) True (ssymbTerm "a" :: Term (WordN 4))
-          `shouldBe` constructUnary (Sext @WordN @4 @6) (ssymbTerm "a" :: Term (WordN 4))
-        bvtext (Proxy @6) False (ssymbTerm "a" :: Term (WordN 4))
-          `shouldBe` constructUnary (Zext @WordN @4 @6) (ssymbTerm "a" :: Term (WordN 4))
-    describe "Extension pattern" $ do
-      it "extensionView should work" $ do
-        case extensionView (bvtext (Proxy @6) True (ssymbTerm "a" :: Term (WordN 4))) of
-          Just (ExtensionMatchResult b v1 :: ExtensionMatchResult WordN 4 6) -> do
-            b `shouldBe` True
-            v1 `shouldBe` ssymbTerm "a"
-          _ -> return () :: Expectation
-        case extensionView (bvtext (Proxy @6) False (ssymbTerm "a" :: Term (WordN 4))) of
-          Just (ExtensionMatchResult b v1 :: ExtensionMatchResult WordN 4 6) -> do
-            b `shouldBe` False
-            v1 `shouldBe` ssymbTerm "a"
-          _ -> return () :: Expectation
+        pevalBVExtendTerm True (Proxy @6) (ssymbTerm "a" :: Term (WordN 4))
+          `shouldBe` bvextendTerm True (Proxy @6) (ssymbTerm "a" :: Term (WordN 4))
+        pevalBVExtendTerm False (Proxy @6) (ssymbTerm "a" :: Term (WordN 4))
+          `shouldBe` bvextendTerm False (Proxy @6) (ssymbTerm "a" :: Term (WordN 4))
   describe "Concat" $ do
     describe "Concat construction" $ do
       it "Concat on concrete" $ do

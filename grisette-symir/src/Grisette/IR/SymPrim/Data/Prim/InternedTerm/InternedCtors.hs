@@ -34,6 +34,9 @@ module Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
     rotateBitsTerm,
     bvconcatTerm,
     bvselectTerm,
+    bvextendTerm,
+    bvsignExtendTerm,
+    bvzeroExtendTerm,
   )
 where
 
@@ -220,3 +223,39 @@ bvselectTerm ::
   Term (bv w)
 bvselectTerm _ _ v = internTerm $ UBVSelectTerm (typeRep @ix) (typeRep @w) v
 {-# INLINE bvselectTerm #-}
+
+bvextendTerm ::
+  forall bv a n w proxy.
+    ( SupportedPrim (bv a),
+      SupportedPrim (bv w),
+      KnownNat a,
+      KnownNat n,
+      KnownNat w,
+      BVExtend (bv a) n (bv w)
+    ) => Bool -> proxy n -> Term (bv a) -> Term (bv w)
+bvextendTerm signed _ v = internTerm $ UBVExtendTerm signed (typeRep @n) v
+{-# INLINE bvextendTerm #-}
+
+bvsignExtendTerm ::
+  forall bv a n w proxy.
+    ( SupportedPrim (bv a),
+      SupportedPrim (bv w),
+      KnownNat a,
+      KnownNat n,
+      KnownNat w,
+      BVExtend (bv a) n (bv w)
+    ) => proxy n -> Term (bv a) -> Term (bv w)
+bvsignExtendTerm _ v = internTerm $ UBVExtendTerm True (typeRep @n) v
+{-# INLINE bvsignExtendTerm #-}
+
+bvzeroExtendTerm ::
+  forall bv a n w proxy.
+    ( SupportedPrim (bv a),
+      SupportedPrim (bv w),
+      KnownNat a,
+      KnownNat n,
+      KnownNat w,
+      BVExtend (bv a) n (bv w)
+    ) => proxy n -> Term (bv a) -> Term (bv w)
+bvzeroExtendTerm _ v = internTerm $ UBVExtendTerm False (typeRep @n) v
+{-# INLINE bvzeroExtendTerm #-}

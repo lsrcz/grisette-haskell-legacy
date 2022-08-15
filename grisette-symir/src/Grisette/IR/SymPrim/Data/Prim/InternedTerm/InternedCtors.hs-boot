@@ -30,6 +30,9 @@ module Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
     rotateBitsTerm,
     bvconcatTerm,
     bvselectTerm,
+    bvextendTerm,
+    bvsignExtendTerm,
+    bvzeroExtendTerm,
   )
 where
 
@@ -112,3 +115,33 @@ bvselectTerm ::
   proxy w ->
   Term (bv a) ->
   Term (bv w)
+
+bvextendTerm ::
+  forall bv a n w proxy.
+    ( SupportedPrim (bv a),
+      SupportedPrim (bv w),
+      KnownNat a,
+      KnownNat n,
+      KnownNat w,
+      BVExtend (bv a) n (bv w)
+    ) => Bool -> proxy n -> Term (bv a) -> Term (bv w)
+
+bvsignExtendTerm ::
+  forall bv a n w proxy.
+    ( SupportedPrim (bv a),
+      SupportedPrim (bv w),
+      KnownNat a,
+      KnownNat n,
+      KnownNat w,
+      BVExtend (bv a) n (bv w)
+    ) => proxy n -> Term (bv a) -> Term (bv w)
+
+bvzeroExtendTerm ::
+  forall bv a n w proxy.
+    ( SupportedPrim (bv a),
+      SupportedPrim (bv w),
+      KnownNat a,
+      KnownNat n,
+      KnownNat w,
+      BVExtend (bv a) n (bv w)
+    ) => proxy n -> Term (bv a) -> Term (bv w)

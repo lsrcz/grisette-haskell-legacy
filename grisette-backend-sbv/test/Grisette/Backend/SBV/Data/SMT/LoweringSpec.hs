@@ -19,7 +19,6 @@ import Grisette.Backend.SBV.Data.SMT.Config
 import Grisette.Backend.SBV.Data.SMT.Lowering
 import Grisette.Backend.SBV.Data.SMT.SymBiMap
 import Grisette.IR.SymPrim.Data.BV
-import Grisette.IR.SymPrim.Data.Prim.BV
 import Grisette.IR.SymPrim.Data.Prim.Integer
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
@@ -459,21 +458,25 @@ spec = do
         "select"
         id
     it "Extension lowering should work" $ do
-      testUnaryOpLowering' @(IntN 5) @(IntN 6)
+      testUnaryOpLowering @(IntN 5) @(IntN 6)
         unboundedConfig
-        (Zext @IntN @5 @6)
+        (bvzeroExtendTerm (Proxy @6))
+        "bvzeroExtend"
         SBV.zeroExtend
-      testUnaryOpLowering' @(IntN 5) @(IntN 10)
+      testUnaryOpLowering @(IntN 5) @(IntN 10)
         unboundedConfig
-        (Zext @IntN @5 @10)
+        (bvzeroExtendTerm (Proxy @10))
+        "bvzeroExtend"
         SBV.zeroExtend
-      testUnaryOpLowering' @(IntN 5) @(IntN 6)
+      testUnaryOpLowering @(IntN 5) @(IntN 6)
         unboundedConfig
-        (Sext @IntN @5 @6)
+        (bvsignExtendTerm (Proxy @6))
+        "bvsignExtend"
         SBV.signExtend
-      testUnaryOpLowering' @(IntN 5) @(IntN 10)
+      testUnaryOpLowering @(IntN 5) @(IntN 10)
         unboundedConfig
-        (Sext @IntN @5 @10)
+        (bvsignExtendTerm (Proxy @10))
+        "bvsignExtend"
         SBV.signExtend
     it "Concat should work" $ do
       testBinaryOpLowering @(IntN 4) @(IntN 5) @(IntN 9)
@@ -638,21 +641,25 @@ spec = do
         "select"
         id
     it "Extension lowering should work" $ do
-      testUnaryOpLowering' @(WordN 5) @(WordN 6)
+      testUnaryOpLowering @(WordN 5) @(WordN 6)
         unboundedConfig
-        (Zext @WordN @5 @6)
+        (bvzeroExtendTerm (Proxy @6))
+        "bvzeroExtend"
         SBV.zeroExtend
-      testUnaryOpLowering' @(WordN 5) @(WordN 10)
+      testUnaryOpLowering @(WordN 5) @(WordN 10)
         unboundedConfig
-        (Zext @WordN @5 @10)
+        (bvzeroExtendTerm (Proxy @10))
+        "bvzeroExtend"
         SBV.zeroExtend
-      testUnaryOpLowering' @(WordN 5) @(WordN 6)
+      testUnaryOpLowering @(WordN 5) @(WordN 6)
         unboundedConfig
-        (Sext @WordN @5 @6)
+        (bvsignExtendTerm (Proxy @6))
+        "bvsignExtend"
         SBV.signExtend
-      testUnaryOpLowering' @(WordN 5) @(WordN 10)
+      testUnaryOpLowering @(WordN 5) @(WordN 10)
         unboundedConfig
-        (Sext @WordN @5 @10)
+        (bvsignExtendTerm (Proxy @10))
+        "bvsignExtend"
         SBV.signExtend
     it "Concat should work" $ do
       testBinaryOpLowering @(WordN 4) @(WordN 5) @(WordN 9)

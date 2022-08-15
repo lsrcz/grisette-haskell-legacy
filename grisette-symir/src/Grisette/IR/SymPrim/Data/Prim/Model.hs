@@ -138,6 +138,8 @@ evaluateSomeTerm fillDefault (Model ma) = gomemo
       goBinary pevalBVConcatTerm arg1 arg2
     go (SomeTerm (BVSelectTerm _ ix w arg)) =
       goUnary (pevalBVSelectTerm ix w) arg
+    go (SomeTerm (BVExtendTerm _ n signed arg)) =
+      goUnary (pevalBVExtendTerm n signed) arg
     goUnary :: (SupportedPrim a, SupportedPrim b) => (Term a -> Term b) -> Term a -> SomeTerm
     goUnary f a = SomeTerm $ f (gotyped a)
     goBinary :: (SupportedPrim a, SupportedPrim b, SupportedPrim c) =>

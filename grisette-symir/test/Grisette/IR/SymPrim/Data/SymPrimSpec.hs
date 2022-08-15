@@ -309,14 +309,14 @@ spec = do
             )
     describe "bvextend for Sym BV" $ do
       it "bvzeroExtend for SymPrim" $ do
-        bvzeroExtend (Proxy @6) au `shouldBe` Sym (bvtext (Proxy @6) False aut)
-        bvzeroExtend (Proxy @6) as `shouldBe` Sym (bvtext (Proxy @6) False ast)
+        bvzeroExtend (Proxy @6) au `shouldBe` Sym (pevalBVExtendTerm False (Proxy @6) aut)
+        bvzeroExtend (Proxy @6) as `shouldBe` Sym (pevalBVExtendTerm False (Proxy @6) ast)
       it "bvsignExtend for SymPrim" $ do
-        bvsignExtend (Proxy @6) au `shouldBe` Sym (bvtext (Proxy @6) True aut)
-        bvsignExtend (Proxy @6) as `shouldBe` Sym (bvtext (Proxy @6) True ast)
+        bvsignExtend (Proxy @6) au `shouldBe` Sym (pevalBVExtendTerm True (Proxy @6) aut)
+        bvsignExtend (Proxy @6) as `shouldBe` Sym (pevalBVExtendTerm True (Proxy @6) ast)
       it "bvextend for SymPrim" $ do
-        bvextend (Proxy @6) au `shouldBe` Sym (bvtext (Proxy @6) False aut)
-        bvextend (Proxy @6) as `shouldBe` Sym (bvtext (Proxy @6) True ast)
+        bvextend (Proxy @6) au `shouldBe` Sym (pevalBVExtendTerm False (Proxy @6) aut)
+        bvextend (Proxy @6) as `shouldBe` Sym (pevalBVExtendTerm True (Proxy @6) ast)
     describe "bvselect for Sym BV" $ do
       it "bvselect for SymPrim" $ do
         bvselect (Proxy @2) (Proxy @1) au

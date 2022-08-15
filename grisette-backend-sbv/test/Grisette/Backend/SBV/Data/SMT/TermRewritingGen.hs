@@ -187,6 +187,10 @@ bvselectSpec :: (TermRewritingSpec a (bv an), TermRewritingSpec b (bv bn),
   KnownNat an, KnownNat bn, KnownNat ix, BVSelect (bv an) ix bn (bv bn)) => proxy ix -> proxy bn -> a -> b
 bvselectSpec p1 p2 = constructUnarySpec (bvselectTerm p1 p2) (pevalBVSelectTerm p1 p2)
 
+bvextendSpec :: (TermRewritingSpec a (bv an), TermRewritingSpec b (bv bn),
+  KnownNat an, KnownNat bn, BVExtend (bv an) bn (bv bn)) => Bool -> proxy bn -> a -> b
+bvextendSpec signed p = constructUnarySpec (bvextendTerm signed p) (pevalBVExtendTerm signed p)
+
 data BoolOnlySpec = BoolOnlySpec (Term Bool) (Term Bool)
 
 instance Show BoolOnlySpec where
@@ -560,8 +564,8 @@ dsbv2 p depth | depth > 0 = do
       return $ bvselectSpec (Proxy @1) (Proxy @2) v3,
       return $ bvselectSpec (Proxy @0) (Proxy @2) v2,
       return $ bvconcatSpec v1 v1',
-      return $ constructUnarySpec' (Zext @bv @1 @2) v1,
-      return $ constructUnarySpec' (Sext @bv @1 @2) v1
+      return $ bvextendSpec False (Proxy @2) v1,
+      return $ bvextendSpec True (Proxy @2) v1
     ]
 dsbv2 _ _ = error "Should never be called"
 
@@ -639,10 +643,10 @@ dsbv3 p depth | depth > 0 = do
       return $ bvselectSpec (Proxy @0) (Proxy @3) v3,
       return $ bvconcatSpec v1 v2,
       return $ bvconcatSpec v2 v1,
-      return $ constructUnarySpec' (Zext @bv @1 @3) v1,
-      return $ constructUnarySpec' (Sext @bv @1 @3) v1,
-      return $ constructUnarySpec' (Zext @bv @2 @3) v2,
-      return $ constructUnarySpec' (Sext @bv @2 @3) v2
+      return $ bvextendSpec False (Proxy @3) v1,
+      return $ bvextendSpec True (Proxy @3) v1,
+      return $ bvextendSpec False (Proxy @3) v2,
+      return $ bvextendSpec True (Proxy @3) v2
     ]
 dsbv3 _ _ = error "Should never be called"
 
@@ -720,12 +724,12 @@ dsbv4 p depth | depth > 0 = do
       return $ bvconcatSpec v1 v3,
       return $ bvconcatSpec v2 v2',
       return $ bvconcatSpec v3 v1,
-      return $ constructUnarySpec' (Zext @bv @1 @4) v1,
-      return $ constructUnarySpec' (Sext @bv @1 @4) v1,
-      return $ constructUnarySpec' (Zext @bv @2 @4) v2,
-      return $ constructUnarySpec' (Sext @bv @2 @4) v2,
-      return $ constructUnarySpec' (Zext @bv @3 @4) v3,
-      return $ constructUnarySpec' (Sext @bv @3 @4) v3
+      return $ bvextendSpec False (Proxy @4) v1,
+      return $ bvextendSpec True (Proxy @4) v1,
+      return $ bvextendSpec False (Proxy @4) v2,
+      return $ bvextendSpec True (Proxy @4) v2,
+      return $ bvextendSpec False (Proxy @4) v3,
+      return $ bvextendSpec True (Proxy @4) v3
     ]
 dsbv4 _ _ = error "Should never be called"
 

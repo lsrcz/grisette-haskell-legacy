@@ -104,3 +104,4 @@ subst sym@(TermSymbol tc _) term input = case eqTypeRep tc (typeRep @a) of
         RotateBitsTerm _ op n -> SomeTerm $ pevalRotateBitsTerm (gov op) n
         BVConcatTerm _ op1 op2 -> SomeTerm $ pevalBVConcatTerm (gov op1) (gov op2)
         BVSelectTerm _ ix w op -> SomeTerm $ pevalBVSelectTerm ix w (gov op)
+        BVExtendTerm _ n signed op -> SomeTerm $ pevalBVExtendTerm n signed (gov op)

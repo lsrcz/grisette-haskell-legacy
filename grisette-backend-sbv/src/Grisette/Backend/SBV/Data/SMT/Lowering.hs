@@ -40,7 +40,6 @@ import Grisette.Backend.SBV.Data.SMT.Config
 import Grisette.Backend.SBV.Data.SMT.SymBiMap
 import Grisette.IR.SymPrim.Data.BV
 import Grisette.IR.SymPrim.Data.GeneralFunc
-import Grisette.IR.SymPrim.Data.Prim.BV
 import Grisette.IR.SymPrim.Data.Prim.Bool
 import Grisette.IR.SymPrim.Data.Prim.GeneralFunc
 import Grisette.IR.SymPrim.Data.Prim.Integer
@@ -65,9 +64,6 @@ withKnownNat (NatRepr nVal) v =
 
 data LeqProof (m :: Nat) (n :: Nat) where
   LeqProof :: m <= n => LeqProof m n
-
--- withLeqProof :: LeqProof m n -> ((m <= n) => a) -> a
--- withLeqProof p a = case p of LeqProof -> a
 
 -- | Assert a proof of equality between two types.
 -- This is unsafe if used improperly, so use this with caution!
@@ -166,38 +162,10 @@ lowerSinglePrimImpl' _ t@SymbTerm {} =
   error $
     "The symbolic term should have already been lowered " ++ show t ++ " to SMT with collectedPrims.\n"
       ++ "We don't support adding new symbolics after collectedPrims with SBV backend"
-lowerSinglePrimImpl' config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) =
-  fromMaybe errorMsg $ asum [extBV {-, extractBV-}]
+lowerSinglePrimImpl' _ (UnaryTerm _ op (_ :: Term x)) = errorMsg
   where
     errorMsg :: forall t1. t1
     errorMsg = translateUnaryError (show op) (R.typeRep @x) (R.typeRep @a)
-    extBV :: Maybe (State SymBiMap (TermTy integerBitWidth a))
-    extBV = case (R.typeRep @x, R.typeRep @a) of
-      (UnsignedBVType (_ :: proxy xn), UnsignedBVType (_ :: proxy an)) ->
-        case extensionView @WordN @xn @an t of
-          Just (ExtensionMatchResult isSignedExt (t1 :: Term (WordN xn))) ->
-            Just $
-              bvIsNonZeroFromGEq1 @(an - xn) $
-                lowerUnaryTerm' config t t1 (if isSignedExt then SBV.signExtend else SBV.zeroExtend)
-          _ -> Nothing
-      (SignedBVType (_ :: proxy xn), SignedBVType (_ :: proxy an)) ->
-        case extensionView @IntN @xn @an t of
-          Just (ExtensionMatchResult isSignedExt (t1 :: Term (IntN xn))) ->
-            Just $
-              bvIsNonZeroFromGEq1 @(an - xn) $
-                -- bvIsNonZeroFromGEq1 @nn $
-                lowerUnaryTerm' @integerBitWidth @x @(SBV.SBV (SBV.IntN xn)) @a @(SBV.SBV (SBV.IntN an))
-                  config
-                  t
-                  t1
-                  ( if isSignedExt
-                      then SBV.signExtend
-                      else \x ->
-                        SBV.sFromIntegral
-                          (SBV.zeroExtend (SBV.sFromIntegral x :: SBV.SBV (SBV.WordN xn)) :: SBV.SBV (SBV.WordN an))
-                  )
-          _ -> Nothing
-      _ -> Nothing
 lowerSinglePrimImpl' config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_ :: Term y)) =
   fromMaybe errorMsg $ asum [{-concatBV,-} funcApply]
   where
@@ -331,6 +299,30 @@ lowerSinglePrimImpl' config t@(BVSelectTerm _ (ix :: R.TypeRep ix) w (bv :: Term
         n1 :: NatRepr (na + ix - 1)
         n1 = NatRepr (natVal (Proxy @na) + natVal (Proxy @ix) - 1)
     _ -> translateTernaryError "bvselect" ix w (R.typeRep @x) (R.typeRep @a)
+lowerSinglePrimImpl' config t@(BVExtendTerm _ signed (n :: R.TypeRep n) (bv :: Term x)) =
+  case (R.typeRep @a, R.typeRep @x) of
+    (UnsignedBVType (_ :: Proxy na), UnsignedBVType (_ :: Proxy nx)) ->
+      withKnownNat (NatRepr (natVal (Proxy @na) - natVal (Proxy @nx)) :: NatRepr (na - nx)) $
+        case (unsafeLeqProof @(nx + 1) @na, unsafeLeqProof @1 @(na - nx)) of
+          (LeqProof, LeqProof) ->
+            bvIsNonZeroFromGEq1 @(na - nx) $
+              lowerUnaryTerm' config t bv (if signed then SBV.signExtend else SBV.zeroExtend)
+    (SignedBVType (_ :: Proxy na), SignedBVType (_ :: Proxy nx)) ->
+      withKnownNat (NatRepr (natVal (Proxy @na) - natVal (Proxy @nx)) :: NatRepr (na - nx)) $
+        case (unsafeLeqProof @(nx + 1) @na, unsafeLeqProof @1 @(na - nx)) of
+          (LeqProof, LeqProof) ->
+            bvIsNonZeroFromGEq1 @(na - nx) $
+              lowerUnaryTerm'
+                config
+                t
+                bv
+                ( if signed
+                    then SBV.signExtend
+                    else \x ->
+                      SBV.sFromIntegral
+                        (SBV.zeroExtend (SBV.sFromIntegral x :: SBV.SBV (SBV.WordN nx)) :: SBV.SBV (SBV.WordN na))
+                )
+    _ -> translateTernaryError "bvextend" (R.typeRep @Bool) n (R.typeRep @x) (R.typeRep @a)
 lowerSinglePrimImpl' _ _ = undefined
 
 buildUTFunc11 ::
@@ -540,40 +532,10 @@ lowerSinglePrimImpl config t@(SymbTerm _ ts) m =
       _ -> Nothing
     ufunc :: (Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a)))
     ufunc = lowerSinglePrimUFunc config t m
-lowerSinglePrimImpl config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) m =
-  fromMaybe errorMsg $ asum [extBV {-, extractBV-}]
+lowerSinglePrimImpl _ (UnaryTerm _ op (_ :: Term x)) _ = errorMsg
   where
     errorMsg :: forall t1. t1
     errorMsg = translateUnaryError (show op) (R.typeRep @x) (R.typeRep @a)
-    extBV :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
-    extBV = case (R.typeRep @x, R.typeRep @a) of
-      (UnsignedBVType (_ :: proxy xn), UnsignedBVType (_ :: proxy an)) ->
-        case extensionView @WordN @xn @an t of
-          Just (ExtensionMatchResult isSignedExt (t1 :: Term (WordN xn))) ->
-            Just $
-              bvIsNonZeroFromGEq1 @(an - xn) $
-                -- bvIsNonZeroFromGEq1 @nn $
-                lowerUnaryTerm config t t1 (if isSignedExt then SBV.signExtend else SBV.zeroExtend) m
-          _ -> Nothing
-      (SignedBVType (_ :: proxy xn), SignedBVType (_ :: proxy an)) ->
-        case extensionView @IntN @xn @an t of
-          Just (ExtensionMatchResult isSignedExt (t1 :: Term (IntN xn))) ->
-            Just $
-              -- bvIsNonZeroFromGEq1 @nn $
-              bvIsNonZeroFromGEq1 @(an - xn) $
-                lowerUnaryTerm @integerBitWidth @x @(SBV.SBV (SBV.IntN xn)) @a @(SBV.SBV (SBV.IntN an))
-                  config
-                  t
-                  t1
-                  ( if isSignedExt
-                      then SBV.signExtend
-                      else \x ->
-                        SBV.sFromIntegral
-                          (SBV.zeroExtend (SBV.sFromIntegral x :: SBV.SBV (SBV.WordN xn)) :: SBV.SBV (SBV.WordN an))
-                  )
-                  m
-          _ -> Nothing
-      _ -> Nothing
 lowerSinglePrimImpl config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_ :: Term y)) m =
   fromMaybe errorMsg $ asum [{-concatBV,-} integerType, funcApply]
   where
@@ -713,6 +675,31 @@ lowerSinglePrimImpl config t@(BVSelectTerm _ (ix :: R.TypeRep ix) w (bv :: Term 
         n1 :: NatRepr (na + ix - 1)
         n1 = NatRepr (natVal (Proxy @na) + natVal (Proxy @ix) - 1)
     _ -> translateTernaryError "bvselect" ix w (R.typeRep @x) (R.typeRep @a)
+lowerSinglePrimImpl config t@(BVExtendTerm _ signed (n :: R.TypeRep n) (bv :: Term x)) m =
+  case (R.typeRep @a, R.typeRep @x) of
+    (UnsignedBVType (_ :: Proxy na), UnsignedBVType (_ :: Proxy nx)) ->
+      withKnownNat (NatRepr (natVal (Proxy @na) - natVal (Proxy @nx)) :: NatRepr (na - nx)) $
+        case (unsafeLeqProof @(nx + 1) @na, unsafeLeqProof @1 @(na - nx)) of
+          (LeqProof, LeqProof) ->
+            bvIsNonZeroFromGEq1 @(na - nx) $
+              lowerUnaryTerm config t bv (if signed then SBV.signExtend else SBV.zeroExtend) m
+    (SignedBVType (_ :: Proxy na), SignedBVType (_ :: Proxy nx)) ->
+      withKnownNat (NatRepr (natVal (Proxy @na) - natVal (Proxy @nx)) :: NatRepr (na - nx)) $
+        case (unsafeLeqProof @(nx + 1) @na, unsafeLeqProof @1 @(na - nx)) of
+          (LeqProof, LeqProof) ->
+            bvIsNonZeroFromGEq1 @(na - nx) $
+              lowerUnaryTerm
+                config
+                t
+                bv
+                ( if signed
+                    then SBV.signExtend
+                    else \x ->
+                      SBV.sFromIntegral
+                        (SBV.zeroExtend (SBV.sFromIntegral x :: SBV.SBV (SBV.WordN nx)) :: SBV.SBV (SBV.WordN na))
+                )
+                m
+    _ -> translateTernaryError "bvextend" (R.typeRep @Bool) n (R.typeRep @x) (R.typeRep @a)
 lowerSinglePrimImpl _ _ _ = error "Should never happen"
 
 unsafeMkNatRepr :: Int -> NatRepr w
