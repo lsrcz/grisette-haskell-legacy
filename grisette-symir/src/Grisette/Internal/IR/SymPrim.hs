@@ -78,6 +78,7 @@ module Grisette.Internal.IR.SymPrim
     pevalGtNumTerm,
     pevalGeNumTerm,
     pevalTabularFuncApplyTerm,
+    pevalGeneralFuncApplyTerm,
   )
 where
 
@@ -93,3 +94,4 @@ import Grisette.IR.SymPrim.Data.Union
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.SomeTerm
+import Grisette.IR.SymPrim.Data.Prim.GeneralFunc

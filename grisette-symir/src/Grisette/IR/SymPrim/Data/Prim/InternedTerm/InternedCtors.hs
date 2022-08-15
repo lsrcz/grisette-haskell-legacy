@@ -38,7 +38,8 @@ module Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
     bvextendTerm,
     bvsignExtendTerm,
     bvzeroExtendTerm,
-    tabularFuncApplyTerm ,
+    tabularFuncApplyTerm,
+    generalFuncApplyTerm,
   )
 where
 
@@ -266,3 +267,7 @@ bvzeroExtendTerm _ v = internTerm $ UBVExtendTerm False (typeRep @n) v
 tabularFuncApplyTerm :: (SupportedPrim a, SupportedPrim b) => Term (a =-> b) -> Term a -> Term b
 tabularFuncApplyTerm f a = internTerm $ UTabularFuncApplyTerm f a
 {-# INLINE tabularFuncApplyTerm #-}
+
+generalFuncApplyTerm :: (SupportedPrim a, SupportedPrim b) => Term (a --> b) -> Term a -> Term b
+generalFuncApplyTerm f a = internTerm $ UGeneralFuncApplyTerm f a
+{-# INLINE generalFuncApplyTerm #-}

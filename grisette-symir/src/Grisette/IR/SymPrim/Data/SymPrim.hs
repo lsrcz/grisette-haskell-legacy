@@ -52,12 +52,10 @@ import Grisette.Core.Data.Class.SimpleMergeable
 import Grisette.Core.Data.Class.ToCon
 import Grisette.Core.Data.Class.ToSym
 import Grisette.IR.SymPrim.Data.BV
-import Grisette.IR.SymPrim.Data.GeneralFunc
 import Grisette.IR.SymPrim.Data.IntBitwidth
 import Grisette.IR.SymPrim.Data.Prim.BV
 import Grisette.IR.SymPrim.Data.Prim.Bits
 import Grisette.IR.SymPrim.Data.Prim.Bool
-import Grisette.IR.SymPrim.Data.Prim.GeneralFunc
 import Grisette.IR.SymPrim.Data.Prim.Integer
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.Model
@@ -68,6 +66,7 @@ import Grisette.Lib.Control.Monad
 import Language.Haskell.TH.Syntax
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
+import Grisette.IR.SymPrim.Data.Prim.GeneralFunc
 
 newtype Sym a = Sym {underlyingTerm :: Term a} deriving (Lift, Generic)
 
@@ -395,7 +394,7 @@ infixr 0 -~>
 instance (SupportedPrim a, SupportedPrim b) => Function (a -~> b) where
   type Arg (a -~> b) = Sym a
   type Ret (a -~> b) = Sym b
-  (Sym f) # (Sym t) = Sym $ applyg f t
+  (Sym f) # (Sym t) = Sym $ pevalGeneralFuncApplyTerm f t
 
 symsSize :: [Sym a] -> Int
 symsSize = termsSize . fmap underlyingTerm

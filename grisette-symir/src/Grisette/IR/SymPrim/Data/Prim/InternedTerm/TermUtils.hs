@@ -53,6 +53,7 @@ identity (BVConcatTerm i _ _) = i
 identity (BVSelectTerm i _ _ _) = i
 identity (BVExtendTerm i _ _ _) = i
 identity (TabularFuncApplyTerm i _ _) = i
+identity (GeneralFuncApplyTerm i _ _) = i
 {-# INLINE identity #-}
 
 identityWithTypeRep :: forall t. Term t -> (TypeRep, Id)
@@ -83,6 +84,7 @@ identityWithTypeRep (BVConcatTerm i _ _) = (typeRep (Proxy @t), i)
 identityWithTypeRep (BVSelectTerm i _ _ _) = (typeRep (Proxy @t), i)
 identityWithTypeRep (BVExtendTerm i _ _ _) = (typeRep (Proxy @t), i)
 identityWithTypeRep (TabularFuncApplyTerm i _ _) = (typeRep (Proxy @t), i)
+identityWithTypeRep (GeneralFuncApplyTerm i _ _) = (typeRep (Proxy @t), i)
 {-# INLINE identityWithTypeRep #-}
 
 introSupportedPrimConstraint :: forall t a. Term t -> ((SupportedPrim t) => a) -> a
@@ -113,6 +115,7 @@ introSupportedPrimConstraint BVConcatTerm {} x = x
 introSupportedPrimConstraint BVSelectTerm {} x = x
 introSupportedPrimConstraint BVExtendTerm {} x = x
 introSupportedPrimConstraint TabularFuncApplyTerm {} x = x
+introSupportedPrimConstraint GeneralFuncApplyTerm {} x = x
 {-# INLINE introSupportedPrimConstraint #-}
 
 extractSymbolicsSomeTerm :: SomeTerm -> S.HashSet TermSymbol
@@ -156,6 +159,7 @@ extractSymbolicsSomeTerm t1 = evalState (gocached t1) M.empty
     go (SomeTerm (BVSelectTerm _ _ _ arg)) = goUnary arg
     go (SomeTerm (BVExtendTerm _ _ _ arg)) = goUnary arg
     go (SomeTerm (TabularFuncApplyTerm _ func arg)) = goBinary func arg
+    go (SomeTerm (GeneralFuncApplyTerm _ func arg)) = goBinary func arg
     goUnary arg = gocached (SomeTerm arg)
     goBinary arg1 arg2 = do
       r1 <- gocached (SomeTerm arg1)
@@ -200,6 +204,7 @@ castTerm t@BVConcatTerm {} = cast t
 castTerm t@BVSelectTerm {} = cast t
 castTerm t@BVExtendTerm {} = cast t
 castTerm t@TabularFuncApplyTerm {} = cast t
+castTerm t@GeneralFuncApplyTerm {} = cast t
 {-# INLINE castTerm #-}
 
 pformat :: forall t. (SupportedPrim t) => Term t -> String
@@ -230,6 +235,7 @@ pformat (BVConcatTerm _ arg1 arg2) = "(bvconcat " ++ pformat arg1 ++ " " ++ pfor
 pformat (BVSelectTerm _ ix w arg) = "(bvselect " ++ show ix ++ " " ++ show w ++ " " ++ pformat arg ++ ")"
 pformat (BVExtendTerm _ signed n arg) = (if signed then "(bvsext " else "(bvzext") ++ show n ++ " " ++ pformat arg ++ ")"
 pformat (TabularFuncApplyTerm _ func arg) = "(apply " ++ pformat func ++ " " ++ pformat arg ++ ")"
+pformat (GeneralFuncApplyTerm _ func arg) = "(apply " ++ pformat func ++ " " ++ pformat arg ++ ")"
 {-# INLINE pformat #-}
 
 termsSize :: [Term a] -> Int
@@ -265,6 +271,7 @@ termsSize terms = S.size $ execState (traverse go terms) S.empty
     go t@(BVSelectTerm _ _ _ arg) = goUnary t arg
     go t@(BVExtendTerm _ _ _ arg) = goUnary t arg
     go t@(TabularFuncApplyTerm _ func arg) = goBinary t func arg
+    go t@(GeneralFuncApplyTerm _ func arg) = goBinary t func arg
     goUnary :: forall a b. (SupportedPrim a) => Term a -> Term b -> State (S.HashSet SomeTerm) ()
     goUnary t arg = do
       b <- exists t

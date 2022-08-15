@@ -34,19 +34,20 @@ module Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
     bvextendTerm,
     bvsignExtendTerm,
     bvzeroExtendTerm,
-    tabularFuncApplyTerm ,
+    tabularFuncApplyTerm,
+    generalFuncApplyTerm,
   )
 where
 
 import Control.DeepSeq
+import Data.Bits
 import Data.Hashable
 import Data.Typeable
-import {-# SOURCE #-} Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
-import Language.Haskell.TH.Syntax
-import Data.Bits
-import Grisette.Core.Data.Class.BitVector
 import GHC.TypeNats
+import Grisette.Core.Data.Class.BitVector
+import {-# SOURCE #-} Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import {-# SOURCE #-} Grisette.IR.SymPrim.Data.TabularFunc
+import Language.Haskell.TH.Syntax
 
 constructUnary ::
   forall tag arg t.
@@ -118,35 +119,42 @@ bvselectTerm ::
   proxy w ->
   Term (bv a) ->
   Term (bv w)
-
 bvextendTerm ::
   forall bv a n w proxy.
-    ( SupportedPrim (bv a),
-      SupportedPrim (bv w),
-      KnownNat a,
-      KnownNat n,
-      KnownNat w,
-      BVExtend (bv a) n (bv w)
-    ) => Bool -> proxy n -> Term (bv a) -> Term (bv w)
-
+  ( SupportedPrim (bv a),
+    SupportedPrim (bv w),
+    KnownNat a,
+    KnownNat n,
+    KnownNat w,
+    BVExtend (bv a) n (bv w)
+  ) =>
+  Bool ->
+  proxy n ->
+  Term (bv a) ->
+  Term (bv w)
 bvsignExtendTerm ::
   forall bv a n w proxy.
-    ( SupportedPrim (bv a),
-      SupportedPrim (bv w),
-      KnownNat a,
-      KnownNat n,
-      KnownNat w,
-      BVExtend (bv a) n (bv w)
-    ) => proxy n -> Term (bv a) -> Term (bv w)
-
+  ( SupportedPrim (bv a),
+    SupportedPrim (bv w),
+    KnownNat a,
+    KnownNat n,
+    KnownNat w,
+    BVExtend (bv a) n (bv w)
+  ) =>
+  proxy n ->
+  Term (bv a) ->
+  Term (bv w)
 bvzeroExtendTerm ::
   forall bv a n w proxy.
-    ( SupportedPrim (bv a),
-      SupportedPrim (bv w),
-      KnownNat a,
-      KnownNat n,
-      KnownNat w,
-      BVExtend (bv a) n (bv w)
-    ) => proxy n -> Term (bv a) -> Term (bv w)
-
+  ( SupportedPrim (bv a),
+    SupportedPrim (bv w),
+    KnownNat a,
+    KnownNat n,
+    KnownNat w,
+    BVExtend (bv a) n (bv w)
+  ) =>
+  proxy n ->
+  Term (bv a) ->
+  Term (bv w)
 tabularFuncApplyTerm :: (SupportedPrim a, SupportedPrim b) => Term (a =-> b) -> Term a -> Term b
+generalFuncApplyTerm :: (SupportedPrim a, SupportedPrim b) => Term (a --> b) -> Term a -> Term b

@@ -36,6 +36,7 @@ import Data.Proxy
 import Grisette.IR.SymPrim.Data.Prim.Bits
 import Grisette.IR.SymPrim.Data.Prim.BV
 import Grisette.IR.SymPrim.Data.Prim.TabularFunc
+import Grisette.IR.SymPrim.Data.Prim.GeneralFunc
 
 newtype Model = Model (M.HashMap TermSymbol ModelValue) deriving (Show, Eq, Generic, Hashable)
 
@@ -143,6 +144,8 @@ evaluateSomeTerm fillDefault (Model ma) = gomemo
       goUnary (pevalBVExtendTerm n signed) arg
     go (SomeTerm (TabularFuncApplyTerm _ f arg)) =
       goBinary pevalTabularFuncApplyTerm f arg
+    go (SomeTerm (GeneralFuncApplyTerm _ f arg)) =
+      goBinary pevalGeneralFuncApplyTerm f arg
     goUnary :: (SupportedPrim a, SupportedPrim b) => (Term a -> Term b) -> Term a -> SomeTerm
     goUnary f a = SomeTerm $ f (gotyped a)
     goBinary :: (SupportedPrim a, SupportedPrim b, SupportedPrim c) =>

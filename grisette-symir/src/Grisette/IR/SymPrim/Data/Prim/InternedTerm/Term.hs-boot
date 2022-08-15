@@ -17,6 +17,7 @@ module Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
     TermSymbol (..),
     Term (..),
     UTerm (..),
+    type (-->) (..),
   )
 where
 
@@ -183,6 +184,14 @@ data Term t where
     Term (a =-> b) ->
     Term a ->
     Term b
+  GeneralFuncApplyTerm ::
+    ( SupportedPrim a,
+      SupportedPrim b
+    ) =>
+    {-# UNPACK #-} !Id ->
+    Term (a --> b) ->
+    Term a ->
+    Term b
 
 data UTerm t where
   UConcTerm :: (SupportedPrim t) => !t -> UTerm t
@@ -262,3 +271,15 @@ data UTerm t where
     Term (a =-> b) ->
     Term a ->
     UTerm b
+  UGeneralFuncApplyTerm ::
+    ( SupportedPrim a,
+      SupportedPrim b
+    ) =>
+    Term (a --> b) ->
+    Term a ->
+    UTerm b
+
+data (-->) a b where
+  GeneralFunc :: (SupportedPrim a, SupportedPrim b) => TypeRep a -> Symbol -> Term b -> (a --> b)
+
+infixr 0 -->
