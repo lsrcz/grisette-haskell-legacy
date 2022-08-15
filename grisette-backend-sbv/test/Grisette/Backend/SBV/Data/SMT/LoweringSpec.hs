@@ -20,7 +20,6 @@ import Grisette.Backend.SBV.Data.SMT.Lowering
 import Grisette.Backend.SBV.Data.SMT.SymBiMap
 import Grisette.IR.SymPrim.Data.BV
 import Grisette.IR.SymPrim.Data.Prim.BV
-import Grisette.IR.SymPrim.Data.Prim.Bits
 import Grisette.IR.SymPrim.Data.Prim.Integer
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
@@ -468,48 +467,48 @@ spec = do
         (SBV.#)
 
     it "AndBits lowering should work" $ do
-      testBinaryOpLowering' @(IntN 5) @(IntN 5) unboundedConfig (AndBits @(IntN 5)) (.&.)
+      testBinaryOpLowering @(IntN 5) @(IntN 5) unboundedConfig andBitsTerm "(.&.)" (.&.)
     it "OrBits lowering should work" $ do
-      testBinaryOpLowering' @(IntN 5) @(IntN 5) unboundedConfig (OrBits @(IntN 5)) (.|.)
+      testBinaryOpLowering @(IntN 5) @(IntN 5) unboundedConfig orBitsTerm "(.|.)" (.|.)
     it "XorBits lowering should work" $ do
-      testBinaryOpLowering' @(IntN 5) @(IntN 5) unboundedConfig (XorBits @(IntN 5)) xor
+      testBinaryOpLowering @(IntN 5) @(IntN 5) unboundedConfig xorBitsTerm "xor" xor
     it "ComplementBits lowering should work" $ do
-      testUnaryOpLowering' @(IntN 5) unboundedConfig (ComplementBits @(IntN 5)) complement
+      testUnaryOpLowering @(IntN 5) unboundedConfig complementBitsTerm "complement" complement
     it "ShiftBits lowering should work" $ do
-      testUnaryOpLowering' @(IntN 5) unboundedConfig (ShiftBits @(IntN 5) 0) id
-      testUnaryOpLowering' @(IntN 5) unboundedConfig (ShiftBits @(IntN 5) 1) (`shift` 1)
-      testUnaryOpLowering' @(IntN 5) unboundedConfig (ShiftBits @(IntN 5) 2) (`shift` 2)
-      testUnaryOpLowering' @(IntN 5) unboundedConfig (ShiftBits @(IntN 5) 3) (`shift` 3)
-      testUnaryOpLowering' @(IntN 5) unboundedConfig (ShiftBits @(IntN 5) 4) (`shift` 4)
-      testUnaryOpLowering' @(IntN 5) unboundedConfig (ShiftBits @(IntN 5) 5) (`shift` 5)
-      testUnaryOpLowering' @(IntN 5) unboundedConfig (ShiftBits @(IntN 5) 5) (const 0)
-      testUnaryOpLowering' @(IntN 5) unboundedConfig (ShiftBits @(IntN 5) $ -1) (`shift` (-1))
-      testUnaryOpLowering' @(IntN 5) unboundedConfig (ShiftBits @(IntN 5) $ -2) (`shift` (-2))
-      testUnaryOpLowering' @(IntN 5) unboundedConfig (ShiftBits @(IntN 5) $ -3) (`shift` (-3))
-      testUnaryOpLowering' @(IntN 5) unboundedConfig (ShiftBits @(IntN 5) $ -4) (`shift` (-4))
-      testUnaryOpLowering' @(IntN 5) unboundedConfig (ShiftBits @(IntN 5) $ -5) (`shift` (-5))
-      testUnaryOpLowering' @(IntN 5)
+      testUnaryOpLowering @(IntN 5) unboundedConfig (`shiftBitsTerm` 0) "shift" id
+      testUnaryOpLowering @(IntN 5) unboundedConfig (`shiftBitsTerm` 1) "shift" (`shift` 1)
+      testUnaryOpLowering @(IntN 5) unboundedConfig (`shiftBitsTerm` 2) "shift" (`shift` 2)
+      testUnaryOpLowering @(IntN 5) unboundedConfig (`shiftBitsTerm` 3) "shift" (`shift` 3)
+      testUnaryOpLowering @(IntN 5) unboundedConfig (`shiftBitsTerm` 4) "shift" (`shift` 4)
+      testUnaryOpLowering @(IntN 5) unboundedConfig (`shiftBitsTerm` 5) "shift" (`shift` 5)
+      testUnaryOpLowering @(IntN 5) unboundedConfig (`shiftBitsTerm` 5) "shift" (const 0)
+      testUnaryOpLowering @(IntN 5) unboundedConfig (`shiftBitsTerm` (-1)) "shift" (`shift` (-1))
+      testUnaryOpLowering @(IntN 5) unboundedConfig (`shiftBitsTerm` (-2)) "shift" (`shift` (-2))
+      testUnaryOpLowering @(IntN 5) unboundedConfig (`shiftBitsTerm` (-3)) "shift" (`shift` (-3))
+      testUnaryOpLowering @(IntN 5) unboundedConfig (`shiftBitsTerm` (-4)) "shift" (`shift` (-4))
+      testUnaryOpLowering @(IntN 5) unboundedConfig (`shiftBitsTerm` (-5)) "shift" (`shift` (-5))
+      testUnaryOpLowering @(IntN 5)
         unboundedConfig
-        (ShiftBits @(IntN 5) $ -5)
+        (`shiftBitsTerm` (-5)) "shift"
         (\x -> SBV.ite (x SBV..>= 0) 0 (-1))
     it "RotateBits lowering should work" $ do
-      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) 0) id
-      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) 1) (`rotate` 1)
-      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) 2) (`rotate` 2)
-      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) 3) (`rotate` 3)
-      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) 4) (`rotate` 4)
-      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) 5) (`rotate` 5)
-      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) 5) id
-      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) $ -1) (`rotate` (-1))
-      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) $ -1) (`rotate` 4)
-      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) $ -2) (`rotate` (-2))
-      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) $ -2) (`rotate` 3)
-      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) $ -3) (`rotate` (-3))
-      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) $ -3) (`rotate` 2)
-      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) $ -4) (`rotate` (-4))
-      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) $ -4) (`rotate` 1)
-      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) $ -5) (`rotate` (-5))
-      testUnaryOpLowering' @(IntN 5) unboundedConfig (RotateBits @(IntN 5) $ -5) id
+      testUnaryOpLowering @(IntN 5) unboundedConfig (`rotateBitsTerm` 0) "rotate" id
+      testUnaryOpLowering @(IntN 5) unboundedConfig (`rotateBitsTerm` 1) "rotate" (`rotate` 1)
+      testUnaryOpLowering @(IntN 5) unboundedConfig (`rotateBitsTerm` 2) "rotate" (`rotate` 2)
+      testUnaryOpLowering @(IntN 5) unboundedConfig (`rotateBitsTerm` 3) "rotate" (`rotate` 3)
+      testUnaryOpLowering @(IntN 5) unboundedConfig (`rotateBitsTerm` 4) "rotate" (`rotate` 4)
+      testUnaryOpLowering @(IntN 5) unboundedConfig (`rotateBitsTerm` 5) "rotate" (`rotate` 5)
+      testUnaryOpLowering @(IntN 5) unboundedConfig (`rotateBitsTerm` 5) "rotate" id
+      testUnaryOpLowering @(IntN 5) unboundedConfig (`rotateBitsTerm` (-1)) "rotate" (`rotate` (-1))
+      testUnaryOpLowering @(IntN 5) unboundedConfig (`rotateBitsTerm` (-1)) "rotate" (`rotate` 4)
+      testUnaryOpLowering @(IntN 5) unboundedConfig (`rotateBitsTerm` (-2)) "rotate" (`rotate` (-2))
+      testUnaryOpLowering @(IntN 5) unboundedConfig (`rotateBitsTerm` (-2)) "rotate" (`rotate` 3)
+      testUnaryOpLowering @(IntN 5) unboundedConfig (`rotateBitsTerm` (-3)) "rotate" (`rotate` (-3))
+      testUnaryOpLowering @(IntN 5) unboundedConfig (`rotateBitsTerm` (-3)) "rotate" (`rotate` 2)
+      testUnaryOpLowering @(IntN 5) unboundedConfig (`rotateBitsTerm` (-4)) "rotate" (`rotate` (-4))
+      testUnaryOpLowering @(IntN 5) unboundedConfig (`rotateBitsTerm` (-4)) "rotate" (`rotate` 1)
+      testUnaryOpLowering @(IntN 5) unboundedConfig (`rotateBitsTerm` (-5)) "rotate" (`rotate` (-5))
+      testUnaryOpLowering @(IntN 5) unboundedConfig (`rotateBitsTerm` (-5)) "rotate" id
 
   describe "Test WordN Lowering" $ do
     it "Add lowering should work" $ do
@@ -630,48 +629,49 @@ spec = do
         (BVTConcat @WordN @4 @5 @9)
         (SBV.#)
     it "AndBits lowering should work" $ do
-      testBinaryOpLowering' @(WordN 5) @(WordN 5) unboundedConfig (AndBits @(WordN 5)) (.&.)
+      testBinaryOpLowering @(WordN 5) @(WordN 5) unboundedConfig andBitsTerm "(.&.)" (.&.)
     it "OrBits lowering should work" $ do
-      testBinaryOpLowering' @(WordN 5) @(WordN 5) unboundedConfig (OrBits @(WordN 5)) (.|.)
+      testBinaryOpLowering @(WordN 5) @(WordN 5) unboundedConfig orBitsTerm "(.|.)" (.|.)
     it "XorBits lowering should work" $ do
-      testBinaryOpLowering' @(WordN 5) @(WordN 5) unboundedConfig (XorBits @(WordN 5)) xor
+      testBinaryOpLowering @(WordN 5) @(WordN 5) unboundedConfig xorBitsTerm "xor" xor
     it "ComplementBits lowering should work" $ do
-      testUnaryOpLowering' @(WordN 5) unboundedConfig (ComplementBits @(WordN 5)) complement
+      testUnaryOpLowering @(WordN 5) unboundedConfig complementBitsTerm "complement" complement
     it "ShiftBits lowering should work" $ do
-      testUnaryOpLowering' @(WordN 5) unboundedConfig (ShiftBits @(WordN 5) 0) id
-      testUnaryOpLowering' @(WordN 5) unboundedConfig (ShiftBits @(WordN 5) 1) (`shift` 1)
-      testUnaryOpLowering' @(WordN 5) unboundedConfig (ShiftBits @(WordN 5) 2) (`shift` 2)
-      testUnaryOpLowering' @(WordN 5) unboundedConfig (ShiftBits @(WordN 5) 3) (`shift` 3)
-      testUnaryOpLowering' @(WordN 5) unboundedConfig (ShiftBits @(WordN 5) 4) (`shift` 4)
-      testUnaryOpLowering' @(WordN 5) unboundedConfig (ShiftBits @(WordN 5) 5) (`shift` 5)
-      testUnaryOpLowering' @(WordN 5) unboundedConfig (ShiftBits @(WordN 5) 5) (const 0)
-      testUnaryOpLowering' @(WordN 5) unboundedConfig (ShiftBits @(WordN 5) $ -1) (`shift` (-1))
-      testUnaryOpLowering' @(WordN 5) unboundedConfig (ShiftBits @(WordN 5) $ -2) (`shift` (-2))
-      testUnaryOpLowering' @(WordN 5) unboundedConfig (ShiftBits @(WordN 5) $ -3) (`shift` (-3))
-      testUnaryOpLowering' @(WordN 5) unboundedConfig (ShiftBits @(WordN 5) $ -4) (`shift` (-4))
-      testUnaryOpLowering' @(WordN 5) unboundedConfig (ShiftBits @(WordN 5) $ -5) (`shift` (-5))
-      testUnaryOpLowering' @(WordN 5)
+      testUnaryOpLowering @(WordN 5) unboundedConfig (`shiftBitsTerm` 0) "shift" id
+      testUnaryOpLowering @(WordN 5) unboundedConfig (`shiftBitsTerm` 1) "shift" (`shift` 1)
+      testUnaryOpLowering @(WordN 5) unboundedConfig (`shiftBitsTerm` 2) "shift" (`shift` 2)
+      testUnaryOpLowering @(WordN 5) unboundedConfig (`shiftBitsTerm` 3) "shift" (`shift` 3)
+      testUnaryOpLowering @(WordN 5) unboundedConfig (`shiftBitsTerm` 4) "shift" (`shift` 4)
+      testUnaryOpLowering @(WordN 5) unboundedConfig (`shiftBitsTerm` 5) "shift" (`shift` 5)
+      testUnaryOpLowering @(WordN 5) unboundedConfig (`shiftBitsTerm` 5) "shift" (const 0)
+      testUnaryOpLowering @(WordN 5) unboundedConfig (`shiftBitsTerm` (-1)) "shift" (`shift` (-1))
+      testUnaryOpLowering @(WordN 5) unboundedConfig (`shiftBitsTerm` (-2)) "shift" (`shift` (-2))
+      testUnaryOpLowering @(WordN 5) unboundedConfig (`shiftBitsTerm` (-3)) "shift" (`shift` (-3))
+      testUnaryOpLowering @(WordN 5) unboundedConfig (`shiftBitsTerm` (-4)) "shift" (`shift` (-4))
+      testUnaryOpLowering @(WordN 5) unboundedConfig (`shiftBitsTerm` (-5)) "shift" (`shift` (-5))
+      testUnaryOpLowering @(WordN 5)
         unboundedConfig
-        (ShiftBits @(WordN 5) $ -5)
+        (`shiftBitsTerm` (-5))
+        "shift"
         (\x -> SBV.ite (x SBV..>= 0) 0 (-1))
     it "RotateBits lowering should work" $ do
-      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) 0) id
-      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) 1) (`rotate` 1)
-      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) 2) (`rotate` 2)
-      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) 3) (`rotate` 3)
-      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) 4) (`rotate` 4)
-      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) 5) (`rotate` 5)
-      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) 5) id
-      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) $ -1) (`rotate` (-1))
-      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) $ -1) (`rotate` 4)
-      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) $ -2) (`rotate` (-2))
-      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) $ -2) (`rotate` 3)
-      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) $ -3) (`rotate` (-3))
-      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) $ -3) (`rotate` 2)
-      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) $ -4) (`rotate` (-4))
-      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) $ -4) (`rotate` 1)
-      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) $ -5) (`rotate` (-5))
-      testUnaryOpLowering' @(WordN 5) unboundedConfig (RotateBits @(WordN 5) $ -5) id
+      testUnaryOpLowering @(WordN 5) unboundedConfig (`rotateBitsTerm` 0) "rotate" id
+      testUnaryOpLowering @(WordN 5) unboundedConfig (`rotateBitsTerm` 1) "rotate" (`rotate` 1)
+      testUnaryOpLowering @(WordN 5) unboundedConfig (`rotateBitsTerm` 2) "rotate" (`rotate` 2)
+      testUnaryOpLowering @(WordN 5) unboundedConfig (`rotateBitsTerm` 3) "rotate" (`rotate` 3)
+      testUnaryOpLowering @(WordN 5) unboundedConfig (`rotateBitsTerm` 4) "rotate" (`rotate` 4)
+      testUnaryOpLowering @(WordN 5) unboundedConfig (`rotateBitsTerm` 5) "rotate" (`rotate` 5)
+      testUnaryOpLowering @(WordN 5) unboundedConfig (`rotateBitsTerm` 5) "rotate" id
+      testUnaryOpLowering @(WordN 5) unboundedConfig (`rotateBitsTerm` (-1)) "rotate" (`rotate` (-1))
+      testUnaryOpLowering @(WordN 5) unboundedConfig (`rotateBitsTerm` (-1)) "rotate" (`rotate` 4)
+      testUnaryOpLowering @(WordN 5) unboundedConfig (`rotateBitsTerm` (-2)) "rotate" (`rotate` (-2))
+      testUnaryOpLowering @(WordN 5) unboundedConfig (`rotateBitsTerm` (-2)) "rotate" (`rotate` 3)
+      testUnaryOpLowering @(WordN 5) unboundedConfig (`rotateBitsTerm` (-3)) "rotate" (`rotate` (-3))
+      testUnaryOpLowering @(WordN 5) unboundedConfig (`rotateBitsTerm` (-3)) "rotate" (`rotate` 2)
+      testUnaryOpLowering @(WordN 5) unboundedConfig (`rotateBitsTerm` (-4)) "rotate" (`rotate` (-4))
+      testUnaryOpLowering @(WordN 5) unboundedConfig (`rotateBitsTerm` (-4)) "rotate" (`rotate` 1)
+      testUnaryOpLowering @(WordN 5) unboundedConfig (`rotateBitsTerm` (-5)) "rotate" (`rotate` (-5))
+      testUnaryOpLowering @(WordN 5) unboundedConfig (`rotateBitsTerm` (-5)) "rotate" id
 
 {-
 it "DivI lowering should work" $ do

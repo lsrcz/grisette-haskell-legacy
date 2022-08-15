@@ -261,23 +261,23 @@ spec = do
           `shouldBe` mrgIf (as <~ bs) (mrgSingle LT) (mrgIf (as ==~ bs) (mrgSingle EQ) (mrgSingle GT))
     describe "Bits for Sym BV" $ do
       it ".&. for SymPrim should work" $ do
-        au .&. bu `shouldBe` Sym (bitand aut but)
-        as .&. bs `shouldBe` Sym (bitand ast bst)
+        au .&. bu `shouldBe` Sym (pevalAndBitsTerm aut but)
+        as .&. bs `shouldBe` Sym (pevalAndBitsTerm ast bst)
       it ".|. for SymPrim should work" $ do
-        au .|. bu `shouldBe` Sym (bitor aut but)
-        as .|. bs `shouldBe` Sym (bitor ast bst)
+        au .|. bu `shouldBe` Sym (pevalOrBitsTerm aut but)
+        as .|. bs `shouldBe` Sym (pevalOrBitsTerm ast bst)
       it "xor for SymPrim should work" $ do
-        au `xor` bu `shouldBe` Sym (bitxor aut but)
-        as `xor` bs `shouldBe` Sym (bitxor ast bst)
+        au `xor` bu `shouldBe` Sym (pevalXorBitsTerm aut but)
+        as `xor` bs `shouldBe` Sym (pevalXorBitsTerm ast bst)
       it "complement for SymPrim should work" $ do
-        complement au `shouldBe` Sym (bitneg aut)
-        complement as `shouldBe` Sym (bitneg ast)
+        complement au `shouldBe` Sym (pevalComplementBitsTerm aut)
+        complement as `shouldBe` Sym (pevalComplementBitsTerm ast)
       it "shift for SymPrim should work" $ do
-        shift au 1 `shouldBe` Sym (bitshift aut 1)
-        shift as 1 `shouldBe` Sym (bitshift ast 1)
+        shift au 1 `shouldBe` Sym (pevalShiftBitsTerm aut 1)
+        shift as 1 `shouldBe` Sym (pevalShiftBitsTerm ast 1)
       it "rotate for SymPrim should work" $ do
-        rotate au 1 `shouldBe` Sym (bitrotate aut 1)
-        rotate as 1 `shouldBe` Sym (bitrotate ast 1)
+        rotate au 1 `shouldBe` Sym (pevalRotateBitsTerm aut 1)
+        rotate as 1 `shouldBe` Sym (pevalRotateBitsTerm ast 1)
       it "bitSize for SymPrim should work" $ do
         bitSizeMaybe au `shouldBe` Just 4
         bitSizeMaybe as `shouldBe` Just 4

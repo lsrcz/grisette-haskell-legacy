@@ -42,6 +42,12 @@ identity (AbsNumTerm i _) = i
 identity (SignumNumTerm i _) = i
 identity (LTNumTerm i _ _) = i
 identity (LENumTerm i _ _) = i
+identity (AndBitsTerm i _ _) = i
+identity (OrBitsTerm i _ _) = i
+identity (XorBitsTerm i _ _) = i
+identity (ComplementBitsTerm i _) = i
+identity (ShiftBitsTerm i _ _) = i
+identity (RotateBitsTerm i _ _) = i
 {-# INLINE identity #-}
 
 identityWithTypeRep :: forall t. Term t -> (TypeRep, Id)
@@ -62,6 +68,12 @@ identityWithTypeRep (AbsNumTerm i _) = (typeRep (Proxy @t), i)
 identityWithTypeRep (SignumNumTerm i _) = (typeRep (Proxy @t), i)
 identityWithTypeRep (LTNumTerm i _ _) = (typeRep (Proxy @Bool), i)
 identityWithTypeRep (LENumTerm i _ _) = (typeRep (Proxy @Bool), i)
+identityWithTypeRep (AndBitsTerm i _ _) = (typeRep (Proxy @t), i)
+identityWithTypeRep (OrBitsTerm i _ _) = (typeRep (Proxy @t), i)
+identityWithTypeRep (XorBitsTerm i _ _) = (typeRep (Proxy @t), i)
+identityWithTypeRep (ComplementBitsTerm i _) = (typeRep (Proxy @t), i)
+identityWithTypeRep (ShiftBitsTerm i _ _) = (typeRep (Proxy @t), i)
+identityWithTypeRep (RotateBitsTerm i _ _) = (typeRep (Proxy @t), i)
 {-# INLINE identityWithTypeRep #-}
 
 introSupportedPrimConstraint :: forall t a. Term t -> ((SupportedPrim t) => a) -> a
@@ -82,6 +94,12 @@ introSupportedPrimConstraint AbsNumTerm {} x = x
 introSupportedPrimConstraint SignumNumTerm {} x = x
 introSupportedPrimConstraint LTNumTerm {} x = x
 introSupportedPrimConstraint LENumTerm {} x = x
+introSupportedPrimConstraint AndBitsTerm {} x = x
+introSupportedPrimConstraint OrBitsTerm {} x = x
+introSupportedPrimConstraint XorBitsTerm {} x = x
+introSupportedPrimConstraint ComplementBitsTerm {} x = x
+introSupportedPrimConstraint ShiftBitsTerm {} x = x
+introSupportedPrimConstraint RotateBitsTerm {} x = x
 {-# INLINE introSupportedPrimConstraint #-}
 
 extractSymbolicsSomeTerm :: SomeTerm -> S.HashSet TermSymbol
@@ -103,18 +121,24 @@ extractSymbolicsSomeTerm t1 = evalState (gocached t1) M.empty
     go (SomeTerm (UnaryTerm _ _ arg)) = goUnary arg
     go (SomeTerm (BinaryTerm _ _ arg1 arg2)) = goBinary arg1 arg2
     go (SomeTerm (TernaryTerm _ _ arg1 arg2 arg3)) = goTernary arg1 arg2 arg3
-    go (SomeTerm (NotTerm _ arg)) = gocached (SomeTerm arg)
+    go (SomeTerm (NotTerm _ arg)) = goUnary arg
     go (SomeTerm (OrTerm _ arg1 arg2)) = goBinary arg1 arg2
     go (SomeTerm (AndTerm _ arg1 arg2)) = goBinary arg1 arg2
     go (SomeTerm (EqvTerm _ arg1 arg2)) = goBinary arg1 arg2
     go (SomeTerm (ITETerm _ cond arg1 arg2)) = goTernary cond arg1 arg2
     go (SomeTerm (AddNumTerm _ arg1 arg2)) = goBinary arg1 arg2
-    go (SomeTerm (UMinusNumTerm _ arg)) = gocached (SomeTerm arg)
+    go (SomeTerm (UMinusNumTerm _ arg)) = goUnary arg
     go (SomeTerm (TimesNumTerm _ arg1 arg2)) = goBinary arg1 arg2
-    go (SomeTerm (AbsNumTerm _ arg)) = gocached (SomeTerm arg)
-    go (SomeTerm (SignumNumTerm _ arg)) = gocached (SomeTerm arg)
+    go (SomeTerm (AbsNumTerm _ arg)) = goUnary arg
+    go (SomeTerm (SignumNumTerm _ arg)) = goUnary arg
     go (SomeTerm (LTNumTerm _ arg1 arg2)) = goBinary arg1 arg2
     go (SomeTerm (LENumTerm _ arg1 arg2)) = goBinary arg1 arg2
+    go (SomeTerm (AndBitsTerm _ arg1 arg2)) = goBinary arg1 arg2
+    go (SomeTerm (OrBitsTerm _ arg1 arg2)) = goBinary arg1 arg2
+    go (SomeTerm (XorBitsTerm _ arg1 arg2)) = goBinary arg1 arg2
+    go (SomeTerm (ComplementBitsTerm _ arg)) = goUnary arg
+    go (SomeTerm (ShiftBitsTerm _ arg _)) = goUnary arg
+    go (SomeTerm (RotateBitsTerm _ arg _)) = goUnary arg
     goUnary arg = gocached (SomeTerm arg)
     goBinary arg1 arg2 = do
       r1 <- gocached (SomeTerm arg1)
@@ -149,6 +173,12 @@ castTerm t@AbsNumTerm {} = cast t
 castTerm t@SignumNumTerm {} = cast t
 castTerm t@LTNumTerm {} = cast t
 castTerm t@LENumTerm {} = cast t
+castTerm t@AndBitsTerm {} = cast t
+castTerm t@OrBitsTerm {} = cast t
+castTerm t@XorBitsTerm {} = cast t
+castTerm t@ComplementBitsTerm {} = cast t
+castTerm t@ShiftBitsTerm {} = cast t
+castTerm t@RotateBitsTerm {} = cast t
 {-# INLINE castTerm #-}
 
 pformat :: forall t. (SupportedPrim t) => Term t -> String
@@ -169,6 +199,12 @@ pformat (AbsNumTerm _ arg) = "(abs " ++ pformat arg ++ ")"
 pformat (SignumNumTerm _ arg) = "(signum " ++ pformat arg ++ ")"
 pformat (LTNumTerm _ arg1 arg2) = "(< " ++ pformat arg1 ++ " " ++ pformat arg2 ++ ")"
 pformat (LENumTerm _ arg1 arg2) = "(<= " ++ pformat arg1 ++ " " ++ pformat arg2 ++ ")"
+pformat (AndBitsTerm _ arg1 arg2) = "(& " ++ pformat arg1 ++ " " ++ pformat arg2 ++ ")"
+pformat (OrBitsTerm _ arg1 arg2) = "(| " ++ pformat arg1 ++ " " ++ pformat arg2 ++ ")"
+pformat (XorBitsTerm _ arg1 arg2) = "(^ " ++ pformat arg1 ++ " " ++ pformat arg2 ++ ")"
+pformat (ComplementBitsTerm _ arg) = "(~ " ++ pformat arg ++ ")"
+pformat (ShiftBitsTerm _ arg n) = "(shift " ++ pformat arg ++ " " ++ show n ++ ")"
+pformat (RotateBitsTerm _ arg n) = "(rotate " ++ pformat arg ++ " " ++ show n ++ ")"
 {-# INLINE pformat #-}
 
 termsSize :: [Term a] -> Int
@@ -194,6 +230,12 @@ termsSize terms = S.size $ execState (traverse go terms) S.empty
     go t@(SignumNumTerm _ arg) = goUnary t arg
     go t@(LTNumTerm _ arg1 arg2) = goBinary t arg1 arg2
     go t@(LENumTerm _ arg1 arg2) = goBinary t arg1 arg2
+    go t@(AndBitsTerm _ arg1 arg2) = goBinary t arg1 arg2
+    go t@(OrBitsTerm _ arg1 arg2) = goBinary t arg1 arg2
+    go t@(XorBitsTerm _ arg1 arg2) = goBinary t arg1 arg2
+    go t@(ComplementBitsTerm _ arg) = goUnary t arg
+    go t@(ShiftBitsTerm _ arg _) = goUnary t arg
+    go t@(RotateBitsTerm _ arg _) = goUnary t arg
     goUnary :: forall a b. (SupportedPrim a) => Term a -> Term b -> State (S.HashSet SomeTerm) ()
     goUnary t arg = do
       b <- exists t

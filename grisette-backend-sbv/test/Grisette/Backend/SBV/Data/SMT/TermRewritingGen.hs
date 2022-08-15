@@ -161,6 +161,24 @@ ltNumSpec = constructBinarySpec ltNumTerm pevalLtNumTerm
 leNumSpec :: (TermRewritingSpec a av, Num av, Ord av, TermRewritingSpec b Bool) => a -> a -> b
 leNumSpec = constructBinarySpec leNumTerm pevalLeNumTerm
 
+andBitsSpec :: (TermRewritingSpec a av, Bits av) => a -> a -> a
+andBitsSpec = constructBinarySpec andBitsTerm pevalAndBitsTerm
+
+orBitsSpec :: (TermRewritingSpec a av, Bits av) => a -> a -> a
+orBitsSpec = constructBinarySpec orBitsTerm pevalOrBitsTerm
+
+xorBitsSpec :: (TermRewritingSpec a av, Bits av) => a -> a -> a
+xorBitsSpec = constructBinarySpec xorBitsTerm pevalXorBitsTerm
+
+complementBitsSpec :: (TermRewritingSpec a av, Bits av) => a -> a
+complementBitsSpec = constructUnarySpec complementBitsTerm pevalComplementBitsTerm
+
+shiftBitsSpec :: (TermRewritingSpec a av, Bits av) => a -> Int -> a
+shiftBitsSpec a n = constructUnarySpec (`shiftBitsTerm` n) (`pevalShiftBitsTerm` n) a
+
+rotateBitsSpec :: (TermRewritingSpec a av, Bits av) => a -> Int -> a
+rotateBitsSpec a n = constructUnarySpec (`rotateBitsTerm` n) (`pevalRotateBitsTerm` n) a
+
 data BoolOnlySpec = BoolOnlySpec (Term Bool) (Term Bool)
 
 instance Show BoolOnlySpec where
@@ -345,12 +363,12 @@ fsbvWithBool p n | n > 0 = do
       return $ signumNumSpec v1i,
       return $ addNumSpec  v1i v2i,
       return $ timesNumSpec v1i v2i,
-      return $ constructBinarySpec' (AndBits @(bv 4)) v1i v2i,
-      return $ constructBinarySpec' (OrBits @(bv 4)) v1i v2i,
-      return $ constructBinarySpec' (XorBits @(bv 4)) v1i v2i,
-      return $ constructUnarySpec' (ComplementBits @(bv 4)) v1i,
-      return $ constructUnarySpec' (ShiftBits @(bv 4) i) v1i,
-      return $ constructUnarySpec' (RotateBits @(bv 4) i) v1i,
+      return $ andBitsSpec v1i v2i,
+      return $ orBitsSpec v1i v2i,
+      return $ xorBitsSpec v1i v2i,
+      return $ complementBitsSpec v1i,
+      return $ shiftBitsSpec v1i i,
+      return $ rotateBitsSpec v1i i,
       return $ iteSpec v1b v1i v2i
     ]
 fsbvWithBool _ _ = error "Should never be called"
@@ -438,12 +456,12 @@ dsbv1 p depth | depth > 0 = do
       return $ signumNumSpec v1,
       return $ addNumSpec v1 v1',
       return $ timesNumSpec v1 v1',
-      return $ constructBinarySpec' (AndBits @(bv 1)) v1 v1',
-      return $ constructBinarySpec' (OrBits @(bv 1)) v1 v1',
-      return $ constructBinarySpec' (XorBits @(bv 1)) v1 v1',
-      return $ constructUnarySpec' (ComplementBits @(bv 1)) v1,
-      return $ constructUnarySpec' (ShiftBits @(bv 1) i) v1,
-      return $ constructUnarySpec' (RotateBits @(bv 1) i) v1,
+      return $ andBitsSpec v1 v1',
+      return $ orBitsSpec v1 v1',
+      return $ xorBitsSpec v1 v1',
+      return $ complementBitsSpec v1,
+      return $ shiftBitsSpec v1 i,
+      return $ rotateBitsSpec v1 i,
       return $ constructUnarySpec' (BVTSelect @bv @0 @1 @4 Proxy) v4,
       return $ constructUnarySpec' (BVTSelect @bv @1 @1 @4 Proxy) v4,
       return $ constructUnarySpec' (BVTSelect @bv @2 @1 @4 Proxy) v4,
@@ -521,12 +539,12 @@ dsbv2 p depth | depth > 0 = do
       return $ signumNumSpec v2,
       return $ addNumSpec  v2 v2',
       return $ timesNumSpec v2 v2',
-      return $ constructBinarySpec' (AndBits @(bv 2)) v2 v2',
-      return $ constructBinarySpec' (OrBits @(bv 2)) v2 v2',
-      return $ constructBinarySpec' (XorBits @(bv 2)) v2 v2',
-      return $ constructUnarySpec' (ComplementBits @(bv 2)) v2,
-      return $ constructUnarySpec' (ShiftBits @(bv 2) i) v2,
-      return $ constructUnarySpec' (RotateBits @(bv 2) i) v2,
+      return $ andBitsSpec v2 v2',
+      return $ orBitsSpec v2 v2',
+      return $ xorBitsSpec v2 v2',
+      return $ complementBitsSpec v2,
+      return $ shiftBitsSpec v2 i,
+      return $ rotateBitsSpec v2 i,
       return $ constructUnarySpec' (BVTSelect @bv @0 @2 @4 Proxy) v4,
       return $ constructUnarySpec' (BVTSelect @bv @1 @2 @4 Proxy) v4,
       return $ constructUnarySpec' (BVTSelect @bv @2 @2 @4 Proxy) v4,
@@ -602,12 +620,12 @@ dsbv3 p depth | depth > 0 = do
       return $ signumNumSpec v3,
       return $ addNumSpec  v3 v3',
       return $ timesNumSpec v3 v3',
-      return $ constructBinarySpec' (AndBits @(bv 3)) v3 v3',
-      return $ constructBinarySpec' (OrBits @(bv 3)) v3 v3',
-      return $ constructBinarySpec' (XorBits @(bv 3)) v3 v3',
-      return $ constructUnarySpec' (ComplementBits @(bv 3)) v3,
-      return $ constructUnarySpec' (ShiftBits @(bv 3) i) v3,
-      return $ constructUnarySpec' (RotateBits @(bv 3) i) v3,
+      return $ andBitsSpec v3 v3',
+      return $ orBitsSpec v3 v3',
+      return $ xorBitsSpec v3 v3',
+      return $ complementBitsSpec v3,
+      return $ shiftBitsSpec v3 i,
+      return $ rotateBitsSpec v3 i,
       return $ constructUnarySpec' (BVTSelect @bv @0 @3 @4 Proxy) v4,
       return $ constructUnarySpec' (BVTSelect @bv @1 @3 @4 Proxy) v4,
       return $ constructUnarySpec' (BVTSelect @bv @0 @3 @3 Proxy) v3,
@@ -684,12 +702,12 @@ dsbv4 p depth | depth > 0 = do
       return $ signumNumSpec v4,
       return $ addNumSpec v4 v4',
       return $ timesNumSpec v4 v4',
-      return $ constructBinarySpec' (AndBits @(bv 4)) v4 v4',
-      return $ constructBinarySpec' (OrBits @(bv 4)) v4 v4',
-      return $ constructBinarySpec' (XorBits @(bv 4)) v4 v4',
-      return $ constructUnarySpec' (ComplementBits @(bv 4)) v4,
-      return $ constructUnarySpec' (ShiftBits @(bv 4) i) v4,
-      return $ constructUnarySpec' (RotateBits @(bv 4) i) v4,
+      return $ andBitsSpec v4 v4',
+      return $ orBitsSpec v4 v4',
+      return $ xorBitsSpec v4 v4',
+      return $ complementBitsSpec v4,
+      return $ shiftBitsSpec v4 i,
+      return $ rotateBitsSpec v4 i,
       return $ constructUnarySpec' (BVTSelect @bv @0 @4 @4 Proxy) v4,
       return $ constructBinarySpec' (BVTConcat @bv @1 @3 @4) v1 v3,
       return $ constructBinarySpec' (BVTConcat @bv @2 @2 @4) v2 v2',

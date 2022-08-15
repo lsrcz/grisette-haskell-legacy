@@ -22,6 +22,12 @@ module Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
     signumNumTerm,
     ltNumTerm,
     leNumTerm,
+    andBitsTerm,
+    orBitsTerm,
+    xorBitsTerm,
+    complementBitsTerm,
+    shiftBitsTerm,
+    rotateBitsTerm,
   )
 where
 
@@ -30,6 +36,7 @@ import Data.Hashable
 import Data.Typeable
 import {-# SOURCE #-} Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Language.Haskell.TH.Syntax
+import Data.Bits
 
 constructUnary ::
   forall tag arg t.
@@ -70,3 +77,9 @@ absNumTerm :: (SupportedPrim a, Num a) => Term a -> Term a
 signumNumTerm :: (SupportedPrim a, Num a) => Term a -> Term a
 ltNumTerm :: (SupportedPrim a, Num a, Ord a) => Term a -> Term a -> Term Bool
 leNumTerm :: (SupportedPrim a, Num a, Ord a) => Term a -> Term a -> Term Bool
+andBitsTerm :: (SupportedPrim a, Bits a) => Term a -> Term a -> Term a
+orBitsTerm :: (SupportedPrim a, Bits a) => Term a -> Term a -> Term a
+xorBitsTerm :: (SupportedPrim a, Bits a) => Term a -> Term a -> Term a
+complementBitsTerm :: (SupportedPrim a, Bits a) => Term a -> Term a
+shiftBitsTerm :: (SupportedPrim a, Bits a) => Term a -> Int -> Term a
+rotateBitsTerm :: (SupportedPrim a, Bits a) => Term a -> Int -> Term a

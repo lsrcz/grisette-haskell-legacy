@@ -40,7 +40,6 @@ import Grisette.Backend.SBV.Data.SMT.Config
 import Grisette.IR.SymPrim.Data.BV
 import Grisette.IR.SymPrim.Data.GeneralFunc
 import Grisette.IR.SymPrim.Data.Prim.BV
-import Grisette.IR.SymPrim.Data.Prim.Bits
 import Grisette.IR.SymPrim.Data.Prim.Bool
 import Grisette.IR.SymPrim.Data.Prim.GeneralFunc
 import Grisette.IR.SymPrim.Data.Prim.Integer
@@ -136,7 +135,7 @@ lowerBinaryTerm' ::
   Term x ->
   Term a ->
   Term b ->
-  (a1 -> b1 -> (TermTy integerBitWidth x)) ->
+  (a1 -> b1 -> TermTy integerBitWidth x) ->
   State SymBiMap (TermTy integerBitWidth x)
 lowerBinaryTerm' config orig t1 t2 f = do
   l1 <- lowerSinglePrimCached' config t1
@@ -164,19 +163,10 @@ lowerSinglePrimImpl' _ t@SymbTerm {} =
     "The symbolic term should have already been lowered " ++ show t ++ " to SMT with collectedPrims.\n"
       ++ "We don't support adding new symbolics after collectedPrims with SBV backend"
 lowerSinglePrimImpl' config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) =
-  fromMaybe errorMsg $ asum [bitsType, extBV, extractBV]
+  fromMaybe errorMsg $ asum [extBV, extractBV]
   where
     errorMsg :: forall t1. t1
     errorMsg = translateUnaryError (show op) (R.typeRep @x) (R.typeRep @a)
-    bitsType :: Maybe (State SymBiMap (TermTy integerBitWidth a))
-    bitsType = case (config, R.typeRep @a) of
-      ResolvedBitsType ->
-        case t of
-          ComplementBitsTerm (t1 :: Term a) -> Just $ lowerUnaryTerm' config t t1 complement
-          ShiftBitsTerm (t1 :: Term a) i -> Just $ lowerUnaryTerm' config t t1 (`shift` i)
-          RotateBitsTerm (t1 :: Term a) i -> Just $ lowerUnaryTerm' config t t1 (`rotate` i)
-          _ -> Nothing
-      _ -> Nothing
     extBV :: Maybe (State SymBiMap (TermTy integerBitWidth a))
     extBV = case (R.typeRep @x, R.typeRep @a) of
       (UnsignedBVType (_ :: proxy xn), UnsignedBVType (_ :: proxy an)) ->
@@ -252,19 +242,10 @@ lowerSinglePrimImpl' config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) =
                     withEquality (unsafeAxiom :: ((((w + ix) - 1) - ix) + 1) :~: w) $
                       withLeqProof ev1 r
 lowerSinglePrimImpl' config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_ :: Term y)) =
-  fromMaybe errorMsg $ asum [bitsType, concatBV, funcApply]
+  fromMaybe errorMsg $ asum [concatBV, funcApply]
   where
     errorMsg :: forall t1. t1
     errorMsg = translateBinaryError (show op) (R.typeRep @x) (R.typeRep @y) (R.typeRep @a)
-    bitsType :: Maybe (State SymBiMap (TermTy integerBitWidth a))
-    bitsType = case (config, R.typeRep @a) of
-      ResolvedBitsType ->
-        case t of
-          AndBitsTerm (t1 :: Term a) t2 -> Just $ lowerBinaryTerm' config t t1 t2 (.&.)
-          OrBitsTerm (t1 :: Term a) t2 -> Just $ lowerBinaryTerm' config t t1 t2 (.|.)
-          XorBitsTerm (t1 :: Term a) t2 -> Just $ lowerBinaryTerm' config t t1 t2 xor
-          _ -> Nothing
-      _ -> Nothing
     funcApply :: Maybe (State SymBiMap (TermTy integerBitWidth a))
     funcApply = case (config, R.typeRep @a) of
       ResolvedDeepType -> Just $
@@ -349,11 +330,35 @@ lowerSinglePrimImpl' config t@(SignumNumTerm _ arg) =
 lowerSinglePrimImpl' config t@(LTNumTerm _ (arg1 :: Term arg) arg2) =
   case (config, R.typeRep @arg) of
     ResolvedNumOrdType -> lowerBinaryTerm' config t arg1 arg2 (SBV..<)
-    _ -> translateBinaryError "<" (R.typeRep @arg) (R.typeRep @arg) (R.typeRep @Bool)
+    _ -> translateBinaryError "(<)" (R.typeRep @arg) (R.typeRep @arg) (R.typeRep @Bool)
 lowerSinglePrimImpl' config t@(LENumTerm _ (arg1 :: Term arg) arg2) =
   case (config, R.typeRep @arg) of
     ResolvedNumOrdType -> lowerBinaryTerm' config t arg1 arg2 (SBV..<=)
-    _ -> translateBinaryError "<" (R.typeRep @arg) (R.typeRep @arg) (R.typeRep @Bool)
+    _ -> translateBinaryError "(<=)" (R.typeRep @arg) (R.typeRep @arg) (R.typeRep @Bool)
+lowerSinglePrimImpl' config t@(AndBitsTerm _ arg1 arg2) =
+  case (config, R.typeRep @a) of
+    ResolvedBitsType -> lowerBinaryTerm' config t arg1 arg2 (.&.)
+    _ -> translateBinaryError "(.&.)" (R.typeRep @a) (R.typeRep @a) (R.typeRep @a)
+lowerSinglePrimImpl' config t@(OrBitsTerm _ arg1 arg2) =
+  case (config, R.typeRep @a) of
+    ResolvedBitsType -> lowerBinaryTerm' config t arg1 arg2 (.|.)
+    _ -> translateBinaryError "(.|.)" (R.typeRep @a) (R.typeRep @a) (R.typeRep @a)
+lowerSinglePrimImpl' config t@(XorBitsTerm _ arg1 arg2) =
+  case (config, R.typeRep @a) of
+    ResolvedBitsType -> lowerBinaryTerm' config t arg1 arg2 xor
+    _ -> translateBinaryError "xor" (R.typeRep @a) (R.typeRep @a) (R.typeRep @a)
+lowerSinglePrimImpl' config t@(ComplementBitsTerm _ arg) =
+  case (config, R.typeRep @a) of
+    ResolvedBitsType -> lowerUnaryTerm' config t arg complement
+    _ -> translateUnaryError "complement" (R.typeRep @a) (R.typeRep @a)
+lowerSinglePrimImpl' config t@(ShiftBitsTerm _ arg n) =
+  case (config, R.typeRep @a) of
+    ResolvedBitsType -> lowerUnaryTerm' config t arg (`shift` n)
+    _ -> translateBinaryError "shift" (R.typeRep @a) (R.typeRep @Int) (R.typeRep @a)
+lowerSinglePrimImpl' config t@(RotateBitsTerm _ arg n) =
+  case (config, R.typeRep @a) of
+    ResolvedBitsType -> lowerUnaryTerm' config t arg (`rotate` n)
+    _ -> translateBinaryError "rotate" (R.typeRep @a) (R.typeRep @Int) (R.typeRep @a)
 lowerSinglePrimImpl' _ _ = undefined
 
 buildUTFunc11 ::
@@ -542,19 +547,10 @@ lowerSinglePrimImpl config t@(SymbTerm _ ts) m =
     ufunc :: (Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a)))
     ufunc = lowerSinglePrimUFunc config t m
 lowerSinglePrimImpl config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) m =
-  fromMaybe errorMsg $ asum [bitsType, extBV, extractBV]
+  fromMaybe errorMsg $ asum [extBV, extractBV]
   where
     errorMsg :: forall t1. t1
     errorMsg = translateUnaryError (show op) (R.typeRep @x) (R.typeRep @a)
-    bitsType :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
-    bitsType = case (config, R.typeRep @a) of
-      ResolvedBitsType ->
-        case t of
-          ComplementBitsTerm (t1 :: Term a) -> Just $ lowerUnaryTerm config t t1 complement m
-          ShiftBitsTerm (t1 :: Term a) i -> Just $ lowerUnaryTerm config t t1 (`shift` i) m
-          RotateBitsTerm (t1 :: Term a) i -> Just $ lowerUnaryTerm config t t1 (`rotate` i) m
-          _ -> Nothing
-      _ -> Nothing
     extBV :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
     extBV = case (R.typeRep @x, R.typeRep @a) of
       (UnsignedBVType (_ :: proxy xn), UnsignedBVType (_ :: proxy an)) ->
@@ -632,7 +628,7 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) m 
                     withEquality (unsafeAxiom :: ((((w + ix) - 1) - ix) + 1) :~: w) $
                       withLeqProof ev1 r
 lowerSinglePrimImpl config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_ :: Term y)) m =
-  fromMaybe errorMsg $ asum [bitsType, concatBV, integerType, funcApply]
+  fromMaybe errorMsg $ asum [concatBV, integerType, funcApply]
   where
     errorMsg :: forall t1. t1
     errorMsg = translateBinaryError (show op) (R.typeRep @x) (R.typeRep @y) (R.typeRep @a)
@@ -642,15 +638,6 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_
         case t of
           DivITerm t1' t2' -> Just $ lowerBinaryTerm config t t1' t2' SBV.sDiv m
           ModITerm t1' t2' -> Just $ lowerBinaryTerm config t t1' t2' SBV.sMod m
-          _ -> Nothing
-      _ -> Nothing
-    bitsType :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
-    bitsType = case (config, R.typeRep @a) of
-      ResolvedBitsType ->
-        case t of
-          AndBitsTerm (t1 :: Term a) t2 -> Just $ lowerBinaryTerm config t t1 t2 (.&.) m
-          OrBitsTerm (t1 :: Term a) t2 -> Just $ lowerBinaryTerm config t t1 t2 (.|.) m
-          XorBitsTerm (t1 :: Term a) t2 -> Just $ lowerBinaryTerm config t t1 t2 xor m
           _ -> Nothing
       _ -> Nothing
     funcApply :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
@@ -735,11 +722,35 @@ lowerSinglePrimImpl config t@(SignumNumTerm _ arg) m =
 lowerSinglePrimImpl config t@(LTNumTerm _ (arg1 :: Term arg) arg2) m =
   case (config, R.typeRep @arg) of
     ResolvedNumOrdType -> lowerBinaryTerm config t arg1 arg2 (SBV..<) m
-    _ -> translateBinaryError "<" (R.typeRep @a) (R.typeRep @a) (R.typeRep @Bool)
+    _ -> translateBinaryError "(<)" (R.typeRep @a) (R.typeRep @a) (R.typeRep @Bool)
 lowerSinglePrimImpl config t@(LENumTerm _ (arg1 :: Term arg) arg2) m =
   case (config, R.typeRep @arg) of
     ResolvedNumOrdType -> lowerBinaryTerm config t arg1 arg2 (SBV..<=) m
-    _ -> translateBinaryError "<=" (R.typeRep @a) (R.typeRep @a) (R.typeRep @Bool)
+    _ -> translateBinaryError "(<=)" (R.typeRep @a) (R.typeRep @a) (R.typeRep @Bool)
+lowerSinglePrimImpl config t@(AndBitsTerm _ arg1 arg2) m =
+  case (config, R.typeRep @a) of
+    ResolvedBitsType -> lowerBinaryTerm config t arg1 arg2 (.&.) m
+    _ -> translateBinaryError "(.&.)" (R.typeRep @a) (R.typeRep @a) (R.typeRep @a)
+lowerSinglePrimImpl config t@(OrBitsTerm _ arg1 arg2) m =
+  case (config, R.typeRep @a) of
+    ResolvedBitsType -> lowerBinaryTerm config t arg1 arg2 (.|.) m
+    _ -> translateBinaryError "(.|.)" (R.typeRep @a) (R.typeRep @a) (R.typeRep @a)
+lowerSinglePrimImpl config t@(XorBitsTerm _ arg1 arg2) m =
+  case (config, R.typeRep @a) of
+    ResolvedBitsType -> lowerBinaryTerm config t arg1 arg2 xor m
+    _ -> translateBinaryError "xor" (R.typeRep @a) (R.typeRep @a) (R.typeRep @a)
+lowerSinglePrimImpl config t@(ComplementBitsTerm _ arg) m =
+  case (config, R.typeRep @a) of
+    ResolvedBitsType -> lowerUnaryTerm config t arg complement m
+    _ -> translateUnaryError "complement" (R.typeRep @a) (R.typeRep @a)
+lowerSinglePrimImpl config t@(ShiftBitsTerm _ arg n) m =
+  case (config, R.typeRep @a) of
+    ResolvedBitsType -> lowerUnaryTerm config t arg (`shift` n) m
+    _ -> translateBinaryError "shift" (R.typeRep @a) (R.typeRep @Int) (R.typeRep @a)
+lowerSinglePrimImpl config t@(RotateBitsTerm _ arg n) m =
+  case (config, R.typeRep @a) of
+    ResolvedBitsType -> lowerUnaryTerm config t arg (`rotate` n) m
+    _ -> translateBinaryError "rotate" (R.typeRep @a) (R.typeRep @Int) (R.typeRep @a)
 lowerSinglePrimImpl _ _ _ = error "Should never happen"
 
 unsafeMkNatRepr :: Int -> NatRepr w

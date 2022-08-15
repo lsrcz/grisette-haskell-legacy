@@ -41,6 +41,7 @@ import Grisette.IR.SymPrim.Data.Prim.ModelValue
 import Grisette.IR.SymPrim.Data.Prim.Utils
 import Language.Haskell.TH.Syntax
 import Language.Haskell.TH.Syntax.Compat
+import Data.Bits
 
 class (Lift t, Typeable t, Hashable t, Eq t, Show t, NFData t) => SupportedPrim t where
   type PrimConstraint t :: Constraint
@@ -196,6 +197,12 @@ data Term t where
   SignumNumTerm :: (SupportedPrim t, Num t) => {-# UNPACK #-} !Id -> !(Term t) -> Term t
   LTNumTerm :: (SupportedPrim t, Num t, Ord t) => {-# UNPACK #-} !Id -> !(Term t) -> !(Term t) -> Term Bool
   LENumTerm :: (SupportedPrim t, Num t, Ord t) => {-# UNPACK #-} !Id -> !(Term t) -> !(Term t) -> Term Bool
+  AndBitsTerm :: (SupportedPrim t, Bits t) => {-# UNPACK #-} !Id -> !(Term t) -> !(Term t) -> Term t
+  OrBitsTerm :: (SupportedPrim t, Bits t) => {-# UNPACK #-} !Id -> !(Term t) -> !(Term t) -> Term t
+  XorBitsTerm :: (SupportedPrim t, Bits t) => {-# UNPACK #-} !Id -> !(Term t) -> !(Term t) -> Term t
+  ComplementBitsTerm :: (SupportedPrim t, Bits t) => {-# UNPACK #-} !Id -> !(Term t) -> Term t
+  ShiftBitsTerm :: (SupportedPrim t, Bits t) => {-# UNPACK #-} !Id -> !(Term t) -> {-# UNPACK #-} !Int -> Term t
+  RotateBitsTerm :: (SupportedPrim t, Bits t) => {-# UNPACK #-} !Id -> !(Term t) -> {-# UNPACK #-} !Int -> Term t
 
 instance NFData (Term a) where
   rnf i = identity i `seq` ()
@@ -219,6 +226,12 @@ instance Lift (Term t) where
   liftTyped (SignumNumTerm _ arg) = [||signumNumTerm arg||]
   liftTyped (LTNumTerm _ arg1 arg2) = [||ltNumTerm arg1 arg2||]
   liftTyped (LENumTerm _ arg1 arg2) = [||leNumTerm arg1 arg2||]
+  liftTyped (AndBitsTerm _ arg1 arg2) = [||andBitsTerm arg1 arg2||]
+  liftTyped (OrBitsTerm _ arg1 arg2) = [||orBitsTerm arg1 arg2||]
+  liftTyped (XorBitsTerm _ arg1 arg2) = [||xorBitsTerm arg1 arg2||]
+  liftTyped (ComplementBitsTerm _ arg) = [||complementBitsTerm arg||]
+  liftTyped (ShiftBitsTerm _ arg n) = [||shiftBitsTerm arg n||]
+  liftTyped (RotateBitsTerm _ arg n) = [||rotateBitsTerm arg n||]
 
 instance Show (Term ty) where
   show (ConcTerm i v) = "ConcTerm{id=" ++ show i ++ ", v=" ++ show v ++ "}"
@@ -251,6 +264,12 @@ instance Show (Term ty) where
   show (SignumNumTerm i arg) = "SignumNum{id=" ++ show i ++ ", arg=" ++ show arg ++ "}"
   show (LTNumTerm i arg1 arg2) = "LTNum{id=" ++ show i ++ ", arg1=" ++ show arg1 ++ ", arg2=" ++ show arg2 ++ "}"
   show (LENumTerm i arg1 arg2) = "LENum{id=" ++ show i ++ ", arg1=" ++ show arg1 ++ ", arg2=" ++ show arg2 ++ "}"
+  show (AndBitsTerm i arg1 arg2) = "AndBits{id=" ++ show i ++ ", arg1=" ++ show arg1 ++ ", arg2=" ++ show arg2 ++ "}"
+  show (OrBitsTerm i arg1 arg2) = "OrBits{id=" ++ show i ++ ", arg1=" ++ show arg1 ++ ", arg2=" ++ show arg2 ++ "}"
+  show (XorBitsTerm i arg1 arg2) = "XorBits{id=" ++ show i ++ ", arg1=" ++ show arg1 ++ ", arg2=" ++ show arg2 ++ "}"
+  show (ComplementBitsTerm i arg) = "ComplementBits{id=" ++ show i ++ ", arg=" ++ show arg ++ "}"
+  show (ShiftBitsTerm i arg n) = "ShiftBits{id=" ++ show i ++ ", arg=" ++ show arg ++ ", n=" ++ show n ++ "}"
+  show (RotateBitsTerm i arg n) = "RotateBits{id=" ++ show i ++ ", arg=" ++ show arg ++ ", n=" ++ show n ++ "}"
 
 instance (SupportedPrim t) => Eq (Term t) where
   (==) = (==) `on` identity
@@ -287,6 +306,12 @@ data UTerm t where
   USignumNumTerm :: (SupportedPrim t, Num t) => !(Term t) -> UTerm t
   ULTNumTerm :: (SupportedPrim t, Num t, Ord t) => !(Term t) -> !(Term t) -> UTerm Bool
   ULENumTerm :: (SupportedPrim t, Num t, Ord t) => !(Term t) -> !(Term t) -> UTerm Bool
+  UAndBitsTerm :: (SupportedPrim t, Bits t) => !(Term t) -> !(Term t) -> UTerm t
+  UOrBitsTerm :: (SupportedPrim t, Bits t) => !(Term t) -> !(Term t) -> UTerm t
+  UXorBitsTerm :: (SupportedPrim t, Bits t) => !(Term t) -> !(Term t) -> UTerm t
+  UComplementBitsTerm :: (SupportedPrim t, Bits t) => !(Term t) -> UTerm t
+  UShiftBitsTerm :: (SupportedPrim t, Bits t) => !(Term t) -> {-# UNPACK #-} !Int -> UTerm t
+  URotateBitsTerm :: (SupportedPrim t, Bits t) => !(Term t) -> {-# UNPACK #-} !Int -> UTerm t
 
 eqTypedId :: (TypeRep a, Id) -> (TypeRep b, Id) -> Bool
 eqTypedId (a, i1) (b, i2) = i1 == i2 && eqTypeRepBool a b
@@ -331,6 +356,12 @@ instance (SupportedPrim t) => Interned (Term t) where
     DSignumNumTerm :: {-# UNPACK #-} !Id -> Description (Term t)
     DLTNumTerm :: TypeRep args -> {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term Bool)
     DLENumTerm :: TypeRep args -> {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term Bool)
+    DAndBitsTerm :: {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term t)
+    DOrBitsTerm :: {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term t)
+    DXorBitsTerm :: {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term t)
+    DComplementBitsTerm :: {-# UNPACK #-} !Id -> Description (Term t)
+    DShiftBitsTerm :: {-# UNPACK #-} !Id -> {-# UNPACK #-} !Int -> Description (Term t)
+    DRotateBitsTerm :: {-# UNPACK #-} !Id -> {-# UNPACK #-} !Int -> Description (Term t)
   describe (UConcTerm v) = DConcTerm v
   describe ((USymbTerm name) :: UTerm t) = DSymbTerm @t name
   describe ((UUnaryTerm (tag :: tagt) (tm :: Term arg)) :: UTerm t) =
@@ -351,6 +382,12 @@ instance (SupportedPrim t) => Interned (Term t) where
   describe (USignumNumTerm arg) = DSignumNumTerm (identity arg)
   describe (ULTNumTerm (arg1 :: arg) arg2) = DLTNumTerm (typeRep :: TypeRep arg) (identity arg1) (identity arg2)
   describe (ULENumTerm (arg1 :: arg) arg2) = DLENumTerm (typeRep :: TypeRep arg) (identity arg1) (identity arg2)
+  describe (UAndBitsTerm arg1 arg2) = DAndBitsTerm (identity arg1) (identity arg2)
+  describe (UOrBitsTerm arg1 arg2) = DOrBitsTerm (identity arg1) (identity arg2)
+  describe (UXorBitsTerm arg1 arg2) = DXorBitsTerm (identity arg1) (identity arg2)
+  describe (UComplementBitsTerm arg) = DComplementBitsTerm (identity arg)
+  describe (UShiftBitsTerm arg n) = DShiftBitsTerm (identity arg) n
+  describe (URotateBitsTerm arg n) = DRotateBitsTerm (identity arg) n
   identify i = go
     where
       go (UConcTerm v) = ConcTerm i v
@@ -370,6 +407,12 @@ instance (SupportedPrim t) => Interned (Term t) where
       go (USignumNumTerm arg) = SignumNumTerm i arg
       go (ULTNumTerm arg1 arg2) = LTNumTerm i arg1 arg2
       go (ULENumTerm arg1 arg2) = LENumTerm i arg1 arg2
+      go (UAndBitsTerm arg1 arg2) = AndBitsTerm i arg1 arg2
+      go (UOrBitsTerm arg1 arg2) = OrBitsTerm i arg1 arg2
+      go (UXorBitsTerm arg1 arg2) = XorBitsTerm i arg1 arg2
+      go (UComplementBitsTerm arg) = ComplementBitsTerm i arg
+      go (UShiftBitsTerm arg n) = ShiftBitsTerm i arg n
+      go (URotateBitsTerm arg n) = RotateBitsTerm i arg n
   cache = termCache
 
 instance (SupportedPrim t) => Eq (Description (Term t)) where
@@ -392,6 +435,12 @@ instance (SupportedPrim t) => Eq (Description (Term t)) where
   DSignumNumTerm li == DSignumNumTerm ri = li == ri
   DLTNumTerm lrep li1 li2 == DLTNumTerm rrep ri1 ri2 = eqTypeRepBool lrep rrep && li1 == ri1 && li2 == ri2
   DLENumTerm lrep li1 li2 == DLENumTerm rrep ri1 ri2 = eqTypeRepBool lrep rrep && li1 == ri1 && li2 == ri2
+  DAndBitsTerm li1 li2 == DAndBitsTerm ri1 ri2 = li1 == ri1 && li2 == ri2
+  DOrBitsTerm li1 li2 == DOrBitsTerm ri1 ri2 = li1 == ri1 && li2 == ri2
+  DXorBitsTerm li1 li2 == DXorBitsTerm ri1 ri2 = li1 == ri1 && li2 == ri2
+  DComplementBitsTerm li == DComplementBitsTerm ri = li == ri
+  DShiftBitsTerm li ln == DShiftBitsTerm ri rn = li == ri && ln == rn
+  DRotateBitsTerm li ln == DRotateBitsTerm ri rn= li == ri && ln == rn
   _ == _ = False
 
 instance (SupportedPrim t) => Hashable (Description (Term t)) where
@@ -421,6 +470,12 @@ instance (SupportedPrim t) => Hashable (Description (Term t)) where
     s `hashWithSalt` (15 :: Int) `hashWithSalt` rep `hashWithSalt` id1 `hashWithSalt` id2
   hashWithSalt s (DLENumTerm rep id1 id2) =
     s `hashWithSalt` (16 :: Int) `hashWithSalt` rep `hashWithSalt` id1 `hashWithSalt` id2
+  hashWithSalt s (DAndBitsTerm id1 id2) = s `hashWithSalt` (17 :: Int) `hashWithSalt` id1 `hashWithSalt` id2
+  hashWithSalt s (DOrBitsTerm id1 id2) = s `hashWithSalt` (18 :: Int) `hashWithSalt` id1 `hashWithSalt` id2
+  hashWithSalt s (DXorBitsTerm id1 id2) = s `hashWithSalt` (19 :: Int) `hashWithSalt` id1 `hashWithSalt` id2
+  hashWithSalt s (DComplementBitsTerm id1) = s `hashWithSalt` (20 :: Int) `hashWithSalt` id1
+  hashWithSalt s (DShiftBitsTerm id1 n) = s `hashWithSalt` (21 :: Int) `hashWithSalt` id1 `hashWithSalt` n
+  hashWithSalt s (DRotateBitsTerm id1 n) = s `hashWithSalt` (22 :: Int) `hashWithSalt` id1 `hashWithSalt` n
 
 -- Basic Bool
 defaultValueForBool :: Bool

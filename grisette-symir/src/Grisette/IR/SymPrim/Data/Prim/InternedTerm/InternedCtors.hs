@@ -25,6 +25,12 @@ module Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
     signumNumTerm,
     ltNumTerm,
     leNumTerm,
+    andBitsTerm,
+    orBitsTerm,
+    xorBitsTerm,
+    complementBitsTerm,
+    shiftBitsTerm,
+    rotateBitsTerm,
   )
 where
 
@@ -39,6 +45,7 @@ import Type.Reflection
 import GHC.IO (unsafeDupablePerformIO)
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Language.Haskell.TH.Syntax
+import Data.Bits
 
 internTerm :: forall t. (SupportedPrim t) => Uninterned (Term t) -> Term t
 internTerm !bt = unsafeDupablePerformIO $ atomicModifyIORef' slot go
@@ -153,3 +160,27 @@ ltNumTerm l r = internTerm $ ULTNumTerm l r
 leNumTerm :: (SupportedPrim a, Num a, Ord a) => Term a -> Term a -> Term Bool
 leNumTerm l r = internTerm $ ULENumTerm l r
 {-# INLINE leNumTerm #-}
+
+andBitsTerm :: (SupportedPrim a, Bits a) => Term a -> Term a -> Term a
+andBitsTerm l r = internTerm $ UAndBitsTerm l r
+{-# INLINE andBitsTerm #-}
+
+orBitsTerm :: (SupportedPrim a, Bits a) => Term a -> Term a -> Term a
+orBitsTerm l r = internTerm $ UOrBitsTerm l r
+{-# INLINE orBitsTerm #-}
+
+xorBitsTerm :: (SupportedPrim a, Bits a) => Term a -> Term a -> Term a
+xorBitsTerm l r = internTerm $ UXorBitsTerm l r
+{-# INLINE xorBitsTerm #-}
+
+complementBitsTerm :: (SupportedPrim a, Bits a) => Term a -> Term a
+complementBitsTerm = internTerm . UComplementBitsTerm
+{-# INLINE complementBitsTerm #-}
+
+shiftBitsTerm :: (SupportedPrim a, Bits a) => Term a -> Int -> Term a
+shiftBitsTerm t n = internTerm $ UShiftBitsTerm t n
+{-# INLINE shiftBitsTerm #-}
+
+rotateBitsTerm :: (SupportedPrim a, Bits a) => Term a -> Int -> Term a
+rotateBitsTerm t n = internTerm $ URotateBitsTerm t n
+{-# INLINE rotateBitsTerm #-}

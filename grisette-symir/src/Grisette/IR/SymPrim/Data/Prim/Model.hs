@@ -33,6 +33,7 @@ import Unsafe.Coerce
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.SomeTerm
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 import Data.Proxy
+import Grisette.IR.SymPrim.Data.Prim.Bits
 
 newtype Model = Model (M.HashMap TermSymbol ModelValue) deriving (Show, Eq, Generic, Hashable)
 
@@ -121,6 +122,17 @@ evaluateSomeTerm fillDefault (Model ma) = gomemo
       goBinary pevalLtNumTerm arg1 arg2
     go (SomeTerm (LENumTerm _ arg1 arg2)) =
       goBinary pevalLeNumTerm arg1 arg2
+    go (SomeTerm (AndBitsTerm _ arg1 arg2)) =
+      goBinary pevalAndBitsTerm arg1 arg2
+    go (SomeTerm (OrBitsTerm _ arg1 arg2)) =
+      goBinary pevalOrBitsTerm arg1 arg2
+    go (SomeTerm (XorBitsTerm _ arg1 arg2)) =
+      goBinary pevalXorBitsTerm arg1 arg2
+    go (SomeTerm (ComplementBitsTerm _ arg)) = goUnary pevalComplementBitsTerm arg
+    go (SomeTerm (ShiftBitsTerm _ arg n)) =
+      goUnary (`pevalShiftBitsTerm` n) arg
+    go (SomeTerm (RotateBitsTerm _ arg n)) =
+      goUnary (`pevalRotateBitsTerm` n) arg
     goUnary :: (SupportedPrim a, SupportedPrim b) => (Term a -> Term b) -> Term a -> SomeTerm
     goUnary f a = SomeTerm $ f (gotyped a)
     goBinary :: (SupportedPrim a, SupportedPrim b, SupportedPrim c) =>

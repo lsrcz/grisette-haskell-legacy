@@ -235,12 +235,12 @@ instance (SupportedPrim (IntN n)) => Num (Sym (IntN n)) where
   fromInteger i = withPrim (Proxy @(IntN n)) $ conc $ fromInteger i
 
 instance (SupportedPrim (IntN n)) => Bits (Sym (IntN n)) where
-  Sym l .&. Sym r = Sym $ withPrim (Proxy @(IntN n)) $ bitand l r
-  Sym l .|. Sym r = Sym $ withPrim (Proxy @(IntN n)) $ bitor l r
-  Sym l `xor` Sym r = Sym $ withPrim (Proxy @(IntN n)) $ bitxor l r
-  complement (Sym n) = Sym $ withPrim (Proxy @(IntN n)) $ bitneg n
-  shift (Sym n) i = Sym $ withPrim (Proxy @(IntN n)) $ bitshift n i
-  rotate (Sym n) i = Sym $ withPrim (Proxy @(IntN n)) $ bitrotate n i
+  Sym l .&. Sym r = Sym $ withPrim (Proxy @(IntN n)) $ pevalAndBitsTerm l r
+  Sym l .|. Sym r = Sym $ withPrim (Proxy @(IntN n)) $ pevalOrBitsTerm l r
+  Sym l `xor` Sym r = Sym $ withPrim (Proxy @(IntN n)) $ pevalXorBitsTerm l r
+  complement (Sym n) = Sym $ withPrim (Proxy @(IntN n)) $ pevalComplementBitsTerm n
+  shift (Sym n) i = Sym $ withPrim (Proxy @(IntN n)) $ pevalShiftBitsTerm n i
+  rotate (Sym n) i = Sym $ withPrim (Proxy @(IntN n)) $ pevalRotateBitsTerm n i
   bitSize _ = fromInteger $ withPrim (Proxy @(IntN n)) $ natVal (Proxy @n)
   bitSizeMaybe _ = Just $ fromInteger $ withPrim (Proxy @(IntN n)) $ natVal (Proxy @n)
   isSigned _ = True
@@ -362,12 +362,12 @@ instance
   bvselect pix pw (Sym v) = Sym $ bvtselect pix pw v
 
 instance (SupportedPrim (WordN n)) => Bits (Sym (WordN n)) where
-  Sym l .&. Sym r = Sym $ withPrim (Proxy @(WordN n)) $ bitand l r
-  Sym l .|. Sym r = Sym $ withPrim (Proxy @(WordN n)) $ bitor l r
-  Sym l `xor` Sym r = Sym $ withPrim (Proxy @(WordN n)) $ bitxor l r
-  complement (Sym n) = Sym $ withPrim (Proxy @(WordN n)) $ bitneg n
-  shift (Sym n) i = Sym $ withPrim (Proxy @(WordN n)) $ bitshift n i
-  rotate (Sym n) i = Sym $ withPrim (Proxy @(WordN n)) $ bitrotate n i
+  Sym l .&. Sym r = Sym $ withPrim (Proxy @(WordN n)) $ pevalAndBitsTerm l r
+  Sym l .|. Sym r = Sym $ withPrim (Proxy @(WordN n)) $ pevalOrBitsTerm l r
+  Sym l `xor` Sym r = Sym $ withPrim (Proxy @(WordN n)) $ pevalXorBitsTerm l r
+  complement (Sym n) = Sym $ withPrim (Proxy @(WordN n)) $ pevalComplementBitsTerm n
+  shift (Sym n) i = Sym $ withPrim (Proxy @(WordN n)) $ pevalShiftBitsTerm n i
+  rotate (Sym n) i = Sym $ withPrim (Proxy @(WordN n)) $ pevalRotateBitsTerm n i
   bitSize _ = fromInteger $ withPrim (Proxy @(WordN n)) $ natVal (Proxy @n)
   bitSizeMaybe _ = Just $ fromInteger $ withPrim (Proxy @(WordN n)) $ natVal (Proxy @n)
   isSigned _ = False
