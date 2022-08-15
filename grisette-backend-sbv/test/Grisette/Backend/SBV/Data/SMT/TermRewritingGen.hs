@@ -183,6 +183,10 @@ bvconcatSpec :: (TermRewritingSpec a (bv an), TermRewritingSpec b (bv bn), TermR
   KnownNat an, KnownNat bn, KnownNat cn, BVConcat (bv an) (bv bn) (bv cn)) => a -> b -> c
 bvconcatSpec = constructBinarySpec bvconcatTerm pevalBVConcatTerm
 
+bvselectSpec :: (TermRewritingSpec a (bv an), TermRewritingSpec b (bv bn),
+  KnownNat an, KnownNat bn, KnownNat ix, BVSelect (bv an) ix bn (bv bn)) => proxy ix -> proxy bn -> a -> b
+bvselectSpec p1 p2 = constructUnarySpec (bvselectTerm p1 p2) (pevalBVSelectTerm p1 p2)
+
 data BoolOnlySpec = BoolOnlySpec (Term Bool) (Term Bool)
 
 instance Show BoolOnlySpec where
@@ -466,16 +470,16 @@ dsbv1 p depth | depth > 0 = do
       return $ complementBitsSpec v1,
       return $ shiftBitsSpec v1 i,
       return $ rotateBitsSpec v1 i,
-      return $ constructUnarySpec' (BVTSelect @bv @0 @1 @4 Proxy) v4,
-      return $ constructUnarySpec' (BVTSelect @bv @1 @1 @4 Proxy) v4,
-      return $ constructUnarySpec' (BVTSelect @bv @2 @1 @4 Proxy) v4,
-      return $ constructUnarySpec' (BVTSelect @bv @3 @1 @4 Proxy) v4,
-      return $ constructUnarySpec' (BVTSelect @bv @0 @1 @3 Proxy) v3,
-      return $ constructUnarySpec' (BVTSelect @bv @1 @1 @3 Proxy) v3,
-      return $ constructUnarySpec' (BVTSelect @bv @2 @1 @3 Proxy) v3,
-      return $ constructUnarySpec' (BVTSelect @bv @0 @1 @2 Proxy) v2,
-      return $ constructUnarySpec' (BVTSelect @bv @1 @1 @2 Proxy) v2,
-      return $ constructUnarySpec' (BVTSelect @bv @0 @1 @1 Proxy) v1
+      return $ bvselectSpec (Proxy @0) (Proxy @1) v4,
+      return $ bvselectSpec (Proxy @1) (Proxy @1) v4,
+      return $ bvselectSpec (Proxy @2) (Proxy @1) v4,
+      return $ bvselectSpec (Proxy @3) (Proxy @1) v4,
+      return $ bvselectSpec (Proxy @0) (Proxy @1) v3,
+      return $ bvselectSpec (Proxy @1) (Proxy @1) v3,
+      return $ bvselectSpec (Proxy @2) (Proxy @1) v3,
+      return $ bvselectSpec (Proxy @0) (Proxy @1) v2,
+      return $ bvselectSpec (Proxy @1) (Proxy @1) v2,
+      return $ bvselectSpec (Proxy @0) (Proxy @1) v1
     ]
 dsbv1 _ _ = error "Should never be called"
 
@@ -549,12 +553,12 @@ dsbv2 p depth | depth > 0 = do
       return $ complementBitsSpec v2,
       return $ shiftBitsSpec v2 i,
       return $ rotateBitsSpec v2 i,
-      return $ constructUnarySpec' (BVTSelect @bv @0 @2 @4 Proxy) v4,
-      return $ constructUnarySpec' (BVTSelect @bv @1 @2 @4 Proxy) v4,
-      return $ constructUnarySpec' (BVTSelect @bv @2 @2 @4 Proxy) v4,
-      return $ constructUnarySpec' (BVTSelect @bv @0 @2 @3 Proxy) v3,
-      return $ constructUnarySpec' (BVTSelect @bv @1 @2 @3 Proxy) v3,
-      return $ constructUnarySpec' (BVTSelect @bv @0 @2 @2 Proxy) v2,
+      return $ bvselectSpec (Proxy @0) (Proxy @2) v4,
+      return $ bvselectSpec (Proxy @1) (Proxy @2) v4,
+      return $ bvselectSpec (Proxy @2) (Proxy @2) v4,
+      return $ bvselectSpec (Proxy @0) (Proxy @2) v3,
+      return $ bvselectSpec (Proxy @1) (Proxy @2) v3,
+      return $ bvselectSpec (Proxy @0) (Proxy @2) v2,
       return $ bvconcatSpec v1 v1',
       return $ constructUnarySpec' (Zext @bv @1 @2) v1,
       return $ constructUnarySpec' (Sext @bv @1 @2) v1
@@ -630,9 +634,9 @@ dsbv3 p depth | depth > 0 = do
       return $ complementBitsSpec v3,
       return $ shiftBitsSpec v3 i,
       return $ rotateBitsSpec v3 i,
-      return $ constructUnarySpec' (BVTSelect @bv @0 @3 @4 Proxy) v4,
-      return $ constructUnarySpec' (BVTSelect @bv @1 @3 @4 Proxy) v4,
-      return $ constructUnarySpec' (BVTSelect @bv @0 @3 @3 Proxy) v3,
+      return $ bvselectSpec (Proxy @0) (Proxy @3) v4,
+      return $ bvselectSpec (Proxy @1) (Proxy @3) v4,
+      return $ bvselectSpec (Proxy @0) (Proxy @3) v3,
       return $ bvconcatSpec v1 v2,
       return $ bvconcatSpec v2 v1,
       return $ constructUnarySpec' (Zext @bv @1 @3) v1,
@@ -712,7 +716,7 @@ dsbv4 p depth | depth > 0 = do
       return $ complementBitsSpec v4,
       return $ shiftBitsSpec v4 i,
       return $ rotateBitsSpec v4 i,
-      return $ constructUnarySpec' (BVTSelect @bv @0 @4 @4 Proxy) v4,
+      return $ bvselectSpec (Proxy @0) (Proxy @4) v4,
       return $ bvconcatSpec v1 v3,
       return $ bvconcatSpec v2 v2',
       return $ bvconcatSpec v3 v1,

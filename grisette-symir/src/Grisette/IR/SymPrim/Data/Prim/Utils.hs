@@ -4,6 +4,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE PolyKinds #-}
 
 module Grisette.IR.SymPrim.Data.Prim.Utils
   ( pattern Dyn,
@@ -39,7 +41,7 @@ eqHeteroRep :: forall a b. Eq a => TypeRep a -> TypeRep b -> a -> b -> Bool
 eqHeteroRep ta tb = cmpHeteroRep ta tb (==)
 {-# INLINE eqHeteroRep #-}
 
-eqTypeRepBool :: TypeRep a -> TypeRep b -> Bool
+eqTypeRepBool :: forall ka kb (a :: ka) (b :: kb). TypeRep a -> TypeRep b -> Bool
 eqTypeRepBool a b = case eqTypeRep a b of
   Just HRefl -> True
   _ -> False

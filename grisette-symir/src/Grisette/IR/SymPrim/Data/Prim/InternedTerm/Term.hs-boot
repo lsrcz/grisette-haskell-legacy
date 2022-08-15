@@ -148,6 +148,18 @@ data Term t where
     !(Term (bv a)) ->
     !(Term (bv b)) ->
     Term (bv c)
+  BVSelectTerm ::
+    (SupportedPrim (bv a),
+     SupportedPrim (bv w),
+     KnownNat a,
+     KnownNat w,
+     KnownNat ix,
+     BVSelect (bv a) ix w (bv w)) =>
+     {-# UNPACK #-} !Id ->
+      !(TypeRep ix) ->
+      !(TypeRep w) ->
+      !(Term (bv a)) ->
+      Term (bv w)
 
 data UTerm t where
   UConcTerm :: (SupportedPrim t) => !t -> UTerm t
@@ -196,3 +208,16 @@ data UTerm t where
     !(Term (bv a)) ->
     !(Term (bv b)) ->
     UTerm (bv c)
+  UBVSelectTerm ::
+    (SupportedPrim (bv a),
+     SupportedPrim (bv w),
+     KnownNat a,
+     KnownNat ix,
+     KnownNat w,
+     BVSelect (bv a) ix w (bv w)) =>
+      !(TypeRep ix) ->
+      !(TypeRep w) ->
+      !(Term (bv a)) ->
+      UTerm (bv w)
+
+

@@ -136,6 +136,8 @@ evaluateSomeTerm fillDefault (Model ma) = gomemo
       goUnary (`pevalRotateBitsTerm` n) arg
     go (SomeTerm (BVConcatTerm _ arg1 arg2)) =
       goBinary pevalBVConcatTerm arg1 arg2
+    go (SomeTerm (BVSelectTerm _ ix w arg)) =
+      goUnary (pevalBVSelectTerm ix w) arg
     goUnary :: (SupportedPrim a, SupportedPrim b) => (Term a -> Term b) -> Term a -> SomeTerm
     goUnary f a = SomeTerm $ f (gotyped a)
     goBinary :: (SupportedPrim a, SupportedPrim b, SupportedPrim c) =>

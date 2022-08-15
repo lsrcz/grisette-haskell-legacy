@@ -21,7 +21,6 @@ module Grisette.Backend.SBV.Data.SMT.Lowering
   )
 where
 
-import GHC.Stack
 import Control.Monad.State.Strict
 import Data.Bifunctor
 import Data.Bits
@@ -35,8 +34,10 @@ import Data.Type.Equality (type (~~))
 import Data.Typeable
 import GHC.Exts (sortWith)
 import GHC.Natural
+import GHC.Stack
 import GHC.TypeNats
 import Grisette.Backend.SBV.Data.SMT.Config
+import Grisette.Backend.SBV.Data.SMT.SymBiMap
 import Grisette.IR.SymPrim.Data.BV
 import Grisette.IR.SymPrim.Data.GeneralFunc
 import Grisette.IR.SymPrim.Data.Prim.BV
@@ -52,7 +53,6 @@ import Grisette.IR.SymPrim.Data.Prim.TabularFunc
 import Grisette.IR.SymPrim.Data.TabularFunc
 import qualified Type.Reflection as R
 import Unsafe.Coerce
-import Grisette.Backend.SBV.Data.SMT.SymBiMap
 
 newtype NatRepr (n :: Nat) = NatRepr Natural
 
@@ -66,14 +66,18 @@ withKnownNat (NatRepr nVal) v =
 data LeqProof (m :: Nat) (n :: Nat) where
   LeqProof :: m <= n => LeqProof m n
 
-withLeqProof :: LeqProof m n -> ((m <= n) => a) -> a
-withLeqProof p a = case p of LeqProof -> a
+-- withLeqProof :: LeqProof m n -> ((m <= n) => a) -> a
+-- withLeqProof p a = case p of LeqProof -> a
 
 -- | Assert a proof of equality between two types.
 -- This is unsafe if used improperly, so use this with caution!
 unsafeAxiom :: forall a b. a :~: b
 unsafeAxiom = unsafeCoerce (Refl @a)
 {-# NOINLINE unsafeAxiom #-} -- Note [Mark unsafe axioms as NOINLINE]
+
+unsafeLeqProof :: forall m n. LeqProof m n
+unsafeLeqProof = unsafeCoerce (LeqProof @0 @0)
+{-# NOINLINE unsafeLeqProof #-} -- Note [Mark unsafe axioms as NOINLINE]
 
 cachedResult ::
   forall integerBitWidth a.
@@ -163,7 +167,7 @@ lowerSinglePrimImpl' _ t@SymbTerm {} =
     "The symbolic term should have already been lowered " ++ show t ++ " to SMT with collectedPrims.\n"
       ++ "We don't support adding new symbolics after collectedPrims with SBV backend"
 lowerSinglePrimImpl' config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) =
-  fromMaybe errorMsg $ asum [extBV, extractBV]
+  fromMaybe errorMsg $ asum [extBV {-, extractBV-}]
   where
     errorMsg :: forall t1. t1
     errorMsg = translateUnaryError (show op) (R.typeRep @x) (R.typeRep @a)
@@ -194,53 +198,6 @@ lowerSinglePrimImpl' config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) =
                   )
           _ -> Nothing
       _ -> Nothing
-    extractBV :: Maybe (State SymBiMap (TermTy integerBitWidth a))
-    extractBV = case (R.typeRep @x, R.typeRep @a) of
-      (UnsignedBVType (_ :: proxy xn), UnsignedBVType (_ :: proxy an)) ->
-        case selectView @WordN @an @xn t of
-          Just (SelectMatchResult (_ :: proxy1 ix) (t1 :: Term (WordN xn))) ->
-            Just $
-              ev @ix @an @xn $
-                lowerUnaryTerm' config t t1 (SBV.bvExtract (Proxy @(an + ix - 1)) (Proxy @ix))
-          _ -> Nothing
-      (SignedBVType (_ :: proxy xn), SignedBVType (_ :: proxy an)) ->
-        case selectView @IntN @an @xn t of
-          Just (SelectMatchResult (_ :: proxy1 ix) (t1 :: Term (IntN xn))) ->
-            Just $
-              ev @ix @an @xn $
-                lowerUnaryTerm' config t t1 (SBV.bvExtract (Proxy @(an + ix - 1)) (Proxy @ix))
-          _ -> Nothing
-      _ -> Nothing
-      where
-        ev ::
-          forall ix w ow r.
-          ( KnownNat ix,
-            KnownNat w,
-            KnownNat ow,
-            ix + w <= ow,
-            1 <= ow,
-            1 <= w
-          ) =>
-          ( ( ((((w + ix) - 1) - ix) + 1) ~ w,
-              KnownNat ((w + ix) - 1),
-              (((w + ix) - 1) + 1) <= ow,
-              ix <= ((w + ix) - 1)
-            ) =>
-            r
-          ) ->
-          r
-        ev r =
-          let withEquality :: forall x1 x2 x3. x1 :~: x2 -> (x1 ~ x2 => x3) -> x3
-              withEquality Refl ret = ret
-              wpixm1repr :: NatRepr (w + ix - 1) = NatRepr (natVal (Proxy @w) + natVal (Proxy @ix) - 1)
-              wpixleqow :: LeqProof (w + ix) ow = unsafeCoerce (LeqProof :: LeqProof 0 0)
-              wpixm1p1cancel :: (((w + ix) - 1) + 1) :~: (w + ix) = unsafeCoerce (LeqProof :: LeqProof 0 0)
-              ev1 :: LeqProof ix ((w + ix) - 1) = unsafeCoerce (LeqProof :: LeqProof 0 0)
-           in withKnownNat wpixm1repr $
-                withLeqProof wpixleqow $
-                  withEquality wpixm1p1cancel $
-                    withEquality (unsafeAxiom :: ((((w + ix) - 1) - ix) + 1) :~: w) $
-                      withLeqProof ev1 r
 lowerSinglePrimImpl' config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_ :: Term y)) =
   fromMaybe errorMsg $ asum [{-concatBV,-} funcApply]
   where
@@ -264,30 +221,6 @@ lowerSinglePrimImpl' config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (
             return g
           _ -> errorMsg
       _ -> Nothing
-      {-
-    concatBV :: Maybe (State SymBiMap (TermTy integerBitWidth a))
-    concatBV = case (R.typeRep @x, R.typeRep @y, R.typeRep @a) of
-      (UnsignedBVType (_ :: proxy xn), UnsignedBVType (_ :: proxy yn), UnsignedBVType (_ :: proxy an)) ->
-        case concatView @WordN @xn @yn @an t of
-          Just (ConcatMatchResult (t1 :: Term (WordN xn)) (t2 :: Term (WordN yn))) ->
-            Just $ lowerBinaryTerm' config t t1 t2 (SBV.#)
-          _ -> Nothing
-      (SignedBVType (_ :: proxy xn), SignedBVType (_ :: proxy yn), SignedBVType (_ :: proxy an)) ->
-        case concatView @IntN @xn @yn @an t of
-          Just (ConcatMatchResult (t1 :: Term (IntN xn)) (t2 :: Term (IntN yn))) ->
-            Just $
-              lowerBinaryTerm'
-                config
-                t
-                t1
-                t2
-                ( \(x :: SBV.SInt xn) (y :: SBV.SInt yn) ->
-                    SBV.sFromIntegral $
-                      (SBV.sFromIntegral x :: SBV.SWord xn) SBV.# (SBV.sFromIntegral y :: SBV.SWord yn)
-                )
-          _ -> Nothing
-      _ -> Nothing
-      -}
 lowerSinglePrimImpl' ResolvedConfig {} (TernaryTerm _ op (_ :: Term x) (_ :: Term y) (_ :: Term z)) = errorMsg
   where
     errorMsg :: forall t1. t1
@@ -302,12 +235,12 @@ lowerSinglePrimImpl' config t@(EqvTerm _ (arg1 :: Term x) arg2) =
 lowerSinglePrimImpl' config t@(ITETerm _ cond arg1 arg2) =
   case (config, R.typeRep @a) of
     ResolvedSimpleType -> do
-          l1 <- lowerSinglePrimCached' config cond
-          l2 <- lowerSinglePrimCached' config arg1
-          l3 <- lowerSinglePrimCached' config arg2
-          let g = SBV.ite l1 l2 l3
-          addResult @integerBitWidth t g
-          return g
+      l1 <- lowerSinglePrimCached' config cond
+      l2 <- lowerSinglePrimCached' config arg1
+      l3 <- lowerSinglePrimCached' config arg2
+      let g = SBV.ite l1 l2 l3
+      addResult @integerBitWidth t g
+      return g
     _ -> translateTernaryError "ite" (R.typeRep @Bool) (R.typeRep @a) (R.typeRep @a) (R.typeRep @a)
 lowerSinglePrimImpl' config t@(AddNumTerm _ arg1 arg2) =
   case (config, R.typeRep @a) of
@@ -368,11 +301,36 @@ lowerSinglePrimImpl' config t@(BVConcatTerm _ (bv1 :: Term x) (bv2 :: Term y)) =
         Refl -> lowerBinaryTerm' config t bv1 bv2 (SBV.#)
     (SignedBVType (_ :: Proxy na), SignedBVType (_ :: Proxy nx), SignedBVType (_ :: Proxy ny)) ->
       case (unsafeAxiom @(nx + ny) @na) of
-        Refl -> lowerBinaryTerm' config t bv1 bv2 (\(x :: SBV.SInt xn) (y :: SBV.SInt yn) ->
-                    SBV.sFromIntegral $
-                      (SBV.sFromIntegral x :: SBV.SWord xn) SBV.# (SBV.sFromIntegral y :: SBV.SWord yn)
-                )
+        Refl ->
+          lowerBinaryTerm'
+            config
+            t
+            bv1
+            bv2
+            ( \(x :: SBV.SInt xn) (y :: SBV.SInt yn) ->
+                SBV.sFromIntegral $
+                  (SBV.sFromIntegral x :: SBV.SWord xn) SBV.# (SBV.sFromIntegral y :: SBV.SWord yn)
+            )
     _ -> translateBinaryError "bvconcat" (R.typeRep @x) (R.typeRep @y) (R.typeRep @a)
+lowerSinglePrimImpl' config t@(BVSelectTerm _ (ix :: R.TypeRep ix) w (bv :: Term x)) =
+  case (R.typeRep @a, R.typeRep @x) of
+    (UnsignedBVType (_ :: Proxy na), UnsignedBVType (_ :: Proxy xn)) ->
+      withKnownNat n1 $
+        case (unsafeAxiom @(na + ix - 1 - ix + 1) @na, unsafeLeqProof @(na + ix - 1 + 1) @xn, unsafeLeqProof @ix @(na + ix - 1)) of
+          (Refl, LeqProof, LeqProof) ->
+            lowerUnaryTerm' config t bv (SBV.bvExtract (Proxy @(na + ix - 1)) (Proxy @ix))
+      where
+        n1 :: NatRepr (na + ix - 1)
+        n1 = NatRepr (natVal (Proxy @na) + natVal (Proxy @ix) - 1)
+    (SignedBVType (_ :: Proxy na), SignedBVType (_ :: Proxy xn)) ->
+      withKnownNat n1 $
+        case (unsafeAxiom @(na + ix - 1 - ix + 1) @na, unsafeLeqProof @(na + ix - 1 + 1) @xn, unsafeLeqProof @ix @(na + ix - 1)) of
+          (Refl, LeqProof, LeqProof) ->
+            lowerUnaryTerm' config t bv (SBV.bvExtract (Proxy @(na + ix - 1)) (Proxy @ix))
+      where
+        n1 :: NatRepr (na + ix - 1)
+        n1 = NatRepr (natVal (Proxy @na) + natVal (Proxy @ix) - 1)
+    _ -> translateTernaryError "bvselect" ix w (R.typeRep @x) (R.typeRep @a)
 lowerSinglePrimImpl' _ _ = undefined
 
 buildUTFunc11 ::
@@ -461,7 +419,7 @@ lowerSinglePrimUFunc config t@(SymbTerm _ _) m =
 lowerSinglePrimUFunc _ _ _ = error "Should not call this function"
 
 lowerUnaryTerm ::
-  forall integerBitWidth a a1 x x1. 
+  forall integerBitWidth a a1 x x1.
   (Typeable x1, a1 ~ TermTy integerBitWidth a, SupportedPrim x, HasCallStack) =>
   GrisetteSMTConfig integerBitWidth ->
   Term x ->
@@ -491,7 +449,8 @@ lowerBinaryTerm config orig t1 t2 f m = do
   return (addBiMapIntermediate (SomeTerm orig) (toDyn g) m2, g)
 
 lowerSinglePrimCached ::
-  forall integerBitWidth a. HasCallStack =>
+  forall integerBitWidth a.
+  HasCallStack =>
   GrisetteSMTConfig integerBitWidth ->
   Term a ->
   SymBiMap ->
@@ -506,33 +465,54 @@ lowerSinglePrimCached config t m =
       _ -> translateTypeError (R.typeRep @a)
 
 lowerSinglePrim ::
-  forall integerBitWidth a. HasCallStack =>
+  forall integerBitWidth a.
+  HasCallStack =>
   GrisetteSMTConfig integerBitWidth ->
   Term a ->
   SBV.Symbolic (SymBiMap, TermTy integerBitWidth a)
 lowerSinglePrim config t = lowerSinglePrimCached config t emptySymBiMap
 
 translateTypeError :: HasCallStack => R.TypeRep a -> b
-translateTypeError ta = error $
-  "Don't know how to translate the type " ++ show ta ++ " to SMT"
+translateTypeError ta =
+  error $
+    "Don't know how to translate the type " ++ show ta ++ " to SMT"
 
 translateUnaryError :: HasCallStack => String -> R.TypeRep a -> R.TypeRep b -> c
-translateUnaryError op ta tb = error $
-  "Don't know how to translate the op " ++ show op ++ " :: "
-    ++ show ta ++ " -> " ++ show tb ++ " to SMT"
+translateUnaryError op ta tb =
+  error $
+    "Don't know how to translate the op " ++ show op ++ " :: "
+      ++ show ta
+      ++ " -> "
+      ++ show tb
+      ++ " to SMT"
 
 translateBinaryError :: HasCallStack => String -> R.TypeRep a -> R.TypeRep b -> R.TypeRep c -> d
-translateBinaryError op ta tb tc = error $
-  "Don't know how to translate the op " ++ show op ++ " :: "
-    ++ show ta ++ " -> " ++ show tb ++ " -> " ++ show tc ++ " to SMT"
+translateBinaryError op ta tb tc =
+  error $
+    "Don't know how to translate the op " ++ show op ++ " :: "
+      ++ show ta
+      ++ " -> "
+      ++ show tb
+      ++ " -> "
+      ++ show tc
+      ++ " to SMT"
 
 translateTernaryError :: HasCallStack => String -> R.TypeRep a -> R.TypeRep b -> R.TypeRep c -> R.TypeRep d -> e
-translateTernaryError op ta tb tc td = error $
-  "Don't know how to translate the op " ++ show op ++ " :: "
-    ++ show ta ++ " -> " ++ show tb ++ " -> " ++ show tc ++ " -> " ++ show td ++ " to SMT"
+translateTernaryError op ta tb tc td =
+  error $
+    "Don't know how to translate the op " ++ show op ++ " :: "
+      ++ show ta
+      ++ " -> "
+      ++ show tb
+      ++ " -> "
+      ++ show tc
+      ++ " -> "
+      ++ show td
+      ++ " to SMT"
 
 lowerSinglePrimImpl ::
-  forall integerBitWidth a. HasCallStack =>
+  forall integerBitWidth a.
+  HasCallStack =>
   GrisetteSMTConfig integerBitWidth ->
   Term a ->
   SymBiMap ->
@@ -561,7 +541,7 @@ lowerSinglePrimImpl config t@(SymbTerm _ ts) m =
     ufunc :: (Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a)))
     ufunc = lowerSinglePrimUFunc config t m
 lowerSinglePrimImpl config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) m =
-  fromMaybe errorMsg $ asum [extBV, extractBV]
+  fromMaybe errorMsg $ asum [extBV {-, extractBV-}]
   where
     errorMsg :: forall t1. t1
     errorMsg = translateUnaryError (show op) (R.typeRep @x) (R.typeRep @a)
@@ -594,53 +574,6 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) m 
                   m
           _ -> Nothing
       _ -> Nothing
-    extractBV :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
-    extractBV = case (R.typeRep @x, R.typeRep @a) of
-      (UnsignedBVType (_ :: proxy xn), UnsignedBVType (_ :: proxy an)) ->
-        case selectView @WordN @an @xn t of
-          Just (SelectMatchResult (_ :: proxy1 ix) (t1 :: Term (WordN xn))) ->
-            Just $
-              ev @ix @an @xn $
-                lowerUnaryTerm config t t1 (SBV.bvExtract (Proxy @(an + ix - 1)) (Proxy @ix)) m
-          _ -> Nothing
-      (SignedBVType (_ :: proxy xn), SignedBVType (_ :: proxy an)) ->
-        case selectView @IntN @an @xn t of
-          Just (SelectMatchResult (_ :: proxy1 ix) (t1 :: Term (IntN xn))) ->
-            Just $
-              ev @ix @an @xn $
-                lowerUnaryTerm config t t1 (SBV.bvExtract (Proxy @(an + ix - 1)) (Proxy @ix)) m
-          _ -> Nothing
-      _ -> Nothing
-      where
-        ev ::
-          forall ix w ow r.
-          ( KnownNat ix,
-            KnownNat w,
-            KnownNat ow,
-            ix + w <= ow,
-            1 <= ow,
-            1 <= w
-          ) =>
-          ( ( ((((w + ix) - 1) - ix) + 1) ~ w,
-              KnownNat ((w + ix) - 1),
-              (((w + ix) - 1) + 1) <= ow,
-              ix <= ((w + ix) - 1)
-            ) =>
-            r
-          ) ->
-          r
-        ev r =
-          let withEquality :: forall x1 x2 x3. x1 :~: x2 -> (x1 ~ x2 => x3) -> x3
-              withEquality Refl ret = ret
-              wpixm1repr :: NatRepr (w + ix - 1) = NatRepr (natVal (Proxy @w) + natVal (Proxy @ix) - 1)
-              wpixleqow :: LeqProof (w + ix) ow = unsafeCoerce (LeqProof :: LeqProof 0 0)
-              wpixm1p1cancel :: (((w + ix) - 1) + 1) :~: (w + ix) = unsafeCoerce (LeqProof :: LeqProof 0 0)
-              ev1 :: LeqProof ix ((w + ix) - 1) = unsafeCoerce (LeqProof :: LeqProof 0 0)
-           in withKnownNat wpixm1repr $
-                withLeqProof wpixleqow $
-                  withEquality wpixm1p1cancel $
-                    withEquality (unsafeAxiom :: ((((w + ix) - 1) - ix) + 1) :~: w) $
-                      withLeqProof ev1 r
 lowerSinglePrimImpl config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_ :: Term y)) m =
   fromMaybe errorMsg $ asum [{-concatBV,-} integerType, funcApply]
   where
@@ -670,30 +603,6 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_
             return (addBiMapIntermediate (SomeTerm t) (toDyn g) m2, g)
           _ -> errorMsg
       _ -> Nothing
-      {-
-    concatBV :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
-    concatBV = case (R.typeRep @x, R.typeRep @y, R.typeRep @a) of
-      (UnsignedBVType (_ :: proxy xn), UnsignedBVType (_ :: proxy yn), UnsignedBVType (_ :: proxy an)) ->
-        case concatView @WordN @xn @yn @an t of
-          Just (ConcatMatchResult (t1 :: Term (WordN xn)) (t2 :: Term (WordN yn))) ->
-            Just $ lowerBinaryTerm config t t1 t2 (SBV.#) m
-          _ -> Nothing
-      (SignedBVType (_ :: proxy xn), SignedBVType (_ :: proxy yn), SignedBVType (_ :: proxy an)) ->
-        case concatView @IntN @xn @yn @an t of
-          Just (ConcatMatchResult (t1 :: Term (IntN xn)) (t2 :: Term (IntN yn))) ->
-            Just $
-              lowerBinaryTerm
-                config
-                t
-                t1
-                t2
-                ( \(x :: SBV.SInt xn) (y :: SBV.SInt yn) ->
-                    SBV.sFromIntegral $
-                      (SBV.sFromIntegral x :: SBV.SWord xn) SBV.# (SBV.sFromIntegral y :: SBV.SWord yn)
-                )
-                m
-          _ -> Nothing
-      _ -> Nothing -}
 lowerSinglePrimImpl ResolvedConfig {} (TernaryTerm _ op (_ :: Term x) (_ :: Term y) (_ :: Term z)) _ = errorMsg
   where
     errorMsg :: forall t1. t1
@@ -773,11 +682,37 @@ lowerSinglePrimImpl config t@(BVConcatTerm _ (bv1 :: Term x) (bv2 :: Term y)) m 
         Refl -> lowerBinaryTerm config t bv1 bv2 (SBV.#) m
     (SignedBVType (_ :: Proxy na), SignedBVType (_ :: Proxy nx), SignedBVType (_ :: Proxy ny)) ->
       case (unsafeAxiom @(nx + ny) @na) of
-        Refl -> lowerBinaryTerm config t bv1 bv2 (\(x :: SBV.SInt xn) (y :: SBV.SInt yn) ->
-                    SBV.sFromIntegral $
-                      (SBV.sFromIntegral x :: SBV.SWord xn) SBV.# (SBV.sFromIntegral y :: SBV.SWord yn)
-                ) m
+        Refl ->
+          lowerBinaryTerm
+            config
+            t
+            bv1
+            bv2
+            ( \(x :: SBV.SInt xn) (y :: SBV.SInt yn) ->
+                SBV.sFromIntegral $
+                  (SBV.sFromIntegral x :: SBV.SWord xn) SBV.# (SBV.sFromIntegral y :: SBV.SWord yn)
+            )
+            m
     _ -> translateBinaryError "bvconcat" (R.typeRep @x) (R.typeRep @y) (R.typeRep @a)
+lowerSinglePrimImpl config t@(BVSelectTerm _ (ix :: R.TypeRep ix) w (bv :: Term x)) m =
+  case (R.typeRep @a, R.typeRep @x) of
+    (UnsignedBVType (_ :: Proxy na), UnsignedBVType (_ :: Proxy xn)) ->
+      withKnownNat n1 $
+        case (unsafeAxiom @(na + ix - 1 - ix + 1) @na, unsafeLeqProof @(na + ix - 1 + 1) @xn, unsafeLeqProof @ix @(na + ix - 1)) of
+          (Refl, LeqProof, LeqProof) ->
+            lowerUnaryTerm config t bv (SBV.bvExtract (Proxy @(na + ix - 1)) (Proxy @ix)) m
+      where
+        n1 :: NatRepr (na + ix - 1)
+        n1 = NatRepr (natVal (Proxy @na) + natVal (Proxy @ix) - 1)
+    (SignedBVType (_ :: Proxy na), SignedBVType (_ :: Proxy xn)) ->
+      withKnownNat n1 $
+        case (unsafeAxiom @(na + ix - 1 - ix + 1) @na, unsafeLeqProof @(na + ix - 1 + 1) @xn, unsafeLeqProof @ix @(na + ix - 1)) of
+          (Refl, LeqProof, LeqProof) ->
+            lowerUnaryTerm config t bv (SBV.bvExtract (Proxy @(na + ix - 1)) (Proxy @ix)) m
+      where
+        n1 :: NatRepr (na + ix - 1)
+        n1 = NatRepr (natVal (Proxy @na) + natVal (Proxy @ix) - 1)
+    _ -> translateTernaryError "bvselect" ix w (R.typeRep @x) (R.typeRep @a)
 lowerSinglePrimImpl _ _ _ = error "Should never happen"
 
 unsafeMkNatRepr :: Int -> NatRepr w

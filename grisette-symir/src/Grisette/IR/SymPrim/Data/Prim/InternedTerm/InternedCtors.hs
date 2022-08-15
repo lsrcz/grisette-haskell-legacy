@@ -33,6 +33,7 @@ module Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
     shiftBitsTerm,
     rotateBitsTerm,
     bvconcatTerm,
+    bvselectTerm,
   )
 where
 
@@ -203,3 +204,19 @@ bvconcatTerm ::
   Term (bv c)
 bvconcatTerm l r = internTerm $ UBVConcatTerm l r
 {-# INLINE bvconcatTerm #-}
+
+bvselectTerm ::
+  forall bv a ix w proxy.
+  ( SupportedPrim (bv a),
+    SupportedPrim (bv w),
+    KnownNat a,
+    KnownNat w,
+    KnownNat ix,
+    BVSelect (bv a) ix w (bv w)
+  ) =>
+  proxy ix ->
+  proxy w ->
+  Term (bv a) ->
+  Term (bv w)
+bvselectTerm _ _ v = internTerm $ UBVSelectTerm (typeRep @ix) (typeRep @w) v
+{-# INLINE bvselectTerm #-}

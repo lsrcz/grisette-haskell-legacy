@@ -320,9 +320,9 @@ spec = do
     describe "bvselect for Sym BV" $ do
       it "bvselect for SymPrim" $ do
         bvselect (Proxy @2) (Proxy @1) au
-          `shouldBe` Sym (bvtselect (Proxy @2) (Proxy @1) aut)
+          `shouldBe` Sym (pevalBVSelectTerm (Proxy @2) (Proxy @1) aut)
         bvselect (Proxy @2) (Proxy @1) as
-          `shouldBe` Sym (bvtselect (Proxy @2) (Proxy @1) ast)
+          `shouldBe` Sym (pevalBVSelectTerm (Proxy @2) (Proxy @1) ast)
     describe "conversion between Int8 and Sym BV" $ do
       it "toSym" $ do
         toSym (0 :: Int8) `shouldBe` (conc 0 :: SymIntN 8)

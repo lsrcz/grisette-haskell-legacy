@@ -282,7 +282,7 @@ instance
   ) =>
   BVSelect (Sym (IntN ow)) ix w (Sym (IntN w))
   where
-  bvselect pix pw (Sym v) = Sym $ bvtselect pix pw v
+  bvselect pix pw (Sym v) = Sym $ pevalBVSelectTerm pix pw v
 
 #define TOSYM_MACHINE_INTEGER(int, bv) \
 instance ToSym (int) (Sym (bv)) where \
@@ -359,7 +359,7 @@ instance
   ) =>
   BVSelect (Sym (WordN ow)) ix w (Sym (WordN w))
   where
-  bvselect pix pw (Sym v) = Sym $ bvtselect pix pw v
+  bvselect pix pw (Sym v) = Sym $ pevalBVSelectTerm pix pw v
 
 instance (SupportedPrim (WordN n)) => Bits (Sym (WordN n)) where
   Sym l .&. Sym r = Sym $ withPrim (Proxy @(WordN n)) $ pevalAndBitsTerm l r

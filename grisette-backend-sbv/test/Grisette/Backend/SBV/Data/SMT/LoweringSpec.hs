@@ -383,65 +383,80 @@ spec = do
         leNumTerm "(<=)" 
         (\x y -> x * 2 - x SBV..<= y * 2 - y)
     it "Extract lowering should work" $ do
-      testUnaryOpLowering' @(IntN 5) @(IntN 1)
+      testUnaryOpLowering @(IntN 5) @(IntN 1)
         unboundedConfig
-        (BVTSelect @IntN @0 @1 @5 Proxy)
+        (bvselectTerm (Proxy @0) (Proxy @1))
+        "select"
         (SBV.bvExtract @0 @0 @5 Proxy Proxy)
-      testUnaryOpLowering' @(IntN 5) @(IntN 1)
+      testUnaryOpLowering @(IntN 5) @(IntN 1)
         unboundedConfig
-        (BVTSelect @IntN @1 @1 @5 Proxy)
+        (bvselectTerm (Proxy @1) (Proxy @1))
+        "select"
         (SBV.bvExtract @1 @1 @5 Proxy Proxy)
-      testUnaryOpLowering' @(IntN 5) @(IntN 1)
+      testUnaryOpLowering @(IntN 5) @(IntN 1)
         unboundedConfig
-        (BVTSelect @IntN @2 @1 @5 Proxy)
+        (bvselectTerm (Proxy @2) (Proxy @1))
+        "select"
         (SBV.bvExtract @2 @2 @5 Proxy Proxy)
-      testUnaryOpLowering' @(IntN 5) @(IntN 1)
+      testUnaryOpLowering @(IntN 5) @(IntN 1)
         unboundedConfig
-        (BVTSelect @IntN @3 @1 @5 Proxy)
+        (bvselectTerm (Proxy @3) (Proxy @1))
+        "select"
         (SBV.bvExtract @3 @3 @5 Proxy Proxy)
-      testUnaryOpLowering' @(IntN 5) @(IntN 1)
+      testUnaryOpLowering @(IntN 5) @(IntN 1)
         unboundedConfig
-        (BVTSelect @IntN @4 @1 @5 Proxy)
+        (bvselectTerm (Proxy @4) (Proxy @1))
+        "select"
         (SBV.bvExtract @4 @4 @5 Proxy Proxy)
-      testUnaryOpLowering' @(IntN 5) @(IntN 2)
+      testUnaryOpLowering @(IntN 5) @(IntN 2)
         unboundedConfig
-        (BVTSelect @IntN @0 @2 @5 Proxy)
+        (bvselectTerm (Proxy @0) (Proxy @2))
+        "select"
         (SBV.bvExtract @1 @0 @5 Proxy Proxy)
-      testUnaryOpLowering' @(IntN 5) @(IntN 2)
+      testUnaryOpLowering @(IntN 5) @(IntN 2)
         unboundedConfig
-        (BVTSelect @IntN @1 @2 @5 Proxy)
+        (bvselectTerm (Proxy @1) (Proxy @2))
+        "select"
         (SBV.bvExtract @2 @1 @5 Proxy Proxy)
-      testUnaryOpLowering' @(IntN 5) @(IntN 2)
+      testUnaryOpLowering @(IntN 5) @(IntN 2)
         unboundedConfig
-        (BVTSelect @IntN @2 @2 @5 Proxy)
+        (bvselectTerm (Proxy @2) (Proxy @2))
+        "select"
         (SBV.bvExtract @3 @2 @5 Proxy Proxy)
-      testUnaryOpLowering' @(IntN 5) @(IntN 2)
+      testUnaryOpLowering @(IntN 5) @(IntN 2)
         unboundedConfig
-        (BVTSelect @IntN @3 @2 @5 Proxy)
+        (bvselectTerm (Proxy @3) (Proxy @2))
+        "select"
         (SBV.bvExtract @4 @3 @5 Proxy Proxy)
-      testUnaryOpLowering' @(IntN 5) @(IntN 3)
+      testUnaryOpLowering @(IntN 5) @(IntN 3)
         unboundedConfig
-        (BVTSelect @IntN @0 @3 @5 Proxy)
+        (bvselectTerm (Proxy @0) (Proxy @3))
+        "select"
         (SBV.bvExtract @2 @0 @5 Proxy Proxy)
-      testUnaryOpLowering' @(IntN 5) @(IntN 3)
+      testUnaryOpLowering @(IntN 5) @(IntN 3)
         unboundedConfig
-        (BVTSelect @IntN @1 @3 @5 Proxy)
+        (bvselectTerm (Proxy @1) (Proxy @3))
+        "select"
         (SBV.bvExtract @3 @1 @5 Proxy Proxy)
-      testUnaryOpLowering' @(IntN 5) @(IntN 3)
+      testUnaryOpLowering @(IntN 5) @(IntN 3)
         unboundedConfig
-        (BVTSelect @IntN @2 @3 @5 Proxy)
+        (bvselectTerm (Proxy @2) (Proxy @3))
+        "select"
         (SBV.bvExtract @4 @2 @5 Proxy Proxy)
-      testUnaryOpLowering' @(IntN 5) @(IntN 4)
+      testUnaryOpLowering @(IntN 5) @(IntN 4)
         unboundedConfig
-        (BVTSelect @IntN @0 @4 @5 Proxy)
+        (bvselectTerm (Proxy @0) (Proxy @4))
+        "select"
         (SBV.bvExtract @3 @0 @5 Proxy Proxy)
-      testUnaryOpLowering' @(IntN 5) @(IntN 4)
+      testUnaryOpLowering @(IntN 5) @(IntN 4)
         unboundedConfig
-        (BVTSelect @IntN @1 @4 @5 Proxy)
+        (bvselectTerm (Proxy @1) (Proxy @4))
+        "select"
         (SBV.bvExtract @4 @1 @5 Proxy Proxy)
-      testUnaryOpLowering' @(IntN 5) @(IntN 5)
+      testUnaryOpLowering @(IntN 5) @(IntN 5)
         unboundedConfig
-        (BVTSelect @IntN @0 @5 @5 Proxy)
+        (bvselectTerm (Proxy @0) (Proxy @5))
+        "select"
         id
     it "Extension lowering should work" $ do
       testUnaryOpLowering' @(IntN 5) @(IntN 6)
@@ -547,65 +562,80 @@ spec = do
         leNumTerm "(<=)"
         (\x y -> x * 2 - x SBV..<= y * 2 - y)
     it "Extract lowering should work" $ do
-      testUnaryOpLowering' @(WordN 5) @(WordN 1)
+      testUnaryOpLowering @(WordN 5) @(WordN 1)
         unboundedConfig
-        (BVTSelect @WordN @0 @1 @5 Proxy)
+        (bvselectTerm (Proxy @0) (Proxy @1))
+        "select"
         (SBV.bvExtract @0 @0 @5 Proxy Proxy)
-      testUnaryOpLowering' @(WordN 5) @(WordN 1)
+      testUnaryOpLowering @(WordN 5) @(WordN 1)
         unboundedConfig
-        (BVTSelect @WordN @1 @1 @5 Proxy)
+        (bvselectTerm (Proxy @1) (Proxy @1))
+        "select"
         (SBV.bvExtract @1 @1 @5 Proxy Proxy)
-      testUnaryOpLowering' @(WordN 5) @(WordN 1)
+      testUnaryOpLowering @(WordN 5) @(WordN 1)
         unboundedConfig
-        (BVTSelect @WordN @2 @1 @5 Proxy)
+        (bvselectTerm (Proxy @2) (Proxy @1))
+        "select"
         (SBV.bvExtract @2 @2 @5 Proxy Proxy)
-      testUnaryOpLowering' @(WordN 5) @(WordN 1)
+      testUnaryOpLowering @(WordN 5) @(WordN 1)
         unboundedConfig
-        (BVTSelect @WordN @3 @1 @5 Proxy)
+        (bvselectTerm (Proxy @3) (Proxy @1))
+        "select"
         (SBV.bvExtract @3 @3 @5 Proxy Proxy)
-      testUnaryOpLowering' @(WordN 5) @(WordN 1)
+      testUnaryOpLowering @(WordN 5) @(WordN 1)
         unboundedConfig
-        (BVTSelect @WordN @4 @1 @5 Proxy)
+        (bvselectTerm (Proxy @4) (Proxy @1))
+        "select"
         (SBV.bvExtract @4 @4 @5 Proxy Proxy)
-      testUnaryOpLowering' @(WordN 5) @(WordN 2)
+      testUnaryOpLowering @(WordN 5) @(WordN 2)
         unboundedConfig
-        (BVTSelect @WordN @0 @2 @5 Proxy)
+        (bvselectTerm (Proxy @0) (Proxy @2))
+        "select"
         (SBV.bvExtract @1 @0 @5 Proxy Proxy)
-      testUnaryOpLowering' @(WordN 5) @(WordN 2)
+      testUnaryOpLowering @(WordN 5) @(WordN 2)
         unboundedConfig
-        (BVTSelect @WordN @1 @2 @5 Proxy)
+        (bvselectTerm (Proxy @1) (Proxy @2))
+        "select"
         (SBV.bvExtract @2 @1 @5 Proxy Proxy)
-      testUnaryOpLowering' @(WordN 5) @(WordN 2)
+      testUnaryOpLowering @(WordN 5) @(WordN 2)
         unboundedConfig
-        (BVTSelect @WordN @2 @2 @5 Proxy)
+        (bvselectTerm (Proxy @2) (Proxy @2))
+        "select"
         (SBV.bvExtract @3 @2 @5 Proxy Proxy)
-      testUnaryOpLowering' @(WordN 5) @(WordN 2)
+      testUnaryOpLowering @(WordN 5) @(WordN 2)
         unboundedConfig
-        (BVTSelect @WordN @3 @2 @5 Proxy)
+        (bvselectTerm (Proxy @3) (Proxy @2))
+        "select"
         (SBV.bvExtract @4 @3 @5 Proxy Proxy)
-      testUnaryOpLowering' @(WordN 5) @(WordN 3)
+      testUnaryOpLowering @(WordN 5) @(WordN 3)
         unboundedConfig
-        (BVTSelect @WordN @0 @3 @5 Proxy)
+        (bvselectTerm (Proxy @0) (Proxy @3))
+        "select"
         (SBV.bvExtract @2 @0 @5 Proxy Proxy)
-      testUnaryOpLowering' @(WordN 5) @(WordN 3)
+      testUnaryOpLowering @(WordN 5) @(WordN 3)
         unboundedConfig
-        (BVTSelect @WordN @1 @3 @5 Proxy)
+        (bvselectTerm (Proxy @1) (Proxy @3))
+        "select"
         (SBV.bvExtract @3 @1 @5 Proxy Proxy)
-      testUnaryOpLowering' @(WordN 5) @(WordN 3)
+      testUnaryOpLowering @(WordN 5) @(WordN 3)
         unboundedConfig
-        (BVTSelect @WordN @2 @3 @5 Proxy)
+        (bvselectTerm (Proxy @2) (Proxy @3))
+        "select"
         (SBV.bvExtract @4 @2 @5 Proxy Proxy)
-      testUnaryOpLowering' @(WordN 5) @(WordN 4)
+      testUnaryOpLowering @(WordN 5) @(WordN 4)
         unboundedConfig
-        (BVTSelect @WordN @0 @4 @5 Proxy)
+        (bvselectTerm (Proxy @0) (Proxy @4))
+        "select"
         (SBV.bvExtract @3 @0 @5 Proxy Proxy)
-      testUnaryOpLowering' @(WordN 5) @(WordN 4)
+      testUnaryOpLowering @(WordN 5) @(WordN 4)
         unboundedConfig
-        (BVTSelect @WordN @1 @4 @5 Proxy)
+        (bvselectTerm (Proxy @1) (Proxy @4))
+        "select"
         (SBV.bvExtract @4 @1 @5 Proxy Proxy)
-      testUnaryOpLowering' @(WordN 5) @(WordN 5)
+      testUnaryOpLowering @(WordN 5) @(WordN 5)
         unboundedConfig
-        (BVTSelect @WordN @0 @5 @5 Proxy)
+        (bvselectTerm (Proxy @0) (Proxy @5))
+        "select"
         id
     it "Extension lowering should work" $ do
       testUnaryOpLowering' @(WordN 5) @(WordN 6)

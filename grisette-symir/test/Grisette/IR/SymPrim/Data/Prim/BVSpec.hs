@@ -14,72 +14,65 @@ import Test.Hspec
 
 spec :: Spec
 spec = do
-  describe "BVTSelect" $ do
-    describe "BVTSelect construction" $ do
-      it "BVTSelect on concrete" $ do
-        bvtselect
+  describe "pevalBVSelectTerm" $ do
+    describe "pevalBVSelectTerm construction" $ do
+      it "pevalBVSelectTerm on concrete" $ do
+        pevalBVSelectTerm
           (Proxy @0)
           (Proxy @1)
           (concTerm 6 :: Term (WordN 4))
           `shouldBe` concTerm 0
-        bvtselect
+        pevalBVSelectTerm
           (Proxy @1)
           (Proxy @1)
           (concTerm 6 :: Term (WordN 4))
           `shouldBe` concTerm 1
-        bvtselect
+        pevalBVSelectTerm
           (Proxy @2)
           (Proxy @1)
           (concTerm 6 :: Term (WordN 4))
           `shouldBe` concTerm 1
-        bvtselect
+        pevalBVSelectTerm
           (Proxy @3)
           (Proxy @1)
           (concTerm 6 :: Term (WordN 4))
           `shouldBe` concTerm 0
-        bvtselect
+        pevalBVSelectTerm
           (Proxy @0)
           (Proxy @2)
           (concTerm 6 :: Term (WordN 4))
           `shouldBe` concTerm 2
-        bvtselect
+        pevalBVSelectTerm
           (Proxy @1)
           (Proxy @2)
           (concTerm 6 :: Term (WordN 4))
           `shouldBe` concTerm 3
-        bvtselect
+        pevalBVSelectTerm
           (Proxy @2)
           (Proxy @2)
           (concTerm 6 :: Term (WordN 4))
           `shouldBe` concTerm 1
-        bvtselect
+        pevalBVSelectTerm
           (Proxy @0)
           (Proxy @3)
           (concTerm 6 :: Term (WordN 4))
           `shouldBe` concTerm 6
-        bvtselect
+        pevalBVSelectTerm
           (Proxy @1)
           (Proxy @3)
           (concTerm 6 :: Term (WordN 4))
           `shouldBe` concTerm 3
-        bvtselect
+        pevalBVSelectTerm
           (Proxy @0)
           (Proxy @4)
           (concTerm 6 :: Term (WordN 4))
           `shouldBe` concTerm 6
-      it "BVTSelect on symbolic" $ do
-        bvtselect
+      it "pevalBVSelectTerm on symbolic" $ do
+        pevalBVSelectTerm
           (Proxy @2)
           (Proxy @1)
           (ssymbTerm "a" :: Term (WordN 4))
-          `shouldBe` constructUnary (BVTSelect @WordN @2 @1 @4 Proxy) (ssymbTerm "a" :: Term (WordN 4))
-    describe "BVTSelect pattern" $ do
-      it "selectView should work" $ do
-        case selectView (bvtselect (Proxy @1) (Proxy @2) (ssymbTerm "a" :: Term (WordN 4))) of
-          Just (SelectMatchResult _ v1 :: SelectMatchResult WordN 2 4) -> do
-            True `shouldBe` True
-            v1 `shouldBe` ssymbTerm "a"
-          _ -> return () :: Expectation
+          `shouldBe` bvselectTerm (Proxy @2) (Proxy @1) (ssymbTerm "a" :: Term (WordN 4))
   describe "Extension" $ do
     describe "Extension construction" $ do
       it "Extension on concrete" $ do

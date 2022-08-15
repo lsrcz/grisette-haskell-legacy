@@ -14,9 +14,10 @@
 {-# LANGUAGE ViewPatterns #-}
 
 module Grisette.IR.SymPrim.Data.Prim.BV
-  ( BVTSelect (..),
-    bvtselect,
+  ( -- BVTSelect (..),
+    -- bvtselect,
     pevalBVConcatTerm,
+    pevalBVSelectTerm,
     -- BVTConcat (..),
     -- bvtconcat,
     -- concatView,
@@ -25,8 +26,8 @@ module Grisette.IR.SymPrim.Data.Prim.BV
     bvtext,
     extensionView,
     ExtensionMatchResult (..),
-    selectView,
-    SelectMatchResult (..),
+    -- selectView,
+    -- SelectMatchResult (..),
   )
 where
 
@@ -87,6 +88,39 @@ instance UnderlyingBV BVS.SignedBV where
   -}
 
 -- select
+
+pevalBVSelectTerm :: forall bv a ix w proxy.
+  ( SupportedPrim (bv a),
+    SupportedPrim (bv w),
+    KnownNat a,
+    KnownNat w,
+    KnownNat ix,
+    BVSelect (bv a) ix w (bv w)
+  ) =>
+  proxy ix ->
+  proxy w ->
+  Term (bv a) ->
+  Term (bv w)
+pevalBVSelectTerm ix w = unaryUnfoldOnce (doPevalBVSelectTerm ix w) (bvselectTerm ix w)
+
+doPevalBVSelectTerm :: forall bv a ix w proxy.
+  ( SupportedPrim (bv a),
+    SupportedPrim (bv w),
+    KnownNat a,
+    KnownNat w,
+    KnownNat ix,
+    BVSelect (bv a) ix w (bv w)
+  ) =>
+  proxy ix ->
+  proxy w ->
+  Term (bv a) ->
+  Maybe (Term (bv w))
+doPevalBVSelectTerm ix w (ConcTerm _ b) = Just $ concTerm $ bvselect ix w b
+doPevalBVSelectTerm _ _ _ = Nothing
+
+
+
+{-
 data BVTSelect (s :: Nat -> Type) (w :: Nat) (ow :: Nat) where
   BVTSelect ::
     forall s ix w ow.
@@ -182,6 +216,7 @@ selectView (UnaryTerm _ (tag :: tag) t1) =
       Just (SelectMatchResult p v)
     _ -> Nothing
 selectView _ = Nothing
+-}
 
 -- ext
 data BVTExt (s :: Nat -> Type) (w :: Nat) (w' :: Nat) where
