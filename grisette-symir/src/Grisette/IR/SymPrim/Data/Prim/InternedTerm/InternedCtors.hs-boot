@@ -36,6 +36,8 @@ module Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
     bvzeroExtendTerm,
     tabularFuncApplyTerm,
     generalFuncApplyTerm,
+    divIntegerTerm,
+    modIntegerTerm,
   )
 where
 
@@ -158,3 +160,5 @@ bvzeroExtendTerm ::
   Term (bv w)
 tabularFuncApplyTerm :: (SupportedPrim a, SupportedPrim b) => Term (a =-> b) -> Term a -> Term b
 generalFuncApplyTerm :: (SupportedPrim a, SupportedPrim b) => Term (a --> b) -> Term a -> Term b
+divIntegerTerm :: Term Integer -> Term Integer -> Term Integer
+modIntegerTerm :: Term Integer -> Term Integer -> Term Integer

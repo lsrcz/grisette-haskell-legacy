@@ -191,6 +191,12 @@ bvextendSpec :: (TermRewritingSpec a (bv an), TermRewritingSpec b (bv bn),
   KnownNat an, KnownNat bn, BVExtend (bv an) bn (bv bn)) => Bool -> proxy bn -> a -> b
 bvextendSpec signed p = constructUnarySpec (bvextendTerm signed p) (pevalBVExtendTerm signed p)
 
+divIntegerSpec :: (TermRewritingSpec a Integer) => a -> a -> a
+divIntegerSpec = constructBinarySpec divIntegerTerm pevalDivIntegerTerm
+
+modIntegerSpec :: (TermRewritingSpec a Integer) => a -> a -> a
+modIntegerSpec = constructBinarySpec modIntegerTerm pevalModIntegerTerm
+
 data BoolOnlySpec = BoolOnlySpec (Term Bool) (Term Bool)
 
 instance Show BoolOnlySpec where
@@ -786,26 +792,3 @@ instance (SupportedPrim s) => TermRewritingSpec (GeneralSpec s) s where
   rewriteVer (GeneralSpec _ r) = r
   wrap = GeneralSpec
   same s = eqvTerm (norewriteVer s) (rewriteVer s)
-
-unop ::
-  forall tag a.
-  (UnaryOp tag a a) =>
-  tag ->
-  GeneralSpec a ->
-  GeneralSpec a
-unop = constructUnarySpec'
-
-binop ::
-  forall tag a.
-  (BinaryOp tag a a a) =>
-  tag ->
-  GeneralSpec a ->
-  GeneralSpec a ->
-  GeneralSpec a
-binop = constructBinarySpec'
-
-divint :: GeneralSpec Integer -> GeneralSpec Integer -> GeneralSpec Integer
-divint = binop DivI
-
-modint :: GeneralSpec Integer -> GeneralSpec Integer -> GeneralSpec Integer
-modint = binop ModI

@@ -109,27 +109,27 @@ spec = do
     it "DivI on concrete" $ do
       traverse_
         ( \(x, y) -> do
-            validateSpec unboundedConfig $ divint (concSpec x) (concSpec y)
+            validateSpec @(GeneralSpec Integer) unboundedConfig $ divIntegerSpec (concSpec x) (concSpec y)
         )
         [(i, j) | i <- [-3 .. 3], j <- [-3 .. 3]]
     it "DivI on single concrete" $ do
       traverse_
         ( \x -> do
-            validateSpec unboundedConfig $ divint (concSpec x) (symbSpec "a")
-            validateSpec unboundedConfig $ divint (symbSpec "a") (concSpec x)
+            validateSpec @(GeneralSpec Integer) unboundedConfig $ divIntegerSpec (concSpec x) (symbSpec "a")
+            validateSpec @(GeneralSpec Integer) unboundedConfig $ divIntegerSpec (symbSpec "a") (concSpec x)
         )
         [-3 .. 3]
   describe "ModI" $ do
     it "ModI on concrete" $ do
       traverse_
         ( \(x, y) -> do
-            validateSpec unboundedConfig $ modint (concSpec x) (concSpec y)
+            validateSpec @(GeneralSpec Integer) unboundedConfig $ modIntegerSpec (concSpec x) (concSpec y)
         )
         [(i, j) | i <- [-3 .. 3], j <- [-3 .. 3]]
     it "ModI on single concrete" $ do
       traverse_
         ( \x -> do
-            validateSpec unboundedConfig $ modint (concSpec x) (symbSpec "a")
-            validateSpec unboundedConfig $ modint (symbSpec "a") (concSpec x)
+            validateSpec @(GeneralSpec Integer) unboundedConfig $ modIntegerSpec (concSpec x) (symbSpec "a")
+            validateSpec @(GeneralSpec Integer) unboundedConfig $ modIntegerSpec (symbSpec "a") (concSpec x)
         )
         [-3 .. 3]

@@ -1,95 +1,28 @@
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DeriveLift #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE ViewPatterns #-}
-
 module Grisette.IR.SymPrim.Data.Prim.Integer
-  ( integerConcTermView,
-    pattern IntegerConcTerm,
-    pattern IntegerTerm,
-    DivI (..),
-    divi,
-    pattern DivITerm,
-    ModI (..),
-    modi,
-    pattern ModITerm,
+  ( pevalDivIntegerTerm,
+    pevalModIntegerTerm,
   )
 where
 
-import Control.DeepSeq
-import Data.Typeable
-import GHC.Generics
-import Grisette.IR.SymPrim.Data.Prim.Helpers
-import Grisette.IR.SymPrim.Data.Prim.PartialEval
 import Grisette.IR.SymPrim.Data.Prim.Unfold
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
-import Language.Haskell.TH.Syntax
-import Data.Hashable
-
-integerConcTermView :: forall a. Term a -> Maybe Integer
-integerConcTermView (ConcTerm _ b) = cast b
-integerConcTermView _ = Nothing
-
-pattern IntegerConcTerm :: Integer -> Term a
-pattern IntegerConcTerm b <- (integerConcTermView -> Just b)
-
-integerTermView :: Term a -> Maybe (Term Integer)
-integerTermView = castTerm
-
-pattern IntegerTerm :: Term Integer -> Term a
-pattern IntegerTerm b <- (integerTermView -> Just b)
 
 -- div
-data DivI = DivI deriving (Show, Lift, Generic, NFData, Eq, Hashable)
+pevalDivIntegerTerm :: Term Integer -> Term Integer -> Term Integer
+pevalDivIntegerTerm = binaryUnfoldOnce doPevalDivIntegerTerm divIntegerTerm
 
-divi :: Term Integer -> Term Integer -> Term Integer
-divi = partialEvalBinary DivI
-
-instance BinaryPartialStrategy DivI Integer Integer Integer where
-  extractora _ = integerConcTermView
-  extractorb _ = integerConcTermView
-  allConstantHandler _ i j
-    | j /= 0 = Just $ concTerm $ i `div` j
-  allConstantHandler _ _ _ = Nothing
-  leftConstantHandler _ _ _ = Nothing
-  rightConstantHandler _ i 1 = Just i
-  rightConstantHandler _ _ _ = Nothing
-  nonBinaryConstantHandler _ _ _ = Nothing
-
-instance BinaryOp DivI Integer Integer Integer where
-  partialEvalBinary tag l r = binaryUnfoldOnce (binaryPartial @DivI tag) (constructBinary tag) l r
-  pformatBinary _ l r = "(/I " ++ pformat l ++ " " ++ pformat r ++ ")"
-
-pattern DivITerm :: Term Integer -> Term Integer -> Term a
-pattern DivITerm l r <- BinaryTermPatt DivI l r
+doPevalDivIntegerTerm :: Term Integer -> Term Integer -> Maybe (Term Integer)
+doPevalDivIntegerTerm (ConcTerm _ a) (ConcTerm _ b) | b /= 0 = Just $ concTerm $ a `div` b
+doPevalDivIntegerTerm a (ConcTerm _ 1) = Just a
+doPevalDivIntegerTerm _ _ = Nothing
 
 -- mod
-data ModI = ModI deriving (Show, Lift, Generic, NFData, Eq, Hashable)
+pevalModIntegerTerm :: Term Integer -> Term Integer -> Term Integer
+pevalModIntegerTerm = binaryUnfoldOnce doPevalModIntegerTerm modIntegerTerm
 
-modi :: Term Integer -> Term Integer -> Term Integer
-modi = partialEvalBinary ModI
-
-instance BinaryPartialStrategy ModI Integer Integer Integer where
-  extractora _ = integerConcTermView
-  extractorb _ = integerConcTermView
-  allConstantHandler _ i j
-    | j /= 0 = Just $ concTerm $ i `mod` j
-  allConstantHandler _ _ _ = Nothing
-  leftConstantHandler _ _ _ = Nothing
-  rightConstantHandler _ _ 1 = Just $ concTerm 0
-  rightConstantHandler _ _ (-1) = Just $ concTerm 0
-  rightConstantHandler _ _ _ = Nothing
-  nonBinaryConstantHandler _ _ _ = Nothing
-
-instance BinaryOp ModI Integer Integer Integer where
-  partialEvalBinary tag l r = binaryUnfoldOnce (binaryPartial tag) (constructBinary tag) l r
-  pformatBinary _ l r = "(%I " ++ pformat l ++ " " ++ pformat r ++ ")"
-
-pattern ModITerm :: Term Integer -> Term Integer -> Term a
-pattern ModITerm l r <- BinaryTermPatt ModI l r
+doPevalModIntegerTerm :: Term Integer -> Term Integer -> Maybe (Term Integer)
+doPevalModIntegerTerm (ConcTerm _ a) (ConcTerm _ b) | b /= 0 = Just $ concTerm $ a `mod` b
+doPevalModIntegerTerm _ (ConcTerm _ 1) = Just $ concTerm 0
+doPevalModIntegerTerm _ (ConcTerm _ (-1)) = Just $ concTerm 0
+doPevalModIntegerTerm _ _ = Nothing

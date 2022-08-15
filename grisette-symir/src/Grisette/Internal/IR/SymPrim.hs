@@ -56,15 +56,6 @@ module Grisette.Internal.IR.SymPrim
     BinaryCommPartialStrategy (..),
     BinaryPartialStrategy (..),
     binaryPartial,
-    integerConcTermView,
-    pattern IntegerConcTerm,
-    pattern IntegerTerm,
-    DivI (..),
-    divi,
-    pattern DivITerm,
-    ModI (..),
-    modi,
-    pattern ModITerm,
     pattern NumConcTerm,
     pattern NumOrdConcTerm,
     pevalAddNumTerm,
@@ -79,6 +70,8 @@ module Grisette.Internal.IR.SymPrim
     pevalGeNumTerm,
     pevalTabularFuncApplyTerm,
     pevalGeneralFuncApplyTerm,
+    pevalDivIntegerTerm,
+    pevalModIntegerTerm,
   )
 where
 

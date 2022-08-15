@@ -156,7 +156,7 @@ spec = do
           `shouldBe` ( mrgIf
                          ((ssymb "b" :: Sym Integer) ==~ conc (0 :: Integer) :: SymBool)
                          (throwError ())
-                         (mrgSingle $ Sym $ divi (ssymbTerm "a") (ssymbTerm "b")) ::
+                         (mrgSingle $ Sym $ pevalDivIntegerTerm (ssymbTerm "a") (ssymbTerm "b")) ::
                          ExceptT () UnionM SymInteger
                      )
       prop "mods should work on concrete" $ \(i :: Integer, j :: Integer) ->
@@ -172,7 +172,7 @@ spec = do
           `shouldBe` ( mrgIf
                          ((ssymb "b" :: Sym Integer) ==~ conc (0 :: Integer) :: SymBool)
                          (throwError ())
-                         (mrgSingle $ Sym $ modi (ssymbTerm "a") (ssymbTerm "b")) ::
+                         (mrgSingle $ Sym $ pevalModIntegerTerm (ssymbTerm "a") (ssymbTerm "b")) ::
                          ExceptT () UnionM SymInteger
                      )
     describe "SOrd for Sym Integer" $ do

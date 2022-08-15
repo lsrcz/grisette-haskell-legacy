@@ -19,7 +19,6 @@ import Grisette.Backend.SBV.Data.SMT.Config
 import Grisette.Backend.SBV.Data.SMT.Lowering
 import Grisette.Backend.SBV.Data.SMT.SymBiMap
 import Grisette.IR.SymPrim.Data.BV
-import Grisette.IR.SymPrim.Data.Prim.Integer
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.SomeTerm
@@ -341,11 +340,11 @@ spec = do
         leNumTerm "(<=)" 
         (\x y -> x * 2 - x SBV..<= y * 2 - y)
     it "DivI lowering should work" $ do
-      testBinaryOpLowering' @Integer @Integer @Integer unboundedConfig DivI SBV.sDiv
-      testBinaryOpLowering' @Integer @Integer @Integer boundedConfig DivI SBV.sDiv
+      testBinaryOpLowering @Integer @Integer @Integer unboundedConfig divIntegerTerm "div" SBV.sDiv
+      testBinaryOpLowering @Integer @Integer @Integer boundedConfig divIntegerTerm "div" SBV.sDiv
     it "ModI lowering should work" $ do
-      testBinaryOpLowering' @Integer @Integer @Integer unboundedConfig ModI SBV.sMod
-      testBinaryOpLowering' @Integer @Integer @Integer boundedConfig ModI SBV.sMod
+      testBinaryOpLowering @Integer @Integer @Integer unboundedConfig modIntegerTerm "mod" SBV.sMod
+      testBinaryOpLowering @Integer @Integer @Integer boundedConfig modIntegerTerm "mod" SBV.sMod
   describe "Test IntN Lowering" $ do
     it "Add lowering should work" $ do
       testBinaryOpLowering @(IntN 5) @(IntN 5) unboundedConfig addNumTerm "(+)" (+)

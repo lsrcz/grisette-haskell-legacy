@@ -268,6 +268,8 @@ data Term t where
     Term (a --> b) ->
     Term a ->
     Term b
+  DivIntegerTerm :: !Id -> Term Integer -> Term Integer -> Term Integer
+  ModIntegerTerm :: !Id -> Term Integer -> Term Integer -> Term Integer
 
 instance NFData (Term a) where
   rnf i = identity i `seq` ()
@@ -302,6 +304,8 @@ instance Lift (Term t) where
   liftTyped (BVExtendTerm _ signed (_ :: TypeRep n) arg) = [||bvextendTerm signed (Proxy @n) arg||]
   liftTyped (TabularFuncApplyTerm _ func arg) = [||tabularFuncApplyTerm func arg||]
   liftTyped (GeneralFuncApplyTerm _ func arg) = [||generalFuncApplyTerm func arg||]
+  liftTyped (DivIntegerTerm _ arg1 arg2) = [||divIntegerTerm arg1 arg2||]
+  liftTyped (ModIntegerTerm _ arg1 arg2) = [||modIntegerTerm arg1 arg2||]
 
 instance Show (Term ty) where
   show (ConcTerm i v) = "ConcTerm{id=" ++ show i ++ ", v=" ++ show v ++ "}"
@@ -345,6 +349,8 @@ instance Show (Term ty) where
   show (BVExtendTerm i signed n arg) = "BVExtend{id=" ++ show i ++ ", signed=" ++ show signed ++ ", n=" ++ show n ++ ", arg=" ++ show arg ++ "}"
   show (TabularFuncApplyTerm i func arg) = "TabularFuncApply{id=" ++ show i ++ ", func=" ++ show func ++ ", arg=" ++ show arg ++ "}"
   show (GeneralFuncApplyTerm i func arg) = "GeneralFuncApply{id=" ++ show i ++ ", func=" ++ show func ++ ", arg=" ++ show arg ++ "}"
+  show (DivIntegerTerm i arg1 arg2) = "DivInteger{id=" ++ show i ++ ", arg1=" ++ show arg1 ++ ", arg2=" ++ show arg2 ++ "}"
+  show (ModIntegerTerm i arg1 arg2) = "ModInteger{id=" ++ show i ++ ", arg1=" ++ show arg1 ++ ", arg2=" ++ show arg2 ++ "}"
 
 instance (SupportedPrim t) => Eq (Term t) where
   (==) = (==) `on` identity
@@ -437,6 +443,8 @@ data UTerm t where
     Term (a --> b) ->
     Term a ->
     UTerm b
+  UDivIntegerTerm :: Term Integer -> Term Integer -> UTerm Integer
+  UModIntegerTerm :: Term Integer -> Term Integer -> UTerm Integer
 
 eqTypedId :: (TypeRep a, Id) -> (TypeRep b, Id) -> Bool
 eqTypedId (a, i1) (b, i2) = i1 == i2 && eqTypeRepBool a b
@@ -507,6 +515,8 @@ instance (SupportedPrim t) => Interned (Term t) where
       {-# UNPACK #-} !(TypeRep (a --> b), Id) ->
       {-# UNPACK #-} !(TypeRep a, Id) ->
       Description (Term b)
+    DDivIntegerTerm :: {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term Integer)
+    DModIntegerTerm :: {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term Integer)
 
   describe (UConcTerm v) = DConcTerm v
   describe ((USymbTerm name) :: UTerm t) = DSymbTerm @t name
@@ -544,6 +554,8 @@ instance (SupportedPrim t) => Interned (Term t) where
     DTabularFuncApplyTerm (typeRep :: TypeRep f, identity func) (typeRep :: TypeRep a, identity arg)
   describe (UGeneralFuncApplyTerm (func :: Term f) (arg :: Term a)) =
     DGeneralFuncApplyTerm (typeRep :: TypeRep f, identity func) (typeRep :: TypeRep a, identity arg)
+  describe (UDivIntegerTerm arg1 arg2) = DDivIntegerTerm (identity arg1) (identity arg2)
+  describe (UModIntegerTerm arg1 arg2) = DModIntegerTerm (identity arg1) (identity arg2)
   identify i = go
     where
       go (UConcTerm v) = ConcTerm i v
@@ -574,6 +586,8 @@ instance (SupportedPrim t) => Interned (Term t) where
       go (UBVExtendTerm signed n arg) = BVExtendTerm i signed n arg
       go (UTabularFuncApplyTerm func arg) = TabularFuncApplyTerm i func arg
       go (UGeneralFuncApplyTerm func arg) = GeneralFuncApplyTerm i func arg
+      go (UDivIntegerTerm arg1 arg2) = DivIntegerTerm i arg1 arg2
+      go (UModIntegerTerm arg1 arg2) = ModIntegerTerm i arg1 arg2
   cache = termCache
 
 instance (SupportedPrim t) => Eq (Description (Term t)) where
@@ -609,6 +623,8 @@ instance (SupportedPrim t) => Eq (Description (Term t)) where
   DBVExtendTerm lIsSigned ln li == DBVExtendTerm rIsSigned rn ri = lIsSigned == rIsSigned && eqTypeRepBool ln rn && eqTypedId li ri
   DTabularFuncApplyTerm lf li == DTabularFuncApplyTerm rf ri = eqTypedId lf rf && eqTypedId li ri
   DGeneralFuncApplyTerm lf li == DGeneralFuncApplyTerm rf ri = eqTypedId lf rf && eqTypedId li ri
+  DDivIntegerTerm li1 li2 == DDivIntegerTerm ri1 ri2 = li1 == ri1 && li2 == ri2
+  DModIntegerTerm li1 li2 == DModIntegerTerm ri1 ri2 = li1 == ri1 && li2 == ri2
   _ == _ = False
 
 instance (SupportedPrim t) => Hashable (Description (Term t)) where
@@ -650,6 +666,8 @@ instance (SupportedPrim t) => Hashable (Description (Term t)) where
   hashWithSalt s (DBVExtendTerm signed n id1) = s `hashWithSalt` (25 :: Int) `hashWithSalt` signed `hashWithSalt` n `hashWithSalt` id1
   hashWithSalt s (DTabularFuncApplyTerm id1 id2) = s `hashWithSalt` (26 :: Int) `hashWithSalt` id1 `hashWithSalt` id2
   hashWithSalt s (DGeneralFuncApplyTerm id1 id2) = s `hashWithSalt` (27 :: Int) `hashWithSalt` id1 `hashWithSalt` id2
+  hashWithSalt s (DDivIntegerTerm id1 id2) = s `hashWithSalt` (28 :: Int) `hashWithSalt` id1 `hashWithSalt` id2
+  hashWithSalt s (DModIntegerTerm id1 id2) = s `hashWithSalt` (29 :: Int) `hashWithSalt` id1 `hashWithSalt` id2
 
 -- Basic Bool
 defaultValueForBool :: Bool

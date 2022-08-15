@@ -212,12 +212,12 @@ instance SignedDivMod (Sym Bool) (Sym Integer) where
     mrgIf @(Sym Bool)
       (rs ==~ conc 0)
       (throwError $ transformError DivideByZero)
-      (mrgReturn $ Sym $ divi l r)
+      (mrgReturn $ Sym $ pevalDivIntegerTerm l r)
   mods (Sym l) rs@(Sym r) =
     mrgIf @(Sym Bool)
       (rs ==~ conc 0)
       (throwError $ transformError DivideByZero)
-      (mrgReturn $ Sym $ modi l r)
+      (mrgReturn $ Sym $ pevalModIntegerTerm l r)
 
 instance SymIntegerOp (Sym Bool) (Sym Integer)
 

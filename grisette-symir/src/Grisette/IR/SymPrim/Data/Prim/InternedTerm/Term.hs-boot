@@ -192,6 +192,8 @@ data Term t where
     Term (a --> b) ->
     Term a ->
     Term b
+  DivIntegerTerm :: !Id -> Term Integer -> Term Integer -> Term Integer
+  ModIntegerTerm :: !Id -> Term Integer -> Term Integer -> Term Integer
 
 data UTerm t where
   UConcTerm :: (SupportedPrim t) => !t -> UTerm t
@@ -278,6 +280,8 @@ data UTerm t where
     Term (a --> b) ->
     Term a ->
     UTerm b
+  UDivIntegerTerm :: Term Integer -> Term Integer -> UTerm Integer
+  UModIntegerTerm :: Term Integer -> Term Integer -> UTerm Integer
 
 data (-->) a b where
   GeneralFunc :: (SupportedPrim a, SupportedPrim b) => TypeRep a -> Symbol -> Term b -> (a --> b)

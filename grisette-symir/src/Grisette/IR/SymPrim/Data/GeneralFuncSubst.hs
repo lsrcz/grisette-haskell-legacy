@@ -18,6 +18,7 @@ import Grisette.IR.SymPrim.Data.Prim.BV
 import Grisette.IR.SymPrim.Data.Prim.TabularFunc
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.GeneralFunc
+import Grisette.IR.SymPrim.Data.Prim.Integer
 
 generalFuncSubst :: forall a b. (SupportedPrim a, SupportedPrim b) => TermSymbol -> Term a -> Term b -> Term b
 generalFuncSubst sym@(TermSymbol tc _) term input = case eqTypeRep tc (typeRep @a) of
@@ -67,3 +68,5 @@ generalFuncSubst sym@(TermSymbol tc _) term input = case eqTypeRep tc (typeRep @
         BVExtendTerm _ n signed op -> SomeTerm $ pevalBVExtendTerm n signed (gov op)
         TabularFuncApplyTerm _ f op -> SomeTerm $ pevalTabularFuncApplyTerm (gov f) (gov op)
         GeneralFuncApplyTerm _ f op -> SomeTerm $ pevalGeneralFuncApplyTerm (gov f) (gov op)
+        DivIntegerTerm _ op1 op2 -> SomeTerm $ pevalDivIntegerTerm (gov op1) (gov op2)
+        ModIntegerTerm _ op1 op2 -> SomeTerm $ pevalModIntegerTerm (gov op1) (gov op2)

@@ -40,7 +40,6 @@ import Grisette.Backend.SBV.Data.SMT.Config
 import Grisette.Backend.SBV.Data.SMT.SymBiMap
 import Grisette.IR.SymPrim.Data.BV
 import Grisette.IR.SymPrim.Data.Prim.Bool
-import Grisette.IR.SymPrim.Data.Prim.Integer
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.SomeTerm
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
@@ -319,6 +318,14 @@ lowerSinglePrimImpl' config t@(GeneralFuncApplyTerm _ (f :: Term (b --> a)) (arg
       addResult @integerBitWidth t g
       return g
     _ -> translateBinaryError "generalApply" (R.typeRep @(b --> a)) (R.typeRep @b) (R.typeRep @a)
+lowerSinglePrimImpl' config t@(DivIntegerTerm _ arg1 arg2) =
+  case (config, R.typeRep @a) of
+    (ResolvedConfig {}, IntegerType) -> lowerBinaryTerm' config t arg1 arg2 SBV.sDiv
+    _ -> translateBinaryError "div" (R.typeRep @a) (R.typeRep @a) (R.typeRep @a)
+lowerSinglePrimImpl' config t@(ModIntegerTerm _ arg1 arg2) =
+  case (config, R.typeRep @a) of
+    (ResolvedConfig {}, IntegerType) -> lowerBinaryTerm' config t arg1 arg2 SBV.sMod
+    _ -> translateBinaryError "mod" (R.typeRep @a) (R.typeRep @a) (R.typeRep @a)
 lowerSinglePrimImpl' _ _ = undefined
 
 buildUTFunc11 ::
@@ -532,19 +539,10 @@ lowerSinglePrimImpl _ (UnaryTerm _ op (_ :: Term x)) _ = errorMsg
   where
     errorMsg :: forall t1. t1
     errorMsg = translateUnaryError (show op) (R.typeRep @x) (R.typeRep @a)
-lowerSinglePrimImpl config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_ :: Term y)) m =
-  fromMaybe errorMsg $ asum [{-concatBV,-} integerType]
+lowerSinglePrimImpl _ (BinaryTerm _ op (_ :: Term x) (_ :: Term y)) _ = errorMsg
   where
     errorMsg :: forall t1. t1
     errorMsg = translateBinaryError (show op) (R.typeRep @x) (R.typeRep @y) (R.typeRep @a)
-    integerType :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
-    integerType = case (config, R.typeRep @a) of
-      (ResolvedConfig {}, IntegerType) ->
-        case t of
-          DivITerm t1' t2' -> Just $ lowerBinaryTerm config t t1' t2' SBV.sDiv m
-          ModITerm t1' t2' -> Just $ lowerBinaryTerm config t t1' t2' SBV.sMod m
-          _ -> Nothing
-      _ -> Nothing
 lowerSinglePrimImpl ResolvedConfig {} (TernaryTerm _ op (_ :: Term x) (_ :: Term y) (_ :: Term z)) _ = errorMsg
   where
     errorMsg :: forall t1. t1
@@ -696,6 +694,14 @@ lowerSinglePrimImpl config t@(GeneralFuncApplyTerm _ (f :: Term (b --> a)) (arg 
       let g = l1 l2
       return (addBiMapIntermediate (SomeTerm t) (toDyn g) m2, g)
     _ -> translateBinaryError "generalApply" (R.typeRep @(b --> a)) (R.typeRep @b) (R.typeRep @a)
+lowerSinglePrimImpl config t@(DivIntegerTerm _ arg1 arg2) m =
+  case (config, R.typeRep @a) of
+    (ResolvedConfig {}, IntegerType) -> lowerBinaryTerm config t arg1 arg2 SBV.sDiv m
+    _ -> translateBinaryError "div" (R.typeRep @a) (R.typeRep @a) (R.typeRep @a)
+lowerSinglePrimImpl config t@(ModIntegerTerm _ arg1 arg2) m =
+  case (config, R.typeRep @a) of
+    (ResolvedConfig {}, IntegerType) -> lowerBinaryTerm config t arg1 arg2 SBV.sMod m
+    _ -> translateBinaryError "mod" (R.typeRep @a) (R.typeRep @a) (R.typeRep @a)
 lowerSinglePrimImpl _ _ _ = error "Should never happen"
 
 unsafeMkNatRepr :: Int -> NatRepr w
