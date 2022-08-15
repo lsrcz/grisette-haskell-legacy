@@ -254,7 +254,7 @@ instance
   (KnownNat w', KnownNat n, KnownNat w, w' ~ (n + w), 1 <= n, 1 <= w, 1 <= w') =>
   BVConcat (Sym (IntN n)) (Sym (IntN w)) (Sym (IntN w'))
   where
-  bvconcat (Sym l) (Sym r) = Sym (bvtconcat l r)
+  bvconcat (Sym l) (Sym r) = Sym (pevalBVConcatTerm l r)
 
 instance
   ( KnownNat w,
@@ -331,7 +331,7 @@ instance
   (KnownNat w', KnownNat n, KnownNat w, w' ~ (n + w), 1 <= n, 1 <= w, 1 <= w') =>
   BVConcat (Sym (WordN n)) (Sym (WordN w)) (Sym (WordN w'))
   where
-  bvconcat (Sym l) (Sym r) = Sym (bvtconcat l r)
+  bvconcat (Sym l) (Sym r) = Sym (pevalBVConcatTerm l r)
 
 instance
   ( KnownNat w,

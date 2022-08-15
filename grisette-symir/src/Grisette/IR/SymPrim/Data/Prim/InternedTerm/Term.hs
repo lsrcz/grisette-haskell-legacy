@@ -26,13 +26,14 @@ module Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 where
 
 import Control.DeepSeq
+import Data.Bits
 import Data.Function (on)
 import Data.Hashable
 import Data.Interned
 import Data.Kind
-import Type.Reflection
 import Data.Typeable (cast)
 import GHC.TypeNats
+import Grisette.Core.Data.Class.BitVector
 import Grisette.IR.SymPrim.Data.BV
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Caches
 import {-# SOURCE #-} Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
@@ -41,7 +42,7 @@ import Grisette.IR.SymPrim.Data.Prim.ModelValue
 import Grisette.IR.SymPrim.Data.Prim.Utils
 import Language.Haskell.TH.Syntax
 import Language.Haskell.TH.Syntax.Compat
-import Data.Bits
+import Type.Reflection
 
 class (Lift t, Typeable t, Hashable t, Eq t, Show t, NFData t) => SupportedPrim t where
   type PrimConstraint t :: Constraint
@@ -203,6 +204,19 @@ data Term t where
   ComplementBitsTerm :: (SupportedPrim t, Bits t) => {-# UNPACK #-} !Id -> !(Term t) -> Term t
   ShiftBitsTerm :: (SupportedPrim t, Bits t) => {-# UNPACK #-} !Id -> !(Term t) -> {-# UNPACK #-} !Int -> Term t
   RotateBitsTerm :: (SupportedPrim t, Bits t) => {-# UNPACK #-} !Id -> !(Term t) -> {-# UNPACK #-} !Int -> Term t
+  BVConcatTerm ::
+    ( SupportedPrim (bv a),
+      SupportedPrim (bv b),
+      SupportedPrim (bv c),
+      KnownNat a,
+      KnownNat b,
+      KnownNat c,
+      BVConcat (bv a) (bv b) (bv c)
+    ) =>
+    {-# UNPACK #-} !Id ->
+    !(Term (bv a)) ->
+    !(Term (bv b)) ->
+    Term (bv c)
 
 instance NFData (Term a) where
   rnf i = identity i `seq` ()
@@ -232,6 +246,7 @@ instance Lift (Term t) where
   liftTyped (ComplementBitsTerm _ arg) = [||complementBitsTerm arg||]
   liftTyped (ShiftBitsTerm _ arg n) = [||shiftBitsTerm arg n||]
   liftTyped (RotateBitsTerm _ arg n) = [||rotateBitsTerm arg n||]
+  liftTyped (BVConcatTerm _ arg1 arg2) = [||bvconcatTerm arg1 arg2||]
 
 instance Show (Term ty) where
   show (ConcTerm i v) = "ConcTerm{id=" ++ show i ++ ", v=" ++ show v ++ "}"
@@ -270,6 +285,7 @@ instance Show (Term ty) where
   show (ComplementBitsTerm i arg) = "ComplementBits{id=" ++ show i ++ ", arg=" ++ show arg ++ "}"
   show (ShiftBitsTerm i arg n) = "ShiftBits{id=" ++ show i ++ ", arg=" ++ show arg ++ ", n=" ++ show n ++ "}"
   show (RotateBitsTerm i arg n) = "RotateBits{id=" ++ show i ++ ", arg=" ++ show arg ++ ", n=" ++ show n ++ "}"
+  show (BVConcatTerm i arg1 arg2) = "BVConcat{id=" ++ show i ++ ", arg1=" ++ show arg1 ++ ", arg2=" ++ show arg2 ++ "}"
 
 instance (SupportedPrim t) => Eq (Term t) where
   (==) = (==) `on` identity
@@ -312,6 +328,18 @@ data UTerm t where
   UComplementBitsTerm :: (SupportedPrim t, Bits t) => !(Term t) -> UTerm t
   UShiftBitsTerm :: (SupportedPrim t, Bits t) => !(Term t) -> {-# UNPACK #-} !Int -> UTerm t
   URotateBitsTerm :: (SupportedPrim t, Bits t) => !(Term t) -> {-# UNPACK #-} !Int -> UTerm t
+  UBVConcatTerm ::
+    ( SupportedPrim (bv a),
+      SupportedPrim (bv b),
+      SupportedPrim (bv c),
+      KnownNat a,
+      KnownNat b,
+      KnownNat c,
+      BVConcat (bv a) (bv b) (bv c)
+    ) =>
+    !(Term (bv a)) ->
+    !(Term (bv b)) ->
+    UTerm (bv c)
 
 eqTypedId :: (TypeRep a, Id) -> (TypeRep b, Id) -> Bool
 eqTypedId (a, i1) (b, i2) = i1 == i2 && eqTypeRepBool a b
@@ -362,6 +390,7 @@ instance (SupportedPrim t) => Interned (Term t) where
     DComplementBitsTerm :: {-# UNPACK #-} !Id -> Description (Term t)
     DShiftBitsTerm :: {-# UNPACK #-} !Id -> {-# UNPACK #-} !Int -> Description (Term t)
     DRotateBitsTerm :: {-# UNPACK #-} !Id -> {-# UNPACK #-} !Int -> Description (Term t)
+    DBVConcatTerm :: TypeRep bv1 -> TypeRep bv2 -> {-# UNPACK #-} !Id -> {-# UNPACK #-} !Id -> Description (Term t)
   describe (UConcTerm v) = DConcTerm v
   describe ((USymbTerm name) :: UTerm t) = DSymbTerm @t name
   describe ((UUnaryTerm (tag :: tagt) (tm :: Term arg)) :: UTerm t) =
@@ -388,6 +417,8 @@ instance (SupportedPrim t) => Interned (Term t) where
   describe (UComplementBitsTerm arg) = DComplementBitsTerm (identity arg)
   describe (UShiftBitsTerm arg n) = DShiftBitsTerm (identity arg) n
   describe (URotateBitsTerm arg n) = DRotateBitsTerm (identity arg) n
+  describe (UBVConcatTerm (arg1 :: bv1) (arg2 :: bv2)) =
+    DBVConcatTerm (typeRep :: TypeRep bv1) (typeRep :: TypeRep bv2) (identity arg1) (identity arg2)
   identify i = go
     where
       go (UConcTerm v) = ConcTerm i v
@@ -413,6 +444,7 @@ instance (SupportedPrim t) => Interned (Term t) where
       go (UComplementBitsTerm arg) = ComplementBitsTerm i arg
       go (UShiftBitsTerm arg n) = ShiftBitsTerm i arg n
       go (URotateBitsTerm arg n) = RotateBitsTerm i arg n
+      go (UBVConcatTerm arg1 arg2) = BVConcatTerm i arg1 arg2
   cache = termCache
 
 instance (SupportedPrim t) => Eq (Description (Term t)) where
@@ -440,7 +472,9 @@ instance (SupportedPrim t) => Eq (Description (Term t)) where
   DXorBitsTerm li1 li2 == DXorBitsTerm ri1 ri2 = li1 == ri1 && li2 == ri2
   DComplementBitsTerm li == DComplementBitsTerm ri = li == ri
   DShiftBitsTerm li ln == DShiftBitsTerm ri rn = li == ri && ln == rn
-  DRotateBitsTerm li ln == DRotateBitsTerm ri rn= li == ri && ln == rn
+  DRotateBitsTerm li ln == DRotateBitsTerm ri rn = li == ri && ln == rn
+  DBVConcatTerm lrep1 lrep2 li1 li2 == DBVConcatTerm rrep1 rrep2 ri1 ri2 =
+    eqTypeRepBool lrep1 rrep1 && eqTypeRepBool lrep2 rrep2 && li1 == ri1 && li2 == ri2
   _ == _ = False
 
 instance (SupportedPrim t) => Hashable (Description (Term t)) where
@@ -476,6 +510,8 @@ instance (SupportedPrim t) => Hashable (Description (Term t)) where
   hashWithSalt s (DComplementBitsTerm id1) = s `hashWithSalt` (20 :: Int) `hashWithSalt` id1
   hashWithSalt s (DShiftBitsTerm id1 n) = s `hashWithSalt` (21 :: Int) `hashWithSalt` id1 `hashWithSalt` n
   hashWithSalt s (DRotateBitsTerm id1 n) = s `hashWithSalt` (22 :: Int) `hashWithSalt` id1 `hashWithSalt` n
+  hashWithSalt s (DBVConcatTerm rep1 rep2 id1 id2) =
+    s `hashWithSalt` (23 :: Int) `hashWithSalt` rep1 `hashWithSalt` rep2 `hashWithSalt` id1 `hashWithSalt` id2
 
 -- Basic Bool
 defaultValueForBool :: Bool

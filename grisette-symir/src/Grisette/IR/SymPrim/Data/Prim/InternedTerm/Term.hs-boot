@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs #-}
@@ -5,6 +6,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 
 module Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
   ( SupportedPrim (..),
@@ -19,13 +21,15 @@ module Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 where
 
 import Control.DeepSeq
+import Data.Bits
 import Data.Hashable
 import Data.Interned
 import Data.Kind
-import Type.Reflection
+import GHC.TypeNats
+import Grisette.Core
 import Grisette.IR.SymPrim.Data.Prim.ModelValue
 import Language.Haskell.TH.Syntax
-import Data.Bits
+import Type.Reflection
 
 class (Lift t, Typeable t, Hashable t, Eq t, Show t, NFData t) => SupportedPrim t where
   type PrimConstraint t :: Constraint
@@ -131,6 +135,19 @@ data Term t where
   ComplementBitsTerm :: (SupportedPrim t, Bits t) => {-# UNPACK #-} !Id -> !(Term t) -> Term t
   ShiftBitsTerm :: (SupportedPrim t, Bits t) => {-# UNPACK #-} !Id -> !(Term t) -> {-# UNPACK #-} !Int -> Term t
   RotateBitsTerm :: (SupportedPrim t, Bits t) => {-# UNPACK #-} !Id -> !(Term t) -> {-# UNPACK #-} !Int -> Term t
+  BVConcatTerm ::
+    ( SupportedPrim (bv a),
+      SupportedPrim (bv b),
+      SupportedPrim (bv c),
+      KnownNat a,
+      KnownNat b,
+      KnownNat c,
+      BVConcat (bv a) (bv b) (bv c)
+    ) =>
+    {-# UNPACK #-} !Id ->
+    !(Term (bv a)) ->
+    !(Term (bv b)) ->
+    Term (bv c)
 
 data UTerm t where
   UConcTerm :: (SupportedPrim t) => !t -> UTerm t
@@ -167,3 +184,15 @@ data UTerm t where
   UComplementBitsTerm :: (SupportedPrim t, Bits t) => !(Term t) -> UTerm t
   UShiftBitsTerm :: (SupportedPrim t, Bits t) => !(Term t) -> {-# UNPACK #-} !Int -> UTerm t
   URotateBitsTerm :: (SupportedPrim t, Bits t) => !(Term t) -> {-# UNPACK #-} !Int -> UTerm t
+  UBVConcatTerm ::
+    ( SupportedPrim (bv a),
+      SupportedPrim (bv b),
+      SupportedPrim (bv c),
+      KnownNat a,
+      KnownNat b,
+      KnownNat c,
+      BVConcat (bv a) (bv b) (bv c)
+    ) =>
+    !(Term (bv a)) ->
+    !(Term (bv b)) ->
+    UTerm (bv c)

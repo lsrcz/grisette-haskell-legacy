@@ -28,6 +28,7 @@ module Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
     complementBitsTerm,
     shiftBitsTerm,
     rotateBitsTerm,
+    bvconcatTerm,
   )
 where
 
@@ -37,6 +38,8 @@ import Data.Typeable
 import {-# SOURCE #-} Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Language.Haskell.TH.Syntax
 import Data.Bits
+import Grisette.Core.Data.Class.BitVector
+import GHC.TypeNats
 
 constructUnary ::
   forall tag arg t.
@@ -83,3 +86,15 @@ xorBitsTerm :: (SupportedPrim a, Bits a) => Term a -> Term a -> Term a
 complementBitsTerm :: (SupportedPrim a, Bits a) => Term a -> Term a
 shiftBitsTerm :: (SupportedPrim a, Bits a) => Term a -> Int -> Term a
 rotateBitsTerm :: (SupportedPrim a, Bits a) => Term a -> Int -> Term a
+bvconcatTerm ::
+  ( SupportedPrim (bv a),
+    SupportedPrim (bv b),
+    SupportedPrim (bv c),
+    KnownNat a,
+    KnownNat b,
+    KnownNat c,
+    BVConcat (bv a) (bv b) (bv c)
+  ) =>
+  Term (bv a) ->
+  Term (bv b) ->
+  Term (bv c)

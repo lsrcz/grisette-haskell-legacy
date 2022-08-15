@@ -111,24 +111,12 @@ spec = do
   describe "Concat" $ do
     describe "Concat construction" $ do
       it "Concat on concrete" $ do
-        bvtconcat (concTerm 3 :: Term (WordN 4)) (concTerm 5 :: Term (WordN 3))
+        pevalBVConcatTerm (concTerm 3 :: Term (WordN 4)) (concTerm 5 :: Term (WordN 3))
           `shouldBe` concTerm 29
-        bvtconcat (concTerm 3 :: Term (IntN 4)) (concTerm 5 :: Term (IntN 3))
+        pevalBVConcatTerm (concTerm 3 :: Term (IntN 4)) (concTerm 5 :: Term (IntN 3))
           `shouldBe` concTerm 29
       it "Concat on symbolic" $ do
-        bvtconcat (ssymbTerm "a" :: Term (WordN 4)) (ssymbTerm "b" :: Term (WordN 3))
-          `shouldBe` constructBinary
-            (BVTConcat @WordN @4 @3)
+        pevalBVConcatTerm (ssymbTerm "a" :: Term (WordN 4)) (ssymbTerm "b" :: Term (WordN 3))
+          `shouldBe` bvconcatTerm
             (ssymbTerm "a" :: Term (WordN 4))
             (ssymbTerm "b" :: Term (WordN 3))
-    describe "Concat pattern" $ do
-      it "concatView should work" $ do
-        case concatView
-          ( bvtconcat
-              (ssymbTerm "a" :: Term (WordN 4))
-              (ssymbTerm "b" :: Term (WordN 3))
-          ) of
-          Just (ConcatMatchResult v1 v2 :: ConcatMatchResult WordN 3 4 7) -> do
-            v1 `shouldBe` ssymbTerm "a"
-            v2 `shouldBe` ssymbTerm "b"
-          _ -> return () :: Expectation

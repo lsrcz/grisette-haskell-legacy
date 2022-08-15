@@ -303,7 +303,7 @@ spec = do
           (ssymb "a" :: Sym (WordN 4))
           (ssymb "b" :: Sym (WordN 3))
           `shouldBe` Sym
-            ( bvtconcat
+            ( pevalBVConcatTerm
                 (ssymbTerm "a" :: Term (WordN 4))
                 (ssymbTerm "b" :: Term (WordN 3))
             )

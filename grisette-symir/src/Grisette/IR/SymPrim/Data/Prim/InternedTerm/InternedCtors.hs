@@ -1,4 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
@@ -31,21 +32,24 @@ module Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
     complementBitsTerm,
     shiftBitsTerm,
     rotateBitsTerm,
+    bvconcatTerm,
   )
 where
 
 import Control.DeepSeq
 import Data.Array
+import Data.Bits
 import qualified Data.HashMap.Strict as M
 import Data.Hashable
 import Data.IORef (atomicModifyIORef')
 import Data.Interned
 import Data.Interned.Internal
-import Type.Reflection
 import GHC.IO (unsafeDupablePerformIO)
+import GHC.TypeNats
+import Grisette.Core.Data.Class.BitVector
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Language.Haskell.TH.Syntax
-import Data.Bits
+import Type.Reflection
 
 internTerm :: forall t. (SupportedPrim t) => Uninterned (Term t) -> Term t
 internTerm !bt = unsafeDupablePerformIO $ atomicModifyIORef' slot go
@@ -184,3 +188,18 @@ shiftBitsTerm t n = internTerm $ UShiftBitsTerm t n
 rotateBitsTerm :: (SupportedPrim a, Bits a) => Term a -> Int -> Term a
 rotateBitsTerm t n = internTerm $ URotateBitsTerm t n
 {-# INLINE rotateBitsTerm #-}
+
+bvconcatTerm ::
+  ( SupportedPrim (bv a),
+    SupportedPrim (bv b),
+    SupportedPrim (bv c),
+    KnownNat a,
+    KnownNat b,
+    KnownNat c,
+    BVConcat (bv a) (bv b) (bv c)
+  ) =>
+  Term (bv a) ->
+  Term (bv b) ->
+  Term (bv c)
+bvconcatTerm l r = internTerm $ UBVConcatTerm l r
+{-# INLINE bvconcatTerm #-}

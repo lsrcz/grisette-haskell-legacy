@@ -34,6 +34,7 @@ import Grisette.IR.SymPrim.Data.Prim.InternedTerm.SomeTerm
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 import Data.Proxy
 import Grisette.IR.SymPrim.Data.Prim.Bits
+import Grisette.IR.SymPrim.Data.Prim.BV
 
 newtype Model = Model (M.HashMap TermSymbol ModelValue) deriving (Show, Eq, Generic, Hashable)
 
@@ -133,6 +134,8 @@ evaluateSomeTerm fillDefault (Model ma) = gomemo
       goUnary (`pevalShiftBitsTerm` n) arg
     go (SomeTerm (RotateBitsTerm _ arg n)) =
       goUnary (`pevalRotateBitsTerm` n) arg
+    go (SomeTerm (BVConcatTerm _ arg1 arg2)) =
+      goBinary pevalBVConcatTerm arg1 arg2
     goUnary :: (SupportedPrim a, SupportedPrim b) => (Term a -> Term b) -> Term a -> SomeTerm
     goUnary f a = SomeTerm $ f (gotyped a)
     goBinary :: (SupportedPrim a, SupportedPrim b, SupportedPrim c) =>

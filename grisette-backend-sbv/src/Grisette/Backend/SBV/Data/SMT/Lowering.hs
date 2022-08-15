@@ -242,7 +242,7 @@ lowerSinglePrimImpl' config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) =
                     withEquality (unsafeAxiom :: ((((w + ix) - 1) - ix) + 1) :~: w) $
                       withLeqProof ev1 r
 lowerSinglePrimImpl' config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_ :: Term y)) =
-  fromMaybe errorMsg $ asum [concatBV, funcApply]
+  fromMaybe errorMsg $ asum [{-concatBV,-} funcApply]
   where
     errorMsg :: forall t1. t1
     errorMsg = translateBinaryError (show op) (R.typeRep @x) (R.typeRep @y) (R.typeRep @a)
@@ -264,6 +264,7 @@ lowerSinglePrimImpl' config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (
             return g
           _ -> errorMsg
       _ -> Nothing
+      {-
     concatBV :: Maybe (State SymBiMap (TermTy integerBitWidth a))
     concatBV = case (R.typeRep @x, R.typeRep @y, R.typeRep @a) of
       (UnsignedBVType (_ :: proxy xn), UnsignedBVType (_ :: proxy yn), UnsignedBVType (_ :: proxy an)) ->
@@ -286,6 +287,7 @@ lowerSinglePrimImpl' config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (
                 )
           _ -> Nothing
       _ -> Nothing
+      -}
 lowerSinglePrimImpl' ResolvedConfig {} (TernaryTerm _ op (_ :: Term x) (_ :: Term y) (_ :: Term z)) = errorMsg
   where
     errorMsg :: forall t1. t1
@@ -359,6 +361,18 @@ lowerSinglePrimImpl' config t@(RotateBitsTerm _ arg n) =
   case (config, R.typeRep @a) of
     ResolvedBitsType -> lowerUnaryTerm' config t arg (`rotate` n)
     _ -> translateBinaryError "rotate" (R.typeRep @a) (R.typeRep @Int) (R.typeRep @a)
+lowerSinglePrimImpl' config t@(BVConcatTerm _ (bv1 :: Term x) (bv2 :: Term y)) =
+  case (R.typeRep @a, R.typeRep @x, R.typeRep @y) of
+    (UnsignedBVType (_ :: Proxy na), UnsignedBVType (_ :: Proxy nx), UnsignedBVType (_ :: Proxy ny)) ->
+      case (unsafeAxiom @(nx + ny) @na) of
+        Refl -> lowerBinaryTerm' config t bv1 bv2 (SBV.#)
+    (SignedBVType (_ :: Proxy na), SignedBVType (_ :: Proxy nx), SignedBVType (_ :: Proxy ny)) ->
+      case (unsafeAxiom @(nx + ny) @na) of
+        Refl -> lowerBinaryTerm' config t bv1 bv2 (\(x :: SBV.SInt xn) (y :: SBV.SInt yn) ->
+                    SBV.sFromIntegral $
+                      (SBV.sFromIntegral x :: SBV.SWord xn) SBV.# (SBV.sFromIntegral y :: SBV.SWord yn)
+                )
+    _ -> translateBinaryError "bvconcat" (R.typeRep @x) (R.typeRep @y) (R.typeRep @a)
 lowerSinglePrimImpl' _ _ = undefined
 
 buildUTFunc11 ::
@@ -628,7 +642,7 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(UnaryTerm _ op (_ :: Term x)) m 
                     withEquality (unsafeAxiom :: ((((w + ix) - 1) - ix) + 1) :~: w) $
                       withLeqProof ev1 r
 lowerSinglePrimImpl config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_ :: Term y)) m =
-  fromMaybe errorMsg $ asum [concatBV, integerType, funcApply]
+  fromMaybe errorMsg $ asum [{-concatBV,-} integerType, funcApply]
   where
     errorMsg :: forall t1. t1
     errorMsg = translateBinaryError (show op) (R.typeRep @x) (R.typeRep @y) (R.typeRep @a)
@@ -656,6 +670,7 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_
             return (addBiMapIntermediate (SomeTerm t) (toDyn g) m2, g)
           _ -> errorMsg
       _ -> Nothing
+      {-
     concatBV :: Maybe (SBV.Symbolic (SymBiMap, TermTy integerBitWidth a))
     concatBV = case (R.typeRep @x, R.typeRep @y, R.typeRep @a) of
       (UnsignedBVType (_ :: proxy xn), UnsignedBVType (_ :: proxy yn), UnsignedBVType (_ :: proxy an)) ->
@@ -678,7 +693,7 @@ lowerSinglePrimImpl config@ResolvedConfig {} t@(BinaryTerm _ op (_ :: Term x) (_
                 )
                 m
           _ -> Nothing
-      _ -> Nothing
+      _ -> Nothing -}
 lowerSinglePrimImpl ResolvedConfig {} (TernaryTerm _ op (_ :: Term x) (_ :: Term y) (_ :: Term z)) _ = errorMsg
   where
     errorMsg :: forall t1. t1
@@ -751,6 +766,18 @@ lowerSinglePrimImpl config t@(RotateBitsTerm _ arg n) m =
   case (config, R.typeRep @a) of
     ResolvedBitsType -> lowerUnaryTerm config t arg (`rotate` n) m
     _ -> translateBinaryError "rotate" (R.typeRep @a) (R.typeRep @Int) (R.typeRep @a)
+lowerSinglePrimImpl config t@(BVConcatTerm _ (bv1 :: Term x) (bv2 :: Term y)) m =
+  case (R.typeRep @a, R.typeRep @x, R.typeRep @y) of
+    (UnsignedBVType (_ :: Proxy na), UnsignedBVType (_ :: Proxy nx), UnsignedBVType (_ :: Proxy ny)) ->
+      case (unsafeAxiom @(nx + ny) @na) of
+        Refl -> lowerBinaryTerm config t bv1 bv2 (SBV.#) m
+    (SignedBVType (_ :: Proxy na), SignedBVType (_ :: Proxy nx), SignedBVType (_ :: Proxy ny)) ->
+      case (unsafeAxiom @(nx + ny) @na) of
+        Refl -> lowerBinaryTerm config t bv1 bv2 (\(x :: SBV.SInt xn) (y :: SBV.SInt yn) ->
+                    SBV.sFromIntegral $
+                      (SBV.sFromIntegral x :: SBV.SWord xn) SBV.# (SBV.sFromIntegral y :: SBV.SWord yn)
+                ) m
+    _ -> translateBinaryError "bvconcat" (R.typeRep @x) (R.typeRep @y) (R.typeRep @a)
 lowerSinglePrimImpl _ _ _ = error "Should never happen"
 
 unsafeMkNatRepr :: Int -> NatRepr w

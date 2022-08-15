@@ -16,10 +16,11 @@
 module Grisette.IR.SymPrim.Data.Prim.BV
   ( BVTSelect (..),
     bvtselect,
-    BVTConcat (..),
-    bvtconcat,
-    concatView,
-    ConcatMatchResult (..),
+    pevalBVConcatTerm,
+    -- BVTConcat (..),
+    -- bvtconcat,
+    -- concatView,
+    -- ConcatMatchResult (..),
     BVTExt (..),
     bvtext,
     extensionView,
@@ -306,6 +307,7 @@ extensionView (UnaryTerm _ (tag :: tag) t1) =
 extensionView _ = Nothing
 
 -- concat
+{-
 data BVTConcat (s :: Nat -> Type) w w' w'' where
   BVTConcat :: forall s w w' w''. (KnownNat w, KnownNat w', KnownNat w'', w'' ~ (w + w'), BVConcat (s w) (s w') (s w''), Typeable s) => BVTConcat s w w' w''
 
@@ -324,9 +326,20 @@ instance Lift (BVTConcat s w w' w'') where
 
 instance NFData (BVTConcat s w w' w'') where
   rnf BVTConcat = ()
+  -}
 
 --deriving (Show, Lift, Generic, NFData)
 
+pevalBVConcatTerm :: (SupportedPrim (s w), SupportedPrim (s w') , SupportedPrim (s w''), KnownNat w, KnownNat w',
+  KnownNat w'', BVConcat (s w) (s w') (s w'')) => Term (s w) -> Term (s w') -> Term (s w'')
+pevalBVConcatTerm = binaryUnfoldOnce doPevalBVConcatTerm bvconcatTerm
+
+doPevalBVConcatTerm :: (SupportedPrim (s w), SupportedPrim (s w') , SupportedPrim (s w''), KnownNat w, KnownNat w',
+  KnownNat w'', BVConcat (s w) (s w') (s w'')) => Term (s w) -> Term (s w') -> Maybe (Term (s w''))
+doPevalBVConcatTerm (ConcTerm _ v) (ConcTerm _ v') = Just $ concTerm $ bvconcat v v'
+doPevalBVConcatTerm _ _ = Nothing
+
+{-
 bvtconcat ::
   forall s w w' w''.
   ( KnownNat w,
@@ -410,3 +423,5 @@ concatView (BinaryTerm _ (tag :: tag) t1 t2) =
     (Just BVTConcat, Just l, Just r) -> Just (ConcatMatchResult l r)
     _ -> Nothing
 concatView _ = Nothing
+
+-}

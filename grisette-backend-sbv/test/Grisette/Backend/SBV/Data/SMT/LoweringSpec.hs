@@ -461,9 +461,10 @@ spec = do
         (Sext @IntN @5 @10)
         SBV.signExtend
     it "Concat should work" $ do
-      testBinaryOpLowering' @(IntN 4) @(IntN 5) @(IntN 9)
+      testBinaryOpLowering @(IntN 4) @(IntN 5) @(IntN 9)
         unboundedConfig
-        (BVTConcat @IntN @4 @5 @9)
+        bvconcatTerm
+        "bvconcat"
         (SBV.#)
 
     it "AndBits lowering should work" $ do
@@ -624,9 +625,10 @@ spec = do
         (Sext @WordN @5 @10)
         SBV.signExtend
     it "Concat should work" $ do
-      testBinaryOpLowering' @(WordN 4) @(WordN 5) @(WordN 9)
+      testBinaryOpLowering @(WordN 4) @(WordN 5) @(WordN 9)
         unboundedConfig
-        (BVTConcat @WordN @4 @5 @9)
+        bvconcatTerm
+        "bvconcat"
         (SBV.#)
     it "AndBits lowering should work" $ do
       testBinaryOpLowering @(WordN 5) @(WordN 5) unboundedConfig andBitsTerm "(.&.)" (.&.)

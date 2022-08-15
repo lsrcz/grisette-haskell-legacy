@@ -26,6 +26,7 @@ import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 import Grisette.IR.SymPrim.Data.Prim.Bool
 import Grisette.IR.SymPrim.Data.Prim.Num
 import Grisette.IR.SymPrim.Data.Prim.Bits
+import Grisette.IR.SymPrim.Data.Prim.BV
 
 data FuncArg = FuncArg deriving (Show, Eq, Generic, Ord, Lift, Hashable, NFData)
 
@@ -101,3 +102,4 @@ subst sym@(TermSymbol tc _) term input = case eqTypeRep tc (typeRep @a) of
         ComplementBitsTerm _ op -> SomeTerm $ pevalComplementBitsTerm (gov op)
         ShiftBitsTerm _ op n -> SomeTerm $ pevalShiftBitsTerm (gov op) n
         RotateBitsTerm _ op n -> SomeTerm $ pevalRotateBitsTerm (gov op) n
+        BVConcatTerm _ op1 op2 -> SomeTerm $ pevalBVConcatTerm (gov op1) (gov op2)

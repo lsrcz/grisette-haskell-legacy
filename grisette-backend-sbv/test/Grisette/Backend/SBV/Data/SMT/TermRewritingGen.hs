@@ -179,6 +179,10 @@ shiftBitsSpec a n = constructUnarySpec (`shiftBitsTerm` n) (`pevalShiftBitsTerm`
 rotateBitsSpec :: (TermRewritingSpec a av, Bits av) => a -> Int -> a
 rotateBitsSpec a n = constructUnarySpec (`rotateBitsTerm` n) (`pevalRotateBitsTerm` n) a
 
+bvconcatSpec :: (TermRewritingSpec a (bv an), TermRewritingSpec b (bv bn), TermRewritingSpec c (bv cn),
+  KnownNat an, KnownNat bn, KnownNat cn, BVConcat (bv an) (bv bn) (bv cn)) => a -> b -> c
+bvconcatSpec = constructBinarySpec bvconcatTerm pevalBVConcatTerm
+
 data BoolOnlySpec = BoolOnlySpec (Term Bool) (Term Bool)
 
 instance Show BoolOnlySpec where
@@ -551,7 +555,7 @@ dsbv2 p depth | depth > 0 = do
       return $ constructUnarySpec' (BVTSelect @bv @0 @2 @3 Proxy) v3,
       return $ constructUnarySpec' (BVTSelect @bv @1 @2 @3 Proxy) v3,
       return $ constructUnarySpec' (BVTSelect @bv @0 @2 @2 Proxy) v2,
-      return $ constructBinarySpec' (BVTConcat @bv @1 @1 @2) v1 v1',
+      return $ bvconcatSpec v1 v1',
       return $ constructUnarySpec' (Zext @bv @1 @2) v1,
       return $ constructUnarySpec' (Sext @bv @1 @2) v1
     ]
@@ -629,8 +633,8 @@ dsbv3 p depth | depth > 0 = do
       return $ constructUnarySpec' (BVTSelect @bv @0 @3 @4 Proxy) v4,
       return $ constructUnarySpec' (BVTSelect @bv @1 @3 @4 Proxy) v4,
       return $ constructUnarySpec' (BVTSelect @bv @0 @3 @3 Proxy) v3,
-      return $ constructBinarySpec' (BVTConcat @bv @1 @2 @3) v1 v2,
-      return $ constructBinarySpec' (BVTConcat @bv @2 @1 @3) v2 v1,
+      return $ bvconcatSpec v1 v2,
+      return $ bvconcatSpec v2 v1,
       return $ constructUnarySpec' (Zext @bv @1 @3) v1,
       return $ constructUnarySpec' (Sext @bv @1 @3) v1,
       return $ constructUnarySpec' (Zext @bv @2 @3) v2,
@@ -709,9 +713,9 @@ dsbv4 p depth | depth > 0 = do
       return $ shiftBitsSpec v4 i,
       return $ rotateBitsSpec v4 i,
       return $ constructUnarySpec' (BVTSelect @bv @0 @4 @4 Proxy) v4,
-      return $ constructBinarySpec' (BVTConcat @bv @1 @3 @4) v1 v3,
-      return $ constructBinarySpec' (BVTConcat @bv @2 @2 @4) v2 v2',
-      return $ constructBinarySpec' (BVTConcat @bv @3 @1 @4) v3 v1,
+      return $ bvconcatSpec v1 v3,
+      return $ bvconcatSpec v2 v2',
+      return $ bvconcatSpec v3 v1,
       return $ constructUnarySpec' (Zext @bv @1 @4) v1,
       return $ constructUnarySpec' (Sext @bv @1 @4) v1,
       return $ constructUnarySpec' (Zext @bv @2 @4) v2,

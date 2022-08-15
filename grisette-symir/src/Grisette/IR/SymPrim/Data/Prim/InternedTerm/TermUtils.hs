@@ -48,6 +48,7 @@ identity (XorBitsTerm i _ _) = i
 identity (ComplementBitsTerm i _) = i
 identity (ShiftBitsTerm i _ _) = i
 identity (RotateBitsTerm i _ _) = i
+identity (BVConcatTerm i _ _) = i
 {-# INLINE identity #-}
 
 identityWithTypeRep :: forall t. Term t -> (TypeRep, Id)
@@ -56,24 +57,25 @@ identityWithTypeRep (SymbTerm i _) = (typeRep (Proxy @t), i)
 identityWithTypeRep (UnaryTerm i _ _) = (typeRep (Proxy @t), i)
 identityWithTypeRep (BinaryTerm i _ _ _) = (typeRep (Proxy @t), i)
 identityWithTypeRep (TernaryTerm i _ _ _ _) = (typeRep (Proxy @t), i)
-identityWithTypeRep (NotTerm i _) = (typeRep (Proxy @Bool), i)
-identityWithTypeRep (OrTerm i _ _) = (typeRep (Proxy @Bool), i)
-identityWithTypeRep (AndTerm i _ _) = (typeRep (Proxy @Bool), i)
-identityWithTypeRep (EqvTerm i _ _) = (typeRep (Proxy @Bool), i)
+identityWithTypeRep (NotTerm i _) = (typeRep (Proxy @t), i)
+identityWithTypeRep (OrTerm i _ _) = (typeRep (Proxy @t), i)
+identityWithTypeRep (AndTerm i _ _) = (typeRep (Proxy @t), i)
+identityWithTypeRep (EqvTerm i _ _) = (typeRep (Proxy @t), i)
 identityWithTypeRep (ITETerm i _ _ _) = (typeRep (Proxy @t), i)
 identityWithTypeRep (AddNumTerm i _ _) = (typeRep (Proxy @t), i)
 identityWithTypeRep (UMinusNumTerm i _) = (typeRep (Proxy @t), i)
 identityWithTypeRep (TimesNumTerm i _ _) = (typeRep (Proxy @t), i)
 identityWithTypeRep (AbsNumTerm i _) = (typeRep (Proxy @t), i)
 identityWithTypeRep (SignumNumTerm i _) = (typeRep (Proxy @t), i)
-identityWithTypeRep (LTNumTerm i _ _) = (typeRep (Proxy @Bool), i)
-identityWithTypeRep (LENumTerm i _ _) = (typeRep (Proxy @Bool), i)
+identityWithTypeRep (LTNumTerm i _ _) = (typeRep (Proxy @t), i)
+identityWithTypeRep (LENumTerm i _ _) = (typeRep (Proxy @t), i)
 identityWithTypeRep (AndBitsTerm i _ _) = (typeRep (Proxy @t), i)
 identityWithTypeRep (OrBitsTerm i _ _) = (typeRep (Proxy @t), i)
 identityWithTypeRep (XorBitsTerm i _ _) = (typeRep (Proxy @t), i)
 identityWithTypeRep (ComplementBitsTerm i _) = (typeRep (Proxy @t), i)
 identityWithTypeRep (ShiftBitsTerm i _ _) = (typeRep (Proxy @t), i)
 identityWithTypeRep (RotateBitsTerm i _ _) = (typeRep (Proxy @t), i)
+identityWithTypeRep (BVConcatTerm i _ _) = (typeRep (Proxy @t), i)
 {-# INLINE identityWithTypeRep #-}
 
 introSupportedPrimConstraint :: forall t a. Term t -> ((SupportedPrim t) => a) -> a
@@ -100,6 +102,7 @@ introSupportedPrimConstraint XorBitsTerm {} x = x
 introSupportedPrimConstraint ComplementBitsTerm {} x = x
 introSupportedPrimConstraint ShiftBitsTerm {} x = x
 introSupportedPrimConstraint RotateBitsTerm {} x = x
+introSupportedPrimConstraint BVConcatTerm {} x = x
 {-# INLINE introSupportedPrimConstraint #-}
 
 extractSymbolicsSomeTerm :: SomeTerm -> S.HashSet TermSymbol
@@ -139,6 +142,7 @@ extractSymbolicsSomeTerm t1 = evalState (gocached t1) M.empty
     go (SomeTerm (ComplementBitsTerm _ arg)) = goUnary arg
     go (SomeTerm (ShiftBitsTerm _ arg _)) = goUnary arg
     go (SomeTerm (RotateBitsTerm _ arg _)) = goUnary arg
+    go (SomeTerm (BVConcatTerm _ arg1 arg2)) = goBinary arg1 arg2
     goUnary arg = gocached (SomeTerm arg)
     goBinary arg1 arg2 = do
       r1 <- gocached (SomeTerm arg1)
@@ -179,6 +183,7 @@ castTerm t@XorBitsTerm {} = cast t
 castTerm t@ComplementBitsTerm {} = cast t
 castTerm t@ShiftBitsTerm {} = cast t
 castTerm t@RotateBitsTerm {} = cast t
+castTerm t@BVConcatTerm {} = cast t
 {-# INLINE castTerm #-}
 
 pformat :: forall t. (SupportedPrim t) => Term t -> String
@@ -205,6 +210,7 @@ pformat (XorBitsTerm _ arg1 arg2) = "(^ " ++ pformat arg1 ++ " " ++ pformat arg2
 pformat (ComplementBitsTerm _ arg) = "(~ " ++ pformat arg ++ ")"
 pformat (ShiftBitsTerm _ arg n) = "(shift " ++ pformat arg ++ " " ++ show n ++ ")"
 pformat (RotateBitsTerm _ arg n) = "(rotate " ++ pformat arg ++ " " ++ show n ++ ")"
+pformat (BVConcatTerm _ arg1 arg2) = "(bvconcat " ++ pformat arg1 ++ " " ++ pformat arg2 ++ ")"
 {-# INLINE pformat #-}
 
 termsSize :: [Term a] -> Int
@@ -236,6 +242,7 @@ termsSize terms = S.size $ execState (traverse go terms) S.empty
     go t@(ComplementBitsTerm _ arg) = goUnary t arg
     go t@(ShiftBitsTerm _ arg _) = goUnary t arg
     go t@(RotateBitsTerm _ arg _) = goUnary t arg
+    go t@(BVConcatTerm _ arg1 arg2) = goBinary t arg1 arg2
     goUnary :: forall a b. (SupportedPrim a) => Term a -> Term b -> State (S.HashSet SomeTerm) ()
     goUnary t arg = do
       b <- exists t

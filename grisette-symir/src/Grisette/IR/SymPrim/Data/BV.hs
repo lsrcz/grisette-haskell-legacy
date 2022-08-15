@@ -22,21 +22,29 @@ import GHC.Generics
 import GHC.TypeNats
 import Grisette.Core.Data.Class.BitVector
 import Language.Haskell.TH.Syntax
+import Numeric
 
 newtype WordN (n :: Nat) = WordN {unWordN :: Integer}
   deriving (Eq, Ord, Generic, Lift, Hashable, NFData)
 
-instance Show (WordN n) where
-  show (WordN w) = show w
+instance (KnownNat n, 1 <= n) => Show (WordN n) where
+  show (WordN w) = if (bitwidth `mod` 4) == 0 then hexRepPre ++ hexRep else binRepPre ++ binRep
+    where bitwidth = natVal (Proxy :: Proxy n)
+          hexRepPre = "0x" ++ replicate (fromIntegral (bitwidth `div` 4) - length hexRep) '0'
+          hexRep = showHex w ""
+          binRepPre = "0b" ++ replicate (fromIntegral bitwidth - length binRep) '0'
+          binRep = showIntAtBase 2 (\x -> if x == 0 then '0' else '1') w ""
 
 newtype IntN (n :: Nat) = IntN {unIntN :: Integer}
   deriving (Eq, Generic, Lift, Hashable, NFData)
 
 instance (KnownNat n, 1 <= n) => Show (IntN n) where
-  show v@(IntN w) = if sign then '-' : show (unIntN $ abs v) else show w
-    where
-      bitwidth = fromIntegral $ natVal (Proxy :: Proxy n)
-      sign = testBit w (bitwidth - 1)
+  show (IntN w) = if (bitwidth `mod` 4) == 0 then hexRepPre ++ hexRep else binRepPre ++ binRep
+    where bitwidth = natVal (Proxy :: Proxy n)
+          hexRepPre = "0x" ++ replicate (fromIntegral (bitwidth `div` 4) - length hexRep) '0'
+          hexRep = showHex w ""
+          binRepPre = "0b" ++ replicate (fromIntegral bitwidth - length binRep) '0'
+          binRep = showIntAtBase 2 (\x -> if x == 0 then '0' else '1') w ""
 
 maxWordN :: forall proxy n. KnownNat n => proxy n -> WordN n
 maxWordN _ = WordN ((1 `shiftL` fromIntegral (natVal (Proxy :: Proxy n))) - 1)
