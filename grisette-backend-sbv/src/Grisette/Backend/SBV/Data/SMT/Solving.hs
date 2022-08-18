@@ -8,10 +8,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module Grisette.Backend.SBV.Data.SMT.Solving
-  ( DefaultVerificationCondition (..),
-  )
-where
+module Grisette.Backend.SBV.Data.SMT.Solving () where
 
 import Control.Monad.Except
 import qualified Data.HashSet as S
@@ -21,11 +18,9 @@ import Data.SBV.Control (Query)
 import qualified Data.SBV.Control as SBVC
 import Grisette.Backend.SBV.Data.SMT.Config
 import Grisette.Backend.SBV.Data.SMT.Lowering
-import Grisette.Core.Control.Exception
 import Grisette.Core.Data.Class.Bool
 import Grisette.Core.Data.Class.Evaluate
 import Grisette.Core.Data.Class.ExtractSymbolics
-import Grisette.Core.Data.Class.PrimWrapper
 import Grisette.Core.Data.Class.Solver
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
@@ -153,19 +148,3 @@ instance Solver (GrisetteSMTConfig n) SymBool (S.HashSet TermSymbol) SBVC.CheckS
             (newm, res) <- guess cexm origm
             loop res (cex : cexs) newm
       loop (Left v) _ origm = return (origm, Left v)
-
-data DefaultVerificationCondition = DefaultVerificationCondition
-
-instance SolverErrorTranslation DefaultVerificationCondition VerificationConditions where
-  errorTranslation _ AssumptionViolation = False
-  errorTranslation _ AssertionViolation = True
-
-instance SymBoolOp bool => SolverTranslation DefaultVerificationCondition bool VerificationConditions () where
-  valueTranslation _ _ = conc False
-
-instance CegisErrorTranslation DefaultVerificationCondition VerificationConditions where
-  cegisErrorTranslation _ = id
-
-instance
-  (SymBoolOp bool) =>
-  CegisTranslation DefaultVerificationCondition bool VerificationConditions ()

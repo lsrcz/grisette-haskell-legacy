@@ -15,9 +15,9 @@ f7 = genSym (7 :: Int) "a"
 
 main :: IO ()
 main = timeItAll "Overall" $ do
-  let result = lift f7 >>= execLetPoly
-  _ <- timeItAll "evaluate" $ runExceptT result `deepseq` return ()
-  r <- timeItAll "Lowering/Solving" $ solveWithExcept VerifyTyper (BoundedReasoning @7 boolector {verbose = False}) result
+  let result = runExceptT $ lift f7 >>= execLetPoly
+  _ <- timeItAll "evaluate" $ result `deepseq` return ()
+  r <- timeItAll "Lowering/Solving" $ solveFallable (BoundedReasoning @7 boolector {verbose = False}) verifyTyperTranslation result
   case r of
     Left _ -> putStrLn "Verified"
     Right mo -> do

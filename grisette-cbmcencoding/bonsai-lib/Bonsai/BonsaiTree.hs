@@ -70,9 +70,6 @@ instance TransformError BonsaiError BonsaiError where
 
 data VerifyTyper = VerifyTyper
 
-instance SolverErrorTranslation VerifyTyper BonsaiError where
-  errorTranslation _ BonsaiExecError = True
-  errorTranslation _ _ = False
-
-instance SolverTranslation VerifyTyper SymBool BonsaiError a where
-  valueTranslation _ _ = conc False
+verifyTyperTranslation :: Either BonsaiError a -> SymBool
+verifyTyperTranslation (Left BonsaiExecError) = conc True
+verifyTyperTranslation _ = conc False

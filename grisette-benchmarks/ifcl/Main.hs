@@ -12,14 +12,9 @@ import Utils.Timing
 
 data EENIWitness = EENIWitness Program Program deriving (Show)
 
-data VerifyEENI = VerifyEENI
-
-instance SolverErrorTranslation VerifyEENI VerificationConditions where
-  errorTranslation _ AssertionViolation = True
-  errorTranslation _ _ = False
-
-instance SolverTranslation VerifyEENI SymBool VerificationConditions () where
-  valueTranslation _ _ = conc False
+verifyEENITranslation :: Either VerificationConditions () -> SymBool
+verifyEENITranslation (Left AssertionViolation) = conc True
+verifyEENITranslation _ = conc False
 
 verifyEENI ::
   (GenSymSimple pspec Program) =>
@@ -36,7 +31,7 @@ verifyEENI config end indistinguishable steps progSpec =
       m1 = freshMachine 2
       r0 = merge $ withExceptT (const AssumptionViolation) $ step steps m0 p0
       r1 = merge $ withExceptT (const AssumptionViolation) $ step steps m1 p1
-      res = do
+      res = runExceptT $ do
         symFailIfNot AssumptionViolation (indistinguishable m0 p0 m1 p1)
         m0k <- r0
         m1k <- r1
@@ -46,7 +41,7 @@ verifyEENI config end indistinguishable steps progSpec =
    in do
         _ <- timeItAll "evaluate1" $ runExceptT r0 `deepseq` return ()
         _ <- timeItAll "evaluate2" $ runExceptT r1 `deepseq` return ()
-        m <- timeItAll "Lowering/Solving" $ solveWithExcept VerifyEENI config res
+        m <- timeItAll "Lowering/Solving" $ solveFallable config verifyEENITranslation res
         case m of
           Left _ -> do return Nothing
           Right mo -> return $ Just $ EENIWitness (evaluate True mo p0) (evaluate True mo p1)

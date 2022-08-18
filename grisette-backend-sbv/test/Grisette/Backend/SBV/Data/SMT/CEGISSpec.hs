@@ -10,7 +10,7 @@ import qualified Data.HashSet as S
 import Data.Proxy
 import qualified Data.SBV as SBV
 import Grisette.Backend.SBV.Data.SMT.Config
-import Grisette.Backend.SBV.Data.SMT.Solving
+import Grisette.Backend.SBV.Data.SMT.Solving ()
 import Grisette.Core.Control.Exception
 import Grisette.Core.Data.Class.BitVector
 import Grisette.Core.Data.Class.Bool
@@ -29,7 +29,7 @@ import Test.Hspec
 
 testCegis :: (HasCallStack, ExtractSymbolics (S.HashSet TermSymbol) a, Evaluate Model a, Show a) => GrisetteSMTConfig i -> Bool -> a -> [SymBool] -> Expectation
 testCegis config shouldSuccess a bs = do
-  x <- cegisWithExcept DefaultVerificationCondition config (a, ssymb "internal" :: SymInteger) (buildFormula bs)
+  x <- cegisFallable' config (a, ssymb "internal" :: SymInteger) return (runExceptT $ buildFormula bs)
   case x of
     Left _ -> shouldSuccess `shouldBe` False
     Right (_, m) -> do

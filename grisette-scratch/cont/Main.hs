@@ -9,7 +9,6 @@ import Control.Monad.Cont
 import Debug.Trace
 import GHC.Generics
 import Grisette
-import Grisette.Lib.Control.Monad.Trans.Cont
 
 a :: UnionM Integer
 a = mrgIf "a" 1 2

@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Main where
@@ -28,18 +26,15 @@ p3 =
 sketch :: UnionM [UnionM Stmt]
 sketch = genSym (ListSpec 0 2 (ExprSpec 2 1)) "a"
 
-data FindRuntimeTypeMismatch = FindRuntimeTypeMismatch
-
-instance SolverErrorTranslation FindRuntimeTypeMismatch Error where
-  errorTranslation _ (Runtime RuntimeTypeMismatch) = True
-  errorTranslation _ _ = False
-
-instance SolverTranslation FindRuntimeTypeMismatch SymBool Error LitExpr where
-  valueTranslation _ _ = conc False
+findRuntimeTypeMismatch :: Either Error LitExpr -> SymBool
+findRuntimeTypeMismatch (Left (Runtime RuntimeTypeMismatch)) = conc True
+findRuntimeTypeMismatch _ = conc False
 
 main :: IO ()
 main = do
-  m <- solveWithExcept FindRuntimeTypeMismatch (UnboundedReasoning z3 {verbose = True}) $ checkAndInterpretStmtUListU sketch
+  m <-
+    solveFallable (UnboundedReasoning z3 {verbose = True}) findRuntimeTypeMismatch $
+      checkAndInterpretStmtUListU sketch
   case m of
     Right mm -> do
       putStrLn "Not verified, counter example: "

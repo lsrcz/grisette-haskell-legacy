@@ -174,42 +174,13 @@ module Grisette.Core
     ToSym (..),
 
     -- * Solver interface
-    SolverErrorTranslation (..),
-    SolverTranslation (..),
-    CegisErrorTranslation (..),
-    CegisTranslation (..),
     Solver (..),
-    solveWithExcept,
-    -- solveArgWithExcept,
-    solveWithExceptMulti,
-    cegisWithExcept,
-    -- cegisForallByWithExcept,
-    -- cegisArgWithExcept,
-    -- cegisArgForallByWithExcept,
-    MonadErrorTrans (..),
-    {-SolveProblem
-      ( Formula,
-        WithExcept,
-        ArgFormula,
-        ArgWithExcept
-      ),
-    solve,
-    CegisProblem
-      ( CFormulaPair,
-        CArgFormulaPair,
-        CForallFormulaPair,
-        CArgForallFormulaPair,
-        CWithExcept,
-        CArgWithExcept,
-        CForallWithExcept,
-        CArgForallWithExcept
-      ),
-    cegis,
-    forallIn,
-    argBy,
-    forallBy,
-    translateBy,-}
-  
+    ExtractUnionEither (..),
+    solveFallable,
+    solveMultiFallable,
+    cegisFallable,
+    cegisFallable',
+
     -- * Memoization
     htmemo,
     htmemo2,

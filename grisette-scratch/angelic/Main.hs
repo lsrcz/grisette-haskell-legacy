@@ -101,18 +101,16 @@ data Marble = Red | White | Blue
 
 data DutchFlag = DutchFlag {nred :: Int, nwhite :: Int}
 
-instance SolverErrorTranslation DutchFlag AssertionError where
-  errorTranslation _ _ = False
-
-instance SolverTranslation DutchFlag SymBool AssertionError ([UnionM Marble], Trace) where
-  valueTranslation (DutchFlag r w) (v, _) =
-    isColor Red rmarbles &&~ isColor White wmarbles &&~ isColor Blue bmarbles
-    where
-      rmarbles = take r v
-      wmarbles = take w $ drop r v
-      bmarbles = drop (r + w) v
-      isColor :: Marble -> [UnionM Marble] -> SymBool
-      isColor m = foldl (\acc n -> acc &&~ mrgReturn m ==~ n) (conc True)
+dutchFlagTranslation :: DutchFlag -> Either AssertionError ([UnionM Marble], Trace) -> SymBool
+dutchFlagTranslation _ (Left _) = conc False
+dutchFlagTranslation (DutchFlag r w) (Right (v, _)) =
+  isColor Red rmarbles &&~ isColor White wmarbles &&~ isColor Blue bmarbles
+  where
+    rmarbles = take r v
+    wmarbles = take w $ drop r v
+    bmarbles = drop (r + w) v
+    isColor :: Marble -> [UnionM Marble] -> SymBool
+    isColor m = foldl (\acc n -> acc &&~ mrgReturn m ==~ n) (conc True)
 
 -- This one is lazy. But it does not perform incremental reasoning and can be slow.
 runDutchFlag :: GrisetteSMTConfig n -> Algo -> Integer -> [Marble] -> IO [ConTrace]
@@ -125,7 +123,13 @@ runDutchFlag config algo len initMarbles = do
       return $ ct : r
   where
     solveProb result = do
-      ms <- solveWithExcept (DutchFlag (length $ filter (== Red) initMarbles) (length $ filter (== White) initMarbles)) config result
+      ms <-
+        solveFallable
+          config
+          ( dutchFlagTranslation
+              (DutchFlag (length $ filter (== Red) initMarbles) (length $ filter (== White) initMarbles))
+          )
+          result
       case ms of
         Left _ -> return Nothing
         Right mo -> do
@@ -151,7 +155,14 @@ runDutchFlag config algo len initMarbles = do
 -- We currently cannot do this lazily due to the restriction of SBV APIs.
 runDutchFlag' :: GrisetteSMTConfig n -> Algo -> Integer -> Int -> [Marble] -> IO [ConTrace]
 runDutchFlag' config algo len maxModelCnt initMarbles = do
-  ms <- solveWithExceptMulti (DutchFlag (length $ filter (== Red) initMarbles) (length $ filter (== White) initMarbles)) config maxModelCnt final
+  ms <-
+    solveMultiFallable
+      config
+      maxModelCnt
+      ( dutchFlagTranslation
+          (DutchFlag (length $ filter (== Red) initMarbles) (length $ filter (== White) initMarbles))
+      )
+      (runExceptT final)
   return $
     ( \mo ->
         let res :: Either AssertionError ConTrace = evaluateToCon mo (runExceptT (snd <$> final) :: UnionM (Either AssertionError Trace))
@@ -171,4 +182,3 @@ main = do
   runDutchFlag config algo1 7 [Blue, White, Red, White, Red, White, Blue] >>= print . take 3
   runDutchFlag' config algo0 3 3 [Blue, White, Red, White, Red, White, Blue] >>= print
   runDutchFlag' config algo1 7 3 [Blue, White, Red, White, Red, White, Blue] >>= print
-

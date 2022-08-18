@@ -9,12 +9,12 @@ import Parser
 
 main :: IO ()
 main = do
-  r1 <- synthesis DoSynthesis (UnboundedReasoning z3) (getSketch "assert ??b" "a")
+  r1 <- synthesis (UnboundedReasoning z3) doSynthesisTranslation (getSketch "assert ??b" "a")
   print r1
   r2 <-
     synthesis
-      DoSynthesis
       (UnboundedReasoning z3)
+      doSynthesisTranslation 
       ( getSketch
           "v1 = ??i;                   \
           \ v2 = ??i;                  \
@@ -30,8 +30,8 @@ main = do
   print r2
   r3 <-
     synthesis
-      DoSynthesis
       (UnboundedReasoning z3)
+      doSynthesisTranslation 
       ( getSketch
           "v1 = ??i;                   \
           \ v2 = ??i;                  \
@@ -47,8 +47,8 @@ main = do
   print r3
   r4 <-
     synthesis
-      GetTypeError
       (UnboundedReasoning z3)
+      getTypeErrorTranslation
       ( getSketch
           "v1 = ??i;                   \
           \ v2 = ??i;                  \

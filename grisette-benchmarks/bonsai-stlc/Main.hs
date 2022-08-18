@@ -17,9 +17,9 @@ f8 = genSym (8 :: Int) "h"
 
 main :: IO ()
 main = timeItAll "Overall" $ do
-  let result = lift f8 >>= execStlc
-  _ <- timeItAll "evaluate" $ runExceptT result `deepseq` return ()
-  r <- timeItAll "Lowering/Solving" $ solveWithExcept VerifyTyper (BoundedReasoning @6 boolector) result
+  let result = runExceptT $ lift f8 >>= execStlc
+  _ <- timeItAll "evaluate" $ result `deepseq` return ()
+  r <- timeItAll "Lowering/Solving" $ solveFallable (BoundedReasoning @6 boolector) verifyTyperTranslation result
   case r of
     Left _ -> putStrLn "Verified"
     Right mo -> do
