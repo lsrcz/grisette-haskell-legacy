@@ -1,10 +1,19 @@
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Grisette.Backend.SBV.Data.SMT.SymBiMap (SymBiMap (..), emptySymBiMap, sizeBiMap, addBiMap, addBiMapIntermediate, findStringToSymbol, lookupTerm) where
 
-import GHC.Stack
+module Grisette.Backend.SBV.Data.SMT.SymBiMap
+  ( SymBiMap (..),
+    emptySymBiMap,
+    sizeBiMap,
+    addBiMap,
+    addBiMapIntermediate,
+    findStringToSymbol,
+    lookupTerm,
+  )
+where
+
 import Data.Dynamic
 import qualified Data.HashMap.Strict as M
+import GHC.Stack
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.SomeTerm
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 

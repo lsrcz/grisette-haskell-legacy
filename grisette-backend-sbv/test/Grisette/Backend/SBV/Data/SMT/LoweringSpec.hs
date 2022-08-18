@@ -19,9 +19,9 @@ import Grisette.Backend.SBV.Data.SMT.Config
 import Grisette.Backend.SBV.Data.SMT.Lowering
 import Grisette.Backend.SBV.Data.SMT.SymBiMap
 import Grisette.IR.SymPrim.Data.BV
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.SomeTerm
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Test.Hspec
 
 testUnaryOpLowering ::
@@ -257,48 +257,56 @@ spec = do
       testBinaryOpLowering @Bool @Bool @Bool unboundedConfig andTerm "and" (SBV..&&)
       testBinaryOpLowering @Bool @Bool @Bool
         unboundedConfig
-        andTerm "and" 
+        andTerm
+        "and"
         (\x y -> SBV.sNot (x SBV..<+> y) SBV..&& (x SBV..|| y))
     it "Or lowering should work" $ do
       testBinaryOpLowering @Bool @Bool @Bool unboundedConfig orTerm "or" (SBV..||)
       testBinaryOpLowering @Bool @Bool @Bool
         unboundedConfig
-        orTerm "or"
+        orTerm
+        "or"
         (\x y -> (x SBV..<+> y) SBV..|| (x SBV..&& y))
     it "Eqv lowering should work" $ do
       testBinaryOpLowering @Bool @Bool @Bool unboundedConfig eqvTerm "eqv" (SBV..==)
       testBinaryOpLowering @Bool @Bool @Bool
         unboundedConfig
-        eqvTerm "eqv"
+        eqvTerm
+        "eqv"
         (\x y -> SBV.sNot (x SBV..<+> y))
     it "ITE lowering should work" $ do
       testTernaryOpLowering @Bool @Bool @Bool @Bool unboundedConfig iteTerm "ite" SBV.ite
       testTernaryOpLowering @Bool @Bool @Bool @Bool
         unboundedConfig
-        iteTerm "ite"
+        iteTerm
+        "ite"
         (\c x y -> (c SBV..=> x) SBV..&& (SBV.sNot c SBV..=> y))
   describe "Test Integer Lowering" $ do
     it "Add lowering should work" $ do
       testBinaryOpLowering @Integer @Integer @Integer unboundedConfig addNumTerm "(+)" (+)
       testBinaryOpLowering @Integer @Integer @Integer
         unboundedConfig
-        addNumTerm "(+)"
+        addNumTerm
+        "(+)"
         (\x y -> (x + 1) * (y + 1) - x * y - 1)
       testBinaryOpLowering @Integer @Integer @Integer boundedConfig addNumTerm "(+)" (+)
       testBinaryOpLowering @Integer @Integer @Integer
         boundedConfig
-        addNumTerm "(+)"
+        addNumTerm
+        "(+)"
         (\x y -> (x + 1) * (y + 1) - x * y - 1)
     it "Uminus lowering should work" $ do
       testUnaryOpLowering @Integer @Integer unboundedConfig uminusNumTerm "negate" negate
       testUnaryOpLowering @Integer @Integer
         unboundedConfig
-        uminusNumTerm "negate"
+        uminusNumTerm
+        "negate"
         (\x -> (x + 1) * (x + 1) - 3 * x - x * x - 1)
       testUnaryOpLowering @Integer @Integer boundedConfig uminusNumTerm "negate" negate
       testUnaryOpLowering @Integer @Integer
         boundedConfig
-        uminusNumTerm "negate" 
+        uminusNumTerm
+        "negate"
         (\x -> (x + 1) * (x + 1) - 3 * x - x * x - 1)
     it "Abs lowering should work" $ do
       testUnaryOpLowering @Integer @Integer unboundedConfig absNumTerm "abs" abs
@@ -310,34 +318,40 @@ spec = do
       testBinaryOpLowering @Integer @Integer @Integer unboundedConfig timesNumTerm "(*)" (*)
       testBinaryOpLowering @Integer @Integer @Integer
         unboundedConfig
-        timesNumTerm "(*)"
+        timesNumTerm
+        "(*)"
         (\x y -> (x + 1) * (y + 1) - x - y - 1)
       testBinaryOpLowering @Integer @Integer @Integer boundedConfig timesNumTerm "(*)" (*)
       testBinaryOpLowering @Integer @Integer @Integer
         boundedConfig
-        timesNumTerm "(*)" 
+        timesNumTerm
+        "(*)"
         (\x y -> (x + 1) * (y + 1) - x - y - 1)
     it "Lt lowering should work" $ do
-      testBinaryOpLowering @Integer @Integer @Bool unboundedConfig ltNumTerm "(<)"(SBV..<)
+      testBinaryOpLowering @Integer @Integer @Bool unboundedConfig ltNumTerm "(<)" (SBV..<)
       testBinaryOpLowering @Integer @Integer @Bool
         unboundedConfig
-        ltNumTerm "(<)"
+        ltNumTerm
+        "(<)"
         (\x y -> x * 2 - x SBV..< y * 2 - y)
-      testBinaryOpLowering @Integer @Integer @Bool boundedConfig ltNumTerm "(<)"(SBV..<)
+      testBinaryOpLowering @Integer @Integer @Bool boundedConfig ltNumTerm "(<)" (SBV..<)
       testBinaryOpLowering @Integer @Integer @Bool
         boundedConfig
-        ltNumTerm "(<=)"
+        ltNumTerm
+        "(<=)"
         (\x y -> x * 2 - x SBV..< y * 2 - y)
     it "Le lowering should work" $ do
       testBinaryOpLowering @Integer @Integer @Bool unboundedConfig leNumTerm "(<=)" (SBV..<=)
       testBinaryOpLowering @Integer @Integer @Bool
         unboundedConfig
-        leNumTerm "(<=)" 
+        leNumTerm
+        "(<=)"
         (\x y -> x * 2 - x SBV..<= y * 2 - y)
       testBinaryOpLowering @Integer @Integer @Bool boundedConfig leNumTerm "(<=)" (SBV..<=)
       testBinaryOpLowering @Integer @Integer @Bool
         boundedConfig
-        leNumTerm "(<=)" 
+        leNumTerm
+        "(<=)"
         (\x y -> x * 2 - x SBV..<= y * 2 - y)
     it "DivI lowering should work" $ do
       testBinaryOpLowering @Integer @Integer @Integer unboundedConfig divIntegerTerm "div" SBV.sDiv
@@ -350,13 +364,15 @@ spec = do
       testBinaryOpLowering @(IntN 5) @(IntN 5) unboundedConfig addNumTerm "(+)" (+)
       testBinaryOpLowering @(IntN 5) @(IntN 5)
         unboundedConfig
-        addNumTerm "(+)"
+        addNumTerm
+        "(+)"
         (\x y -> (x + 1) * (y + 1) - x * y - 1)
     it "Uminus lowering should work" $ do
       testUnaryOpLowering @(IntN 5) unboundedConfig uminusNumTerm "negate" negate
       testUnaryOpLowering @(IntN 5)
         unboundedConfig
-        uminusNumTerm "negate"
+        uminusNumTerm
+        "negate"
         (\x -> (x + 1) * (x + 1) - 3 * x - x * x - 1)
     it "Abs lowering should work" $ do
       testUnaryOpLowering @(IntN 5) unboundedConfig absNumTerm "abs" abs
@@ -366,19 +382,22 @@ spec = do
       testBinaryOpLowering @(IntN 5) @(IntN 5) unboundedConfig timesNumTerm "(*)" (*)
       testBinaryOpLowering @(IntN 5) @(IntN 5)
         unboundedConfig
-        timesNumTerm "(*)"
+        timesNumTerm
+        "(*)"
         (\x y -> (x + 1) * (y + 1) - x - y - 1)
     it "Lt lowering should work" $ do
       testBinaryOpLowering @(IntN 5) @(IntN 5) unboundedConfig ltNumTerm "(<)" (SBV..<)
       testBinaryOpLowering @(IntN 5) @(IntN 5)
         unboundedConfig
-        ltNumTerm "(<)" 
+        ltNumTerm
+        "(<)"
         (\x y -> x * 2 - x SBV..< y * 2 - y)
     it "Le lowering should work" $ do
       testBinaryOpLowering @(IntN 5) @(IntN 5) unboundedConfig leNumTerm "(<=)" (SBV..<=)
       testBinaryOpLowering @(IntN 5) @(IntN 5)
         unboundedConfig
-        leNumTerm "(<=)" 
+        leNumTerm
+        "(<=)"
         (\x y -> x * 2 - x SBV..<= y * 2 - y)
     it "Extract lowering should work" $ do
       testUnaryOpLowering @(IntN 5) @(IntN 1)
@@ -507,7 +526,8 @@ spec = do
       testUnaryOpLowering @(IntN 5) unboundedConfig (`shiftBitsTerm` (-5)) "shift" (`shift` (-5))
       testUnaryOpLowering @(IntN 5)
         unboundedConfig
-        (`shiftBitsTerm` (-5)) "shift"
+        (`shiftBitsTerm` (-5))
+        "shift"
         (\x -> SBV.ite (x SBV..>= 0) 0 (-1))
     it "RotateBits lowering should work" $ do
       testUnaryOpLowering @(IntN 5) unboundedConfig (`rotateBitsTerm` 0) "rotate" id
@@ -533,13 +553,15 @@ spec = do
       testBinaryOpLowering @(WordN 5) @(WordN 5) unboundedConfig addNumTerm "(+)" (+)
       testBinaryOpLowering @(WordN 5) @(WordN 5)
         unboundedConfig
-        addNumTerm "(+)"
+        addNumTerm
+        "(+)"
         (\x y -> (x + 1) * (y + 1) - x * y - 1)
     it "Uminus lowering should work" $ do
       testUnaryOpLowering @(WordN 5) unboundedConfig uminusNumTerm "negate" negate
       testUnaryOpLowering @(WordN 5)
         unboundedConfig
-        uminusNumTerm "negate"
+        uminusNumTerm
+        "negate"
         (\x -> (x + 1) * (x + 1) - 3 * x - x * x - 1)
     it "Abs lowering should work" $ do
       testUnaryOpLowering @(WordN 5) unboundedConfig absNumTerm "abs" abs
@@ -549,19 +571,22 @@ spec = do
       testBinaryOpLowering @(WordN 5) @(WordN 5) unboundedConfig timesNumTerm "(*)" (*)
       testBinaryOpLowering @(WordN 5) @(WordN 5)
         unboundedConfig
-        timesNumTerm "(*)"
+        timesNumTerm
+        "(*)"
         (\x y -> (x + 1) * (y + 1) - x - y - 1)
     it "Lt lowering should work" $ do
       testBinaryOpLowering @(WordN 5) @(WordN 5) unboundedConfig ltNumTerm "(<)" (SBV..<)
       testBinaryOpLowering @(WordN 5) @(WordN 5)
         unboundedConfig
-        ltNumTerm "(<)"
+        ltNumTerm
+        "(<)"
         (\x y -> x * 2 - x SBV..< y * 2 - y)
     it "Le lowering should work" $ do
       testBinaryOpLowering @(WordN 5) @(WordN 5) unboundedConfig leNumTerm "(<=)" (SBV..<=)
       testBinaryOpLowering @(WordN 5) @(WordN 5)
         unboundedConfig
-        leNumTerm "(<=)"
+        leNumTerm
+        "(<=)"
         (\x y -> x * 2 - x SBV..<= y * 2 - y)
     it "Extract lowering should work" $ do
       testUnaryOpLowering @(WordN 5) @(WordN 1)

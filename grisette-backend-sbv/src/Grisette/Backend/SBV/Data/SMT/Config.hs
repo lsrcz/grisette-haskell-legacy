@@ -17,8 +17,8 @@ import Data.Kind
 import qualified Data.SBV as SBV
 import GHC.TypeNats
 import Grisette.IR.SymPrim.Data.BV
-import Grisette.IR.SymPrim.Data.TabularFunc
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
+import Grisette.IR.SymPrim.Data.TabularFunc
 
 type Aux :: Bool -> Nat -> Type
 type family Aux o n where

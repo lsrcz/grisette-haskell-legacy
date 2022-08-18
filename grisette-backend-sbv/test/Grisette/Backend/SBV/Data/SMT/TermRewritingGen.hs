@@ -17,14 +17,14 @@ import Data.Data
 import Data.Kind
 import GHC.TypeLits
 import Grisette.Core.Data.Class.BitVector
-import Grisette.IR.SymPrim.Data.Prim.BV
-import Grisette.IR.SymPrim.Data.Prim.Bits
-import Grisette.IR.SymPrim.Data.Prim.Bool
-import Grisette.IR.SymPrim.Data.Prim.Integer
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
-import Grisette.IR.SymPrim.Data.Prim.Num
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.BV
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Bits
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Bool
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Integer
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Num
 import Test.QuickCheck
 
 class (SupportedPrim b) => TermRewritingSpec a b | a -> b where
@@ -122,8 +122,10 @@ constructTernarySpec' ::
   b ->
   c ->
   d
-constructTernarySpec' tag = constructTernarySpec @a @av @b @bv @c @cv @d @dv
-  (constructTernary tag) (partialEvalTernary tag)
+constructTernarySpec' tag =
+  constructTernarySpec @a @av @b @bv @c @cv @d @dv
+    (constructTernary tag)
+    (partialEvalTernary tag)
 
 notSpec :: (TermRewritingSpec a Bool, TermRewritingSpec b Bool) => a -> b
 notSpec = constructUnarySpec notTerm pevalNotTerm
@@ -179,16 +181,45 @@ shiftBitsSpec a n = constructUnarySpec (`shiftBitsTerm` n) (`pevalShiftBitsTerm`
 rotateBitsSpec :: (TermRewritingSpec a av, Bits av) => a -> Int -> a
 rotateBitsSpec a n = constructUnarySpec (`rotateBitsTerm` n) (`pevalRotateBitsTerm` n) a
 
-bvconcatSpec :: (TermRewritingSpec a (bv an), TermRewritingSpec b (bv bn), TermRewritingSpec c (bv cn),
-  KnownNat an, KnownNat bn, KnownNat cn, BVConcat (bv an) (bv bn) (bv cn)) => a -> b -> c
+bvconcatSpec ::
+  ( TermRewritingSpec a (bv an),
+    TermRewritingSpec b (bv bn),
+    TermRewritingSpec c (bv cn),
+    KnownNat an,
+    KnownNat bn,
+    KnownNat cn,
+    BVConcat (bv an) (bv bn) (bv cn)
+  ) =>
+  a ->
+  b ->
+  c
 bvconcatSpec = constructBinarySpec bvconcatTerm pevalBVConcatTerm
 
-bvselectSpec :: (TermRewritingSpec a (bv an), TermRewritingSpec b (bv bn),
-  KnownNat an, KnownNat bn, KnownNat ix, BVSelect (bv an) ix bn (bv bn)) => proxy ix -> proxy bn -> a -> b
+bvselectSpec ::
+  ( TermRewritingSpec a (bv an),
+    TermRewritingSpec b (bv bn),
+    KnownNat an,
+    KnownNat bn,
+    KnownNat ix,
+    BVSelect (bv an) ix bn (bv bn)
+  ) =>
+  proxy ix ->
+  proxy bn ->
+  a ->
+  b
 bvselectSpec p1 p2 = constructUnarySpec (bvselectTerm p1 p2) (pevalBVSelectTerm p1 p2)
 
-bvextendSpec :: (TermRewritingSpec a (bv an), TermRewritingSpec b (bv bn),
-  KnownNat an, KnownNat bn, BVExtend (bv an) bn (bv bn)) => Bool -> proxy bn -> a -> b
+bvextendSpec ::
+  ( TermRewritingSpec a (bv an),
+    TermRewritingSpec b (bv bn),
+    KnownNat an,
+    KnownNat bn,
+    BVExtend (bv an) bn (bv bn)
+  ) =>
+  Bool ->
+  proxy bn ->
+  a ->
+  b
 bvextendSpec signed p = constructUnarySpec (bvextendTerm signed p) (pevalBVExtendTerm signed p)
 
 divIntegerSpec :: (TermRewritingSpec a Integer) => a -> a -> a
@@ -379,7 +410,7 @@ fsbvWithBool p n | n > 0 = do
     [ return $ uminusNumSpec v1i,
       return $ absNumSpec v1i,
       return $ signumNumSpec v1i,
-      return $ addNumSpec  v1i v2i,
+      return $ addNumSpec v1i v2i,
       return $ timesNumSpec v1i v2i,
       return $ andBitsSpec v1i v2i,
       return $ orBitsSpec v1i v2i,
@@ -555,7 +586,7 @@ dsbv2 p depth | depth > 0 = do
     [ return $ uminusNumSpec v2,
       return $ absNumSpec v2,
       return $ signumNumSpec v2,
-      return $ addNumSpec  v2 v2',
+      return $ addNumSpec v2 v2',
       return $ timesNumSpec v2 v2',
       return $ andBitsSpec v2 v2',
       return $ orBitsSpec v2 v2',
@@ -636,7 +667,7 @@ dsbv3 p depth | depth > 0 = do
     [ return $ uminusNumSpec v3,
       return $ absNumSpec v3,
       return $ signumNumSpec v3,
-      return $ addNumSpec  v3 v3',
+      return $ addNumSpec v3 v3',
       return $ timesNumSpec v3 v3',
       return $ andBitsSpec v3 v3',
       return $ orBitsSpec v3 v3',

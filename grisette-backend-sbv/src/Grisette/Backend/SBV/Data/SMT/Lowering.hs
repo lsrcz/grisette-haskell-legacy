@@ -39,12 +39,12 @@ import GHC.TypeNats
 import Grisette.Backend.SBV.Data.SMT.Config
 import Grisette.Backend.SBV.Data.SMT.SymBiMap
 import Grisette.IR.SymPrim.Data.BV
-import Grisette.IR.SymPrim.Data.Prim.Bool
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.SomeTerm
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
 import Grisette.IR.SymPrim.Data.Prim.Model as PM
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Bool
 import Grisette.IR.SymPrim.Data.TabularFunc
 import qualified Type.Reflection as R
 import Unsafe.Coerce
@@ -126,7 +126,11 @@ lowerUnaryTerm' config orig t1 f = do
 
 lowerBinaryTerm' ::
   forall integerBitWidth a b a1 b1 x.
-  (Typeable (TermTy integerBitWidth x), a1 ~ TermTy integerBitWidth a, b1 ~ TermTy integerBitWidth b, SupportedPrim x) =>
+  ( Typeable (TermTy integerBitWidth x),
+    a1 ~ TermTy integerBitWidth a,
+    b1 ~ TermTy integerBitWidth b,
+    SupportedPrim x
+  ) =>
   GrisetteSMTConfig integerBitWidth ->
   Term x ->
   Term a ->
@@ -261,7 +265,10 @@ lowerSinglePrimImpl' config t@(BVSelectTerm _ (ix :: R.TypeRep ix) w (bv :: Term
   case (R.typeRep @a, R.typeRep @x) of
     (UnsignedBVType (_ :: Proxy na), UnsignedBVType (_ :: Proxy xn)) ->
       withKnownNat n1 $
-        case (unsafeAxiom @(na + ix - 1 - ix + 1) @na, unsafeLeqProof @(na + ix - 1 + 1) @xn, unsafeLeqProof @ix @(na + ix - 1)) of
+        case ( unsafeAxiom @(na + ix - 1 - ix + 1) @na,
+               unsafeLeqProof @(na + ix - 1 + 1) @xn,
+               unsafeLeqProof @ix @(na + ix - 1)
+             ) of
           (Refl, LeqProof, LeqProof) ->
             lowerUnaryTerm' config t bv (SBV.bvExtract (Proxy @(na + ix - 1)) (Proxy @ix))
       where
@@ -269,7 +276,10 @@ lowerSinglePrimImpl' config t@(BVSelectTerm _ (ix :: R.TypeRep ix) w (bv :: Term
         n1 = NatRepr (natVal (Proxy @na) + natVal (Proxy @ix) - 1)
     (SignedBVType (_ :: Proxy na), SignedBVType (_ :: Proxy xn)) ->
       withKnownNat n1 $
-        case (unsafeAxiom @(na + ix - 1 - ix + 1) @na, unsafeLeqProof @(na + ix - 1 + 1) @xn, unsafeLeqProof @ix @(na + ix - 1)) of
+        case ( unsafeAxiom @(na + ix - 1 - ix + 1) @na,
+               unsafeLeqProof @(na + ix - 1 + 1) @xn,
+               unsafeLeqProof @ix @(na + ix - 1)
+             ) of
           (Refl, LeqProof, LeqProof) ->
             lowerUnaryTerm' config t bv (SBV.bvExtract (Proxy @(na + ix - 1)) (Proxy @ix))
       where
@@ -358,7 +368,9 @@ buildUTFunc111 ::
 buildUTFunc111 config ta tb tc term@(SymbTerm _ ts) m = case ((config, ta), (config, tb), (config, tc)) of
   (ResolvedSimpleType, ResolvedSimpleType, ResolvedSimpleType) ->
     let name = "ufunc_" ++ show (sizeBiMap m)
-        f = SBV.uninterpret @(TermTy integerBitWidth s1 -> TermTy integerBitWidth s2 -> TermTy integerBitWidth s3) name
+        f =
+          SBV.uninterpret @(TermTy integerBitWidth s1 -> TermTy integerBitWidth s2 -> TermTy integerBitWidth s3)
+            name
      in Just $ return (addBiMap (SomeTerm term) (toDyn f) name ts m, f)
   _ -> Nothing
 buildUTFunc111 _ _ _ _ _ _ = error "Should only be called on SymbTerm"
@@ -393,7 +405,9 @@ buildUGFunc111 ::
 buildUGFunc111 config ta tb tc term@(SymbTerm _ ts) m = case ((config, ta), (config, tb), (config, tc)) of
   (ResolvedSimpleType, ResolvedSimpleType, ResolvedSimpleType) ->
     let name = "ufunc_" ++ show (sizeBiMap m)
-        f = SBV.uninterpret @(TermTy integerBitWidth s1 -> TermTy integerBitWidth s2 -> TermTy integerBitWidth s3) name
+        f =
+          SBV.uninterpret @(TermTy integerBitWidth s1 -> TermTy integerBitWidth s2 -> TermTy integerBitWidth s3)
+            name
      in Just $ return (addBiMap (SomeTerm term) (toDyn f) name ts m, f)
   _ -> Nothing
 buildUGFunc111 _ _ _ _ _ _ = error "Should only be called on SymbTerm"
@@ -638,7 +652,10 @@ lowerSinglePrimImpl config t@(BVSelectTerm _ (ix :: R.TypeRep ix) w (bv :: Term 
   case (R.typeRep @a, R.typeRep @x) of
     (UnsignedBVType (_ :: Proxy na), UnsignedBVType (_ :: Proxy xn)) ->
       withKnownNat n1 $
-        case (unsafeAxiom @(na + ix - 1 - ix + 1) @na, unsafeLeqProof @(na + ix - 1 + 1) @xn, unsafeLeqProof @ix @(na + ix - 1)) of
+        case ( unsafeAxiom @(na + ix - 1 - ix + 1) @na,
+               unsafeLeqProof @(na + ix - 1 + 1) @xn,
+               unsafeLeqProof @ix @(na + ix - 1)
+             ) of
           (Refl, LeqProof, LeqProof) ->
             lowerUnaryTerm config t bv (SBV.bvExtract (Proxy @(na + ix - 1)) (Proxy @ix)) m
       where
@@ -646,7 +663,10 @@ lowerSinglePrimImpl config t@(BVSelectTerm _ (ix :: R.TypeRep ix) w (bv :: Term 
         n1 = NatRepr (natVal (Proxy @na) + natVal (Proxy @ix) - 1)
     (SignedBVType (_ :: Proxy na), SignedBVType (_ :: Proxy xn)) ->
       withKnownNat n1 $
-        case (unsafeAxiom @(na + ix - 1 - ix + 1) @na, unsafeLeqProof @(na + ix - 1 + 1) @xn, unsafeLeqProof @ix @(na + ix - 1)) of
+        case ( unsafeAxiom @(na + ix - 1 - ix + 1) @na,
+               unsafeLeqProof @(na + ix - 1 + 1) @xn,
+               unsafeLeqProof @ix @(na + ix - 1)
+             ) of
           (Refl, LeqProof, LeqProof) ->
             lowerUnaryTerm config t bv (SBV.bvExtract (Proxy @(na + ix - 1)) (Proxy @ix)) m
       where
@@ -791,13 +811,31 @@ parseModel _ (SBVI.SMTModel _ _ assoc uifuncs) mp = foldr gouifuncs (foldr goass
           let symb = WithInfo (IndexedSymbol "arg" idx) FuncArg
               funs = second (\r -> gougfuncResolve (idx + 1) ta2' tr2' (r, s)) <$> partition ta1 l
               def = gougfuncResolve (idx + 1) ta2' tr2' ([], s)
-              body = foldl' (\acc (v, f) -> pevalITETerm (pevalEqvTerm (iinfosymbTerm "arg" idx FuncArg) (concTerm v)) (concTerm f) acc) (concTerm def) funs
+              body =
+                foldl'
+                  ( \acc (v, f) ->
+                      pevalITETerm
+                        (pevalEqvTerm (iinfosymbTerm "arg" idx FuncArg) (concTerm v))
+                        (concTerm f)
+                        acc
+                  )
+                  (concTerm def)
+                  funs
            in GeneralFunc R.typeRep symb body
         _ ->
           let symb = WithInfo (IndexedSymbol "arg" idx) FuncArg
               vs = bimap (resolveSingle ta1 . head) (resolveSingle ta2) <$> l
               def = resolveSingle ta2 s
-              body = foldl' (\acc (v, a) -> pevalITETerm (pevalEqvTerm (iinfosymbTerm "arg" idx FuncArg) (concTerm v)) (concTerm a) acc) (concTerm def) vs
+              body =
+                foldl'
+                  ( \acc (v, a) ->
+                      pevalITETerm
+                        (pevalEqvTerm (iinfosymbTerm "arg" idx FuncArg) (concTerm v))
+                        (concTerm a)
+                        acc
+                  )
+                  (concTerm def)
+                  vs
            in GeneralFunc R.typeRep symb body
     partition :: R.TypeRep a -> [([SBVI.CV], SBVI.CV)] -> [(a, [([SBVI.CV], SBVI.CV)])]
     partition t = case (R.eqTypeRep t (R.typeRep @Bool), R.eqTypeRep t (R.typeRep @Integer)) of
