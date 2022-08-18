@@ -18,11 +18,9 @@ import Data.SBV.Control (Query)
 import qualified Data.SBV.Control as SBVC
 import Grisette.Backend.SBV.Data.SMT.Config
 import Grisette.Backend.SBV.Data.SMT.Lowering
-import Grisette.Core.Control.Exception
 import Grisette.Core.Data.Class.Bool
 import Grisette.Core.Data.Class.Evaluate
 import Grisette.Core.Data.Class.ExtractSymbolics
-import Grisette.Core.Data.Class.PrimWrapper
 import Grisette.Core.Data.Class.Solver
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
