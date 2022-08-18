@@ -4,6 +4,7 @@ module Grisette.IR.SymPrim
   ( UnionM,
     type (=->) (..),
     type (-->),
+    FuncArg (..),
     Sym (..),
     symSize,
     symsSize,
@@ -18,6 +19,7 @@ module Grisette.IR.SymPrim
     Model (..),
     Symbol (..),
     TermSymbol (..),
+    termSymbol,
     empty,
     valueOf,
     exceptFor,
@@ -32,8 +34,7 @@ where
 
 import Grisette.IR.SymPrim.Control.Monad.UnionM
 import Grisette.IR.SymPrim.Data.BV
-import Grisette.IR.SymPrim.Data.GeneralFunc
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.Model
 import Grisette.IR.SymPrim.Data.SymPrim
 import Grisette.IR.SymPrim.Data.TabularFunc

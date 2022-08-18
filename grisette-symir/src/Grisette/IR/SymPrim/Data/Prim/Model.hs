@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
@@ -21,20 +22,29 @@ where
 import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet as S
 import Data.Hashable
-import Data.Typeable
+import Data.Proxy
 import GHC.Generics
 import Grisette.Core.Data.MemoUtils
-import Grisette.IR.SymPrim.Data.Prim.Bool
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.SomeTerm
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.ModelValue
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.BV
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Bits
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Bool
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.GeneralFunc
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Integer
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Num
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.TabularFunc
+import Type.Reflection
 import Unsafe.Coerce
 
 newtype Model = Model (M.HashMap TermSymbol ModelValue) deriving (Show, Eq, Generic, Hashable)
 
 equation :: Model -> TermSymbol -> Maybe (Term Bool)
-equation m tsym@(TermSymbol (_ :: Proxy a) sym) =
+equation m tsym@(TermSymbol (_ :: TypeRep a) sym) =
   case valueOf m tsym of
-    Just (v :: a) -> Just $ eqterm (symbTerm sym) (concTerm v)
+    Just (v :: a) -> Just $ pevalEqvTerm (symbTerm sym) (concTerm v)
     Nothing -> Nothing
 
 empty :: Model
@@ -47,7 +57,7 @@ valueOf (Model m) sym =
 
 exceptFor :: Model -> S.HashSet TermSymbol -> Model
 exceptFor (Model m) s =
-  Model $ S.foldl' (\acc sym -> M.delete sym acc) m s
+  Model $ S.foldl' (flip M.delete) m s
 
 restrictTo :: Model -> S.HashSet TermSymbol -> Model
 restrictTo (Model m) s =
@@ -64,9 +74,9 @@ extendTo :: Model -> S.HashSet TermSymbol -> Model
 extendTo (Model m) s =
   Model $
     S.foldl'
-      ( \acc sym@(TermSymbol (_ :: Proxy t) _) -> case M.lookup sym acc of
+      ( \acc sym@(TermSymbol (_ :: TypeRep t) _) -> case M.lookup sym acc of
           Just _ -> acc
-          Nothing -> M.insert sym (defaultValueDynamic @t) acc
+          Nothing -> M.insert sym (defaultValueDynamic (Proxy @t)) acc
       )
       m
       s
@@ -76,46 +86,9 @@ exact m s = restrictTo (extendTo m s) s
 
 insert :: (Eq a, Show a, Hashable a, Typeable a) => Model -> TermSymbol -> a -> Model
 insert (Model m) sym@(TermSymbol p _) v =
-  if typeRep p == typeOf v
-    then Model $ M.insert sym (toModelValue v) m
-    else error "Bad value type"
-
-{-
-evaluateSomeTermMemo :: Bool -> Model -> SomeTerm -> MemoState (MemoHashMap SomeTerm SomeTerm) SomeTerm SomeTerm SomeTerm
-evaluateSomeTermMemo fillDefault (Model ma) = go
-  where
-    go :: SomeTerm -> MemoState (MemoHashMap SomeTerm SomeTerm) SomeTerm SomeTerm SomeTerm
-    go c@(SomeTerm ConcTerm {}) = return c
-    go c@(SomeTerm ((SymbTerm _ sym@(TermSymbol (_ :: Proxy t) _)) :: Term a)) = return $ case M.lookup sym ma of
-      Nothing -> if fillDefault then SomeTerm $ concTerm (defaultValue @t) else c
-      Just dy -> SomeTerm $ concTerm (unsafeFromModelValue @a dy)
-    go (SomeTerm (UnaryTerm _ tag (arg :: Term a))) = do
-      SomeTerm argv <- memo go (SomeTerm arg)
-      return $ SomeTerm $ partialEvalUnary tag (unsafeCoerce argv :: Term a)
-    go (SomeTerm (BinaryTerm _ tag (arg1 :: Term a1) (arg2 :: Term a2))) = do
-      SomeTerm arg1v <- memo go (SomeTerm arg1)
-      SomeTerm arg2v <- memo go (SomeTerm arg2)
-      return $
-        SomeTerm $
-          partialEvalBinary
-            tag
-            (unsafeCoerce arg1v :: Term a1)
-            (unsafeCoerce arg2v :: Term a2)
-    go (SomeTerm (TernaryTerm _ tag (arg1 :: Term a1) (arg2 :: Term a2) (arg3 :: Term a3))) = do
-      SomeTerm arg1v <- memo go (SomeTerm arg1)
-      SomeTerm arg2v <- memo go (SomeTerm arg2)
-      SomeTerm arg3v <- memo go (SomeTerm arg3)
-      return $
-        SomeTerm $
-          partialEvalTernary
-            tag
-            (unsafeCoerce arg1v :: Term a1)
-            (unsafeCoerce arg2v :: Term a2)
-            (unsafeCoerce arg3v :: Term a3)
-
-evaluateSomeTerm :: Bool -> Model -> SomeTerm -> SomeTerm
-evaluateSomeTerm fillDefault m t1 = evalMemoState (evaluateSomeTermMemo fillDefault m t1) (MemoHashMap M.empty)
--}
+  case eqTypeRep p (typeOf v) of
+    Just HRefl -> Model $ M.insert sym (toModelValue v) m
+    _ -> error "Bad value type"
 
 evaluateSomeTerm :: Bool -> Model -> SomeTerm -> SomeTerm
 evaluateSomeTerm fillDefault (Model ma) = gomemo
@@ -125,24 +98,76 @@ evaluateSomeTerm fillDefault (Model ma) = gomemo
     gotyped a = case gomemo (SomeTerm a) of
       SomeTerm v -> unsafeCoerce v
     go c@(SomeTerm ConcTerm {}) = c
-    go c@(SomeTerm ((SymbTerm _ sym@(TermSymbol (_ :: Proxy t) _)) :: Term a)) = case M.lookup sym ma of
+    go c@(SomeTerm ((SymbTerm _ sym@(TermSymbol (_ :: TypeRep t) _)) :: Term a)) = case M.lookup sym ma of
       Nothing -> if fillDefault then SomeTerm $ concTerm (defaultValue @t) else c
       Just dy -> SomeTerm $ concTerm (unsafeFromModelValue @a dy)
-    go (SomeTerm (UnaryTerm _ tag (arg :: Term a))) = do
-      SomeTerm $ partialEvalUnary tag (gotyped arg)
+    go (SomeTerm (UnaryTerm _ tag (arg :: Term a))) = goUnary (partialEvalUnary tag) arg
     go (SomeTerm (BinaryTerm _ tag (arg1 :: Term a1) (arg2 :: Term a2))) =
-          SomeTerm $
-            partialEvalBinary
-              tag
-              (gotyped arg1)
-              (gotyped arg2)
+      goBinary (partialEvalBinary tag) arg1 arg2
     go (SomeTerm (TernaryTerm _ tag (arg1 :: Term a1) (arg2 :: Term a2) (arg3 :: Term a3))) = do
-          SomeTerm $
-            partialEvalTernary
-              tag
-              (gotyped arg1)
-              (gotyped arg2)
-              (gotyped arg3)
+      goTernary (partialEvalTernary tag) arg1 arg2 arg3
+    go (SomeTerm (NotTerm _ arg)) = goUnary pevalNotTerm arg
+    go (SomeTerm (OrTerm _ arg1 arg2)) =
+      goBinary pevalOrTerm arg1 arg2
+    go (SomeTerm (AndTerm _ arg1 arg2)) =
+      goBinary pevalAndTerm arg1 arg2
+    go (SomeTerm (EqvTerm _ arg1 arg2)) =
+      goBinary pevalEqvTerm arg1 arg2
+    go (SomeTerm (ITETerm _ cond arg1 arg2)) =
+      goTernary pevalITETerm cond arg1 arg2
+    go (SomeTerm (AddNumTerm _ arg1 arg2)) =
+      goBinary pevalAddNumTerm arg1 arg2
+    go (SomeTerm (UMinusNumTerm _ arg)) = goUnary pevalUMinusNumTerm arg
+    go (SomeTerm (TimesNumTerm _ arg1 arg2)) =
+      goBinary pevalTimesNumTerm arg1 arg2
+    go (SomeTerm (AbsNumTerm _ arg)) = goUnary pevalAbsNumTerm arg
+    go (SomeTerm (SignumNumTerm _ arg)) = goUnary pevalSignumNumTerm arg
+    go (SomeTerm (LTNumTerm _ arg1 arg2)) =
+      goBinary pevalLtNumTerm arg1 arg2
+    go (SomeTerm (LENumTerm _ arg1 arg2)) =
+      goBinary pevalLeNumTerm arg1 arg2
+    go (SomeTerm (AndBitsTerm _ arg1 arg2)) =
+      goBinary pevalAndBitsTerm arg1 arg2
+    go (SomeTerm (OrBitsTerm _ arg1 arg2)) =
+      goBinary pevalOrBitsTerm arg1 arg2
+    go (SomeTerm (XorBitsTerm _ arg1 arg2)) =
+      goBinary pevalXorBitsTerm arg1 arg2
+    go (SomeTerm (ComplementBitsTerm _ arg)) = goUnary pevalComplementBitsTerm arg
+    go (SomeTerm (ShiftBitsTerm _ arg n)) =
+      goUnary (`pevalShiftBitsTerm` n) arg
+    go (SomeTerm (RotateBitsTerm _ arg n)) =
+      goUnary (`pevalRotateBitsTerm` n) arg
+    go (SomeTerm (BVConcatTerm _ arg1 arg2)) =
+      goBinary pevalBVConcatTerm arg1 arg2
+    go (SomeTerm (BVSelectTerm _ ix w arg)) =
+      goUnary (pevalBVSelectTerm ix w) arg
+    go (SomeTerm (BVExtendTerm _ n signed arg)) =
+      goUnary (pevalBVExtendTerm n signed) arg
+    go (SomeTerm (TabularFuncApplyTerm _ f arg)) =
+      goBinary pevalTabularFuncApplyTerm f arg
+    go (SomeTerm (GeneralFuncApplyTerm _ f arg)) =
+      goBinary pevalGeneralFuncApplyTerm f arg
+    go (SomeTerm (DivIntegerTerm _ arg1 arg2)) =
+      goBinary pevalDivIntegerTerm arg1 arg2
+    go (SomeTerm (ModIntegerTerm _ arg1 arg2)) =
+      goBinary pevalModIntegerTerm arg1 arg2
+    goUnary :: (SupportedPrim a, SupportedPrim b) => (Term a -> Term b) -> Term a -> SomeTerm
+    goUnary f a = SomeTerm $ f (gotyped a)
+    goBinary ::
+      (SupportedPrim a, SupportedPrim b, SupportedPrim c) =>
+      (Term a -> Term b -> Term c) ->
+      Term a ->
+      Term b ->
+      SomeTerm
+    goBinary f a b = SomeTerm $ f (gotyped a) (gotyped b)
+    goTernary ::
+      (SupportedPrim a, SupportedPrim b, SupportedPrim c, SupportedPrim d) =>
+      (Term a -> Term b -> Term c -> Term d) ->
+      Term a ->
+      Term b ->
+      Term c ->
+      SomeTerm
+    goTernary f a b c = SomeTerm $ f (gotyped a) (gotyped b) (gotyped c)
 
 evaluateTerm :: forall a. (SupportedPrim a) => Bool -> Model -> Term a -> Term a
 evaluateTerm fillDefault m t = case evaluateSomeTerm fillDefault m $ SomeTerm t of

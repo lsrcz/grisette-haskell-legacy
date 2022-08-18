@@ -17,12 +17,14 @@ import Data.Data
 import Data.Kind
 import GHC.TypeLits
 import Grisette.Core.Data.Class.BitVector
-import Grisette.IR.SymPrim.Data.Prim.BV
-import Grisette.IR.SymPrim.Data.Prim.Bits
-import Grisette.IR.SymPrim.Data.Prim.Bool
-import Grisette.IR.SymPrim.Data.Prim.Integer
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm
-import Grisette.IR.SymPrim.Data.Prim.Num
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.BV
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Bits
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Bool
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Integer
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Num
 import Test.QuickCheck
 
 class (SupportedPrim b) => TermRewritingSpec a b | a -> b where
@@ -31,13 +33,26 @@ class (SupportedPrim b) => TermRewritingSpec a b | a -> b where
   wrap :: Term b -> Term b -> a
   same :: a -> Term Bool
   counterExample :: a -> Term Bool
-  counterExample = constructUnary Not . same
+  counterExample = notTerm . same
   symbSpec :: String -> a
   symbSpec s = wrap (ssymbTerm s) (ssymbTerm s)
   concSpec :: b -> a
   concSpec v = wrap (concTerm v) (concTerm v)
 
 constructUnarySpec ::
+  forall a av b bv.
+  ( TermRewritingSpec a av,
+    TermRewritingSpec b bv
+  ) =>
+  (Term av -> Term bv) ->
+  (Term av -> Term bv) ->
+  a ->
+  b
+constructUnarySpec construct partial a =
+  wrap (construct $ norewriteVer a) (partial $ rewriteVer a)
+
+constructUnarySpec' ::
+  forall a av b bv tag.
   ( TermRewritingSpec a av,
     TermRewritingSpec b bv,
     UnaryOp tag av bv
@@ -45,10 +60,26 @@ constructUnarySpec ::
   tag ->
   a ->
   b
-constructUnarySpec tag a =
-  wrap (constructUnary tag $ norewriteVer a) (partialEvalUnary tag $ rewriteVer a)
+constructUnarySpec' tag = constructUnarySpec @a @av @b @bv (constructUnary tag) (partialEvalUnary tag)
 
 constructBinarySpec ::
+  forall a av b bv c cv.
+  ( TermRewritingSpec a av,
+    TermRewritingSpec b bv,
+    TermRewritingSpec c cv
+  ) =>
+  (Term av -> Term bv -> Term cv) ->
+  (Term av -> Term bv -> Term cv) ->
+  a ->
+  b ->
+  c
+constructBinarySpec construct partial a b =
+  wrap
+    (construct (norewriteVer a) (norewriteVer b))
+    (partial (rewriteVer a) (rewriteVer b))
+
+constructBinarySpec' ::
+  forall a av b bv c cv tag.
   ( TermRewritingSpec a av,
     TermRewritingSpec b bv,
     TermRewritingSpec c cv,
@@ -58,12 +89,28 @@ constructBinarySpec ::
   a ->
   b ->
   c
-constructBinarySpec tag a b =
-  wrap
-    (constructBinary tag (norewriteVer a) (norewriteVer b))
-    (partialEvalBinary tag (rewriteVer a) (rewriteVer b))
+constructBinarySpec' tag = constructBinarySpec @a @av @b @bv @c @cv (constructBinary tag) (partialEvalBinary tag)
 
 constructTernarySpec ::
+  forall a av b bv c cv d dv.
+  ( TermRewritingSpec a av,
+    TermRewritingSpec b bv,
+    TermRewritingSpec c cv,
+    TermRewritingSpec d dv
+  ) =>
+  (Term av -> Term bv -> Term cv -> Term dv) ->
+  (Term av -> Term bv -> Term cv -> Term dv) ->
+  a ->
+  b ->
+  c ->
+  d
+constructTernarySpec construct partial a b c =
+  wrap
+    (construct (norewriteVer a) (norewriteVer b) (norewriteVer c))
+    (partial (rewriteVer a) (rewriteVer b) (rewriteVer c))
+
+constructTernarySpec' ::
+  forall a av b bv c cv d dv tag.
   ( TermRewritingSpec a av,
     TermRewritingSpec b bv,
     TermRewritingSpec c cv,
@@ -75,10 +122,111 @@ constructTernarySpec ::
   b ->
   c ->
   d
-constructTernarySpec tag a b c =
-  wrap
-    (constructTernary tag (norewriteVer a) (norewriteVer b) (norewriteVer c))
-    (partialEvalTernary tag (rewriteVer a) (rewriteVer b) (rewriteVer c))
+constructTernarySpec' tag =
+  constructTernarySpec @a @av @b @bv @c @cv @d @dv
+    (constructTernary tag)
+    (partialEvalTernary tag)
+
+notSpec :: (TermRewritingSpec a Bool, TermRewritingSpec b Bool) => a -> b
+notSpec = constructUnarySpec notTerm pevalNotTerm
+
+andSpec :: (TermRewritingSpec a Bool, TermRewritingSpec b Bool, TermRewritingSpec c Bool) => a -> b -> c
+andSpec = constructBinarySpec andTerm pevalAndTerm
+
+orSpec :: (TermRewritingSpec a Bool, TermRewritingSpec b Bool, TermRewritingSpec c Bool) => a -> b -> c
+orSpec = constructBinarySpec orTerm pevalOrTerm
+
+eqvSpec :: (TermRewritingSpec a av, TermRewritingSpec b Bool) => a -> a -> b
+eqvSpec = constructBinarySpec eqvTerm pevalEqvTerm
+
+iteSpec :: (TermRewritingSpec a Bool, TermRewritingSpec b bv) => a -> b -> b -> b
+iteSpec = constructTernarySpec iteTerm pevalITETerm
+
+addNumSpec :: (TermRewritingSpec a av, Num av) => a -> a -> a
+addNumSpec = constructBinarySpec addNumTerm pevalAddNumTerm
+
+uminusNumSpec :: (TermRewritingSpec a av, Num av) => a -> a
+uminusNumSpec = constructUnarySpec uminusNumTerm pevalUMinusNumTerm
+
+timesNumSpec :: (TermRewritingSpec a av, Num av) => a -> a -> a
+timesNumSpec = constructBinarySpec timesNumTerm pevalTimesNumTerm
+
+absNumSpec :: (TermRewritingSpec a av, Num av) => a -> a
+absNumSpec = constructUnarySpec absNumTerm pevalAbsNumTerm
+
+signumNumSpec :: (TermRewritingSpec a av, Num av) => a -> a
+signumNumSpec = constructUnarySpec signumNumTerm pevalSignumNumTerm
+
+ltNumSpec :: (TermRewritingSpec a av, Num av, Ord av, TermRewritingSpec b Bool) => a -> a -> b
+ltNumSpec = constructBinarySpec ltNumTerm pevalLtNumTerm
+
+leNumSpec :: (TermRewritingSpec a av, Num av, Ord av, TermRewritingSpec b Bool) => a -> a -> b
+leNumSpec = constructBinarySpec leNumTerm pevalLeNumTerm
+
+andBitsSpec :: (TermRewritingSpec a av, Bits av) => a -> a -> a
+andBitsSpec = constructBinarySpec andBitsTerm pevalAndBitsTerm
+
+orBitsSpec :: (TermRewritingSpec a av, Bits av) => a -> a -> a
+orBitsSpec = constructBinarySpec orBitsTerm pevalOrBitsTerm
+
+xorBitsSpec :: (TermRewritingSpec a av, Bits av) => a -> a -> a
+xorBitsSpec = constructBinarySpec xorBitsTerm pevalXorBitsTerm
+
+complementBitsSpec :: (TermRewritingSpec a av, Bits av) => a -> a
+complementBitsSpec = constructUnarySpec complementBitsTerm pevalComplementBitsTerm
+
+shiftBitsSpec :: (TermRewritingSpec a av, Bits av) => a -> Int -> a
+shiftBitsSpec a n = constructUnarySpec (`shiftBitsTerm` n) (`pevalShiftBitsTerm` n) a
+
+rotateBitsSpec :: (TermRewritingSpec a av, Bits av) => a -> Int -> a
+rotateBitsSpec a n = constructUnarySpec (`rotateBitsTerm` n) (`pevalRotateBitsTerm` n) a
+
+bvconcatSpec ::
+  ( TermRewritingSpec a (bv an),
+    TermRewritingSpec b (bv bn),
+    TermRewritingSpec c (bv cn),
+    KnownNat an,
+    KnownNat bn,
+    KnownNat cn,
+    BVConcat (bv an) (bv bn) (bv cn)
+  ) =>
+  a ->
+  b ->
+  c
+bvconcatSpec = constructBinarySpec bvconcatTerm pevalBVConcatTerm
+
+bvselectSpec ::
+  ( TermRewritingSpec a (bv an),
+    TermRewritingSpec b (bv bn),
+    KnownNat an,
+    KnownNat bn,
+    KnownNat ix,
+    BVSelect (bv an) ix bn (bv bn)
+  ) =>
+  proxy ix ->
+  proxy bn ->
+  a ->
+  b
+bvselectSpec p1 p2 = constructUnarySpec (bvselectTerm p1 p2) (pevalBVSelectTerm p1 p2)
+
+bvextendSpec ::
+  ( TermRewritingSpec a (bv an),
+    TermRewritingSpec b (bv bn),
+    KnownNat an,
+    KnownNat bn,
+    BVExtend (bv an) bn (bv bn)
+  ) =>
+  Bool ->
+  proxy bn ->
+  a ->
+  b
+bvextendSpec signed p = constructUnarySpec (bvextendTerm signed p) (pevalBVExtendTerm signed p)
+
+divIntegerSpec :: (TermRewritingSpec a Integer) => a -> a -> a
+divIntegerSpec = constructBinarySpec divIntegerTerm pevalDivIntegerTerm
+
+modIntegerSpec :: (TermRewritingSpec a Integer) => a -> a -> a
+modIntegerSpec = constructBinarySpec modIntegerTerm pevalModIntegerTerm
 
 data BoolOnlySpec = BoolOnlySpec (Term Bool) (Term Bool)
 
@@ -89,7 +237,7 @@ instance TermRewritingSpec BoolOnlySpec Bool where
   norewriteVer (BoolOnlySpec n _) = n
   rewriteVer (BoolOnlySpec _ r) = r
   wrap = BoolOnlySpec
-  same s = constructBinary Eqv (norewriteVer s) (rewriteVer s)
+  same s = eqvTerm (norewriteVer s) (rewriteVer s)
 
 boolonly :: Int -> Gen BoolOnlySpec
 boolonly 0 =
@@ -104,11 +252,11 @@ boolonly n | n > 0 = do
   v2 <- boolonly (n - 1)
   v3 <- boolonly (n - 1)
   oneof
-    [ return $ constructUnarySpec Not v1,
-      return $ constructBinarySpec And v1 v2,
-      return $ constructBinarySpec Or v1 v2,
-      return $ constructBinarySpec Eqv v1 v2,
-      return $ constructTernarySpec ITE v1 v2 v3
+    [ return $ notSpec v1,
+      return $ andSpec v1 v2,
+      return $ orSpec v1 v2,
+      return $ eqvSpec v1 v2,
+      return $ iteSpec v1 v2 v3
     ]
 boolonly _ = error "Should never be called"
 
@@ -124,7 +272,7 @@ instance TermRewritingSpec BoolWithLIASpec Bool where
   norewriteVer (BoolWithLIASpec n _) = n
   rewriteVer (BoolWithLIASpec _ r) = r
   wrap = BoolWithLIASpec
-  same s = constructBinary Eqv (norewriteVer s) (rewriteVer s)
+  same s = eqvTerm (norewriteVer s) (rewriteVer s)
 
 data LIAWithBoolSpec = LIAWithBoolSpec (Term Integer) (Term Integer)
 
@@ -136,7 +284,7 @@ instance TermRewritingSpec LIAWithBoolSpec Integer where
   norewriteVer (LIAWithBoolSpec n _) = n
   rewriteVer (LIAWithBoolSpec _ r) = r
   wrap = LIAWithBoolSpec
-  same s = constructBinary Eqv (norewriteVer s) (rewriteVer s)
+  same s = eqvTerm (norewriteVer s) (rewriteVer s)
 
 boolWithLIA :: Int -> Gen BoolWithLIASpec
 boolWithLIA 0 =
@@ -153,14 +301,14 @@ boolWithLIA n | n > 0 = do
   v1i <- liaWithBool (n - 1)
   v2i <- liaWithBool (n - 1)
   frequency
-    [ (1, return $ constructUnarySpec Not v1),
-      (1, return $ constructBinarySpec And v1 v2),
-      (1, return $ constructBinarySpec Or v1 v2),
-      (1, return $ constructBinarySpec Eqv v1 v2),
-      (5, return $ constructBinarySpec Eqv v1i v2i),
-      (5, return $ constructBinarySpec LTNum v1i v2i),
-      (5, return $ constructBinarySpec LENum v1i v2i),
-      (1, return $ constructTernarySpec ITE v1 v2 v3)
+    [ (1, return $ notSpec v1),
+      (1, return $ andSpec v1 v2),
+      (1, return $ orSpec v1 v2),
+      (1, return $ eqvSpec v1 v2),
+      (5, return $ eqvSpec v1i v2i),
+      (5, return $ ltNumSpec v1i v2i),
+      (5, return $ leNumSpec v1i v2i),
+      (1, return $ iteSpec v1 v2 v3)
     ]
 boolWithLIA _ = error "Should never be called"
 
@@ -177,11 +325,11 @@ liaWithBool n | n > 0 = do
   v1i <- liaWithBool (n - 1)
   v2i <- liaWithBool (n - 1)
   oneof
-    [ return $ constructUnarySpec UMinusNum v1i,
-      return $ constructUnarySpec AbsNum v1i,
-      return $ constructUnarySpec SignumNum v1i,
-      return $ constructBinarySpec (AddNum @Integer) v1i v2i,
-      return $ constructTernarySpec ITE v1b v1i v2i
+    [ return $ uminusNumSpec v1i,
+      return $ absNumSpec v1i,
+      return $ signumNumSpec v1i,
+      return $ addNumSpec v1i v2i,
+      return $ iteSpec v1b v1i v2i
     ]
 liaWithBool _ = error "Should never be called"
 
@@ -200,7 +348,7 @@ instance (SupportedPrim (bv 4)) => TermRewritingSpec (FixedSizedBVWithBoolSpec b
   norewriteVer (FixedSizedBVWithBoolSpec n _) = n
   rewriteVer (FixedSizedBVWithBoolSpec _ r) = r
   wrap = FixedSizedBVWithBoolSpec
-  same s = constructBinary Eqv (norewriteVer s) (rewriteVer s)
+  same s = eqvTerm (norewriteVer s) (rewriteVer s)
 
 data BoolWithFixedSizedBVSpec (bv :: Nat -> Type) = BoolWithFixedSizedBVSpec (Term Bool) (Term Bool)
 
@@ -212,7 +360,7 @@ instance TermRewritingSpec (BoolWithFixedSizedBVSpec bv) Bool where
   norewriteVer (BoolWithFixedSizedBVSpec n _) = n
   rewriteVer (BoolWithFixedSizedBVSpec _ r) = r
   wrap = BoolWithFixedSizedBVSpec
-  same s = constructBinary Eqv (norewriteVer s) (rewriteVer s)
+  same s = eqvTerm (norewriteVer s) (rewriteVer s)
 
 boolWithFSBV :: forall proxy bv. (SupportedPrim (bv 4), Ord (bv 4), Num (bv 4), Bits (bv 4)) => proxy bv -> Int -> Gen (BoolWithFixedSizedBVSpec bv)
 boolWithFSBV _ 0 =
@@ -229,14 +377,14 @@ boolWithFSBV p n | n > 0 = do
   v1i <- fsbvWithBool p (n - 1)
   v2i <- fsbvWithBool p (n - 1)
   frequency
-    [ (1, return $ constructUnarySpec Not v1),
-      (1, return $ constructBinarySpec And v1 v2),
-      (1, return $ constructBinarySpec Or v1 v2),
-      (1, return $ constructBinarySpec Eqv v1 v2),
-      (5, return $ constructBinarySpec Eqv v1i v2i),
-      (5, return $ constructBinarySpec LTNum v1i v2i),
-      (5, return $ constructBinarySpec LENum v1i v2i),
-      (1, return $ constructTernarySpec ITE v1 v2 v3)
+    [ (1, return $ notSpec v1),
+      (1, return $ andSpec v1 v2),
+      (1, return $ orSpec v1 v2),
+      (1, return $ eqvSpec v1 v2),
+      (5, return $ eqvSpec v1i v2i),
+      (5, return $ ltNumSpec v1i v2i),
+      (5, return $ leNumSpec v1i v2i),
+      (1, return $ iteSpec v1 v2 v3)
     ]
 boolWithFSBV _ _ = error "Should never be called"
 
@@ -259,18 +407,18 @@ fsbvWithBool p n | n > 0 = do
   v2i <- fsbvWithBool p (n - 1)
   i <- arbitrary
   oneof
-    [ return $ constructUnarySpec UMinusNum v1i,
-      return $ constructUnarySpec AbsNum v1i,
-      return $ constructUnarySpec SignumNum v1i,
-      return $ constructBinarySpec (AddNum @(bv 4)) v1i v2i,
-      return $ constructBinarySpec TimesNum v1i v2i,
-      return $ constructBinarySpec (AndBits @(bv 4)) v1i v2i,
-      return $ constructBinarySpec (OrBits @(bv 4)) v1i v2i,
-      return $ constructBinarySpec (XorBits @(bv 4)) v1i v2i,
-      return $ constructUnarySpec (ComplementBits @(bv 4)) v1i,
-      return $ constructUnarySpec (ShiftBits @(bv 4) i) v1i,
-      return $ constructUnarySpec (RotateBits @(bv 4) i) v1i,
-      return $ constructTernarySpec ITE v1b v1i v2i
+    [ return $ uminusNumSpec v1i,
+      return $ absNumSpec v1i,
+      return $ signumNumSpec v1i,
+      return $ addNumSpec v1i v2i,
+      return $ timesNumSpec v1i v2i,
+      return $ andBitsSpec v1i v2i,
+      return $ orBitsSpec v1i v2i,
+      return $ xorBitsSpec v1i v2i,
+      return $ complementBitsSpec v1i,
+      return $ shiftBitsSpec v1i i,
+      return $ rotateBitsSpec v1i i,
+      return $ iteSpec v1b v1i v2i
     ]
 fsbvWithBool _ _ = error "Should never be called"
 
@@ -289,7 +437,7 @@ instance (SupportedPrim (bv n)) => TermRewritingSpec (DifferentSizeBVSpec bv n) 
   norewriteVer (DifferentSizeBVSpec n _) = n
   rewriteVer (DifferentSizeBVSpec _ r) = r
   wrap = DifferentSizeBVSpec
-  same s = constructBinary Eqv (norewriteVer s) (rewriteVer s)
+  same s = eqvTerm (norewriteVer s) (rewriteVer s)
 
 type SupportedBV bv (n :: Nat) =
   (SupportedPrim (bv n), Ord (bv n), Num (bv n), Bits (bv n))
@@ -352,27 +500,27 @@ dsbv1 p depth | depth > 0 = do
   v4 <- dsbv4 p (depth - 1)
   i <- arbitrary
   oneof
-    [ return $ constructUnarySpec UMinusNum v1,
-      return $ constructUnarySpec AbsNum v1,
-      return $ constructUnarySpec SignumNum v1,
-      return $ constructBinarySpec (AddNum @(bv 1)) v1 v1',
-      return $ constructBinarySpec TimesNum v1 v1',
-      return $ constructBinarySpec (AndBits @(bv 1)) v1 v1',
-      return $ constructBinarySpec (OrBits @(bv 1)) v1 v1',
-      return $ constructBinarySpec (XorBits @(bv 1)) v1 v1',
-      return $ constructUnarySpec (ComplementBits @(bv 1)) v1,
-      return $ constructUnarySpec (ShiftBits @(bv 1) i) v1,
-      return $ constructUnarySpec (RotateBits @(bv 1) i) v1,
-      return $ constructUnarySpec (BVTSelect @bv @0 @1 @4 Proxy) v4,
-      return $ constructUnarySpec (BVTSelect @bv @1 @1 @4 Proxy) v4,
-      return $ constructUnarySpec (BVTSelect @bv @2 @1 @4 Proxy) v4,
-      return $ constructUnarySpec (BVTSelect @bv @3 @1 @4 Proxy) v4,
-      return $ constructUnarySpec (BVTSelect @bv @0 @1 @3 Proxy) v3,
-      return $ constructUnarySpec (BVTSelect @bv @1 @1 @3 Proxy) v3,
-      return $ constructUnarySpec (BVTSelect @bv @2 @1 @3 Proxy) v3,
-      return $ constructUnarySpec (BVTSelect @bv @0 @1 @2 Proxy) v2,
-      return $ constructUnarySpec (BVTSelect @bv @1 @1 @2 Proxy) v2,
-      return $ constructUnarySpec (BVTSelect @bv @0 @1 @1 Proxy) v1
+    [ return $ uminusNumSpec v1,
+      return $ absNumSpec v1,
+      return $ signumNumSpec v1,
+      return $ addNumSpec v1 v1',
+      return $ timesNumSpec v1 v1',
+      return $ andBitsSpec v1 v1',
+      return $ orBitsSpec v1 v1',
+      return $ xorBitsSpec v1 v1',
+      return $ complementBitsSpec v1,
+      return $ shiftBitsSpec v1 i,
+      return $ rotateBitsSpec v1 i,
+      return $ bvselectSpec (Proxy @0) (Proxy @1) v4,
+      return $ bvselectSpec (Proxy @1) (Proxy @1) v4,
+      return $ bvselectSpec (Proxy @2) (Proxy @1) v4,
+      return $ bvselectSpec (Proxy @3) (Proxy @1) v4,
+      return $ bvselectSpec (Proxy @0) (Proxy @1) v3,
+      return $ bvselectSpec (Proxy @1) (Proxy @1) v3,
+      return $ bvselectSpec (Proxy @2) (Proxy @1) v3,
+      return $ bvselectSpec (Proxy @0) (Proxy @1) v2,
+      return $ bvselectSpec (Proxy @1) (Proxy @1) v2,
+      return $ bvselectSpec (Proxy @0) (Proxy @1) v1
     ]
 dsbv1 _ _ = error "Should never be called"
 
@@ -435,26 +583,26 @@ dsbv2 p depth | depth > 0 = do
   v4 <- dsbv4 p (depth - 1)
   i <- arbitrary
   oneof
-    [ return $ constructUnarySpec UMinusNum v2,
-      return $ constructUnarySpec AbsNum v2,
-      return $ constructUnarySpec SignumNum v2,
-      return $ constructBinarySpec (AddNum @(bv 2)) v2 v2',
-      return $ constructBinarySpec TimesNum v2 v2',
-      return $ constructBinarySpec (AndBits @(bv 2)) v2 v2',
-      return $ constructBinarySpec (OrBits @(bv 2)) v2 v2',
-      return $ constructBinarySpec (XorBits @(bv 2)) v2 v2',
-      return $ constructUnarySpec (ComplementBits @(bv 2)) v2,
-      return $ constructUnarySpec (ShiftBits @(bv 2) i) v2,
-      return $ constructUnarySpec (RotateBits @(bv 2) i) v2,
-      return $ constructUnarySpec (BVTSelect @bv @0 @2 @4 Proxy) v4,
-      return $ constructUnarySpec (BVTSelect @bv @1 @2 @4 Proxy) v4,
-      return $ constructUnarySpec (BVTSelect @bv @2 @2 @4 Proxy) v4,
-      return $ constructUnarySpec (BVTSelect @bv @0 @2 @3 Proxy) v3,
-      return $ constructUnarySpec (BVTSelect @bv @1 @2 @3 Proxy) v3,
-      return $ constructUnarySpec (BVTSelect @bv @0 @2 @2 Proxy) v2,
-      return $ constructBinarySpec (BVTConcat @bv @1 @1 @2) v1 v1',
-      return $ constructUnarySpec (Zext @bv @1 @2) v1,
-      return $ constructUnarySpec (Sext @bv @1 @2) v1
+    [ return $ uminusNumSpec v2,
+      return $ absNumSpec v2,
+      return $ signumNumSpec v2,
+      return $ addNumSpec v2 v2',
+      return $ timesNumSpec v2 v2',
+      return $ andBitsSpec v2 v2',
+      return $ orBitsSpec v2 v2',
+      return $ xorBitsSpec v2 v2',
+      return $ complementBitsSpec v2,
+      return $ shiftBitsSpec v2 i,
+      return $ rotateBitsSpec v2 i,
+      return $ bvselectSpec (Proxy @0) (Proxy @2) v4,
+      return $ bvselectSpec (Proxy @1) (Proxy @2) v4,
+      return $ bvselectSpec (Proxy @2) (Proxy @2) v4,
+      return $ bvselectSpec (Proxy @0) (Proxy @2) v3,
+      return $ bvselectSpec (Proxy @1) (Proxy @2) v3,
+      return $ bvselectSpec (Proxy @0) (Proxy @2) v2,
+      return $ bvconcatSpec v1 v1',
+      return $ bvextendSpec False (Proxy @2) v1,
+      return $ bvextendSpec True (Proxy @2) v1
     ]
 dsbv2 _ _ = error "Should never be called"
 
@@ -516,26 +664,26 @@ dsbv3 p depth | depth > 0 = do
   v4 <- dsbv4 p (depth - 1)
   i <- arbitrary
   oneof
-    [ return $ constructUnarySpec UMinusNum v3,
-      return $ constructUnarySpec AbsNum v3,
-      return $ constructUnarySpec SignumNum v3,
-      return $ constructBinarySpec (AddNum @(bv 3)) v3 v3',
-      return $ constructBinarySpec TimesNum v3 v3',
-      return $ constructBinarySpec (AndBits @(bv 3)) v3 v3',
-      return $ constructBinarySpec (OrBits @(bv 3)) v3 v3',
-      return $ constructBinarySpec (XorBits @(bv 3)) v3 v3',
-      return $ constructUnarySpec (ComplementBits @(bv 3)) v3,
-      return $ constructUnarySpec (ShiftBits @(bv 3) i) v3,
-      return $ constructUnarySpec (RotateBits @(bv 3) i) v3,
-      return $ constructUnarySpec (BVTSelect @bv @0 @3 @4 Proxy) v4,
-      return $ constructUnarySpec (BVTSelect @bv @1 @3 @4 Proxy) v4,
-      return $ constructUnarySpec (BVTSelect @bv @0 @3 @3 Proxy) v3,
-      return $ constructBinarySpec (BVTConcat @bv @1 @2 @3) v1 v2,
-      return $ constructBinarySpec (BVTConcat @bv @2 @1 @3) v2 v1,
-      return $ constructUnarySpec (Zext @bv @1 @3) v1,
-      return $ constructUnarySpec (Sext @bv @1 @3) v1,
-      return $ constructUnarySpec (Zext @bv @2 @3) v2,
-      return $ constructUnarySpec (Sext @bv @2 @3) v2
+    [ return $ uminusNumSpec v3,
+      return $ absNumSpec v3,
+      return $ signumNumSpec v3,
+      return $ addNumSpec v3 v3',
+      return $ timesNumSpec v3 v3',
+      return $ andBitsSpec v3 v3',
+      return $ orBitsSpec v3 v3',
+      return $ xorBitsSpec v3 v3',
+      return $ complementBitsSpec v3,
+      return $ shiftBitsSpec v3 i,
+      return $ rotateBitsSpec v3 i,
+      return $ bvselectSpec (Proxy @0) (Proxy @3) v4,
+      return $ bvselectSpec (Proxy @1) (Proxy @3) v4,
+      return $ bvselectSpec (Proxy @0) (Proxy @3) v3,
+      return $ bvconcatSpec v1 v2,
+      return $ bvconcatSpec v2 v1,
+      return $ bvextendSpec False (Proxy @3) v1,
+      return $ bvextendSpec True (Proxy @3) v1,
+      return $ bvextendSpec False (Proxy @3) v2,
+      return $ bvextendSpec True (Proxy @3) v2
     ]
 dsbv3 _ _ = error "Should never be called"
 
@@ -598,27 +746,27 @@ dsbv4 p depth | depth > 0 = do
   v4' <- dsbv4 p (depth - 1)
   i <- arbitrary
   oneof
-    [ return $ constructUnarySpec UMinusNum v4,
-      return $ constructUnarySpec AbsNum v4,
-      return $ constructUnarySpec SignumNum v4,
-      return $ constructBinarySpec (AddNum @(bv 4)) v4 v4',
-      return $ constructBinarySpec TimesNum v4 v4',
-      return $ constructBinarySpec (AndBits @(bv 4)) v4 v4',
-      return $ constructBinarySpec (OrBits @(bv 4)) v4 v4',
-      return $ constructBinarySpec (XorBits @(bv 4)) v4 v4',
-      return $ constructUnarySpec (ComplementBits @(bv 4)) v4,
-      return $ constructUnarySpec (ShiftBits @(bv 4) i) v4,
-      return $ constructUnarySpec (RotateBits @(bv 4) i) v4,
-      return $ constructUnarySpec (BVTSelect @bv @0 @4 @4 Proxy) v4,
-      return $ constructBinarySpec (BVTConcat @bv @1 @3 @4) v1 v3,
-      return $ constructBinarySpec (BVTConcat @bv @2 @2 @4) v2 v2',
-      return $ constructBinarySpec (BVTConcat @bv @3 @1 @4) v3 v1,
-      return $ constructUnarySpec (Zext @bv @1 @4) v1,
-      return $ constructUnarySpec (Sext @bv @1 @4) v1,
-      return $ constructUnarySpec (Zext @bv @2 @4) v2,
-      return $ constructUnarySpec (Sext @bv @2 @4) v2,
-      return $ constructUnarySpec (Zext @bv @3 @4) v3,
-      return $ constructUnarySpec (Sext @bv @3 @4) v3
+    [ return $ uminusNumSpec v4,
+      return $ absNumSpec v4,
+      return $ signumNumSpec v4,
+      return $ addNumSpec v4 v4',
+      return $ timesNumSpec v4 v4',
+      return $ andBitsSpec v4 v4',
+      return $ orBitsSpec v4 v4',
+      return $ xorBitsSpec v4 v4',
+      return $ complementBitsSpec v4,
+      return $ shiftBitsSpec v4 i,
+      return $ rotateBitsSpec v4 i,
+      return $ bvselectSpec (Proxy @0) (Proxy @4) v4,
+      return $ bvconcatSpec v1 v3,
+      return $ bvconcatSpec v2 v2',
+      return $ bvconcatSpec v3 v1,
+      return $ bvextendSpec False (Proxy @4) v1,
+      return $ bvextendSpec True (Proxy @4) v1,
+      return $ bvextendSpec False (Proxy @4) v2,
+      return $ bvextendSpec True (Proxy @4) v2,
+      return $ bvextendSpec False (Proxy @4) v3,
+      return $ bvextendSpec True (Proxy @4) v3
     ]
 dsbv4 _ _ = error "Should never be called"
 
@@ -674,36 +822,4 @@ instance (SupportedPrim s) => TermRewritingSpec (GeneralSpec s) s where
   norewriteVer (GeneralSpec n _) = n
   rewriteVer (GeneralSpec _ r) = r
   wrap = GeneralSpec
-  same s = constructBinary Eqv (norewriteVer s) (rewriteVer s)
-
-unop ::
-  forall tag a.
-  (UnaryOp tag a a) =>
-  tag ->
-  GeneralSpec a ->
-  GeneralSpec a
-unop = constructUnarySpec
-
-binop ::
-  forall tag a.
-  (BinaryOp tag a a a) =>
-  tag ->
-  GeneralSpec a ->
-  GeneralSpec a ->
-  GeneralSpec a
-binop = constructBinarySpec
-
-times :: (BinaryOp TimesNum a a a, Num a) => GeneralSpec a -> GeneralSpec a -> GeneralSpec a
-times = binop TimesNum
-
-add :: forall a. (BinaryOp (AddNum a) a a a, Num a) => GeneralSpec a -> GeneralSpec a -> GeneralSpec a
-add = binop (AddNum @a)
-
-uminus :: (UnaryOp UMinusNum a a, Num a) => GeneralSpec a -> GeneralSpec a
-uminus = unop UMinusNum
-
-divint :: GeneralSpec Integer -> GeneralSpec Integer -> GeneralSpec Integer
-divint = binop DivI
-
-modint :: GeneralSpec Integer -> GeneralSpec Integer -> GeneralSpec Integer
-modint = binop ModI
+  same s = eqvTerm (norewriteVer s) (rewriteVer s)

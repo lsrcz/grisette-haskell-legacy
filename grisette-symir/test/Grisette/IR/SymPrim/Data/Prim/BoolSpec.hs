@@ -1,12 +1,14 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Grisette.IR.SymPrim.Data.Prim.BoolSpec where
 
 import Grisette.IR.SymPrim.Data.BV
-import Grisette.IR.SymPrim.Data.Prim.Bool
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm
-import Grisette.IR.SymPrim.Data.Prim.Num
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Bool
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Num
 import Test.Hspec
 
 spec :: Spec
@@ -14,742 +16,702 @@ spec = do
   describe "Not" $ do
     describe "Not construction" $ do
       it "Not on concrete" $ do
-        notb (concTerm True) `shouldBe` concTerm False
-        notb (concTerm True) `shouldBe` concTerm False
+        pevalNotTerm (concTerm True) `shouldBe` concTerm False
+        pevalNotTerm (concTerm True) `shouldBe` concTerm False
       it "Not on general symbolic" $ do
-        notb (ssymbTerm "a") `shouldBe` constructUnary Not (ssymbTerm "a" :: Term Bool)
+        pevalNotTerm (ssymbTerm "a") `shouldBe` notTerm (ssymbTerm "a" :: Term Bool)
       it "Not on Not" $ do
-        notb (notb (ssymbTerm "a")) `shouldBe` ssymbTerm "a"
+        pevalNotTerm (pevalNotTerm (ssymbTerm "a")) `shouldBe` ssymbTerm "a"
       it "Not on Or Not" $ do
-        notb (orb (notb (ssymbTerm "a")) (ssymbTerm "b"))
-          `shouldBe` andb (ssymbTerm "a") (notb (ssymbTerm "b"))
-        notb (orb (ssymbTerm "a") (notb (ssymbTerm "b")))
-          `shouldBe` andb (notb (ssymbTerm "a")) (ssymbTerm "b")
+        pevalNotTerm (pevalOrTerm (pevalNotTerm (ssymbTerm "a")) (ssymbTerm "b"))
+          `shouldBe` pevalAndTerm (ssymbTerm "a") (pevalNotTerm (ssymbTerm "b"))
+        pevalNotTerm (pevalOrTerm (ssymbTerm "a") (pevalNotTerm (ssymbTerm "b")))
+          `shouldBe` pevalAndTerm (pevalNotTerm (ssymbTerm "a")) (ssymbTerm "b")
       it "Not on And Not" $ do
-        notb (andb (notb (ssymbTerm "a")) (ssymbTerm "b"))
-          `shouldBe` orb (ssymbTerm "a") (notb (ssymbTerm "b"))
-        notb (andb (ssymbTerm "a") (notb (ssymbTerm "b")))
-          `shouldBe` orb (notb (ssymbTerm "a")) (ssymbTerm "b")
-    describe "Not pattern" $ do
-      it "Not pattern should work" $ do
-        case ssymbTerm "a" :: Term Bool of
-          NotTerm _ -> expectationFailure "Bad pattern matching"
-          _ -> return ()
-        case notb (ssymbTerm "a" :: Term Bool) of
-          NotTerm v -> v `shouldBe` ssymbTerm "a"
-          _ -> return ()
+        pevalNotTerm (pevalAndTerm (pevalNotTerm (ssymbTerm "a")) (ssymbTerm "b"))
+          `shouldBe` pevalOrTerm (ssymbTerm "a") (pevalNotTerm (ssymbTerm "b"))
+        pevalNotTerm (pevalAndTerm (ssymbTerm "a") (pevalNotTerm (ssymbTerm "b")))
+          `shouldBe` pevalOrTerm (pevalNotTerm (ssymbTerm "a")) (ssymbTerm "b")
   describe "Eqv & NEqv" $ do
     describe "Eqv construction" $ do
       it "Eqv with both concrete" $ do
-        eqterm (concTerm True) (concTerm True) `shouldBe` concTerm True
-        eqterm (concTerm True) (concTerm False) `shouldBe` concTerm False
-        eqterm (concTerm False) (concTerm True) `shouldBe` concTerm False
-        eqterm (concTerm False) (concTerm False) `shouldBe` concTerm True
-        eqterm (concTerm (1 :: Integer)) (concTerm 1) `shouldBe` concTerm True
-        eqterm (concTerm (1 :: Integer)) (concTerm 2) `shouldBe` concTerm False
-        eqterm (concTerm (1 :: IntN 4)) (concTerm 1) `shouldBe` concTerm True
-        eqterm (concTerm (1 :: IntN 4)) (concTerm 2) `shouldBe` concTerm False
-        eqterm (concTerm (1 :: WordN 4)) (concTerm 1) `shouldBe` concTerm True
-        eqterm (concTerm (1 :: WordN 4)) (concTerm 2) `shouldBe` concTerm False
+        pevalEqvTerm (concTerm True) (concTerm True) `shouldBe` concTerm True
+        pevalEqvTerm (concTerm True) (concTerm False) `shouldBe` concTerm False
+        pevalEqvTerm (concTerm False) (concTerm True) `shouldBe` concTerm False
+        pevalEqvTerm (concTerm False) (concTerm False) `shouldBe` concTerm True
+        pevalEqvTerm (concTerm (1 :: Integer)) (concTerm 1) `shouldBe` concTerm True
+        pevalEqvTerm (concTerm (1 :: Integer)) (concTerm 2) `shouldBe` concTerm False
+        pevalEqvTerm (concTerm (1 :: IntN 4)) (concTerm 1) `shouldBe` concTerm True
+        pevalEqvTerm (concTerm (1 :: IntN 4)) (concTerm 2) `shouldBe` concTerm False
+        pevalEqvTerm (concTerm (1 :: WordN 4)) (concTerm 1) `shouldBe` concTerm True
+        pevalEqvTerm (concTerm (1 :: WordN 4)) (concTerm 2) `shouldBe` concTerm False
       it "Eqv with single concrete always put concrete ones in the right" $ do
-        eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1)
-          `shouldBe` constructBinary Eqv (ssymbTerm "a" :: Term Integer) (concTerm 1 :: Term Integer)
-        eqterm (concTerm 1) (ssymbTerm "a" :: Term Integer)
-          `shouldBe` constructBinary Eqv (ssymbTerm "a" :: Term Integer) (concTerm 1 :: Term Integer)
+        pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)
+          `shouldBe` eqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1 :: Term Integer)
+        pevalEqvTerm (concTerm 1) (ssymbTerm "a" :: Term Integer)
+          `shouldBe` eqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1 :: Term Integer)
       it "Eqv on general symbolic" $ do
-        eqterm (ssymbTerm "a" :: Term Integer) (ssymbTerm "b")
-          `shouldBe` constructBinary Eqv (ssymbTerm "a" :: Term Integer) (ssymbTerm "b" :: Term Integer)
+        pevalEqvTerm (ssymbTerm "a" :: Term Integer) (ssymbTerm "b")
+          `shouldBe` eqvTerm (ssymbTerm "a" :: Term Integer) (ssymbTerm "b" :: Term Integer)
       it "Eqv on Bool with single concrete" $ do
-        eqterm (concTerm True) (ssymbTerm "a") `shouldBe` ssymbTerm "a"
-        eqterm (ssymbTerm "a") (concTerm True) `shouldBe` ssymbTerm "a"
-        eqterm (concTerm False) (ssymbTerm "a") `shouldBe` notb (ssymbTerm "a")
-        eqterm (ssymbTerm "a") (concTerm False) `shouldBe` notb (ssymbTerm "a")
+        pevalEqvTerm (concTerm True) (ssymbTerm "a") `shouldBe` ssymbTerm "a"
+        pevalEqvTerm (ssymbTerm "a") (concTerm True) `shouldBe` ssymbTerm "a"
+        pevalEqvTerm (concTerm False) (ssymbTerm "a") `shouldBe` pevalNotTerm (ssymbTerm "a")
+        pevalEqvTerm (ssymbTerm "a") (concTerm False) `shouldBe` pevalNotTerm (ssymbTerm "a")
       it "NEqv on general symbolic" $ do
-        neterm (ssymbTerm "a" :: Term Integer) (ssymbTerm "b")
-          `shouldBe` notb (eqterm (ssymbTerm "a" :: Term Integer) (ssymbTerm "b"))
+        pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (ssymbTerm "b")
+          `shouldBe` pevalNotTerm (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (ssymbTerm "b"))
       it "Eqv(Not(x), x) / Eqv(x, Not(x))" $ do
-        eqterm (notb (ssymbTerm "a")) (ssymbTerm "a") `shouldBe` concTerm False
-        eqterm (ssymbTerm "a") (notb (ssymbTerm "a")) `shouldBe` concTerm False
+        pevalEqvTerm (pevalNotTerm (ssymbTerm "a")) (ssymbTerm "a") `shouldBe` concTerm False
+        pevalEqvTerm (ssymbTerm "a") (pevalNotTerm (ssymbTerm "a")) `shouldBe` concTerm False
       it "Eqv(n1+x, n2)" $ do
-        eqterm (addNum (concTerm 1 :: Term Integer) (ssymbTerm "a")) (concTerm 3)
-          `shouldBe` eqterm (ssymbTerm "a") (concTerm 2 :: Term Integer)
-        eqterm (addNum (concTerm 1 :: Term (IntN 4)) (ssymbTerm "a")) (concTerm 3)
-          `shouldBe` eqterm (ssymbTerm "a") (concTerm 2 :: Term (IntN 4))
-        eqterm (addNum (concTerm 1 :: Term (WordN 4)) (ssymbTerm "a")) (concTerm 3)
-          `shouldBe` eqterm (ssymbTerm "a") (concTerm 2 :: Term (WordN 4))
+        pevalEqvTerm (pevalAddNumTerm (concTerm 1 :: Term Integer) (ssymbTerm "a")) (concTerm 3)
+          `shouldBe` pevalEqvTerm (ssymbTerm "a") (concTerm 2 :: Term Integer)
+        pevalEqvTerm (pevalAddNumTerm (concTerm 1 :: Term (IntN 4)) (ssymbTerm "a")) (concTerm 3)
+          `shouldBe` pevalEqvTerm (ssymbTerm "a") (concTerm 2 :: Term (IntN 4))
+        pevalEqvTerm (pevalAddNumTerm (concTerm 1 :: Term (WordN 4)) (ssymbTerm "a")) (concTerm 3)
+          `shouldBe` pevalEqvTerm (ssymbTerm "a") (concTerm 2 :: Term (WordN 4))
       it "Eqv(n1, n2+x)" $ do
-        eqterm (concTerm 3) (addNum (concTerm 1 :: Term Integer) (ssymbTerm "a"))
-          `shouldBe` eqterm (ssymbTerm "a") (concTerm 2 :: Term Integer)
-        eqterm (concTerm 3) (addNum (concTerm 1 :: Term (IntN 4)) (ssymbTerm "a"))
-          `shouldBe` eqterm (ssymbTerm "a") (concTerm 2 :: Term (IntN 4))
-        eqterm (concTerm 3) (addNum (concTerm 1 :: Term (WordN 4)) (ssymbTerm "a"))
-          `shouldBe` eqterm (ssymbTerm "a") (concTerm 2 :: Term (WordN 4))
+        pevalEqvTerm (concTerm 3) (pevalAddNumTerm (concTerm 1 :: Term Integer) (ssymbTerm "a"))
+          `shouldBe` pevalEqvTerm (ssymbTerm "a") (concTerm 2 :: Term Integer)
+        pevalEqvTerm (concTerm 3) (pevalAddNumTerm (concTerm 1 :: Term (IntN 4)) (ssymbTerm "a"))
+          `shouldBe` pevalEqvTerm (ssymbTerm "a") (concTerm 2 :: Term (IntN 4))
+        pevalEqvTerm (concTerm 3) (pevalAddNumTerm (concTerm 1 :: Term (WordN 4)) (ssymbTerm "a"))
+          `shouldBe` pevalEqvTerm (ssymbTerm "a") (concTerm 2 :: Term (WordN 4))
       it "Eqv(l, ITE(c, l, f)) / Eqv(l, ITE(c, t, l) / Eqv(ITE(c, r, f), r) / Eqv(ITE(c, t, r), r)" $ do
-        eqterm (ssymbTerm "a" :: Term Integer) (iteterm (ssymbTerm "b") (ssymbTerm "a") (ssymbTerm "c"))
-          `shouldBe` orb (ssymbTerm "b") (eqterm (ssymbTerm "a") (ssymbTerm "c" :: Term Integer))
-        eqterm (ssymbTerm "a" :: Term Integer) (iteterm (ssymbTerm "b") (ssymbTerm "c") (ssymbTerm "a"))
-          `shouldBe` orb (notb $ ssymbTerm "b") (eqterm (ssymbTerm "a") (ssymbTerm "c" :: Term Integer))
-        eqterm (iteterm (ssymbTerm "b") (ssymbTerm "a") (ssymbTerm "c")) (ssymbTerm "a" :: Term Integer)
-          `shouldBe` orb (ssymbTerm "b") (eqterm (ssymbTerm "c") (ssymbTerm "a" :: Term Integer))
-        eqterm (iteterm (ssymbTerm "b") (ssymbTerm "c") (ssymbTerm "a")) (ssymbTerm "a" :: Term Integer)
-          `shouldBe` orb (notb $ ssymbTerm "b") (eqterm (ssymbTerm "c") (ssymbTerm "a" :: Term Integer))
-    describe "Eqv pattern" $ do
-      it "Eqv pattern should work" $ do
-        case ssymbTerm "a" :: Term Bool of
-          EqvTerm (_ :: Term Bool) _ -> expectationFailure "Bad pattern matching"
-          _ -> return ()
-        case eqterm (ssymbTerm "a" :: Term Bool) (ssymbTerm "b") of
-          EqvTerm (_ :: Term Integer) _ -> expectationFailure "EqvTerm pattern should check type"
-          EqvTerm (v1 :: Term Bool) v2 -> do
-            v1 `shouldBe` ssymbTerm "a"
-            v2 `shouldBe` ssymbTerm "b"
-          _ -> return ()
+        pevalEqvTerm (ssymbTerm "a" :: Term Integer) (pevalITETerm (ssymbTerm "b") (ssymbTerm "a") (ssymbTerm "c"))
+          `shouldBe` pevalOrTerm (ssymbTerm "b") (pevalEqvTerm (ssymbTerm "a") (ssymbTerm "c" :: Term Integer))
+        pevalEqvTerm (ssymbTerm "a" :: Term Integer) (pevalITETerm (ssymbTerm "b") (ssymbTerm "c") (ssymbTerm "a"))
+          `shouldBe` pevalOrTerm (pevalNotTerm $ ssymbTerm "b") (pevalEqvTerm (ssymbTerm "a") (ssymbTerm "c" :: Term Integer))
+        pevalEqvTerm (pevalITETerm (ssymbTerm "b") (ssymbTerm "a") (ssymbTerm "c")) (ssymbTerm "a" :: Term Integer)
+          `shouldBe` pevalOrTerm (ssymbTerm "b") (pevalEqvTerm (ssymbTerm "c") (ssymbTerm "a" :: Term Integer))
+        pevalEqvTerm (pevalITETerm (ssymbTerm "b") (ssymbTerm "c") (ssymbTerm "a")) (ssymbTerm "a" :: Term Integer)
+          `shouldBe` pevalOrTerm (pevalNotTerm $ ssymbTerm "b") (pevalEqvTerm (ssymbTerm "c") (ssymbTerm "a" :: Term Integer))
   describe "Or" $ do
     describe "Or construction" $ do
       it "Or with both concrete" $ do
-        orb (concTerm True) (concTerm True) `shouldBe` concTerm True
-        orb (concTerm True) (concTerm False) `shouldBe` concTerm True
-        orb (concTerm False) (concTerm True) `shouldBe` concTerm True
-        orb (concTerm False) (concTerm False) `shouldBe` concTerm False
+        pevalOrTerm (concTerm True) (concTerm True) `shouldBe` concTerm True
+        pevalOrTerm (concTerm True) (concTerm False) `shouldBe` concTerm True
+        pevalOrTerm (concTerm False) (concTerm True) `shouldBe` concTerm True
+        pevalOrTerm (concTerm False) (concTerm False) `shouldBe` concTerm False
       it "Or on general symbolic" $ do
-        orb (ssymbTerm "a") (ssymbTerm "b")
-          `shouldBe` constructBinary Or (ssymbTerm "a" :: Term Bool) (ssymbTerm "b" :: Term Bool)
+        pevalOrTerm (ssymbTerm "a") (ssymbTerm "b")
+          `shouldBe` orTerm (ssymbTerm "a" :: Term Bool) (ssymbTerm "b" :: Term Bool)
       it "Or(x, y) -> True" $ do
-        orb (concTerm True) (ssymbTerm "b") `shouldBe` concTerm True
-        orb (ssymbTerm "a") (concTerm True) `shouldBe` concTerm True
-        orb
-          (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (neterm (ssymbTerm "a" :: Term Integer) (concTerm 2))
+        pevalOrTerm (concTerm True) (ssymbTerm "b") `shouldBe` concTerm True
+        pevalOrTerm (ssymbTerm "a") (concTerm True) `shouldBe` concTerm True
+        pevalOrTerm
+          (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2))
           `shouldBe` concTerm True
-        orb (notb (ssymbTerm "a")) (ssymbTerm "a") `shouldBe` concTerm True
-        orb (ssymbTerm "a") (notb (ssymbTerm "a")) `shouldBe` concTerm True
+        pevalOrTerm (pevalNotTerm (ssymbTerm "a")) (ssymbTerm "a") `shouldBe` concTerm True
+        pevalOrTerm (ssymbTerm "a") (pevalNotTerm (ssymbTerm "a")) `shouldBe` concTerm True
       it "Or(x, y) -> x" $ do
-        orb (ssymbTerm "a") (concTerm False) `shouldBe` ssymbTerm "a"
-        orb
-          (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 2))
-          `shouldBe` neterm (ssymbTerm "a" :: Term Integer) (concTerm 1)
-        orb (ssymbTerm "a") (ssymbTerm "a") `shouldBe` ssymbTerm "a"
+        pevalOrTerm (ssymbTerm "a") (concTerm False) `shouldBe` ssymbTerm "a"
+        pevalOrTerm
+          (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2))
+          `shouldBe` pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)
+        pevalOrTerm (ssymbTerm "a") (ssymbTerm "a") `shouldBe` ssymbTerm "a"
       it "Or(x, y) -> y" $ do
-        orb (concTerm False) (ssymbTerm "a") `shouldBe` ssymbTerm "a"
-        orb
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 2))
-          (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          `shouldBe` neterm (ssymbTerm "a" :: Term Integer) (concTerm 1)
+        pevalOrTerm (concTerm False) (ssymbTerm "a") `shouldBe` ssymbTerm "a"
+        pevalOrTerm
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2))
+          (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          `shouldBe` pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)
       it "Or(x, Or(y1, y2)) -> True" $ do
-        orb (notb (ssymbTerm "a")) (orb (ssymbTerm "a") (ssymbTerm "b")) `shouldBe` concTerm True
-        orb (ssymbTerm "a") (orb (notb (ssymbTerm "a")) (ssymbTerm "b")) `shouldBe` concTerm True
-        orb
-          (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (orb (neterm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
+        pevalOrTerm (pevalNotTerm (ssymbTerm "a")) (pevalOrTerm (ssymbTerm "a") (ssymbTerm "b")) `shouldBe` concTerm True
+        pevalOrTerm (ssymbTerm "a") (pevalOrTerm (pevalNotTerm (ssymbTerm "a")) (ssymbTerm "b")) `shouldBe` concTerm True
+        pevalOrTerm
+          (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalOrTerm (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
           `shouldBe` concTerm True
 
-        orb (notb (ssymbTerm "a")) (orb (ssymbTerm "b") (ssymbTerm "a")) `shouldBe` concTerm True
-        orb (ssymbTerm "a") (orb (ssymbTerm "b") (notb (ssymbTerm "a"))) `shouldBe` concTerm True
-        orb
-          (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (orb (ssymbTerm "b") (neterm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
+        pevalOrTerm (pevalNotTerm (ssymbTerm "a")) (pevalOrTerm (ssymbTerm "b") (ssymbTerm "a")) `shouldBe` concTerm True
+        pevalOrTerm (ssymbTerm "a") (pevalOrTerm (ssymbTerm "b") (pevalNotTerm (ssymbTerm "a"))) `shouldBe` concTerm True
+        pevalOrTerm
+          (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalOrTerm (ssymbTerm "b") (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
           `shouldBe` concTerm True
       it "Or(x, Or(y1, y2)) -> Or(x, y2)" $ do
-        orb
-          (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (orb (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
-          `shouldBe` orb (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b")
+        pevalOrTerm
+          (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalOrTerm (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
+          `shouldBe` pevalOrTerm (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b")
       it "Or(x, Or(y1, y2)) -> Or(x, y1)" $ do
-        orb
-          (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (orb (ssymbTerm "b") (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
-          `shouldBe` orb (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b")
+        pevalOrTerm
+          (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalOrTerm (ssymbTerm "b") (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
+          `shouldBe` pevalOrTerm (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b")
 
       it "Or(x, y@Or(y1, y2)) -> y" $ do
-        orb (ssymbTerm "a") (orb (ssymbTerm "a") (ssymbTerm "b"))
-          `shouldBe` orb (ssymbTerm "a") (ssymbTerm "b")
-        orb
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 2))
-          (orb (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b"))
-          `shouldBe` orb (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b")
-        orb (ssymbTerm "a") (orb (ssymbTerm "b") (ssymbTerm "a"))
-          `shouldBe` orb (ssymbTerm "b") (ssymbTerm "a")
-        orb
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 2))
-          (orb (ssymbTerm "b") (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1)))
-          `shouldBe` orb (ssymbTerm "b") (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+        pevalOrTerm (ssymbTerm "a") (pevalOrTerm (ssymbTerm "a") (ssymbTerm "b"))
+          `shouldBe` pevalOrTerm (ssymbTerm "a") (ssymbTerm "b")
+        pevalOrTerm
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2))
+          (pevalOrTerm (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b"))
+          `shouldBe` pevalOrTerm (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b")
+        pevalOrTerm (ssymbTerm "a") (pevalOrTerm (ssymbTerm "b") (ssymbTerm "a"))
+          `shouldBe` pevalOrTerm (ssymbTerm "b") (ssymbTerm "a")
+        pevalOrTerm
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2))
+          (pevalOrTerm (ssymbTerm "b") (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)))
+          `shouldBe` pevalOrTerm (ssymbTerm "b") (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
       it "Or(Or(x1, x2), y) -> True" $ do
-        orb (orb (ssymbTerm "a") (ssymbTerm "b")) (notb (ssymbTerm "a")) `shouldBe` concTerm True
-        orb (orb (notb (ssymbTerm "a")) (ssymbTerm "b")) (ssymbTerm "a") `shouldBe` concTerm True
-        orb
-          (orb (neterm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
-          (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+        pevalOrTerm (pevalOrTerm (ssymbTerm "a") (ssymbTerm "b")) (pevalNotTerm (ssymbTerm "a")) `shouldBe` concTerm True
+        pevalOrTerm (pevalOrTerm (pevalNotTerm (ssymbTerm "a")) (ssymbTerm "b")) (ssymbTerm "a") `shouldBe` concTerm True
+        pevalOrTerm
+          (pevalOrTerm (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
+          (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
           `shouldBe` concTerm True
 
-        orb (orb (ssymbTerm "b") (ssymbTerm "a")) (notb (ssymbTerm "a")) `shouldBe` concTerm True
-        orb (orb (ssymbTerm "b") (notb (ssymbTerm "a"))) (ssymbTerm "a") `shouldBe` concTerm True
-        orb
-          (orb (ssymbTerm "b") (neterm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
-          (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+        pevalOrTerm (pevalOrTerm (ssymbTerm "b") (ssymbTerm "a")) (pevalNotTerm (ssymbTerm "a")) `shouldBe` concTerm True
+        pevalOrTerm (pevalOrTerm (ssymbTerm "b") (pevalNotTerm (ssymbTerm "a"))) (ssymbTerm "a") `shouldBe` concTerm True
+        pevalOrTerm
+          (pevalOrTerm (ssymbTerm "b") (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
+          (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
           `shouldBe` concTerm True
       it "Or(x@Or(x1, x2), y) -> x" $ do
-        orb (orb (ssymbTerm "a") (ssymbTerm "b")) (ssymbTerm "a")
-          `shouldBe` orb (ssymbTerm "a") (ssymbTerm "b")
-        orb
-          (orb (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b"))
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 2))
-          `shouldBe` orb (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b")
-        orb (orb (ssymbTerm "b") (ssymbTerm "a")) (ssymbTerm "a")
-          `shouldBe` orb (ssymbTerm "b") (ssymbTerm "a")
-        orb
-          (orb (ssymbTerm "b") (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1)))
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 2))
-          `shouldBe` orb (ssymbTerm "b") (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+        pevalOrTerm (pevalOrTerm (ssymbTerm "a") (ssymbTerm "b")) (ssymbTerm "a")
+          `shouldBe` pevalOrTerm (ssymbTerm "a") (ssymbTerm "b")
+        pevalOrTerm
+          (pevalOrTerm (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b"))
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2))
+          `shouldBe` pevalOrTerm (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b")
+        pevalOrTerm (pevalOrTerm (ssymbTerm "b") (ssymbTerm "a")) (ssymbTerm "a")
+          `shouldBe` pevalOrTerm (ssymbTerm "b") (ssymbTerm "a")
+        pevalOrTerm
+          (pevalOrTerm (ssymbTerm "b") (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)))
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2))
+          `shouldBe` pevalOrTerm (ssymbTerm "b") (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
       it "Or(Or(x1, x2), y) -> Or(x2, y)" $ do
-        orb
-          (orb (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
-          (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          `shouldBe` orb (ssymbTerm "b") (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+        pevalOrTerm
+          (pevalOrTerm (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
+          (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          `shouldBe` pevalOrTerm (ssymbTerm "b") (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
       it "Or(Or(x1, x2), y) -> Or(x1, y)" $ do
-        orb
-          (orb (ssymbTerm "b") (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
-          (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          `shouldBe` orb (ssymbTerm "b") (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+        pevalOrTerm
+          (pevalOrTerm (ssymbTerm "b") (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
+          (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          `shouldBe` pevalOrTerm (ssymbTerm "b") (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
       it "Or(x, And(y1, y2)) -> x" $ do
-        orb
-          (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (andb (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
-          `shouldBe` neterm (ssymbTerm "a" :: Term Integer) (concTerm 1)
-        orb
-          (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (andb (ssymbTerm "b") (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
-          `shouldBe` neterm (ssymbTerm "a" :: Term Integer) (concTerm 1)
+        pevalOrTerm
+          (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalAndTerm (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
+          `shouldBe` pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)
+        pevalOrTerm
+          (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalAndTerm (ssymbTerm "b") (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
+          `shouldBe` pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)
       it "Or(x, And(y1, y2)) -> Or(x, y2)" $ do
-        orb (ssymbTerm "a") (andb (notb (ssymbTerm "a")) (ssymbTerm "b"))
-          `shouldBe` orb (ssymbTerm "a") (ssymbTerm "b")
-        orb (notb (ssymbTerm "a")) (andb (ssymbTerm "a") (ssymbTerm "b"))
-          `shouldBe` orb (notb (ssymbTerm "a")) (ssymbTerm "b")
-        orb
-          (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (andb (neterm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
-          `shouldBe` orb (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b")
+        pevalOrTerm (ssymbTerm "a") (pevalAndTerm (pevalNotTerm (ssymbTerm "a")) (ssymbTerm "b"))
+          `shouldBe` pevalOrTerm (ssymbTerm "a") (ssymbTerm "b")
+        pevalOrTerm (pevalNotTerm (ssymbTerm "a")) (pevalAndTerm (ssymbTerm "a") (ssymbTerm "b"))
+          `shouldBe` pevalOrTerm (pevalNotTerm (ssymbTerm "a")) (ssymbTerm "b")
+        pevalOrTerm
+          (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalAndTerm (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
+          `shouldBe` pevalOrTerm (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b")
       it "Or(And(x1, x2), y) -> y" $ do
-        orb
-          (andb (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
-          (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          `shouldBe` neterm (ssymbTerm "a" :: Term Integer) (concTerm 1)
-        orb
-          (andb (ssymbTerm "b") (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
-          (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          `shouldBe` neterm (ssymbTerm "a" :: Term Integer) (concTerm 1)
+        pevalOrTerm
+          (pevalAndTerm (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
+          (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          `shouldBe` pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)
+        pevalOrTerm
+          (pevalAndTerm (ssymbTerm "b") (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
+          (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          `shouldBe` pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)
       it "Or(x, And(y1, y2)) -> Or(x, y1)" $ do
-        orb (ssymbTerm "a") (andb (ssymbTerm "b") (notb (ssymbTerm "a")))
-          `shouldBe` orb (ssymbTerm "a") (ssymbTerm "b")
-        orb (notb (ssymbTerm "a")) (andb (ssymbTerm "b") (ssymbTerm "a"))
-          `shouldBe` orb (notb (ssymbTerm "a")) (ssymbTerm "b")
-        orb
-          (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (andb (ssymbTerm "b") (neterm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
-          `shouldBe` orb (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b")
+        pevalOrTerm (ssymbTerm "a") (pevalAndTerm (ssymbTerm "b") (pevalNotTerm (ssymbTerm "a")))
+          `shouldBe` pevalOrTerm (ssymbTerm "a") (ssymbTerm "b")
+        pevalOrTerm (pevalNotTerm (ssymbTerm "a")) (pevalAndTerm (ssymbTerm "b") (ssymbTerm "a"))
+          `shouldBe` pevalOrTerm (pevalNotTerm (ssymbTerm "a")) (ssymbTerm "b")
+        pevalOrTerm
+          (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalAndTerm (ssymbTerm "b") (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
+          `shouldBe` pevalOrTerm (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b")
       it "Or(Not(x), Not(y)) -> Not(And(x, y))" $ do
-        orb (notb (ssymbTerm "a")) (notb (ssymbTerm "b"))
-          `shouldBe` notb (andb (ssymbTerm "a") (ssymbTerm "b"))
-    describe "Or pattern" $ do
-      it "Or pattern should work" $ do
-        case ssymbTerm "a" :: Term Bool of
-          OrTerm (_ :: Term Bool) _ -> expectationFailure "Bad pattern matching"
-          _ -> return ()
-        case orb (ssymbTerm "a" :: Term Bool) (ssymbTerm "b") of
-          OrTerm v1 v2 -> do
-            v1 `shouldBe` ssymbTerm "a"
-            v2 `shouldBe` ssymbTerm "b"
-          _ -> return ()
-
+        pevalOrTerm (pevalNotTerm (ssymbTerm "a")) (pevalNotTerm (ssymbTerm "b"))
+          `shouldBe` pevalNotTerm (pevalAndTerm (ssymbTerm "a") (ssymbTerm "b"))
   describe "And" $ do
     describe "And construction" $ do
       it "And with both concrete" $ do
-        andb (concTerm True) (concTerm True) `shouldBe` concTerm True
-        andb (concTerm True) (concTerm False) `shouldBe` concTerm False
-        andb (concTerm False) (concTerm True) `shouldBe` concTerm False
-        andb (concTerm False) (concTerm False) `shouldBe` concTerm False
+        pevalAndTerm (concTerm True) (concTerm True) `shouldBe` concTerm True
+        pevalAndTerm (concTerm True) (concTerm False) `shouldBe` concTerm False
+        pevalAndTerm (concTerm False) (concTerm True) `shouldBe` concTerm False
+        pevalAndTerm (concTerm False) (concTerm False) `shouldBe` concTerm False
       it "And on general symbolic" $ do
-        andb (ssymbTerm "a") (ssymbTerm "b")
-          `shouldBe` constructBinary And (ssymbTerm "a" :: Term Bool) (ssymbTerm "b" :: Term Bool)
+        pevalAndTerm (ssymbTerm "a") (ssymbTerm "b")
+          `shouldBe` andTerm (ssymbTerm "a" :: Term Bool) (ssymbTerm "b" :: Term Bool)
       it "And(x, y) -> False" $ do
-        andb (concTerm False) (ssymbTerm "b") `shouldBe` concTerm False
-        andb (ssymbTerm "a") (concTerm False) `shouldBe` concTerm False
-        andb
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 2))
+        pevalAndTerm (concTerm False) (ssymbTerm "b") `shouldBe` concTerm False
+        pevalAndTerm (ssymbTerm "a") (concTerm False) `shouldBe` concTerm False
+        pevalAndTerm
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2))
           `shouldBe` concTerm False
-        andb (notb (ssymbTerm "a")) (ssymbTerm "a") `shouldBe` concTerm False
-        andb (ssymbTerm "a") (notb (ssymbTerm "a")) `shouldBe` concTerm False
+        pevalAndTerm (pevalNotTerm (ssymbTerm "a")) (ssymbTerm "a") `shouldBe` concTerm False
+        pevalAndTerm (ssymbTerm "a") (pevalNotTerm (ssymbTerm "a")) `shouldBe` concTerm False
       it "And(x, y) -> x" $ do
-        andb (ssymbTerm "a") (concTerm True) `shouldBe` ssymbTerm "a"
-        andb
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (neterm (ssymbTerm "a" :: Term Integer) (concTerm 2))
-          `shouldBe` eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1)
-        andb (ssymbTerm "a") (ssymbTerm "a") `shouldBe` ssymbTerm "a"
+        pevalAndTerm (ssymbTerm "a") (concTerm True) `shouldBe` ssymbTerm "a"
+        pevalAndTerm
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2))
+          `shouldBe` pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)
+        pevalAndTerm (ssymbTerm "a") (ssymbTerm "a") `shouldBe` ssymbTerm "a"
       it "And(x, y) -> y" $ do
-        andb (concTerm True) (ssymbTerm "a") `shouldBe` ssymbTerm "a"
-        andb
-          (neterm (ssymbTerm "a" :: Term Integer) (concTerm 2))
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          `shouldBe` eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1)
+        pevalAndTerm (concTerm True) (ssymbTerm "a") `shouldBe` ssymbTerm "a"
+        pevalAndTerm
+          (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2))
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          `shouldBe` pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)
       it "And(x, And(y1, y2)) -> False" $ do
-        andb (notb (ssymbTerm "a")) (andb (ssymbTerm "a") (ssymbTerm "b")) `shouldBe` concTerm False
-        andb (ssymbTerm "a") (andb (notb (ssymbTerm "a")) (ssymbTerm "b")) `shouldBe` concTerm False
-        andb
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (andb (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
+        pevalAndTerm (pevalNotTerm (ssymbTerm "a")) (pevalAndTerm (ssymbTerm "a") (ssymbTerm "b")) `shouldBe` concTerm False
+        pevalAndTerm (ssymbTerm "a") (pevalAndTerm (pevalNotTerm (ssymbTerm "a")) (ssymbTerm "b")) `shouldBe` concTerm False
+        pevalAndTerm
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalAndTerm (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
           `shouldBe` concTerm False
 
-        andb (notb (ssymbTerm "a")) (andb (ssymbTerm "b") (ssymbTerm "a")) `shouldBe` concTerm False
-        andb (ssymbTerm "a") (andb (ssymbTerm "b") (notb (ssymbTerm "a"))) `shouldBe` concTerm False
-        andb
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (andb (ssymbTerm "b") (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
+        pevalAndTerm (pevalNotTerm (ssymbTerm "a")) (pevalAndTerm (ssymbTerm "b") (ssymbTerm "a")) `shouldBe` concTerm False
+        pevalAndTerm (ssymbTerm "a") (pevalAndTerm (ssymbTerm "b") (pevalNotTerm (ssymbTerm "a"))) `shouldBe` concTerm False
+        pevalAndTerm
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalAndTerm (ssymbTerm "b") (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
           `shouldBe` concTerm False
       it "And(x, And(y1, y2)) -> And(x, y2)" $ do
-        andb
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (andb (neterm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
-          `shouldBe` andb (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b")
+        pevalAndTerm
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalAndTerm (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
+          `shouldBe` pevalAndTerm (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b")
       it "And(x, And(y1, y2)) -> And(x, y1)" $ do
-        andb
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (andb (ssymbTerm "b") (neterm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
-          `shouldBe` andb (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b")
+        pevalAndTerm
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalAndTerm (ssymbTerm "b") (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
+          `shouldBe` pevalAndTerm (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b")
       it "And(x, y@And(y1, y2)) -> y" $ do
-        andb (ssymbTerm "a") (andb (ssymbTerm "a") (ssymbTerm "b"))
-          `shouldBe` andb (ssymbTerm "a") (ssymbTerm "b")
-        andb
-          (neterm (ssymbTerm "a" :: Term Integer) (concTerm 2))
-          (andb (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b"))
-          `shouldBe` andb (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b")
-        andb (ssymbTerm "a") (andb (ssymbTerm "b") (ssymbTerm "a"))
-          `shouldBe` andb (ssymbTerm "b") (ssymbTerm "a")
-        andb
-          (neterm (ssymbTerm "a" :: Term Integer) (concTerm 2))
-          (andb (ssymbTerm "b") (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1)))
-          `shouldBe` andb (ssymbTerm "b") (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+        pevalAndTerm (ssymbTerm "a") (pevalAndTerm (ssymbTerm "a") (ssymbTerm "b"))
+          `shouldBe` pevalAndTerm (ssymbTerm "a") (ssymbTerm "b")
+        pevalAndTerm
+          (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2))
+          (pevalAndTerm (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b"))
+          `shouldBe` pevalAndTerm (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b")
+        pevalAndTerm (ssymbTerm "a") (pevalAndTerm (ssymbTerm "b") (ssymbTerm "a"))
+          `shouldBe` pevalAndTerm (ssymbTerm "b") (ssymbTerm "a")
+        pevalAndTerm
+          (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2))
+          (pevalAndTerm (ssymbTerm "b") (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)))
+          `shouldBe` pevalAndTerm (ssymbTerm "b") (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
       it "And(And(x1, x2), y) -> False" $ do
-        andb (andb (ssymbTerm "a") (ssymbTerm "b")) (notb (ssymbTerm "a")) `shouldBe` concTerm False
-        andb (andb (notb (ssymbTerm "a")) (ssymbTerm "b")) (ssymbTerm "a") `shouldBe` concTerm False
-        andb
-          (andb (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+        pevalAndTerm (pevalAndTerm (ssymbTerm "a") (ssymbTerm "b")) (pevalNotTerm (ssymbTerm "a")) `shouldBe` concTerm False
+        pevalAndTerm (pevalAndTerm (pevalNotTerm (ssymbTerm "a")) (ssymbTerm "b")) (ssymbTerm "a") `shouldBe` concTerm False
+        pevalAndTerm
+          (pevalAndTerm (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
           `shouldBe` concTerm False
 
-        andb (andb (ssymbTerm "b") (ssymbTerm "a")) (notb (ssymbTerm "a")) `shouldBe` concTerm False
-        andb (andb (ssymbTerm "b") (notb (ssymbTerm "a"))) (ssymbTerm "a") `shouldBe` concTerm False
-        andb
-          (andb (ssymbTerm "b") (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+        pevalAndTerm (pevalAndTerm (ssymbTerm "b") (ssymbTerm "a")) (pevalNotTerm (ssymbTerm "a")) `shouldBe` concTerm False
+        pevalAndTerm (pevalAndTerm (ssymbTerm "b") (pevalNotTerm (ssymbTerm "a"))) (ssymbTerm "a") `shouldBe` concTerm False
+        pevalAndTerm
+          (pevalAndTerm (ssymbTerm "b") (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
           `shouldBe` concTerm False
       it "And(x@And(x1, x2), y) -> x" $ do
-        andb (andb (ssymbTerm "a") (ssymbTerm "b")) (ssymbTerm "a")
-          `shouldBe` andb (ssymbTerm "a") (ssymbTerm "b")
-        andb
-          (andb (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b"))
-          (neterm (ssymbTerm "a" :: Term Integer) (concTerm 2))
-          `shouldBe` andb (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b")
-        andb (andb (ssymbTerm "b") (ssymbTerm "a")) (ssymbTerm "a")
-          `shouldBe` andb (ssymbTerm "b") (ssymbTerm "a")
-        andb
-          (andb (ssymbTerm "b") (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1)))
-          (neterm (ssymbTerm "a" :: Term Integer) (concTerm 2))
-          `shouldBe` andb (ssymbTerm "b") (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+        pevalAndTerm (pevalAndTerm (ssymbTerm "a") (ssymbTerm "b")) (ssymbTerm "a")
+          `shouldBe` pevalAndTerm (ssymbTerm "a") (ssymbTerm "b")
+        pevalAndTerm
+          (pevalAndTerm (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b"))
+          (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2))
+          `shouldBe` pevalAndTerm (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b")
+        pevalAndTerm (pevalAndTerm (ssymbTerm "b") (ssymbTerm "a")) (ssymbTerm "a")
+          `shouldBe` pevalAndTerm (ssymbTerm "b") (ssymbTerm "a")
+        pevalAndTerm
+          (pevalAndTerm (ssymbTerm "b") (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)))
+          (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2))
+          `shouldBe` pevalAndTerm (ssymbTerm "b") (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
       it "And(And(x1, x2), y) -> And(x2, y)" $ do
-        andb
-          (andb (neterm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          `shouldBe` andb (ssymbTerm "b") (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+        pevalAndTerm
+          (pevalAndTerm (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          `shouldBe` pevalAndTerm (ssymbTerm "b") (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
       it "And(And(x1, x2), y) -> And(x1, y)" $ do
-        andb
-          (andb (ssymbTerm "b") (neterm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          `shouldBe` andb (ssymbTerm "b") (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+        pevalAndTerm
+          (pevalAndTerm (ssymbTerm "b") (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          `shouldBe` pevalAndTerm (ssymbTerm "b") (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
       it "And(x, Or(y1, y2)) -> x" $ do
-        andb
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (orb (neterm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
-          `shouldBe` eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1)
-        andb
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (orb (ssymbTerm "b") (neterm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
-          `shouldBe` eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1)
+        pevalAndTerm
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalOrTerm (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
+          `shouldBe` pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)
+        pevalAndTerm
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalOrTerm (ssymbTerm "b") (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
+          `shouldBe` pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)
       it "And(x, Or(y1, y2)) -> And(x, y2)" $ do
-        andb (ssymbTerm "a") (orb (notb (ssymbTerm "a")) (ssymbTerm "b"))
-          `shouldBe` andb (ssymbTerm "a") (ssymbTerm "b")
-        andb (notb (ssymbTerm "a")) (orb (ssymbTerm "a") (ssymbTerm "b"))
-          `shouldBe` andb (notb (ssymbTerm "a")) (ssymbTerm "b")
-        andb
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (orb (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
-          `shouldBe` andb (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b")
+        pevalAndTerm (ssymbTerm "a") (pevalOrTerm (pevalNotTerm (ssymbTerm "a")) (ssymbTerm "b"))
+          `shouldBe` pevalAndTerm (ssymbTerm "a") (ssymbTerm "b")
+        pevalAndTerm (pevalNotTerm (ssymbTerm "a")) (pevalOrTerm (ssymbTerm "a") (ssymbTerm "b"))
+          `shouldBe` pevalAndTerm (pevalNotTerm (ssymbTerm "a")) (ssymbTerm "b")
+        pevalAndTerm
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalOrTerm (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
+          `shouldBe` pevalAndTerm (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b")
       it "And(Or(x1, x2), y) -> y" $ do
-        andb
-          (orb (neterm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          `shouldBe` eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1)
-        andb
-          (orb (ssymbTerm "b") (neterm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          `shouldBe` eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1)
+        pevalAndTerm
+          (pevalOrTerm (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          `shouldBe` pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)
+        pevalAndTerm
+          (pevalOrTerm (ssymbTerm "b") (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          `shouldBe` pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)
       it "And(x, Or(y1, y2)) -> And(x, y1)" $ do
-        andb (ssymbTerm "a") (orb (ssymbTerm "b") (notb (ssymbTerm "a")))
-          `shouldBe` andb (ssymbTerm "a") (ssymbTerm "b")
-        andb (notb (ssymbTerm "a")) (orb (ssymbTerm "b") (ssymbTerm "a"))
-          `shouldBe` andb (notb (ssymbTerm "a")) (ssymbTerm "b")
-        andb
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (orb (ssymbTerm "b") (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
-          `shouldBe` andb (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b")
+        pevalAndTerm (ssymbTerm "a") (pevalOrTerm (ssymbTerm "b") (pevalNotTerm (ssymbTerm "a")))
+          `shouldBe` pevalAndTerm (ssymbTerm "a") (ssymbTerm "b")
+        pevalAndTerm (pevalNotTerm (ssymbTerm "a")) (pevalOrTerm (ssymbTerm "b") (ssymbTerm "a"))
+          `shouldBe` pevalAndTerm (pevalNotTerm (ssymbTerm "a")) (ssymbTerm "b")
+        pevalAndTerm
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalOrTerm (ssymbTerm "b") (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
+          `shouldBe` pevalAndTerm (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b")
       it "And(Not(x), Not(y)) -> Not(Or(x, y))" $ do
-        andb (notb (ssymbTerm "a")) (notb (ssymbTerm "b"))
-          `shouldBe` notb (orb (ssymbTerm "a") (ssymbTerm "b"))
-    describe "And pattern" $ do
-      it "And pattern should work" $ do
-        case ssymbTerm "a" :: Term Bool of
-          AndTerm (_ :: Term Bool) _ -> expectationFailure "Bad pattern matching"
-          _ -> return ()
-        case andb (ssymbTerm "a" :: Term Bool) (ssymbTerm "b") of
-          AndTerm v1 v2 -> do
-            v1 `shouldBe` ssymbTerm "a"
-            v2 `shouldBe` ssymbTerm "b"
-          _ -> return ()
+        pevalAndTerm (pevalNotTerm (ssymbTerm "a")) (pevalNotTerm (ssymbTerm "b"))
+          `shouldBe` pevalNotTerm (pevalOrTerm (ssymbTerm "a") (ssymbTerm "b"))
   describe "ITE" $ do
     describe "ITE construction" $ do
       it "ITE with concrete condition" $ do
-        iteterm (concTerm True) (ssymbTerm "a" :: Term Integer) (ssymbTerm "b")
+        pevalITETerm (concTerm True) (ssymbTerm "a" :: Term Integer) (ssymbTerm "b")
           `shouldBe` ssymbTerm "a"
-        iteterm (concTerm False) (ssymbTerm "a" :: Term Integer) (ssymbTerm "b")
+        pevalITETerm (concTerm False) (ssymbTerm "a" :: Term Integer) (ssymbTerm "b")
           `shouldBe` ssymbTerm "b"
       it "ITE with same branches" $ do
-        iteterm (ssymbTerm "c") (ssymbTerm "a" :: Term Integer) (ssymbTerm "a")
+        pevalITETerm (ssymbTerm "c") (ssymbTerm "a" :: Term Integer) (ssymbTerm "a")
           `shouldBe` ssymbTerm "a"
       it "ITE with both not" $ do
-        iteterm (ssymbTerm "c") (notb $ ssymbTerm "a") (notb $ ssymbTerm "b")
-          `shouldBe` notb (iteterm (ssymbTerm "c") (ssymbTerm "a") (ssymbTerm "b"))
+        pevalITETerm (ssymbTerm "c") (pevalNotTerm $ ssymbTerm "a") (pevalNotTerm $ ssymbTerm "b")
+          `shouldBe` pevalNotTerm (pevalITETerm (ssymbTerm "c") (ssymbTerm "a") (ssymbTerm "b"))
       it "ITE with not in condition" $ do
-        iteterm (notb $ ssymbTerm "c") (ssymbTerm "a" :: Term Integer) (ssymbTerm "b")
-          `shouldBe` iteterm (ssymbTerm "c") (ssymbTerm "b") (ssymbTerm "a")
+        pevalITETerm (pevalNotTerm $ ssymbTerm "c") (ssymbTerm "a" :: Term Integer) (ssymbTerm "b")
+          `shouldBe` pevalITETerm (ssymbTerm "c") (ssymbTerm "b") (ssymbTerm "a")
       it "ITE with all arguments as ITE with same conditions" $ do
-        iteterm
-          (iteterm (ssymbTerm "a") (ssymbTerm "b") (ssymbTerm "c"))
-          (iteterm (ssymbTerm "a") (ssymbTerm "d" :: Term Integer) (ssymbTerm "e"))
-          (iteterm (ssymbTerm "a") (ssymbTerm "f" :: Term Integer) (ssymbTerm "g"))
-          `shouldBe` iteterm
+        pevalITETerm
+          (pevalITETerm (ssymbTerm "a") (ssymbTerm "b") (ssymbTerm "c"))
+          (pevalITETerm (ssymbTerm "a") (ssymbTerm "d" :: Term Integer) (ssymbTerm "e"))
+          (pevalITETerm (ssymbTerm "a") (ssymbTerm "f" :: Term Integer) (ssymbTerm "g"))
+          `shouldBe` pevalITETerm
             (ssymbTerm "a")
-            (iteterm (ssymbTerm "b") (ssymbTerm "d") (ssymbTerm "f"))
-            (iteterm (ssymbTerm "c") (ssymbTerm "e") (ssymbTerm "g"))
+            (pevalITETerm (ssymbTerm "b") (ssymbTerm "d") (ssymbTerm "f"))
+            (pevalITETerm (ssymbTerm "c") (ssymbTerm "e") (ssymbTerm "g"))
       it "ITE with true branch as ITE" $ do
-        iteterm
+        pevalITETerm
           (ssymbTerm "a")
-          (iteterm (ssymbTerm "a") (ssymbTerm "b" :: Term Integer) (ssymbTerm "c"))
+          (pevalITETerm (ssymbTerm "a") (ssymbTerm "b" :: Term Integer) (ssymbTerm "c"))
           (ssymbTerm "d")
-          `shouldBe` iteterm (ssymbTerm "a") (ssymbTerm "b") (ssymbTerm "d")
-        iteterm
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          ( iteterm
-              (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 2))
+          `shouldBe` pevalITETerm (ssymbTerm "a") (ssymbTerm "b") (ssymbTerm "d")
+        pevalITETerm
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          ( pevalITETerm
+              (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2))
               (ssymbTerm "b" :: Term Integer)
               (ssymbTerm "c")
           )
           (ssymbTerm "d")
-          `shouldBe` iteterm
-            (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          `shouldBe` pevalITETerm
+            (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
             (ssymbTerm "c")
             (ssymbTerm "d")
-        iteterm
+        pevalITETerm
           (ssymbTerm "a")
-          (iteterm (ssymbTerm "b") (ssymbTerm "c" :: Term Integer) (ssymbTerm "d"))
+          (pevalITETerm (ssymbTerm "b") (ssymbTerm "c" :: Term Integer) (ssymbTerm "d"))
           (ssymbTerm "c")
-          `shouldBe` iteterm
-            (orb (notb $ ssymbTerm "a") (ssymbTerm "b"))
+          `shouldBe` pevalITETerm
+            (pevalOrTerm (pevalNotTerm $ ssymbTerm "a") (ssymbTerm "b"))
             (ssymbTerm "c")
             (ssymbTerm "d")
-        iteterm
+        pevalITETerm
           (ssymbTerm "a")
-          (iteterm (ssymbTerm "b") (ssymbTerm "c" :: Term Integer) (ssymbTerm "d"))
+          (pevalITETerm (ssymbTerm "b") (ssymbTerm "c" :: Term Integer) (ssymbTerm "d"))
           (ssymbTerm "d")
-          `shouldBe` iteterm
-            (andb (ssymbTerm "a") (ssymbTerm "b"))
+          `shouldBe` pevalITETerm
+            (pevalAndTerm (ssymbTerm "a") (ssymbTerm "b"))
             (ssymbTerm "c")
             (ssymbTerm "d")
       it "ITE with false branch as ITE" $ do
-        iteterm
+        pevalITETerm
           (ssymbTerm "a")
           (ssymbTerm "b")
-          (iteterm (ssymbTerm "a") (ssymbTerm "c" :: Term Integer) (ssymbTerm "d"))
-          `shouldBe` iteterm (ssymbTerm "a") (ssymbTerm "b") (ssymbTerm "d")
-        iteterm
+          (pevalITETerm (ssymbTerm "a") (ssymbTerm "c" :: Term Integer) (ssymbTerm "d"))
+          `shouldBe` pevalITETerm (ssymbTerm "a") (ssymbTerm "b") (ssymbTerm "d")
+        pevalITETerm
           (ssymbTerm "a")
           (ssymbTerm "b")
-          (iteterm (ssymbTerm "c") (ssymbTerm "b" :: Term Integer) (ssymbTerm "d"))
-          `shouldBe` iteterm
-            (orb (ssymbTerm "a") (ssymbTerm "c"))
+          (pevalITETerm (ssymbTerm "c") (ssymbTerm "b" :: Term Integer) (ssymbTerm "d"))
+          `shouldBe` pevalITETerm
+            (pevalOrTerm (ssymbTerm "a") (ssymbTerm "c"))
             (ssymbTerm "b")
             (ssymbTerm "d")
-        iteterm
+        pevalITETerm
           (ssymbTerm "a")
           (ssymbTerm "b")
-          (iteterm (ssymbTerm "c") (ssymbTerm "d" :: Term Integer) (ssymbTerm "b"))
-          `shouldBe` iteterm
-            (orb (ssymbTerm "a") (notb $ ssymbTerm "c"))
+          (pevalITETerm (ssymbTerm "c") (ssymbTerm "d" :: Term Integer) (ssymbTerm "b"))
+          `shouldBe` pevalITETerm
+            (pevalOrTerm (ssymbTerm "a") (pevalNotTerm $ ssymbTerm "c"))
             (ssymbTerm "b")
             (ssymbTerm "d")
       it "ITE with both And" $ do
-        iteterm
+        pevalITETerm
           (ssymbTerm "a")
-          (andb (ssymbTerm "b") (ssymbTerm "c"))
-          (andb (ssymbTerm "b") (ssymbTerm "d"))
-          `shouldBe` andb (ssymbTerm "b") (iteterm (ssymbTerm "a") (ssymbTerm "c") (ssymbTerm "d"))
-        iteterm
+          (pevalAndTerm (ssymbTerm "b") (ssymbTerm "c"))
+          (pevalAndTerm (ssymbTerm "b") (ssymbTerm "d"))
+          `shouldBe` pevalAndTerm (ssymbTerm "b") (pevalITETerm (ssymbTerm "a") (ssymbTerm "c") (ssymbTerm "d"))
+        pevalITETerm
           (ssymbTerm "a")
-          (andb (ssymbTerm "c") (ssymbTerm "b"))
-          (andb (ssymbTerm "b") (ssymbTerm "d"))
-          `shouldBe` andb (ssymbTerm "b") (iteterm (ssymbTerm "a") (ssymbTerm "c") (ssymbTerm "d"))
-        iteterm
+          (pevalAndTerm (ssymbTerm "c") (ssymbTerm "b"))
+          (pevalAndTerm (ssymbTerm "b") (ssymbTerm "d"))
+          `shouldBe` pevalAndTerm (ssymbTerm "b") (pevalITETerm (ssymbTerm "a") (ssymbTerm "c") (ssymbTerm "d"))
+        pevalITETerm
           (ssymbTerm "a")
-          (andb (ssymbTerm "b") (ssymbTerm "c"))
-          (andb (ssymbTerm "d") (ssymbTerm "b"))
-          `shouldBe` andb (ssymbTerm "b") (iteterm (ssymbTerm "a") (ssymbTerm "c") (ssymbTerm "d"))
-        iteterm
+          (pevalAndTerm (ssymbTerm "b") (ssymbTerm "c"))
+          (pevalAndTerm (ssymbTerm "d") (ssymbTerm "b"))
+          `shouldBe` pevalAndTerm (ssymbTerm "b") (pevalITETerm (ssymbTerm "a") (ssymbTerm "c") (ssymbTerm "d"))
+        pevalITETerm
           (ssymbTerm "a")
-          (andb (ssymbTerm "c") (ssymbTerm "b"))
-          (andb (ssymbTerm "d") (ssymbTerm "b"))
-          `shouldBe` andb (ssymbTerm "b") (iteterm (ssymbTerm "a") (ssymbTerm "c") (ssymbTerm "d"))
+          (pevalAndTerm (ssymbTerm "c") (ssymbTerm "b"))
+          (pevalAndTerm (ssymbTerm "d") (ssymbTerm "b"))
+          `shouldBe` pevalAndTerm (ssymbTerm "b") (pevalITETerm (ssymbTerm "a") (ssymbTerm "c") (ssymbTerm "d"))
       it "ITE with left And" $ do
-        iteterm
+        pevalITETerm
           (ssymbTerm "a")
-          (andb (ssymbTerm "b") (ssymbTerm "c"))
+          (pevalAndTerm (ssymbTerm "b") (ssymbTerm "c"))
           (ssymbTerm "b")
-          `shouldBe` andb (ssymbTerm "b") (orb (notb (ssymbTerm "a")) (ssymbTerm "c"))
-        iteterm
+          `shouldBe` pevalAndTerm (ssymbTerm "b") (pevalOrTerm (pevalNotTerm (ssymbTerm "a")) (ssymbTerm "c"))
+        pevalITETerm
           (ssymbTerm "a")
-          (andb (ssymbTerm "b") (ssymbTerm "c"))
+          (pevalAndTerm (ssymbTerm "b") (ssymbTerm "c"))
           (ssymbTerm "c")
-          `shouldBe` andb (ssymbTerm "c") (orb (notb (ssymbTerm "a")) (ssymbTerm "b"))
-        iteterm
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (andb (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
+          `shouldBe` pevalAndTerm (ssymbTerm "c") (pevalOrTerm (pevalNotTerm (ssymbTerm "a")) (ssymbTerm "b"))
+        pevalITETerm
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalAndTerm (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
           (ssymbTerm "c")
-          `shouldBe` andb (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "c")
-        iteterm
+          `shouldBe` pevalAndTerm (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "c")
+        pevalITETerm
           (ssymbTerm "a")
-          (andb (notb $ ssymbTerm "a") (ssymbTerm "b"))
+          (pevalAndTerm (pevalNotTerm $ ssymbTerm "a") (ssymbTerm "b"))
           (ssymbTerm "c")
-          `shouldBe` andb (notb $ ssymbTerm "a") (ssymbTerm "c")
-        iteterm
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (andb (ssymbTerm "b") (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
+          `shouldBe` pevalAndTerm (pevalNotTerm $ ssymbTerm "a") (ssymbTerm "c")
+        pevalITETerm
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalAndTerm (ssymbTerm "b") (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
           (ssymbTerm "c")
-          `shouldBe` andb (neterm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "c")
-        iteterm
+          `shouldBe` pevalAndTerm (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "c")
+        pevalITETerm
           (ssymbTerm "a")
-          (andb (ssymbTerm "b") (notb $ ssymbTerm "a"))
+          (pevalAndTerm (ssymbTerm "b") (pevalNotTerm $ ssymbTerm "a"))
           (ssymbTerm "c")
-          `shouldBe` andb (notb $ ssymbTerm "a") (ssymbTerm "c")
-        iteterm
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (andb (neterm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
+          `shouldBe` pevalAndTerm (pevalNotTerm $ ssymbTerm "a") (ssymbTerm "c")
+        pevalITETerm
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalAndTerm (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
           (ssymbTerm "c")
-          `shouldBe` iteterm (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b") (ssymbTerm "c")
-        iteterm
+          `shouldBe` pevalITETerm (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b") (ssymbTerm "c")
+        pevalITETerm
           (ssymbTerm "a")
-          (andb (ssymbTerm "a") (ssymbTerm "b"))
+          (pevalAndTerm (ssymbTerm "a") (ssymbTerm "b"))
           (ssymbTerm "c")
-          `shouldBe` iteterm (ssymbTerm "a") (ssymbTerm "b") (ssymbTerm "c")
-        iteterm
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (andb (ssymbTerm "b") (neterm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
+          `shouldBe` pevalITETerm (ssymbTerm "a") (ssymbTerm "b") (ssymbTerm "c")
+        pevalITETerm
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalAndTerm (ssymbTerm "b") (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
           (ssymbTerm "c")
-          `shouldBe` iteterm (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b") (ssymbTerm "c")
-        iteterm
+          `shouldBe` pevalITETerm (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b") (ssymbTerm "c")
+        pevalITETerm
           (ssymbTerm "a")
-          (andb (ssymbTerm "b") (ssymbTerm "a"))
+          (pevalAndTerm (ssymbTerm "b") (ssymbTerm "a"))
           (ssymbTerm "c")
-          `shouldBe` iteterm (ssymbTerm "a") (ssymbTerm "b") (ssymbTerm "c")
+          `shouldBe` pevalITETerm (ssymbTerm "a") (ssymbTerm "b") (ssymbTerm "c")
       it "ITE with right And" $ do
-        iteterm
+        pevalITETerm
           (ssymbTerm "a")
           (ssymbTerm "b")
-          (andb (ssymbTerm "b") (ssymbTerm "c"))
-          `shouldBe` andb (ssymbTerm "b") (orb (ssymbTerm "a") (ssymbTerm "c"))
-        iteterm
+          (pevalAndTerm (ssymbTerm "b") (ssymbTerm "c"))
+          `shouldBe` pevalAndTerm (ssymbTerm "b") (pevalOrTerm (ssymbTerm "a") (ssymbTerm "c"))
+        pevalITETerm
           (ssymbTerm "a")
           (ssymbTerm "c")
-          (andb (ssymbTerm "b") (ssymbTerm "c"))
-          `shouldBe` andb (ssymbTerm "c") (orb (ssymbTerm "a") (ssymbTerm "b"))
+          (pevalAndTerm (ssymbTerm "b") (ssymbTerm "c"))
+          `shouldBe` pevalAndTerm (ssymbTerm "c") (pevalOrTerm (ssymbTerm "a") (ssymbTerm "b"))
 
       it "ITE with both Or" $ do
-        iteterm
+        pevalITETerm
           (ssymbTerm "a")
-          (orb (ssymbTerm "b") (ssymbTerm "c"))
-          (orb (ssymbTerm "b") (ssymbTerm "d"))
-          `shouldBe` orb (ssymbTerm "b") (iteterm (ssymbTerm "a") (ssymbTerm "c") (ssymbTerm "d"))
-        iteterm
+          (pevalOrTerm (ssymbTerm "b") (ssymbTerm "c"))
+          (pevalOrTerm (ssymbTerm "b") (ssymbTerm "d"))
+          `shouldBe` pevalOrTerm (ssymbTerm "b") (pevalITETerm (ssymbTerm "a") (ssymbTerm "c") (ssymbTerm "d"))
+        pevalITETerm
           (ssymbTerm "a")
-          (orb (ssymbTerm "c") (ssymbTerm "b"))
-          (orb (ssymbTerm "b") (ssymbTerm "d"))
-          `shouldBe` orb (ssymbTerm "b") (iteterm (ssymbTerm "a") (ssymbTerm "c") (ssymbTerm "d"))
-        iteterm
+          (pevalOrTerm (ssymbTerm "c") (ssymbTerm "b"))
+          (pevalOrTerm (ssymbTerm "b") (ssymbTerm "d"))
+          `shouldBe` pevalOrTerm (ssymbTerm "b") (pevalITETerm (ssymbTerm "a") (ssymbTerm "c") (ssymbTerm "d"))
+        pevalITETerm
           (ssymbTerm "a")
-          (orb (ssymbTerm "b") (ssymbTerm "c"))
-          (orb (ssymbTerm "d") (ssymbTerm "b"))
-          `shouldBe` orb (ssymbTerm "b") (iteterm (ssymbTerm "a") (ssymbTerm "c") (ssymbTerm "d"))
-        iteterm
+          (pevalOrTerm (ssymbTerm "b") (ssymbTerm "c"))
+          (pevalOrTerm (ssymbTerm "d") (ssymbTerm "b"))
+          `shouldBe` pevalOrTerm (ssymbTerm "b") (pevalITETerm (ssymbTerm "a") (ssymbTerm "c") (ssymbTerm "d"))
+        pevalITETerm
           (ssymbTerm "a")
-          (orb (ssymbTerm "c") (ssymbTerm "b"))
-          (orb (ssymbTerm "d") (ssymbTerm "b"))
-          `shouldBe` orb (ssymbTerm "b") (iteterm (ssymbTerm "a") (ssymbTerm "c") (ssymbTerm "d"))
+          (pevalOrTerm (ssymbTerm "c") (ssymbTerm "b"))
+          (pevalOrTerm (ssymbTerm "d") (ssymbTerm "b"))
+          `shouldBe` pevalOrTerm (ssymbTerm "b") (pevalITETerm (ssymbTerm "a") (ssymbTerm "c") (ssymbTerm "d"))
       it "ITE with left Or" $ do
-        iteterm
+        pevalITETerm
           (ssymbTerm "a")
-          (orb (ssymbTerm "b") (ssymbTerm "c"))
+          (pevalOrTerm (ssymbTerm "b") (ssymbTerm "c"))
           (ssymbTerm "b")
-          `shouldBe` orb (ssymbTerm "b") (andb (ssymbTerm "a") (ssymbTerm "c"))
-        iteterm
+          `shouldBe` pevalOrTerm (ssymbTerm "b") (pevalAndTerm (ssymbTerm "a") (ssymbTerm "c"))
+        pevalITETerm
           (ssymbTerm "a")
-          (orb (ssymbTerm "b") (ssymbTerm "c"))
+          (pevalOrTerm (ssymbTerm "b") (ssymbTerm "c"))
           (ssymbTerm "c")
-          `shouldBe` orb (ssymbTerm "c") (andb (ssymbTerm "a") (ssymbTerm "b"))
-        iteterm
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (orb (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
+          `shouldBe` pevalOrTerm (ssymbTerm "c") (pevalAndTerm (ssymbTerm "a") (ssymbTerm "b"))
+        pevalITETerm
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalOrTerm (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
           (ssymbTerm "c")
-          `shouldBe` iteterm (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b") (ssymbTerm "c")
-        iteterm
+          `shouldBe` pevalITETerm (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b") (ssymbTerm "c")
+        pevalITETerm
           (ssymbTerm "a")
-          (orb (notb $ ssymbTerm "a") (ssymbTerm "b"))
+          (pevalOrTerm (pevalNotTerm $ ssymbTerm "a") (ssymbTerm "b"))
           (ssymbTerm "c")
-          `shouldBe` iteterm (ssymbTerm "a") (ssymbTerm "b") (ssymbTerm "c")
-        iteterm
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (orb (ssymbTerm "b") (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
+          `shouldBe` pevalITETerm (ssymbTerm "a") (ssymbTerm "b") (ssymbTerm "c")
+        pevalITETerm
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalOrTerm (ssymbTerm "b") (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
           (ssymbTerm "c")
-          `shouldBe` iteterm (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b") (ssymbTerm "c")
-        iteterm
+          `shouldBe` pevalITETerm (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "b") (ssymbTerm "c")
+        pevalITETerm
           (ssymbTerm "a")
-          (orb (ssymbTerm "b") (notb $ ssymbTerm "a"))
+          (pevalOrTerm (ssymbTerm "b") (pevalNotTerm $ ssymbTerm "a"))
           (ssymbTerm "c")
-          `shouldBe` iteterm (ssymbTerm "a") (ssymbTerm "b") (ssymbTerm "c")
-        iteterm
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (orb (neterm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
+          `shouldBe` pevalITETerm (ssymbTerm "a") (ssymbTerm "b") (ssymbTerm "c")
+        pevalITETerm
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalOrTerm (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b"))
           (ssymbTerm "c")
-          `shouldBe` orb (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "c")
-        iteterm
+          `shouldBe` pevalOrTerm (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "c")
+        pevalITETerm
           (ssymbTerm "a")
-          (orb (ssymbTerm "a") (ssymbTerm "b"))
+          (pevalOrTerm (ssymbTerm "a") (ssymbTerm "b"))
           (ssymbTerm "c")
-          `shouldBe` orb (ssymbTerm "a") (ssymbTerm "c")
-        iteterm
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (orb (ssymbTerm "b") (neterm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
+          `shouldBe` pevalOrTerm (ssymbTerm "a") (ssymbTerm "c")
+        pevalITETerm
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalOrTerm (ssymbTerm "b") (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)))
           (ssymbTerm "c")
-          `shouldBe` orb (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "c")
-        iteterm
+          `shouldBe` pevalOrTerm (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "c")
+        pevalITETerm
           (ssymbTerm "a")
-          (orb (ssymbTerm "b") (ssymbTerm "a"))
+          (pevalOrTerm (ssymbTerm "b") (ssymbTerm "a"))
           (ssymbTerm "c")
-          `shouldBe` orb (ssymbTerm "a") (ssymbTerm "c")
+          `shouldBe` pevalOrTerm (ssymbTerm "a") (ssymbTerm "c")
       it "ITE with right Or" $ do
-        iteterm
+        pevalITETerm
           (ssymbTerm "a")
           (ssymbTerm "b")
-          (orb (ssymbTerm "b") (ssymbTerm "c"))
-          `shouldBe` orb (ssymbTerm "b") (andb (notb (ssymbTerm "a")) (ssymbTerm "c"))
-        iteterm
+          (pevalOrTerm (ssymbTerm "b") (ssymbTerm "c"))
+          `shouldBe` pevalOrTerm (ssymbTerm "b") (pevalAndTerm (pevalNotTerm (ssymbTerm "a")) (ssymbTerm "c"))
+        pevalITETerm
           (ssymbTerm "a")
           (ssymbTerm "c")
-          (orb (ssymbTerm "b") (ssymbTerm "c"))
-          `shouldBe` orb (ssymbTerm "c") (andb (notb (ssymbTerm "a")) (ssymbTerm "b"))
+          (pevalOrTerm (ssymbTerm "b") (ssymbTerm "c"))
+          `shouldBe` pevalOrTerm (ssymbTerm "c") (pevalAndTerm (pevalNotTerm (ssymbTerm "a")) (ssymbTerm "b"))
       it "ITE with const boolean in branches" $ do
-        iteterm
+        pevalITETerm
           (ssymbTerm "a")
           (concTerm True)
           (ssymbTerm "b")
-          `shouldBe` orb (ssymbTerm "a") (ssymbTerm "b")
-        iteterm
+          `shouldBe` pevalOrTerm (ssymbTerm "a") (ssymbTerm "b")
+        pevalITETerm
           (ssymbTerm "a")
           (concTerm False)
           (ssymbTerm "b")
-          `shouldBe` andb (notb $ ssymbTerm "a") (ssymbTerm "b")
-        iteterm
+          `shouldBe` pevalAndTerm (pevalNotTerm $ ssymbTerm "a") (ssymbTerm "b")
+        pevalITETerm
           (ssymbTerm "a")
           (ssymbTerm "b")
           (concTerm True)
-          `shouldBe` orb (notb $ ssymbTerm "a") (ssymbTerm "b")
-        iteterm
+          `shouldBe` pevalOrTerm (pevalNotTerm $ ssymbTerm "a") (ssymbTerm "b")
+        pevalITETerm
           (ssymbTerm "a")
           (ssymbTerm "b")
           (concTerm False)
-          `shouldBe` andb (ssymbTerm "a") (ssymbTerm "b")
+          `shouldBe` pevalAndTerm (ssymbTerm "a") (ssymbTerm "b")
       it "ITE with condition equal to some branch" $ do
-        iteterm
+        pevalITETerm
           (ssymbTerm "a")
           (ssymbTerm "a")
           (ssymbTerm "b")
-          `shouldBe` orb (ssymbTerm "a") (ssymbTerm "b")
-        iteterm
+          `shouldBe` pevalOrTerm (ssymbTerm "a") (ssymbTerm "b")
+        pevalITETerm
           (ssymbTerm "a")
           (ssymbTerm "b")
           (ssymbTerm "a")
-          `shouldBe` andb (ssymbTerm "a") (ssymbTerm "b")
+          `shouldBe` pevalAndTerm (ssymbTerm "a") (ssymbTerm "b")
       it "ITE with left Not" $ do
-        iteterm (ssymbTerm "a") (notb (ssymbTerm "a")) (ssymbTerm "b")
-          `shouldBe` andb (notb $ ssymbTerm "a") (ssymbTerm "b")
+        pevalITETerm (ssymbTerm "a") (pevalNotTerm (ssymbTerm "a")) (ssymbTerm "b")
+          `shouldBe` pevalAndTerm (pevalNotTerm $ ssymbTerm "a") (ssymbTerm "b")
       it "ITE with right Not" $ do
-        iteterm (ssymbTerm "a") (ssymbTerm "b") (notb (ssymbTerm "a"))
-          `shouldBe` orb (notb $ ssymbTerm "a") (ssymbTerm "b")
+        pevalITETerm (ssymbTerm "a") (ssymbTerm "b") (pevalNotTerm (ssymbTerm "a"))
+          `shouldBe` pevalOrTerm (pevalNotTerm $ ssymbTerm "a") (ssymbTerm "b")
       it "ITE with left Not And" $ do
-        iteterm
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (notb (andb (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b")))
+        pevalITETerm
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalNotTerm (pevalAndTerm (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b")))
           (ssymbTerm "c")
-          `shouldBe` orb (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "c")
-        iteterm
+          `shouldBe` pevalOrTerm (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "c")
+        pevalITETerm
           (ssymbTerm "a")
-          (notb (andb (notb $ ssymbTerm "a") (ssymbTerm "b")))
+          (pevalNotTerm (pevalAndTerm (pevalNotTerm $ ssymbTerm "a") (ssymbTerm "b")))
           (ssymbTerm "c")
-          `shouldBe` orb (ssymbTerm "a") (ssymbTerm "c")
-        iteterm
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (notb (andb (ssymbTerm "b") (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 2))))
+          `shouldBe` pevalOrTerm (ssymbTerm "a") (ssymbTerm "c")
+        pevalITETerm
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalNotTerm (pevalAndTerm (ssymbTerm "b") (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2))))
           (ssymbTerm "c")
-          `shouldBe` orb (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "c")
-        iteterm
+          `shouldBe` pevalOrTerm (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (ssymbTerm "c")
+        pevalITETerm
           (ssymbTerm "a")
-          (notb (andb (ssymbTerm "b") (notb $ ssymbTerm "a")))
+          (pevalNotTerm (pevalAndTerm (ssymbTerm "b") (pevalNotTerm $ ssymbTerm "a")))
           (ssymbTerm "c")
-          `shouldBe` orb (ssymbTerm "a") (ssymbTerm "c")
-        iteterm
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (notb (andb (neterm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b")))
+          `shouldBe` pevalOrTerm (ssymbTerm "a") (ssymbTerm "c")
+        pevalITETerm
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalNotTerm (pevalAndTerm (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2)) (ssymbTerm "b")))
           (ssymbTerm "c")
-          `shouldBe` iteterm (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (notb $ ssymbTerm "b") (ssymbTerm "c")
-        iteterm
+          `shouldBe` pevalITETerm (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (pevalNotTerm $ ssymbTerm "b") (ssymbTerm "c")
+        pevalITETerm
           (ssymbTerm "a")
-          (notb (andb (ssymbTerm "a") (ssymbTerm "b")))
+          (pevalNotTerm (pevalAndTerm (ssymbTerm "a") (ssymbTerm "b")))
           (ssymbTerm "c")
-          `shouldBe` iteterm (ssymbTerm "a") (notb $ ssymbTerm "b") (ssymbTerm "c")
-        iteterm
-          (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          (notb (andb (ssymbTerm "b") (neterm (ssymbTerm "a" :: Term Integer) (concTerm 2))))
+          `shouldBe` pevalITETerm (ssymbTerm "a") (pevalNotTerm $ ssymbTerm "b") (ssymbTerm "c")
+        pevalITETerm
+          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
+          (pevalNotTerm (pevalAndTerm (ssymbTerm "b") (pevalNotEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2))))
           (ssymbTerm "c")
-          `shouldBe` iteterm (eqterm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (notb $ ssymbTerm "b") (ssymbTerm "c")
-        iteterm
+          `shouldBe` pevalITETerm (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1)) (pevalNotTerm $ ssymbTerm "b") (ssymbTerm "c")
+        pevalITETerm
           (ssymbTerm "a")
-          (notb (andb (ssymbTerm "b") (ssymbTerm "a")))
+          (pevalNotTerm (pevalAndTerm (ssymbTerm "b") (ssymbTerm "a")))
           (ssymbTerm "c")
-          `shouldBe` iteterm (ssymbTerm "a") (notb $ ssymbTerm "b") (ssymbTerm "c")
+          `shouldBe` pevalITETerm (ssymbTerm "a") (pevalNotTerm $ ssymbTerm "b") (ssymbTerm "c")
   describe "Imply" $ do
-    it "implyb should work" $ do
-      ssymbTerm "a" `implyb` ssymbTerm "b"
-        `shouldBe` orb (notb $ ssymbTerm "a") (ssymbTerm "b")
+    it "pevalImplyTerm should work" $ do
+      ssymbTerm "a" `pevalImplyTerm` ssymbTerm "b"
+        `shouldBe` pevalOrTerm (pevalNotTerm $ ssymbTerm "a") (ssymbTerm "b")
   describe "Xor" $ do
-    it "xorb should work" $ do
-      ssymbTerm "a" `xorb` ssymbTerm "b"
-        `shouldBe` orb
-          (andb (notb $ ssymbTerm "a") (ssymbTerm "b"))
-          (andb (ssymbTerm "a") (notb $ ssymbTerm "b"))
+    it "pevalXorTerm should work" $ do
+      ssymbTerm "a" `pevalXorTerm` ssymbTerm "b"
+        `shouldBe` pevalOrTerm
+          (pevalAndTerm (pevalNotTerm $ ssymbTerm "a") (ssymbTerm "b"))
+          (pevalAndTerm (ssymbTerm "a") (pevalNotTerm $ ssymbTerm "b"))

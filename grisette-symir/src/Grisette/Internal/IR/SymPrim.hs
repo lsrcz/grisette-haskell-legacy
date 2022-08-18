@@ -31,24 +31,14 @@ module Grisette.Internal.IR.SymPrim
     pattern TrueTerm,
     pattern FalseTerm,
     pattern BoolTerm,
-    Not (..),
-    notb,
-    pattern NotTerm,
-    Eqv (..),
-    eqterm,
-    neterm,
-    pattern EqvTerm,
-    Or (..),
-    orb,
-    pattern OrTerm,
-    And (..),
-    andb,
-    pattern AndTerm,
-    ITE (..),
-    iteterm,
-    pattern ITETerm,
-    implyb,
-    xorb,
+    pevalNotTerm,
+    pevalEqvTerm,
+    pevalNotEqvTerm,
+    pevalOrTerm,
+    pevalAndTerm,
+    pevalITETerm,
+    pevalImplyTerm,
+    pevalXorTerm,
     unaryUnfoldOnce,
     binaryUnfoldOnce,
     pattern UnaryTermPatt,
@@ -66,53 +56,35 @@ module Grisette.Internal.IR.SymPrim
     BinaryCommPartialStrategy (..),
     BinaryPartialStrategy (..),
     binaryPartial,
-    integerConcTermView,
-    pattern IntegerConcTerm,
-    pattern IntegerTerm,
-    DivI (..),
-    divi,
-    pattern DivITerm,
-    ModI (..),
-    modi,
-    pattern ModITerm,
     pattern NumConcTerm,
     pattern NumOrdConcTerm,
-    AddNum (..),
-    addNum,
-    pattern AddNumTerm,
-    minusNum,
-    UMinusNum (..),
-    uminusNum,
-    pattern UMinusNumTerm,
-    AbsNum (..),
-    absNum,
-    pattern AbsNumTerm,
-    SignumNum (..),
-    signumNum,
-    pattern SignumNumTerm,
-    TimesNum (..),
-    timesNum,
-    pattern TimesNumTerm,
-    LTNum (..),
-    ltNum,
-    pattern LTNumTerm,
-    LENum (..),
-    leNum,
-    pattern LENumTerm,
-    gtNum,
-    geNum,
-    pattern TabularFuncConcTerm,
-    pattern TabularFuncTerm,
-    ApplyF (..),
-    applyf,
-    pattern ApplyFTerm,
+    pevalAddNumTerm,
+    pevalMinusNumTerm,
+    pevalUMinusNumTerm,
+    pevalAbsNumTerm,
+    pevalSignumNumTerm,
+    pevalTimesNumTerm,
+    pevalLtNumTerm,
+    pevalLeNumTerm,
+    pevalGtNumTerm,
+    pevalGeNumTerm,
+    pevalTabularFuncApplyTerm,
+    pevalGeneralFuncApplyTerm,
+    pevalDivIntegerTerm,
+    pevalModIntegerTerm,
   )
 where
 
-import Grisette.IR.SymPrim.Data.Prim.Bool
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Bool
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.GeneralFunc
 import Grisette.IR.SymPrim.Data.Prim.Helpers
-import Grisette.IR.SymPrim.Data.Prim.Integer
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm
-import Grisette.IR.SymPrim.Data.Prim.Num
-import Grisette.IR.SymPrim.Data.Prim.TabularFunc
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Integer
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.SomeTerm
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Num
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.PartialEval
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.TabularFunc
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Unfold
 import Grisette.IR.SymPrim.Data.Union

@@ -38,7 +38,7 @@ import Data.Word
 class Evaluate model a where
   -- | Evaluate a symbolic variable with some model, possibly fill in values for the missing variables.
   --
-  -- >>> let model = insert empty (TermSymbol (Proxy @Integer) (SimpleSymbol "a")) (1 :: Integer)
+  -- >>> let model = insert empty (termSymbol (Proxy @Integer) (SimpleSymbol "a")) (1 :: Integer)
   -- >>> evaluate False model ([ssymb "a", ssymb "b"] :: [SymInteger])
   -- [1I,b]
   -- >>> evaluate True model ([ssymb "a", ssymb "b"] :: [SymInteger])
@@ -70,7 +70,7 @@ instance (Evaluate' model a, Evaluate' model b) => Evaluate' model (a :*: b) whe
 -- | Evaluate a symbolic variable with some model, fill in values for the missing variables,
 -- and transform to concrete ones
 --
--- >>> let model = insert empty (TermSymbol (Proxy @Integer) (SimpleSymbol "a")) (1 :: Integer)
+-- >>> let model = insert empty (termSymbol (Proxy @Integer) (SimpleSymbol "a")) (1 :: Integer)
 -- >>> evaluateToCon model ([ssymb "a", ssymb "b"] :: [SymInteger]) :: [Integer]
 -- [1,0]
 evaluateToCon :: (ToCon a b, Evaluate model a) => model -> a -> b
