@@ -33,12 +33,12 @@ library
       Grisette.IR.SymPrim
       Grisette.IR.SymPrim.Control.Monad.UnionM
       Grisette.IR.SymPrim.Data.BV
-      Grisette.IR.SymPrim.Data.GeneralFuncSubst
       Grisette.IR.SymPrim.Data.IntBitwidth
       Grisette.IR.SymPrim.Data.Prim.Bits
       Grisette.IR.SymPrim.Data.Prim.Bool
       Grisette.IR.SymPrim.Data.Prim.BV
       Grisette.IR.SymPrim.Data.Prim.GeneralFunc
+      Grisette.IR.SymPrim.Data.Prim.GeneralFuncSubst
       Grisette.IR.SymPrim.Data.Prim.Helpers
       Grisette.IR.SymPrim.Data.Prim.Integer
       Grisette.IR.SymPrim.Data.Prim.InternedTerm.Caches

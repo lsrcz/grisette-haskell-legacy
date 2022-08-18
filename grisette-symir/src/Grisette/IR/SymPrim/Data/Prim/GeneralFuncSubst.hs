@@ -4,7 +4,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Grisette.IR.SymPrim.Data.GeneralFuncSubst (generalFuncSubst) where
+module Grisette.IR.SymPrim.Data.Prim.GeneralFuncSubst (generalFuncSubst) where
 
 import Grisette.Core.Data.MemoUtils
 import Type.Reflection

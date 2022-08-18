@@ -51,7 +51,7 @@ import Language.Haskell.TH.Syntax.Compat
 import Type.Reflection
 import Grisette.Core.Data.Class.Function
 import GHC.Generics
-import {-# SOURCE #-} Grisette.IR.SymPrim.Data.GeneralFuncSubst
+import {-# SOURCE #-} Grisette.IR.SymPrim.Data.Prim.GeneralFuncSubst
 
 class (Lift t, Typeable t, Hashable t, Eq t, Show t, NFData t) => SupportedPrim t where
   type PrimConstraint t :: Constraint
