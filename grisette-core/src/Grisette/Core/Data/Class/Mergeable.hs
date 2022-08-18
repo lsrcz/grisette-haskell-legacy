@@ -270,8 +270,8 @@ instance (Mergeable1' bool a, Mergeable1' bool b) => Mergeable1' bool (a :+: b) 
       )
       ( \idx ->
           if not idx
-            then wrapStrategy (liftMergingStrategy' m) L1 (\(L1 v) -> v)
-            else wrapStrategy (liftMergingStrategy' m) R1 (\(R1 v) -> v)
+            then wrapStrategy (liftMergingStrategy' m) L1 (\case (L1 v) -> v; _ -> error "impossible")
+            else wrapStrategy (liftMergingStrategy' m) R1 (\case (R1 v) -> v; _ -> error "impossible")
       )
   {-# INLINE liftMergingStrategy' #-}
 
@@ -319,8 +319,8 @@ instance (Mergeable' bool a, Mergeable' bool b) => Mergeable' bool (a :+: b) whe
       )
       ( \idx ->
           if not idx
-            then wrapStrategy mergingStrategy' L1 (\(L1 v) -> v)
-            else wrapStrategy mergingStrategy' R1 (\(R1 v) -> v)
+            then wrapStrategy mergingStrategy' L1 (\case (L1 v) -> v; _ -> undefined)
+            else wrapStrategy mergingStrategy' R1 (\case (R1 v) -> v; _ -> undefined)
       )
   {-# INLINE mergingStrategy' #-}
 
@@ -388,8 +388,8 @@ instance (SymBoolOp bool) => Mergeable2 bool Either where
           Right _ -> True
       )
       ( \case
-          False -> wrapStrategy m1 Left (\(Left v) -> v)
-          True -> wrapStrategy m2 Right (\(Right v) -> v)
+          False -> wrapStrategy m1 Left (\case (Left v) -> v; _ -> undefined)
+          True -> wrapStrategy m2 Right (\case (Right v) -> v; _ -> undefined)
       )
   {-# INLINE liftMergingStrategy2 #-}
 
@@ -444,7 +444,8 @@ instance (SymBoolOp bool, Mergeable bool a) => Mergeable bool [a] where
         let s :: [MergingStrategy bool a] = unsafeCoerce strategies
             allSimple = all (\case SimpleStrategy _ -> True; _ -> False) s
          in if allSimple
-              then SimpleStrategy $ \cond l r -> (\(SimpleStrategy f, l1, r1) -> f cond l1 r1) <$> zip3 s l r
+              then SimpleStrategy $ \cond l r ->
+                (\case (SimpleStrategy f, l1, r1) -> f cond l1 r1; _ -> error "impossible") <$> zip3 s l r
               else NoStrategy
   {-# INLINE mergingStrategy #-}
 
@@ -460,7 +461,8 @@ instance (SymBoolOp bool) => Mergeable1 bool [] where
         let s :: [MergingStrategy bool a] = unsafeCoerce strategies
             allSimple = all (\case SimpleStrategy _ -> True; _ -> False) s
          in if allSimple
-              then SimpleStrategy $ \cond l r -> (\(SimpleStrategy f, l1, r1) -> f cond l1 r1) <$> zip3 s l r
+              then SimpleStrategy $ \cond l r ->
+                (\case (SimpleStrategy f, l1, r1) -> f cond l1 r1; _ -> error "impossible") <$> zip3 s l r
               else NoStrategy
   {-# INLINE liftMergingStrategy #-}
 
@@ -722,16 +724,16 @@ instance
   mergingStrategy = SortedStrategy (\case
     InL _ -> False
     InR _ -> True) (\case
-      False -> wrapStrategy mergingStrategy1 InL (\(InL v) -> v)
-      True -> wrapStrategy mergingStrategy1 InR (\(InR v) -> v))
+      False -> wrapStrategy mergingStrategy1 InL (\case (InL v) -> v; _ -> error "impossible")
+      True -> wrapStrategy mergingStrategy1 InR (\case (InR v) -> v; _ -> error "impossible"))
   {-# INLINE mergingStrategy #-}
 
 instance (SymBoolOp bool, Mergeable1 bool l, Mergeable1 bool r) => Mergeable1 bool (Sum l r) where
   liftMergingStrategy m = SortedStrategy (\case
     InL _ -> False
     InR _ -> True) (\case
-      False -> wrapStrategy (liftMergingStrategy m) InL (\(InL v) -> v)
-      True -> wrapStrategy (liftMergingStrategy m) InR (\(InR v) -> v))
+      False -> wrapStrategy (liftMergingStrategy m) InL (\case (InL v) -> v; _ -> error "impossible")
+      True -> wrapStrategy (liftMergingStrategy m) InR (\case (InR v) -> v; _ -> error "impossible"))
   {-# INLINE liftMergingStrategy #-}
 
 -- Ordering

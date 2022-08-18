@@ -12,6 +12,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Grisette.Backend.SBV.Data.SMT.Lowering
   ( lowerSinglePrim,
@@ -849,7 +850,7 @@ parseModel _ (SBVI.SMTModel _ _ assoc uifuncs) mp = foldr gouifuncs (foldr goass
         _ -> error "Unknown type"
 
     resolveFirst :: R.TypeRep a -> [([SBVI.CV], SBVI.CV)] -> [(a, [([SBVI.CV], SBVI.CV)])]
-    resolveFirst tf = fmap (\(x : xs, v) -> (resolveSingle tf x, [(xs, v)]))
+    resolveFirst tf = fmap (\case (x : xs, v) -> (resolveSingle tf x, [(xs, v)]); _ -> error "impossible")
 
     partitionWithOrd :: forall a. Ord a => [(a, [([SBVI.CV], SBVI.CV)])] -> [(a, [([SBVI.CV], SBVI.CV)])]
     partitionWithOrd v = go sorted

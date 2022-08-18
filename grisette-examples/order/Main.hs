@@ -57,7 +57,6 @@ instance (Monad m) => Applicative (ExceptT' e m) where
   f <*> v = fromExceptT $ toExceptT f <*> toExceptT v
 
 instance (Monad m) => Monad (ExceptT' e m) where
-  return a = fromExceptT $ return a
   m >>= k = fromExceptT $ toExceptT m >>= (toExceptT . k)
 
 instance (Show1 m, Show e) => Show1 (ExceptT' e m) where

@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 module STLC (stlcSyntax, STLCTree, ConcSTLCTree, execStlc) where
 

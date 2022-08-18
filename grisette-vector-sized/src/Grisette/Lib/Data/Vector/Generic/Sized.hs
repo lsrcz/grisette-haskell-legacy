@@ -11,6 +11,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 module Grisette.Lib.Data.Vector.Generic.Sized where
 
@@ -21,7 +22,6 @@ import qualified Data.Vector.Generic.Sized as VSized
 import GHC.TypeNats
 import Grisette.Core
 import Unsafe.Coerce
-import GHC.Natural
 
 newtype NatRepr (n::Nat) = NatRepr Natural
 
