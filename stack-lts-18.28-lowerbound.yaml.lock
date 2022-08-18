@@ -12,19 +12,19 @@ packages:
   original:
     hackage: doctest-0.20.0@sha256:fd56edde124a92d42c42c74333f0ae74532329d15a6c63d578cbb51f4e7cfd34,7121
 - completed:
+    hackage: extra-1.7.7@sha256:9fa287738baba3c08fafdacc7f99e63dc0fe79f58a634c8d7485332e4adf7c38,2655
+    pantry-tree:
+      size: 1829
+      sha256: 37fed6f6b29e678efb2777955031a0ee915b57398bd278041d8cf6b4535744e2
+  original:
+    hackage: extra-1.7.7
+- completed:
     hackage: fused-effects-1.1.0.0@sha256:29d03c73b585920c0999a18b73c9a0bf9e61e1fa58c5c2bed3f89423c8078f4a,5139
     pantry-tree:
       size: 6288
       sha256: e427a329bd733f5096e37bfcf5a211bb2e8555b88b7e87ac43607d2f455e3f66
   original:
     hackage: fused-effects-1.1.0.0
-- completed:
-    hackage: Unique-0.4.7@sha256:2b8442a754c4d10111a37e1c792d9b08316221bae87ec60258bf32ec06b76797,1484
-    pantry-tree:
-      size: 629
-      sha256: d13646a82faec5f204602c52fd6a267cf2688975a5ffd0cec8b9f5e6ad79022d
-  original:
-    hackage: Unique-0.4.7
 - completed:
     hackage: hashtables-1.2.3.4@sha256:510be063ee0833868f170172af3c80ca72c307f7764353e16a27ca6c1ef5cf72,8486
     pantry-tree:

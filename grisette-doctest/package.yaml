@@ -25,7 +25,6 @@ dependencies:
 - vector-sized >= 1.4.1
 - vector >= 0.12.1.2
 - hashtables >= 1.2.3.4
-- Unique >= 0.4.7
 - loch-th >= 0.2.2
 - typerep-map >= 0.3.3
 - array >= 0.5.4.0

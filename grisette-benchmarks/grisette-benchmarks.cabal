@@ -72,12 +72,12 @@ library
   ghc-options: -Wall -ferror-spans
   build-depends:
       QuickCheck >=2.13.2
-    , Unique >=0.4.7
     , base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -137,12 +137,12 @@ executable bonsai-letpoly
   ghc-options: -Wall -ferror-spans
   build-depends:
       QuickCheck >=2.13.2
-    , Unique >=0.4.7
     , base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -203,12 +203,12 @@ executable bonsai-letpoly-nomemo
   ghc-options: -Wall -ferror-spans
   build-depends:
       QuickCheck >=2.13.2
-    , Unique >=0.4.7
     , base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -269,12 +269,12 @@ executable bonsai-nanoscala
   ghc-options: -Wall -ferror-spans
   build-depends:
       QuickCheck >=2.13.2
-    , Unique >=0.4.7
     , base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -335,12 +335,12 @@ executable bonsai-nanoscala-nomemo
   ghc-options: -Wall -ferror-spans
   build-depends:
       QuickCheck >=2.13.2
-    , Unique >=0.4.7
     , base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -401,12 +401,12 @@ executable bonsai-stlc
   ghc-options: -Wall -ferror-spans
   build-depends:
       QuickCheck >=2.13.2
-    , Unique >=0.4.7
     , base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -467,12 +467,12 @@ executable bonsai-stlc-nomemo
   ghc-options: -Wall -ferror-spans
   build-depends:
       QuickCheck >=2.13.2
-    , Unique >=0.4.7
     , base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -540,12 +540,12 @@ executable cosette
   ghc-options: -Wall -ferror-spans
   build-depends:
       QuickCheck >=2.13.2
-    , Unique >=0.4.7
     , base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -613,12 +613,12 @@ executable cosette-optimized-merge
   ghc-options: -Wall -ferror-spans
   build-depends:
       QuickCheck >=2.13.2
-    , Unique >=0.4.7
     , base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -685,12 +685,12 @@ executable ferrite
   ghc-options: -Wall -ferror-spans
   build-depends:
       QuickCheck >=2.13.2
-    , Unique >=0.4.7
     , base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -750,12 +750,12 @@ executable fluidics
   ghc-options: -Wall -ferror-spans
   build-depends:
       QuickCheck >=2.13.2
-    , Unique >=0.4.7
     , base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -820,12 +820,12 @@ executable ifcl
   ghc-options: -Wall -ferror-spans
   build-depends:
       QuickCheck >=2.13.2
-    , Unique >=0.4.7
     , base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -889,12 +889,12 @@ executable microsem
   ghc-options: -Wall -ferror-spans
   build-depends:
       QuickCheck >=2.13.2
-    , Unique >=0.4.7
     , base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -954,12 +954,12 @@ executable regex
   ghc-options: -Wall -ferror-spans
   build-depends:
       QuickCheck >=2.13.2
-    , Unique >=0.4.7
     , base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -1019,12 +1019,12 @@ executable regex-delim
   ghc-options: -Wall -ferror-spans
   build-depends:
       QuickCheck >=2.13.2
-    , Unique >=0.4.7
     , base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -1084,12 +1084,12 @@ executable regex-delim-nomemo
   ghc-options: -Wall -ferror-spans
   build-depends:
       QuickCheck >=2.13.2
-    , Unique >=0.4.7
     , base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -1149,12 +1149,12 @@ executable regex-nomemo
   ghc-options: -Wall -ferror-spans
   build-depends:
       QuickCheck >=2.13.2
-    , Unique >=0.4.7
     , base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0

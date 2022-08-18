@@ -68,12 +68,12 @@ library
   ghc-options: -Wall -ferror-spans
   build-depends:
       QuickCheck >=2.13.2
-    , Unique >=0.4.7
     , base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -133,12 +133,12 @@ executable bonsai-letpoly-cbmc
   ghc-options: -Wall -ferror-spans
   build-depends:
       QuickCheck >=2.13.2
-    , Unique >=0.4.7
     , base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -199,12 +199,12 @@ executable bonsai-letpoly-nomemo-cbmc
   ghc-options: -Wall -ferror-spans
   build-depends:
       QuickCheck >=2.13.2
-    , Unique >=0.4.7
     , base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -265,12 +265,12 @@ executable bonsai-nanoscala-cbmc
   ghc-options: -Wall -ferror-spans
   build-depends:
       QuickCheck >=2.13.2
-    , Unique >=0.4.7
     , base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -331,12 +331,12 @@ executable bonsai-nanoscala-nomemo-cbmc
   ghc-options: -Wall -ferror-spans
   build-depends:
       QuickCheck >=2.13.2
-    , Unique >=0.4.7
     , base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -397,12 +397,12 @@ executable bonsai-stlc-cbmc
   ghc-options: -Wall -ferror-spans
   build-depends:
       QuickCheck >=2.13.2
-    , Unique >=0.4.7
     , base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -463,12 +463,12 @@ executable bonsai-stlc-nomemo-cbmc
   ghc-options: -Wall -ferror-spans
   build-depends:
       QuickCheck >=2.13.2
-    , Unique >=0.4.7
     , base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -533,12 +533,12 @@ executable ifcl-cbmc
   ghc-options: -Wall -ferror-spans
   build-depends:
       QuickCheck >=2.13.2
-    , Unique >=0.4.7
     , base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
