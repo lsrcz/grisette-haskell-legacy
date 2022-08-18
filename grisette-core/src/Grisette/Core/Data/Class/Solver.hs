@@ -68,24 +68,6 @@ class
     bool ->
     bool ->
     IO (Either failure ([forallArg], model))
-  cegisVC ::
-    (Evaluate model forallArg, ExtractSymbolics symbolSet forallArg, UnionPrjOp bool u, Monad u) =>
-    config ->
-    forallArg ->
-    u (Either VerificationConditions ()) ->
-    IO (Either failure ([forallArg], model))
-  cegisVC config forallArg u =
-    uncurry
-      (cegisFormulas config forallArg)
-      ( getSingle $
-          fmap
-            ( \case
-                Left AssumptionViolation -> (conc True, conc False)
-                Left AssertionViolation -> (conc False, conc True)
-                _ -> (conc False, conc False)
-            )
-            u
-      )
 
 class ExtractUnionEither t u e v | t -> u e v where
   extractUnionEither :: t -> u (Either e v)
