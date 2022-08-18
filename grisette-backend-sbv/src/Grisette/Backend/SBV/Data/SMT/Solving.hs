@@ -1,12 +1,12 @@
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# OPTIONS_GHC -Wno-orphans #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Grisette.Backend.SBV.Data.SMT.Solving () where
 
@@ -16,15 +16,18 @@ import Data.Maybe
 import qualified Data.SBV as SBV
 import Data.SBV.Control (Query)
 import qualified Data.SBV.Control as SBVC
+import Grisette.Backend.SBV.Data.SMT.Config
+import Grisette.Backend.SBV.Data.SMT.Lowering
+import Grisette.Core.Control.Exception
 import Grisette.Core.Data.Class.Bool
 import Grisette.Core.Data.Class.Evaluate
 import Grisette.Core.Data.Class.ExtractSymbolics
+import Grisette.Core.Data.Class.PrimWrapper
 import Grisette.Core.Data.Class.Solver
-import Grisette.IR.SymPrim.Data.Prim.Bool
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.Model as PM
-import Grisette.Backend.SBV.Data.SMT.Config
-import Grisette.Backend.SBV.Data.SMT.Lowering
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Bool
 import Grisette.IR.SymPrim.Data.SymPrim
 
 solveTermWith ::
@@ -62,7 +65,11 @@ instance Solver (GrisetteSMTConfig n) SymBool (S.HashSet TermSymbol) SBVC.CheckS
       allSymbols = extractSymbolics s :: S.HashSet TermSymbol
       next :: PM.Model -> SymBiMap -> Query (SymBiMap, Either SBVC.CheckSatResult PM.Model)
       next md origm = do
-        let newtm = S.foldl' (\acc v -> orb acc (notb (fromJust $ equation md v))) (concTerm False) allSymbols
+        let newtm =
+              S.foldl'
+                (\acc v -> pevalOrTerm acc (pevalNotTerm (fromJust $ equation md v)))
+                (concTerm False)
+                allSymbols
         let (lowered, newm) = lowerSinglePrim' config newtm origm
         SBV.constrain lowered
         r <- SBVC.checkSat
@@ -83,8 +90,14 @@ instance Solver (GrisetteSMTConfig n) SymBool (S.HashSet TermSymbol) SBVC.CheckS
               return $ md : rmmd
         | otherwise = return [md]
   solveFormulaAll = undefined
-  cegisFormulas :: forall forallArg. (ExtractSymbolics (S.HashSet TermSymbol) forallArg, Evaluate PM.Model forallArg) =>
-   GrisetteSMTConfig n -> forallArg -> SymBool -> SymBool -> IO (Either SBVC.CheckSatResult ([forallArg], PM.Model))
+  cegisFormulas ::
+    forall forallArg.
+    (ExtractSymbolics (S.HashSet TermSymbol) forallArg, Evaluate PM.Model forallArg) =>
+    GrisetteSMTConfig n ->
+    forallArg ->
+    SymBool ->
+    SymBool ->
+    IO (Either SBVC.CheckSatResult ([forallArg], PM.Model))
   cegisFormulas config foralls assumption assertion = SBV.runSMTWith (sbvConfig config) $ do
     let Sym t = phi
     (newm, a) <- lowerSinglePrim config t

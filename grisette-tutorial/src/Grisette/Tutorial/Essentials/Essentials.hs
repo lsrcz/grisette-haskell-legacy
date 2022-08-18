@@ -158,7 +158,7 @@ module Grisette.Tutorial.Essentials.Essentials (
   -- The resulting formula can be solved by the constraint solver.
   --
   -- >>> ("a" :: SymInteger) ==~ "b" :: SymBool
-  -- (== a b)
+  -- (= a b)
   --
   -- Note that the @~@ postfix is one of the naming conventions
   -- that is usually used for symbolic operators.

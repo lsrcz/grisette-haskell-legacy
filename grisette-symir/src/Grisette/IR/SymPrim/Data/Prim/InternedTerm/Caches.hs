@@ -3,20 +3,17 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
-
 {-# OPTIONS_GHC -fno-cse #-}
-module Grisette.IR.SymPrim.Data.Prim.Caches where
-import Data.Interned
+
+module Grisette.IR.SymPrim.Data.Prim.InternedTerm.Caches where
+
 import Data.Data
 import Data.Dynamic
--- import Data.Array
 import qualified Data.HashMap.Strict as M
--- import qualified Data.HashTable.IO as H
-import qualified Data.TypeRepMap as TM
 import Data.IORef
+import Data.Interned
+import qualified Data.TypeRepMap as TM
 import GHC.IO
--- import Data.Typeable
--- import Debug.Trace
 
 newDynamicCache :: forall a. (Interned a, Typeable a) => Dynamic
 newDynamicCache = toDyn $ mkCache @a
@@ -35,22 +32,6 @@ typeMemoizedCache = unsafeDupablePerformIO $
           !r = (newDynamicCache @a)
 {-# NOINLINE typeMemoizedCache #-}
 
-{-
-newtype ReverseCache t = ReverseCache (H.BasicHashTable Id t)
-
-mkReverseCache :: TypeRep -> ReverseCache t
-mkReverseCache _ = unsafeDupablePerformIO $ do
-  x <- H.new
-  return $! ReverseCache x
-{-# NOINLINE mkReverseCache #-}
-
-findInReverseCache :: Id -> ReverseCache t -> IO (Maybe t)
-findInReverseCache !i (ReverseCache tab) = H.lookup tab i
-
-addToReverseCache :: Id -> t -> ReverseCache t -> IO ()
-addToReverseCache !i !t (ReverseCache tab) = H.insert tab i t
--}
-
 newtype ReverseCache t = ReverseCache {getReverseCache :: IORef (M.HashMap Id t)}
 
 mkReverseCache :: (Typeable t) => ReverseCache t
@@ -65,29 +46,6 @@ findInReverseCache !i (ReverseCache ref) = do
 addToReverseCache :: Id -> t -> ReverseCache t -> IO ()
 addToReverseCache !i !t (ReverseCache ref) = atomicModifyIORef' ref $ \m ->
   (M.insert i t m, ())
-
-{-
-data ReverseCache t = ReverseCache (Array Int (IORef (M.HashMap Id t)))
-
-cw :: Int
-cw = 1024
-
-mkReverseCache :: forall t. (Typeable t) => ReverseCache t
-mkReverseCache = ReverseCache $ unsafePerformIO $ do print (show (typeRep (Proxy @t))); traverse newIORef $ listArray (0, cw) $ replicate cw M.empty
-{-# NOINLINE mkReverseCache #-}
-
-
-findInReverseCache :: Id -> ReverseCache t -> IO (Maybe t)
-findInReverseCache !i (ReverseCache ref) = do
-  r <- readIORef (ref ! (i `mod` cw))
-  return $! M.lookup i r
-
-addToReverseCache :: Id -> t -> ReverseCache t -> IO ()
-addToReverseCache !i !t (ReverseCache ref) = atomicModifyIORef' (ref ! (i `mod` cw)) $ \m ->
-  (M.insert i t m, ())
-  -}
-
-
 
 termReverseCacheCell :: IORef (TM.TypeRepMap ReverseCache)
 termReverseCacheCell = unsafeDupablePerformIO $ newIORef TM.empty
@@ -104,4 +62,3 @@ typeMemoizedReverseCache = unsafeDupablePerformIO $ do
           !r = mkReverseCache
           {-# NOINLINE r #-}
 {-# NOINLINE typeMemoizedReverseCache #-}
-

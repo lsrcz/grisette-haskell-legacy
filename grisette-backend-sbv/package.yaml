@@ -4,10 +4,11 @@ synopsis: Lowering symbolic primitives to SMT
 description: Lowering symbolic primitives to SMT
 category: Formal Methods, Theorem Provers, Symbolic Computation, SMT
 author: "Sirui Lu"
-maintainer: siruilu@uw.edu
+maintainer: Sirui Lu (siruilu@cs.washington.edu)
 license: BSD3
+license-file: LICENSE
 github: lsrcz/grisette-haskell
-copyright: "2021 Sirui Lu"
+copyright: "2021-2022 Sirui Lu"
 
 dependencies:
 - base > 4.14 && < 5

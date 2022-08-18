@@ -1,12 +1,12 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
 
 module Grisette.IR.SymPrim.Data.Prim.BitsSpec where
 
 import Grisette.IR.SymPrim.Data.BV
-import Grisette.IR.SymPrim.Data.Prim.Bits
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Bits
 import Test.Hspec
 
 spec :: Spec
@@ -14,253 +14,187 @@ spec = do
   describe "AndBits" $ do
     describe "AndBits construction" $ do
       it "AndBits on both concrete" $ do
-        bitand
+        pevalAndBitsTerm
           (concTerm 3 :: Term (WordN 4))
           (concTerm 5)
           `shouldBe` concTerm 1
       it "AndBits with zeroBits" $ do
-        bitand
+        pevalAndBitsTerm
           (concTerm 0 :: Term (WordN 4))
           (ssymbTerm "a")
           `shouldBe` concTerm 0
-        bitand
+        pevalAndBitsTerm
           (ssymbTerm "a")
           (concTerm 0 :: Term (WordN 4))
           `shouldBe` concTerm 0
       it "AndBits with all one bits" $ do
-        bitand
+        pevalAndBitsTerm
           (concTerm 15 :: Term (WordN 4))
           (ssymbTerm "a")
           `shouldBe` ssymbTerm "a"
-        bitand
+        pevalAndBitsTerm
           (ssymbTerm "a")
           (concTerm 15 :: Term (WordN 4))
           `shouldBe` ssymbTerm "a"
       it "AndBits symbolic" $ do
-        bitand
+        pevalAndBitsTerm
           (ssymbTerm "a" :: Term (WordN 4))
           (ssymbTerm "b")
-          `shouldBe` constructBinary
-            (AndBits @(WordN 4))
+          `shouldBe` andBitsTerm
             (ssymbTerm "a" :: Term (WordN 4))
             (ssymbTerm "b" :: Term (WordN 4))
-    describe "AndBits pattern" $ do
-      it "AndBits pattern should work" $ do
-        case ssymbTerm "a" :: Term Bool of
-          AndBitsTerm (_ :: Term Bool) _ -> expectationFailure "Bad pattern matching"
-          _ -> return ()
-        case bitand (ssymbTerm "a" :: Term (WordN 4)) (ssymbTerm "b") of
-          AndBitsTerm v1 v2 -> do
-            v1 `shouldBe` ssymbTerm "a"
-            v2 `shouldBe` ssymbTerm "b"
-          _ -> return ()
   describe "OrBits" $ do
     describe "OrBits construction" $ do
       it "OrBits on both concrete" $ do
-        bitor
+        pevalOrBitsTerm
           (concTerm 3 :: Term (WordN 4))
           (concTerm 5)
           `shouldBe` concTerm 7
       it "OrBits with zeroBits" $ do
-        bitor
+        pevalOrBitsTerm
           (concTerm 0 :: Term (WordN 4))
           (ssymbTerm "a")
           `shouldBe` ssymbTerm "a"
-        bitor
+        pevalOrBitsTerm
           (ssymbTerm "a")
           (concTerm 0 :: Term (WordN 4))
           `shouldBe` ssymbTerm "a"
       it "OrBits with all one bits" $ do
-        bitor
+        pevalOrBitsTerm
           (concTerm 15 :: Term (WordN 4))
           (ssymbTerm "a")
           `shouldBe` concTerm 15
-        bitor
+        pevalOrBitsTerm
           (ssymbTerm "a")
           (concTerm 15 :: Term (WordN 4))
           `shouldBe` concTerm 15
       it "OrBits symbolic" $ do
-        bitor
+        pevalOrBitsTerm
           (ssymbTerm "a" :: Term (WordN 4))
           (ssymbTerm "b")
-          `shouldBe` constructBinary
-            (OrBits @(WordN 4))
+          `shouldBe` orBitsTerm
             (ssymbTerm "a" :: Term (WordN 4))
             (ssymbTerm "b" :: Term (WordN 4))
-    describe "OrBits pattern" $ do
-      it "OrBits pattern should work" $ do
-        case ssymbTerm "a" :: Term Bool of
-          OrBitsTerm (_ :: Term Bool) _ -> expectationFailure "Bad pattern matching"
-          _ -> return ()
-        case bitor (ssymbTerm "a" :: Term (WordN 4)) (ssymbTerm "b") of
-          OrBitsTerm v1 v2 -> do
-            v1 `shouldBe` ssymbTerm "a"
-            v2 `shouldBe` ssymbTerm "b"
-          _ -> return ()
   describe "XorBits" $ do
     describe "XorBits construction" $ do
       it "XorBits on both concrete" $ do
-        bitxor
+        pevalXorBitsTerm
           (concTerm 3 :: Term (WordN 4))
           (concTerm 5)
           `shouldBe` concTerm 6
       it "XorBits with zeroBits" $ do
-        bitxor
+        pevalXorBitsTerm
           (concTerm 0 :: Term (WordN 4))
           (ssymbTerm "a")
           `shouldBe` ssymbTerm "a"
-        bitxor
+        pevalXorBitsTerm
           (ssymbTerm "a")
           (concTerm 0 :: Term (WordN 4))
           `shouldBe` ssymbTerm "a"
       it "XorBits with all one bits" $ do
-        bitxor
+        pevalXorBitsTerm
           (concTerm 15 :: Term (WordN 4))
           (ssymbTerm "a")
-          `shouldBe` bitneg (ssymbTerm "a")
-        bitxor
+          `shouldBe` pevalComplementBitsTerm (ssymbTerm "a")
+        pevalXorBitsTerm
           (ssymbTerm "a")
           (concTerm 15 :: Term (WordN 4))
-          `shouldBe` bitneg (ssymbTerm "a")
+          `shouldBe` pevalComplementBitsTerm (ssymbTerm "a")
       it "XorBits with single complement" $ do
-        bitxor
-          (bitneg $ ssymbTerm "a" :: Term (WordN 4))
+        pevalXorBitsTerm
+          (pevalComplementBitsTerm $ ssymbTerm "a" :: Term (WordN 4))
           (ssymbTerm "b")
-          `shouldBe` bitneg (bitxor (ssymbTerm "a") (ssymbTerm "b"))
-        bitxor
+          `shouldBe` pevalComplementBitsTerm (pevalXorBitsTerm (ssymbTerm "a") (ssymbTerm "b"))
+        pevalXorBitsTerm
           (ssymbTerm "a" :: Term (WordN 4))
-          (bitneg $ ssymbTerm "b")
-          `shouldBe` bitneg (bitxor (ssymbTerm "a") (ssymbTerm "b"))
+          (pevalComplementBitsTerm $ ssymbTerm "b")
+          `shouldBe` pevalComplementBitsTerm (pevalXorBitsTerm (ssymbTerm "a") (ssymbTerm "b"))
       it "XorBits with both complement" $ do
-        bitxor
-          (bitneg $ ssymbTerm "a" :: Term (WordN 4))
-          (bitneg $ ssymbTerm "b")
-          `shouldBe` bitxor (ssymbTerm "a") (ssymbTerm "b")
+        pevalXorBitsTerm
+          (pevalComplementBitsTerm $ ssymbTerm "a" :: Term (WordN 4))
+          (pevalComplementBitsTerm $ ssymbTerm "b")
+          `shouldBe` pevalXorBitsTerm (ssymbTerm "a") (ssymbTerm "b")
       it "XorBits symbolic" $ do
-        bitxor
+        pevalXorBitsTerm
           (ssymbTerm "a" :: Term (WordN 4))
           (ssymbTerm "b")
-          `shouldBe` constructBinary
-            (XorBits @(WordN 4))
+          `shouldBe` xorBitsTerm
             (ssymbTerm "a" :: Term (WordN 4))
             (ssymbTerm "b" :: Term (WordN 4))
-    describe "XorBits pattern" $ do
-      it "XorBits pattern should work" $ do
-        case ssymbTerm "a" :: Term Bool of
-          XorBitsTerm (_ :: Term Bool) _ -> expectationFailure "Bad pattern matching"
-          _ -> return ()
-        case bitxor (ssymbTerm "a" :: Term (WordN 4)) (ssymbTerm "b") of
-          XorBitsTerm v1 v2 -> do
-            v1 `shouldBe` ssymbTerm "a"
-            v2 `shouldBe` ssymbTerm "b"
-          _ -> return ()
   describe "ComplementBits" $ do
     describe "ComplementBits construction" $ do
       it "ComplementBits on concrete" $ do
-        bitneg (concTerm 5 :: Term (WordN 4)) `shouldBe` concTerm 10
+        pevalComplementBitsTerm (concTerm 5 :: Term (WordN 4)) `shouldBe` concTerm 10
       it "ComplementBits on complement" $ do
-        bitneg (bitneg (ssymbTerm "a") :: Term (WordN 4)) `shouldBe` ssymbTerm "a"
+        pevalComplementBitsTerm (pevalComplementBitsTerm (ssymbTerm "a") :: Term (WordN 4)) `shouldBe` ssymbTerm "a"
       it "ComplementBits on symbolic" $ do
-        bitneg (ssymbTerm "a" :: Term (WordN 4))
-          `shouldBe` constructUnary (ComplementBits @(WordN 4)) (ssymbTerm "a" :: Term (WordN 4))
-    describe "ComplementBits pattern" $ do
-      it "ComplementBits pattern should work" $ do
-        case ssymbTerm "a" :: Term Bool of
-          ComplementBitsTerm _ -> expectationFailure "Bad pattern matching"
-          _ -> return ()
-        case bitneg (ssymbTerm "a" :: Term (WordN 4)) of
-          ComplementBitsTerm v1 -> do
-            v1 `shouldBe` ssymbTerm "a"
-          _ -> return ()
+        pevalComplementBitsTerm (ssymbTerm "a" :: Term (WordN 4))
+          `shouldBe` complementBitsTerm (ssymbTerm "a" :: Term (WordN 4))
   describe "ShiftBits" $ do
     describe "ShiftBits construction" $ do
       it "ShiftBits on concrete" $ do
-        bitshift (concTerm 15 :: Term (WordN 4)) (-5) `shouldBe` concTerm 0
-        bitshift (concTerm 15 :: Term (WordN 4)) (-4) `shouldBe` concTerm 0
-        bitshift (concTerm 15 :: Term (WordN 4)) (-3) `shouldBe` concTerm 1
-        bitshift (concTerm 15 :: Term (WordN 4)) (-2) `shouldBe` concTerm 3
-        bitshift (concTerm 15 :: Term (WordN 4)) (-1) `shouldBe` concTerm 7
-        bitshift (concTerm 15 :: Term (WordN 4)) 0 `shouldBe` concTerm 15
-        bitshift (concTerm 15 :: Term (WordN 4)) 1 `shouldBe` concTerm 14
-        bitshift (concTerm 15 :: Term (WordN 4)) 2 `shouldBe` concTerm 12
-        bitshift (concTerm 15 :: Term (WordN 4)) 3 `shouldBe` concTerm 8
-        bitshift (concTerm 15 :: Term (WordN 4)) 4 `shouldBe` concTerm 0
-        bitshift (concTerm 15 :: Term (WordN 4)) 5 `shouldBe` concTerm 0
+        pevalShiftBitsTerm (concTerm 15 :: Term (WordN 4)) (-5) `shouldBe` concTerm 0
+        pevalShiftBitsTerm (concTerm 15 :: Term (WordN 4)) (-4) `shouldBe` concTerm 0
+        pevalShiftBitsTerm (concTerm 15 :: Term (WordN 4)) (-3) `shouldBe` concTerm 1
+        pevalShiftBitsTerm (concTerm 15 :: Term (WordN 4)) (-2) `shouldBe` concTerm 3
+        pevalShiftBitsTerm (concTerm 15 :: Term (WordN 4)) (-1) `shouldBe` concTerm 7
+        pevalShiftBitsTerm (concTerm 15 :: Term (WordN 4)) 0 `shouldBe` concTerm 15
+        pevalShiftBitsTerm (concTerm 15 :: Term (WordN 4)) 1 `shouldBe` concTerm 14
+        pevalShiftBitsTerm (concTerm 15 :: Term (WordN 4)) 2 `shouldBe` concTerm 12
+        pevalShiftBitsTerm (concTerm 15 :: Term (WordN 4)) 3 `shouldBe` concTerm 8
+        pevalShiftBitsTerm (concTerm 15 :: Term (WordN 4)) 4 `shouldBe` concTerm 0
+        pevalShiftBitsTerm (concTerm 15 :: Term (WordN 4)) 5 `shouldBe` concTerm 0
 
-        bitshift (concTerm 15 :: Term (IntN 4)) (-5) `shouldBe` concTerm 15
-        bitshift (concTerm 15 :: Term (IntN 4)) (-4) `shouldBe` concTerm 15
-        bitshift (concTerm 15 :: Term (IntN 4)) (-3) `shouldBe` concTerm 15
-        bitshift (concTerm 15 :: Term (IntN 4)) (-2) `shouldBe` concTerm 15
-        bitshift (concTerm 15 :: Term (IntN 4)) (-1) `shouldBe` concTerm 15
-        bitshift (concTerm 15 :: Term (IntN 4)) 0 `shouldBe` concTerm 15
-        bitshift (concTerm 15 :: Term (IntN 4)) 1 `shouldBe` concTerm 14
-        bitshift (concTerm 15 :: Term (IntN 4)) 2 `shouldBe` concTerm 12
-        bitshift (concTerm 15 :: Term (IntN 4)) 3 `shouldBe` concTerm 8
-        bitshift (concTerm 15 :: Term (IntN 4)) 4 `shouldBe` concTerm 0
-        bitshift (concTerm 15 :: Term (IntN 4)) 5 `shouldBe` concTerm 0
+        pevalShiftBitsTerm (concTerm 15 :: Term (IntN 4)) (-5) `shouldBe` concTerm 15
+        pevalShiftBitsTerm (concTerm 15 :: Term (IntN 4)) (-4) `shouldBe` concTerm 15
+        pevalShiftBitsTerm (concTerm 15 :: Term (IntN 4)) (-3) `shouldBe` concTerm 15
+        pevalShiftBitsTerm (concTerm 15 :: Term (IntN 4)) (-2) `shouldBe` concTerm 15
+        pevalShiftBitsTerm (concTerm 15 :: Term (IntN 4)) (-1) `shouldBe` concTerm 15
+        pevalShiftBitsTerm (concTerm 15 :: Term (IntN 4)) 0 `shouldBe` concTerm 15
+        pevalShiftBitsTerm (concTerm 15 :: Term (IntN 4)) 1 `shouldBe` concTerm 14
+        pevalShiftBitsTerm (concTerm 15 :: Term (IntN 4)) 2 `shouldBe` concTerm 12
+        pevalShiftBitsTerm (concTerm 15 :: Term (IntN 4)) 3 `shouldBe` concTerm 8
+        pevalShiftBitsTerm (concTerm 15 :: Term (IntN 4)) 4 `shouldBe` concTerm 0
+        pevalShiftBitsTerm (concTerm 15 :: Term (IntN 4)) 5 `shouldBe` concTerm 0
       it "ShiftBits 0" $ do
-        bitshift (ssymbTerm "a" :: Term (WordN 4)) 0 `shouldBe` ssymbTerm "a"
-        bitshift (ssymbTerm "a" :: Term (IntN 4)) 0 `shouldBe` ssymbTerm "a"
+        pevalShiftBitsTerm (ssymbTerm "a" :: Term (WordN 4)) 0 `shouldBe` ssymbTerm "a"
+        pevalShiftBitsTerm (ssymbTerm "a" :: Term (IntN 4)) 0 `shouldBe` ssymbTerm "a"
       it "ShiftBits left bitsize" $ do
-        bitshift (ssymbTerm "a" :: Term (WordN 4)) 4 `shouldBe` concTerm 0
-        bitshift (ssymbTerm "a" :: Term (IntN 4)) 4 `shouldBe` concTerm 0
-        bitshift (ssymbTerm "a" :: Term (WordN 4)) 5 `shouldBe` concTerm 0
-        bitshift (ssymbTerm "a" :: Term (IntN 4)) 5 `shouldBe` concTerm 0
+        pevalShiftBitsTerm (ssymbTerm "a" :: Term (WordN 4)) 4 `shouldBe` concTerm 0
+        pevalShiftBitsTerm (ssymbTerm "a" :: Term (IntN 4)) 4 `shouldBe` concTerm 0
+        pevalShiftBitsTerm (ssymbTerm "a" :: Term (WordN 4)) 5 `shouldBe` concTerm 0
+        pevalShiftBitsTerm (ssymbTerm "a" :: Term (IntN 4)) 5 `shouldBe` concTerm 0
       it "ShiftBits same direction twice" $ do
-        bitshift (bitshift (ssymbTerm "a" :: Term (WordN 4)) 1) 2
-          `shouldBe` bitshift (ssymbTerm "a" :: Term (WordN 4)) 3
-        bitshift (bitshift (ssymbTerm "a" :: Term (WordN 4)) (-1)) (-2)
-          `shouldBe` bitshift (ssymbTerm "a" :: Term (WordN 4)) (-3)
+        pevalShiftBitsTerm (pevalShiftBitsTerm (ssymbTerm "a" :: Term (WordN 4)) 1) 2
+          `shouldBe` pevalShiftBitsTerm (ssymbTerm "a" :: Term (WordN 4)) 3
+        pevalShiftBitsTerm (pevalShiftBitsTerm (ssymbTerm "a" :: Term (WordN 4)) (-1)) (-2)
+          `shouldBe` pevalShiftBitsTerm (ssymbTerm "a" :: Term (WordN 4)) (-3)
       it "ShiftBits symbolic" $ do
-        bitshift (ssymbTerm "a" :: Term (WordN 4)) 2
-          `shouldBe` constructUnary
-            (ShiftBits 2 :: ShiftBits (WordN 4))
-            (ssymbTerm "a" :: Term (WordN 4))
-    describe "ShiftBits pattern" $ do
-      it "ShiftBits pattern should work" $ do
-        case ssymbTerm "a" :: Term Bool of
-          ShiftBitsTerm _ _ -> expectationFailure "Bad pattern matching"
-          _ -> return ()
-        case bitshift (ssymbTerm "a" :: Term (WordN 4)) 2 of
-          ShiftBitsTerm v1 v2 -> do
-            v1 `shouldBe` ssymbTerm "a"
-            v2 `shouldBe` 2
-          _ -> return ()
+        pevalShiftBitsTerm (ssymbTerm "a" :: Term (WordN 4)) 2
+          `shouldBe` shiftBitsTerm (ssymbTerm "a" :: Term (WordN 4)) 2
   describe "Rotate" $ do
     describe "Rotate construction" $ do
       it "Rotate on concrete" $ do
-        bitrotate (concTerm 3 :: Term (WordN 4)) (-4) `shouldBe` concTerm 3
-        bitrotate (concTerm 3 :: Term (WordN 4)) (-3) `shouldBe` concTerm 6
-        bitrotate (concTerm 3 :: Term (WordN 4)) (-2) `shouldBe` concTerm 12
-        bitrotate (concTerm 3 :: Term (WordN 4)) (-1) `shouldBe` concTerm 9
-        bitrotate (concTerm 3 :: Term (WordN 4)) 0 `shouldBe` concTerm 3
-        bitrotate (concTerm 3 :: Term (WordN 4)) 1 `shouldBe` concTerm 6
-        bitrotate (concTerm 3 :: Term (WordN 4)) 2 `shouldBe` concTerm 12
-        bitrotate (concTerm 3 :: Term (WordN 4)) 3 `shouldBe` concTerm 9
-        bitrotate (concTerm 3 :: Term (WordN 4)) 4 `shouldBe` concTerm 3
+        pevalRotateBitsTerm (concTerm 3 :: Term (WordN 4)) (-4) `shouldBe` concTerm 3
+        pevalRotateBitsTerm (concTerm 3 :: Term (WordN 4)) (-3) `shouldBe` concTerm 6
+        pevalRotateBitsTerm (concTerm 3 :: Term (WordN 4)) (-2) `shouldBe` concTerm 12
+        pevalRotateBitsTerm (concTerm 3 :: Term (WordN 4)) (-1) `shouldBe` concTerm 9
+        pevalRotateBitsTerm (concTerm 3 :: Term (WordN 4)) 0 `shouldBe` concTerm 3
+        pevalRotateBitsTerm (concTerm 3 :: Term (WordN 4)) 1 `shouldBe` concTerm 6
+        pevalRotateBitsTerm (concTerm 3 :: Term (WordN 4)) 2 `shouldBe` concTerm 12
+        pevalRotateBitsTerm (concTerm 3 :: Term (WordN 4)) 3 `shouldBe` concTerm 9
+        pevalRotateBitsTerm (concTerm 3 :: Term (WordN 4)) 4 `shouldBe` concTerm 3
       it "Rotate 0" $ do
-        bitrotate (ssymbTerm "a" :: Term (WordN 4)) 0 `shouldBe` ssymbTerm "a"
+        pevalRotateBitsTerm (ssymbTerm "a" :: Term (WordN 4)) 0 `shouldBe` ssymbTerm "a"
       it "Rotate extra bits" $ do
-        bitrotate (ssymbTerm "a" :: Term (WordN 4)) 4 `shouldBe` ssymbTerm "a"
-        bitrotate (ssymbTerm "a" :: Term (WordN 4)) 5
-          `shouldBe` bitrotate (ssymbTerm "a") 1
-        bitrotate (ssymbTerm "a" :: Term (WordN 4)) (-1)
-          `shouldBe` bitrotate (ssymbTerm "a") 3
+        pevalRotateBitsTerm (ssymbTerm "a" :: Term (WordN 4)) 4 `shouldBe` ssymbTerm "a"
+        pevalRotateBitsTerm (ssymbTerm "a" :: Term (WordN 4)) 5
+          `shouldBe` pevalRotateBitsTerm (ssymbTerm "a") 1
+        pevalRotateBitsTerm (ssymbTerm "a" :: Term (WordN 4)) (-1)
+          `shouldBe` pevalRotateBitsTerm (ssymbTerm "a") 3
       it "Rotate twice" $ do
-        bitrotate (bitrotate (ssymbTerm "a" :: Term (WordN 4)) 1) 2
-          `shouldBe` bitrotate (ssymbTerm "a") 3
+        pevalRotateBitsTerm (pevalRotateBitsTerm (ssymbTerm "a" :: Term (WordN 4)) 1) 2
+          `shouldBe` pevalRotateBitsTerm (ssymbTerm "a") 3
       it "Rotate symbolic" $ do
-        bitrotate (ssymbTerm "a" :: Term (WordN 4)) 2
-          `shouldBe` constructUnary
-            (RotateBits 2 :: RotateBits (WordN 4))
-            (ssymbTerm "a" :: Term (WordN 4))
-    describe "RotateBits pattern" $ do
-      it "RotateBits pattern should work" $ do
-        case ssymbTerm "a" :: Term Bool of
-          RotateBitsTerm _ _ -> expectationFailure "Bad pattern matching"
-          _ -> return ()
-        case bitshift (ssymbTerm "a" :: Term (WordN 4)) 2 of
-          RotateBitsTerm v1 v2 -> do
-            v1 `shouldBe` ssymbTerm "a"
-            v2 `shouldBe` 2
-          _ -> return ()
+        pevalRotateBitsTerm (ssymbTerm "a" :: Term (WordN 4)) 2
+          `shouldBe` rotateBitsTerm (ssymbTerm "a" :: Term (WordN 4)) 2

@@ -27,18 +27,20 @@ import Grisette.Core.Data.Class.ToCon
 import Grisette.Core.Data.Class.ToSym
 import Grisette.IR.SymPrim.Control.Monad.UnionM
 import Grisette.IR.SymPrim.Data.BV
-import Grisette.IR.SymPrim.Data.Prim.BV
-import Grisette.IR.SymPrim.Data.Prim.Bits
-import Grisette.IR.SymPrim.Data.Prim.Bool
-import Grisette.IR.SymPrim.Data.Prim.Integer
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import qualified Grisette.IR.SymPrim.Data.Prim.Model as Model
-import Grisette.IR.SymPrim.Data.Prim.Num
-import Grisette.IR.SymPrim.Data.Prim.TabularFunc
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.BV
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Bits
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Bool
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Integer
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Num
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.TabularFunc
 import Grisette.IR.SymPrim.Data.SymPrim
 import Grisette.IR.SymPrim.Data.TabularFunc
 import Test.Hspec
 import Test.Hspec.QuickCheck
+import Type.Reflection
 
 spec :: Spec
 spec = do
@@ -61,7 +63,7 @@ spec = do
   describe "ITEOp for SymPrim" $ do
     it "ites should work" $
       ites (ssymb "a" :: Sym Bool) (ssymb "b" :: Sym Integer) (ssymb "c")
-        `shouldBe` Sym (iteterm (ssymbTerm "a") (ssymbTerm "b") (ssymbTerm "c"))
+        `shouldBe` Sym (pevalITETerm (ssymbTerm "a") (ssymbTerm "b") (ssymbTerm "c"))
   describe "Mergeable for SymPrim" $ do
     it "Mergeable should work" $ do
       let SimpleStrategy s = mergingStrategy :: MergingStrategy (Sym Bool) (Sym Integer)
@@ -87,8 +89,8 @@ spec = do
   describe "Evaluate for SymPrim" $ do
     it "evaluate for SymPrim should work" $ do
       let m1 = Model.empty
-      let m2 = Model.insert m1 (TermSymbol (Proxy @Integer) (SimpleSymbol "a")) (1 :: Integer)
-      let m3 = Model.insert m2 (TermSymbol (Proxy @Bool) (SimpleSymbol "b")) True
+      let m2 = Model.insert m1 (TermSymbol (typeRep @Integer) (SimpleSymbol "a")) (1 :: Integer)
+      let m3 = Model.insert m2 (TermSymbol (typeRep @Bool) (SimpleSymbol "b")) True
       evaluate False m3 (ites ("c" :: Sym Bool) "a" ("a" + "a" :: Sym Integer))
         `shouldBe` ites ("c" :: Sym Bool) 1 2
       evaluate True m3 (ites ("c" :: Sym Bool) "a" ("a" + "a" :: Sym Integer)) `shouldBe` 2
@@ -96,9 +98,9 @@ spec = do
     it "extractSymbolics for SymPrim should work" $ do
       extractSymbolics (ites ("c" :: Sym Bool) ("a" :: Sym Integer) ("b" :: Sym Integer))
         `shouldBe` S.fromList
-          [ TermSymbol (Proxy @Bool) (SimpleSymbol "c"),
-            TermSymbol (Proxy @Integer) (SimpleSymbol "a"),
-            TermSymbol (Proxy @Integer) (SimpleSymbol "b")
+          [ TermSymbol (typeRep @Bool) (SimpleSymbol "c"),
+            TermSymbol (typeRep @Integer) (SimpleSymbol "a"),
+            TermSymbol (typeRep @Integer) (SimpleSymbol "b")
           ]
   describe "GenSym" $ do
     it "GenSym for SymPrim should work" $ do
@@ -110,36 +112,36 @@ spec = do
       (genSymSimple () (nameWithInfo "a" True) :: Sym Bool) `shouldBe` iinfosymb "a" 0 True
   describe "SEq" $ do
     it "SEq for SymPrim should work" $ do
-      (ssymb "a" :: Sym Bool) ==~ ssymb "b" `shouldBe` Sym (eqterm (ssymbTerm "a" :: Term Bool) (ssymbTerm "b"))
-      (ssymb "a" :: Sym Bool) /=~ ssymb "b" `shouldBe` Sym (notb $ eqterm (ssymbTerm "a" :: Term Bool) (ssymbTerm "b"))
+      (ssymb "a" :: Sym Bool) ==~ ssymb "b" `shouldBe` Sym (pevalEqvTerm (ssymbTerm "a" :: Term Bool) (ssymbTerm "b"))
+      (ssymb "a" :: Sym Bool) /=~ ssymb "b" `shouldBe` Sym (pevalNotTerm $ pevalEqvTerm (ssymbTerm "a" :: Term Bool) (ssymbTerm "b"))
   describe "Sym Bool" $ do
     describe "LogicalOp for Sym Bool" $ do
       it "||~ for SymPrim should work" $ do
-        ssymb "a" ||~ ssymb "b" `shouldBe` Sym (orb (ssymbTerm "a") (ssymbTerm "b"))
+        ssymb "a" ||~ ssymb "b" `shouldBe` Sym (pevalOrTerm (ssymbTerm "a") (ssymbTerm "b"))
       it "&&~ for SymPrim should work" $ do
-        ssymb "a" &&~ ssymb "b" `shouldBe` Sym (andb (ssymbTerm "a") (ssymbTerm "b"))
+        ssymb "a" &&~ ssymb "b" `shouldBe` Sym (pevalAndTerm (ssymbTerm "a") (ssymbTerm "b"))
       it "nots for SymPrim should work" $ do
-        nots (ssymb "a") `shouldBe` Sym (notb (ssymbTerm "a"))
+        nots (ssymb "a") `shouldBe` Sym (pevalNotTerm (ssymbTerm "a"))
       it "xors for SymPrim should work" $ do
-        xors (ssymb "a") (ssymb "b") `shouldBe` Sym (xorb (ssymbTerm "a") (ssymbTerm "b"))
+        xors (ssymb "a") (ssymb "b") `shouldBe` Sym (pevalXorTerm (ssymbTerm "a") (ssymbTerm "b"))
       it "implies for SymPrim should work" $ do
-        implies (ssymb "a") (ssymb "b") `shouldBe` Sym (implyb (ssymbTerm "a") (ssymbTerm "b"))
+        implies (ssymb "a") (ssymb "b") `shouldBe` Sym (pevalImplyTerm (ssymbTerm "a") (ssymbTerm "b"))
   describe "Sym Integer" $ do
     describe "Num for Sym Integer" $ do
       it "fromInteger should work" $ do
         (1 :: Sym Integer) `shouldBe` Sym (concTerm 1)
       it "(+) for SymPrim should work" $ do
-        (ssymb "a" :: Sym Integer) + ssymb "b" `shouldBe` Sym (addNum (ssymbTerm "a") (ssymbTerm "b"))
+        (ssymb "a" :: Sym Integer) + ssymb "b" `shouldBe` Sym (pevalAddNumTerm (ssymbTerm "a") (ssymbTerm "b"))
       it "(-) for SymPrim should work" $ do
-        (ssymb "a" :: Sym Integer) - ssymb "b" `shouldBe` Sym (minusNum (ssymbTerm "a") (ssymbTerm "b"))
+        (ssymb "a" :: Sym Integer) - ssymb "b" `shouldBe` Sym (pevalMinusNumTerm (ssymbTerm "a") (ssymbTerm "b"))
       it "(*) for SymPrim should work" $ do
-        (ssymb "a" :: Sym Integer) * ssymb "b" `shouldBe` Sym (timesNum (ssymbTerm "a") (ssymbTerm "b"))
+        (ssymb "a" :: Sym Integer) * ssymb "b" `shouldBe` Sym (pevalTimesNumTerm (ssymbTerm "a") (ssymbTerm "b"))
       it "negate for SymPrim should work" $ do
-        negate (ssymb "a" :: Sym Integer) `shouldBe` Sym (uminusNum (ssymbTerm "a"))
+        negate (ssymb "a" :: Sym Integer) `shouldBe` Sym (pevalUMinusNumTerm (ssymbTerm "a"))
       it "abs for SymPrim should work" $ do
-        abs (ssymb "a" :: Sym Integer) `shouldBe` Sym (absNum (ssymbTerm "a"))
+        abs (ssymb "a" :: Sym Integer) `shouldBe` Sym (pevalAbsNumTerm (ssymbTerm "a"))
       it "signum for SymPrim should work" $ do
-        signum (ssymb "a" :: Sym Integer) `shouldBe` Sym (signumNum (ssymbTerm "a"))
+        signum (ssymb "a" :: Sym Integer) `shouldBe` Sym (pevalSignumNumTerm (ssymbTerm "a"))
     describe "SignedDivMod for Sym Integer" $ do
       prop "divs should work on concrete" $ \(i :: Integer, j :: Integer) ->
         divs (conc i :: Sym Integer) (conc j)
@@ -154,7 +156,7 @@ spec = do
           `shouldBe` ( mrgIf
                          ((ssymb "b" :: Sym Integer) ==~ conc (0 :: Integer) :: SymBool)
                          (throwError ())
-                         (mrgSingle $ Sym $ divi (ssymbTerm "a") (ssymbTerm "b")) ::
+                         (mrgSingle $ Sym $ pevalDivIntegerTerm (ssymbTerm "a") (ssymbTerm "b")) ::
                          ExceptT () UnionM SymInteger
                      )
       prop "mods should work on concrete" $ \(i :: Integer, j :: Integer) ->
@@ -170,7 +172,7 @@ spec = do
           `shouldBe` ( mrgIf
                          ((ssymb "b" :: Sym Integer) ==~ conc (0 :: Integer) :: SymBool)
                          (throwError ())
-                         (mrgSingle $ Sym $ modi (ssymbTerm "a") (ssymbTerm "b")) ::
+                         (mrgSingle $ Sym $ pevalModIntegerTerm (ssymbTerm "a") (ssymbTerm "b")) ::
                          ExceptT () UnionM SymInteger
                      )
     describe "SOrd for Sym Integer" $ do
@@ -186,10 +188,10 @@ spec = do
         let b :: Sym Integer = ssymb "b"
         let at :: Term Integer = ssymbTerm "a"
         let bt :: Term Integer = ssymbTerm "b"
-        a <=~ b `shouldBe` Sym (leNum at bt)
-        a <~ b `shouldBe` Sym (ltNum at bt)
-        a >=~ b `shouldBe` Sym (geNum at bt)
-        a >~ b `shouldBe` Sym (gtNum at bt)
+        a <=~ b `shouldBe` Sym (pevalLeNumTerm at bt)
+        a <~ b `shouldBe` Sym (pevalLtNumTerm at bt)
+        a >=~ b `shouldBe` Sym (pevalGeNumTerm at bt)
+        a >~ b `shouldBe` Sym (pevalGtNumTerm at bt)
         (a `symCompare` ssymb "b" :: UnionM Ordering)
           `shouldBe` mrgIf (a <~ b) (mrgSingle LT) (mrgIf (a ==~ b) (mrgSingle EQ) (mrgSingle (GT)))
   describe "Sym BV" $ do
@@ -206,23 +208,23 @@ spec = do
         (1 :: Sym (WordN 4)) `shouldBe` Sym (concTerm 1)
         (1 :: Sym (IntN 4)) `shouldBe` Sym (concTerm 1)
       it "(+) for SymPrim should work" $ do
-        au + bu `shouldBe` Sym (addNum aut but)
-        as + bs `shouldBe` Sym (addNum ast bst)
+        au + bu `shouldBe` Sym (pevalAddNumTerm aut but)
+        as + bs `shouldBe` Sym (pevalAddNumTerm ast bst)
       it "(-) for SymPrim should work" $ do
-        au - bu `shouldBe` Sym (minusNum aut but)
-        as - bs `shouldBe` Sym (minusNum ast bst)
+        au - bu `shouldBe` Sym (pevalMinusNumTerm aut but)
+        as - bs `shouldBe` Sym (pevalMinusNumTerm ast bst)
       it "(*) for SymPrim should work" $ do
-        au * bu `shouldBe` Sym (timesNum aut but)
-        as * bs `shouldBe` Sym (timesNum ast bst)
+        au * bu `shouldBe` Sym (pevalTimesNumTerm aut but)
+        as * bs `shouldBe` Sym (pevalTimesNumTerm ast bst)
       it "negate for SymPrim should work" $ do
-        negate au `shouldBe` Sym (uminusNum aut)
-        negate as `shouldBe` Sym (uminusNum ast)
+        negate au `shouldBe` Sym (pevalUMinusNumTerm aut)
+        negate as `shouldBe` Sym (pevalUMinusNumTerm ast)
       it "abs for SymPrim should work" $ do
-        abs au `shouldBe` Sym (absNum aut)
-        abs as `shouldBe` Sym (absNum ast)
+        abs au `shouldBe` Sym (pevalAbsNumTerm aut)
+        abs as `shouldBe` Sym (pevalAbsNumTerm ast)
       it "signum for SymPrim should work" $ do
-        signum au `shouldBe` Sym (signumNum aut)
-        signum as `shouldBe` Sym (signumNum ast)
+        signum au `shouldBe` Sym (pevalSignumNumTerm aut)
+        signum as `shouldBe` Sym (pevalSignumNumTerm ast)
     describe "SOrd for Sym BV" $ do
       prop "SOrd should work on concrete" $ \(i :: Integer, j :: Integer) -> do
         let iu :: WordN 4 = fromInteger i
@@ -244,38 +246,38 @@ spec = do
         (conc is :: Sym (IntN 4)) `symCompare` conc js
           `shouldBe` (normalizes i `symCompare` normalizes j :: UnionM Ordering)
       it "SOrd should work on symbolic" $ do
-        au <=~ bu `shouldBe` Sym (leNum aut but)
-        au <~ bu `shouldBe` Sym (ltNum aut but)
-        au >=~ bu `shouldBe` Sym (geNum aut but)
-        au >~ bu `shouldBe` Sym (gtNum aut but)
+        au <=~ bu `shouldBe` Sym (pevalLeNumTerm aut but)
+        au <~ bu `shouldBe` Sym (pevalLtNumTerm aut but)
+        au >=~ bu `shouldBe` Sym (pevalGeNumTerm aut but)
+        au >~ bu `shouldBe` Sym (pevalGtNumTerm aut but)
         (au `symCompare` bu :: UnionM Ordering)
           `shouldBe` mrgIf (au <~ bu) (mrgSingle LT) (mrgIf (au ==~ bu) (mrgSingle EQ) (mrgSingle GT))
 
-        as <=~ bs `shouldBe` Sym (leNum ast bst)
-        as <~ bs `shouldBe` Sym (ltNum ast bst)
-        as >=~ bs `shouldBe` Sym (geNum ast bst)
-        as >~ bs `shouldBe` Sym (gtNum ast bst)
+        as <=~ bs `shouldBe` Sym (pevalLeNumTerm ast bst)
+        as <~ bs `shouldBe` Sym (pevalLtNumTerm ast bst)
+        as >=~ bs `shouldBe` Sym (pevalGeNumTerm ast bst)
+        as >~ bs `shouldBe` Sym (pevalGtNumTerm ast bst)
         (as `symCompare` bs :: UnionM Ordering)
           `shouldBe` mrgIf (as <~ bs) (mrgSingle LT) (mrgIf (as ==~ bs) (mrgSingle EQ) (mrgSingle GT))
     describe "Bits for Sym BV" $ do
       it ".&. for SymPrim should work" $ do
-        au .&. bu `shouldBe` Sym (bitand aut but)
-        as .&. bs `shouldBe` Sym (bitand ast bst)
+        au .&. bu `shouldBe` Sym (pevalAndBitsTerm aut but)
+        as .&. bs `shouldBe` Sym (pevalAndBitsTerm ast bst)
       it ".|. for SymPrim should work" $ do
-        au .|. bu `shouldBe` Sym (bitor aut but)
-        as .|. bs `shouldBe` Sym (bitor ast bst)
+        au .|. bu `shouldBe` Sym (pevalOrBitsTerm aut but)
+        as .|. bs `shouldBe` Sym (pevalOrBitsTerm ast bst)
       it "xor for SymPrim should work" $ do
-        au `xor` bu `shouldBe` Sym (bitxor aut but)
-        as `xor` bs `shouldBe` Sym (bitxor ast bst)
+        au `xor` bu `shouldBe` Sym (pevalXorBitsTerm aut but)
+        as `xor` bs `shouldBe` Sym (pevalXorBitsTerm ast bst)
       it "complement for SymPrim should work" $ do
-        complement au `shouldBe` Sym (bitneg aut)
-        complement as `shouldBe` Sym (bitneg ast)
+        complement au `shouldBe` Sym (pevalComplementBitsTerm aut)
+        complement as `shouldBe` Sym (pevalComplementBitsTerm ast)
       it "shift for SymPrim should work" $ do
-        shift au 1 `shouldBe` Sym (bitshift aut 1)
-        shift as 1 `shouldBe` Sym (bitshift ast 1)
+        shift au 1 `shouldBe` Sym (pevalShiftBitsTerm aut 1)
+        shift as 1 `shouldBe` Sym (pevalShiftBitsTerm ast 1)
       it "rotate for SymPrim should work" $ do
-        rotate au 1 `shouldBe` Sym (bitrotate aut 1)
-        rotate as 1 `shouldBe` Sym (bitrotate ast 1)
+        rotate au 1 `shouldBe` Sym (pevalRotateBitsTerm aut 1)
+        rotate as 1 `shouldBe` Sym (pevalRotateBitsTerm ast 1)
       it "bitSize for SymPrim should work" $ do
         bitSizeMaybe au `shouldBe` Just 4
         bitSizeMaybe as `shouldBe` Just 4
@@ -301,26 +303,26 @@ spec = do
           (ssymb "a" :: Sym (WordN 4))
           (ssymb "b" :: Sym (WordN 3))
           `shouldBe` Sym
-            ( bvtconcat
+            ( pevalBVConcatTerm
                 (ssymbTerm "a" :: Term (WordN 4))
                 (ssymbTerm "b" :: Term (WordN 3))
             )
     describe "bvextend for Sym BV" $ do
       it "bvzeroExtend for SymPrim" $ do
-        bvzeroExtend (Proxy @6) au `shouldBe` Sym (bvtext (Proxy @6) False aut)
-        bvzeroExtend (Proxy @6) as `shouldBe` Sym (bvtext (Proxy @6) False ast)
+        bvzeroExtend (Proxy @6) au `shouldBe` Sym (pevalBVExtendTerm False (Proxy @6) aut)
+        bvzeroExtend (Proxy @6) as `shouldBe` Sym (pevalBVExtendTerm False (Proxy @6) ast)
       it "bvsignExtend for SymPrim" $ do
-        bvsignExtend (Proxy @6) au `shouldBe` Sym (bvtext (Proxy @6) True aut)
-        bvsignExtend (Proxy @6) as `shouldBe` Sym (bvtext (Proxy @6) True ast)
+        bvsignExtend (Proxy @6) au `shouldBe` Sym (pevalBVExtendTerm True (Proxy @6) aut)
+        bvsignExtend (Proxy @6) as `shouldBe` Sym (pevalBVExtendTerm True (Proxy @6) ast)
       it "bvextend for SymPrim" $ do
-        bvextend (Proxy @6) au `shouldBe` Sym (bvtext (Proxy @6) False aut)
-        bvextend (Proxy @6) as `shouldBe` Sym (bvtext (Proxy @6) True ast)
+        bvextend (Proxy @6) au `shouldBe` Sym (pevalBVExtendTerm False (Proxy @6) aut)
+        bvextend (Proxy @6) as `shouldBe` Sym (pevalBVExtendTerm True (Proxy @6) ast)
     describe "bvselect for Sym BV" $ do
       it "bvselect for SymPrim" $ do
         bvselect (Proxy @2) (Proxy @1) au
-          `shouldBe` Sym (bvtselect (Proxy @2) (Proxy @1) aut)
+          `shouldBe` Sym (pevalBVSelectTerm (Proxy @2) (Proxy @1) aut)
         bvselect (Proxy @2) (Proxy @1) as
-          `shouldBe` Sym (bvtselect (Proxy @2) (Proxy @1) ast)
+          `shouldBe` Sym (pevalBVSelectTerm (Proxy @2) (Proxy @1) ast)
     describe "conversion between Int8 and Sym BV" $ do
       it "toSym" $ do
         toSym (0 :: Int8) `shouldBe` (conc 0 :: SymIntN 8)
@@ -344,7 +346,7 @@ spec = do
   describe "TabularFunc" $ do
     it "apply" $ do
       (ssymb "a" :: Integer =~> Integer) # ssymb "b"
-        `shouldBe` Sym (applyf (ssymbTerm "a" :: Term (Integer =-> Integer)) (ssymbTerm "b"))
+        `shouldBe` Sym (pevalTabularFuncApplyTerm (ssymbTerm "a" :: Term (Integer =-> Integer)) (ssymbTerm "b"))
   describe "Symbolic size" $ do
     it "symSize" $ do
       symSize (ssymb "a" :: Sym Integer) `shouldBe` 1

@@ -12,9 +12,10 @@ category:       Formal Methods, Theorem Provers, Symbolic Computation, SMT
 homepage:       https://github.com/lsrcz/grisette-haskell#readme
 bug-reports:    https://github.com/lsrcz/grisette-haskell/issues
 author:         Sirui Lu
-maintainer:     siruilu@uw.edu
-copyright:      2021 Sirui Lu
+maintainer:     Sirui Lu (siruilu@cs.washington.edu)
+copyright:      2021-2022 Sirui Lu
 license:        BSD3
+license-file:   LICENSE
 build-type:     Simple
 
 source-repository head
@@ -32,6 +33,7 @@ library
       Grisette.Backend.SBV.Data.SMT.Config
       Grisette.Backend.SBV.Data.SMT.Lowering
       Grisette.Backend.SBV.Data.SMT.Solving
+      Grisette.Backend.SBV.Data.SMT.SymBiMap
       Grisette.Internal.Backend.SBV
   other-modules:
       Paths_grisette_backend_sbv

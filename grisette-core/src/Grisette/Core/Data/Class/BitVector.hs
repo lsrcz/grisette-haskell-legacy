@@ -64,7 +64,7 @@ class BVSelect bv1 (ix :: Nat) (w :: Nat) bv2 | bv1 w -> bv2 where
   -- | Slicing out a smaller bitvector from a larger one, selecting a slice with width @w@ starting from index @ix@.
   --
   -- >>> bvselect (Proxy @1) (Proxy @3) (conc 0b01010 :: SymIntN 5)
-  -- IntN {unIntN = 5}
+  -- 0b101 
   bvselect ::
     -- | Index to start selecting from
     proxy ix ->
@@ -77,7 +77,7 @@ class BVSelect bv1 (ix :: Nat) (w :: Nat) bv2 | bv1 w -> bv2 where
 -- | Extract a smaller bitvector from a larger one from bits @i@ down to @j@.
 --
 -- >>> bvextract (Proxy @3) (Proxy @1) (conc 0b01010 :: SymIntN 5)
--- IntN {unIntN = 5}
+-- 0b101
 bvextract ::
   forall proxy i j bv1 bv2.
   (BVSelect bv1 j (i - j + 1) bv2) =>
