@@ -18,7 +18,8 @@ import Grisette.Core.Data.Class.Function
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Language.Haskell.TH.Syntax
 
-data (=->) a b = TabularFunc {funcTable :: [(a, b)], defaultFuncValue :: b} deriving (Show, Eq, Generic, Generic1, Lift, NFData, NFData1)
+data (=->) a b = TabularFunc {funcTable :: [(a, b)], defaultFuncValue :: b}
+  deriving (Show, Eq, Generic, Generic1, Lift, NFData, NFData1)
 
 infixr 0 =->
 

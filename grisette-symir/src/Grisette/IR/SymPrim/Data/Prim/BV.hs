@@ -17,15 +17,15 @@ module Grisette.IR.SymPrim.Data.Prim.BV
   )
 where
 
-
 import GHC.TypeNats
 import Grisette.Core.Data.Class.BitVector
-import Grisette.IR.SymPrim.Data.Prim.Unfold
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
+import Grisette.IR.SymPrim.Data.Prim.Unfold
 
 -- select
-pevalBVSelectTerm :: forall bv a ix w proxy.
+pevalBVSelectTerm ::
+  forall bv a ix w proxy.
   ( SupportedPrim (bv a),
     SupportedPrim (bv w),
     KnownNat a,
@@ -39,7 +39,8 @@ pevalBVSelectTerm :: forall bv a ix w proxy.
   Term (bv w)
 pevalBVSelectTerm ix w = unaryUnfoldOnce (doPevalBVSelectTerm ix w) (bvselectTerm ix w)
 
-doPevalBVSelectTerm :: forall bv a ix w proxy.
+doPevalBVSelectTerm ::
+  forall bv a ix w proxy.
   ( SupportedPrim (bv a),
     SupportedPrim (bv w),
     KnownNat a,
@@ -114,11 +115,31 @@ doPevalBVExtendTerm ::
 doPevalBVExtendTerm signed p (ConcTerm _ b) = Just $ concTerm $ if signed then bvsignExtend p b else bvzeroExtend p b
 doPevalBVExtendTerm _ _ _ = Nothing
 
-pevalBVConcatTerm :: (SupportedPrim (s w), SupportedPrim (s w') , SupportedPrim (s w''), KnownNat w, KnownNat w',
-  KnownNat w'', BVConcat (s w) (s w') (s w'')) => Term (s w) -> Term (s w') -> Term (s w'')
+pevalBVConcatTerm ::
+  ( SupportedPrim (s w),
+    SupportedPrim (s w'),
+    SupportedPrim (s w''),
+    KnownNat w,
+    KnownNat w',
+    KnownNat w'',
+    BVConcat (s w) (s w') (s w'')
+  ) =>
+  Term (s w) ->
+  Term (s w') ->
+  Term (s w'')
 pevalBVConcatTerm = binaryUnfoldOnce doPevalBVConcatTerm bvconcatTerm
 
-doPevalBVConcatTerm :: (SupportedPrim (s w), SupportedPrim (s w') , SupportedPrim (s w''), KnownNat w, KnownNat w',
-  KnownNat w'', BVConcat (s w) (s w') (s w'')) => Term (s w) -> Term (s w') -> Maybe (Term (s w''))
+doPevalBVConcatTerm ::
+  ( SupportedPrim (s w),
+    SupportedPrim (s w'),
+    SupportedPrim (s w''),
+    KnownNat w,
+    KnownNat w',
+    KnownNat w'',
+    BVConcat (s w) (s w') (s w'')
+  ) =>
+  Term (s w) ->
+  Term (s w') ->
+  Maybe (Term (s w''))
 doPevalBVConcatTerm (ConcTerm _ v) (ConcTerm _ v') = Just $ concTerm $ bvconcat v v'
 doPevalBVConcatTerm _ _ = Nothing

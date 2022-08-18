@@ -1,12 +1,13 @@
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE DefaultSignatures #-}
-{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 
-module Grisette.IR.SymPrim.Data.Prim.PartialEval (PartialFunc,
+module Grisette.IR.SymPrim.Data.Prim.PartialEval
+  ( PartialFunc,
     PartialRuleUnary,
     TotalRuleUnary,
     PartialRuleBinary,
@@ -18,10 +19,11 @@ module Grisette.IR.SymPrim.Data.Prim.PartialEval (PartialFunc,
     BinaryCommPartialStrategy (..),
     BinaryPartialStrategy (..),
     binaryPartial,
-  )where
+  )
+where
 
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Control.Monad.Except
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 
 type PartialFunc a b = a -> Maybe b
 

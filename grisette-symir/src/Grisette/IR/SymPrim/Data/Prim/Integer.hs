@@ -4,9 +4,9 @@ module Grisette.IR.SymPrim.Data.Prim.Integer
   )
 where
 
-import Grisette.IR.SymPrim.Data.Prim.Unfold
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
+import Grisette.IR.SymPrim.Data.Prim.Unfold
 
 -- div
 pevalDivIntegerTerm :: Term Integer -> Term Integer -> Term Integer

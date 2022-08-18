@@ -29,22 +29,24 @@ newtype WordN (n :: Nat) = WordN {unWordN :: Integer}
 
 instance (KnownNat n, 1 <= n) => Show (WordN n) where
   show (WordN w) = if (bitwidth `mod` 4) == 0 then hexRepPre ++ hexRep else binRepPre ++ binRep
-    where bitwidth = natVal (Proxy :: Proxy n)
-          hexRepPre = "0x" ++ replicate (fromIntegral (bitwidth `div` 4) - length hexRep) '0'
-          hexRep = showHex w ""
-          binRepPre = "0b" ++ replicate (fromIntegral bitwidth - length binRep) '0'
-          binRep = showIntAtBase 2 (\x -> if x == 0 then '0' else '1') w ""
+    where
+      bitwidth = natVal (Proxy :: Proxy n)
+      hexRepPre = "0x" ++ replicate (fromIntegral (bitwidth `div` 4) - length hexRep) '0'
+      hexRep = showHex w ""
+      binRepPre = "0b" ++ replicate (fromIntegral bitwidth - length binRep) '0'
+      binRep = showIntAtBase 2 (\x -> if x == 0 then '0' else '1') w ""
 
 newtype IntN (n :: Nat) = IntN {unIntN :: Integer}
   deriving (Eq, Generic, Lift, Hashable, NFData)
 
 instance (KnownNat n, 1 <= n) => Show (IntN n) where
   show (IntN w) = if (bitwidth `mod` 4) == 0 then hexRepPre ++ hexRep else binRepPre ++ binRep
-    where bitwidth = natVal (Proxy :: Proxy n)
-          hexRepPre = "0x" ++ replicate (fromIntegral (bitwidth `div` 4) - length hexRep) '0'
-          hexRep = showHex w ""
-          binRepPre = "0b" ++ replicate (fromIntegral bitwidth - length binRep) '0'
-          binRep = showIntAtBase 2 (\x -> if x == 0 then '0' else '1') w ""
+    where
+      bitwidth = natVal (Proxy :: Proxy n)
+      hexRepPre = "0x" ++ replicate (fromIntegral (bitwidth `div` 4) - length hexRep) '0'
+      hexRep = showHex w ""
+      binRepPre = "0b" ++ replicate (fromIntegral bitwidth - length binRep) '0'
+      binRep = showIntAtBase 2 (\x -> if x == 0 then '0' else '1') w ""
 
 maxWordN :: forall proxy n. KnownNat n => proxy n -> WordN n
 maxWordN _ = WordN ((1 `shiftL` fromIntegral (natVal (Proxy :: Proxy n))) - 1)
@@ -180,10 +182,16 @@ instance (KnownNat n, 1 <= n) => Ord (IntN n) where
       as = testBit a (n - 1)
       bs = testBit b (n - 1)
 
-instance (KnownNat n, 1 <= n, KnownNat m, 1 <= m, KnownNat w, 1 <= w, w ~ (n + m)) => BVConcat (WordN n) (WordN m) (WordN w) where
+instance
+  (KnownNat n, 1 <= n, KnownNat m, 1 <= m, KnownNat w, 1 <= w, w ~ (n + m)) =>
+  BVConcat (WordN n) (WordN m) (WordN w)
+  where
   bvconcat (WordN a) (WordN b) = WordN ((a `shiftL` fromIntegral (natVal (Proxy :: Proxy m))) .|. b)
 
-instance (KnownNat n, 1 <= n, KnownNat m, 1 <= m, KnownNat w, 1 <= w, w ~ (n + m)) => BVConcat (IntN n) (IntN m) (IntN w) where
+instance
+  (KnownNat n, 1 <= n, KnownNat m, 1 <= m, KnownNat w, 1 <= w, w ~ (n + m)) =>
+  BVConcat (IntN n) (IntN m) (IntN w)
+  where
   bvconcat (IntN a) (IntN b) = IntN $ unWordN $ bvconcat (WordN a :: WordN n) (WordN b :: WordN m)
 
 instance (KnownNat n, 1 <= n, KnownNat r, n <= r) => BVExtend (WordN n) r (WordN r) where

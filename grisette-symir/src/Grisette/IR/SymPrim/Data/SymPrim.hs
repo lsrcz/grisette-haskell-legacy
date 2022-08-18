@@ -13,8 +13,6 @@
 
 module Grisette.IR.SymPrim.Data.SymPrim
   ( Sym (..),
-    --SymConcView (..),
-    --pattern SymConc,
     SymBool,
     SymInteger,
     type (=~>),
@@ -56,17 +54,17 @@ import Grisette.IR.SymPrim.Data.IntBitwidth
 import Grisette.IR.SymPrim.Data.Prim.BV
 import Grisette.IR.SymPrim.Data.Prim.Bits
 import Grisette.IR.SymPrim.Data.Prim.Bool
+import Grisette.IR.SymPrim.Data.Prim.GeneralFunc
 import Grisette.IR.SymPrim.Data.Prim.Integer
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
 import Grisette.IR.SymPrim.Data.Prim.Model
 import Grisette.IR.SymPrim.Data.Prim.Num
 import Grisette.IR.SymPrim.Data.Prim.TabularFunc
 import Grisette.IR.SymPrim.Data.TabularFunc
 import Grisette.Lib.Control.Monad
 import Language.Haskell.TH.Syntax
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
-import Grisette.IR.SymPrim.Data.Prim.GeneralFunc
 
 newtype Sym a = Sym {underlyingTerm :: Term a} deriving (Lift, Generic)
 

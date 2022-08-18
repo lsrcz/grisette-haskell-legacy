@@ -57,9 +57,9 @@ import GHC.IO (unsafeDupablePerformIO)
 import GHC.TypeNats
 import Grisette.Core.Data.Class.BitVector
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
+import {-# SOURCE #-} Grisette.IR.SymPrim.Data.TabularFunc
 import Language.Haskell.TH.Syntax
 import Type.Reflection
-import {-# SOURCE #-} Grisette.IR.SymPrim.Data.TabularFunc
 
 internTerm :: forall t. (SupportedPrim t) => Uninterned (Term t) -> Term t
 internTerm !bt = unsafeDupablePerformIO $ atomicModifyIORef' slot go
@@ -119,11 +119,20 @@ isymbTerm :: (SupportedPrim t, Typeable t) => String -> Int -> Term t
 isymbTerm str idx = symbTerm $ IndexedSymbol str idx
 {-# INLINE isymbTerm #-}
 
-sinfosymbTerm :: (SupportedPrim t, Typeable t, Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) => String -> a -> Term t
+sinfosymbTerm ::
+  (SupportedPrim t, Typeable t, Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) =>
+  String ->
+  a ->
+  Term t
 sinfosymbTerm s info = symbTerm $ WithInfo (SimpleSymbol s) info
 {-# INLINE sinfosymbTerm #-}
 
-iinfosymbTerm :: (SupportedPrim t, Typeable t, Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) => String -> Int -> a -> Term t
+iinfosymbTerm ::
+  (SupportedPrim t, Typeable t, Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) =>
+  String ->
+  Int ->
+  a ->
+  Term t
 iinfosymbTerm str idx info = symbTerm $ WithInfo (IndexedSymbol str idx) info
 {-# INLINE iinfosymbTerm #-}
 
@@ -232,37 +241,47 @@ bvselectTerm _ _ v = internTerm $ UBVSelectTerm (typeRep @ix) (typeRep @w) v
 
 bvextendTerm ::
   forall bv a n w proxy.
-    ( SupportedPrim (bv a),
-      SupportedPrim (bv w),
-      KnownNat a,
-      KnownNat n,
-      KnownNat w,
-      BVExtend (bv a) n (bv w)
-    ) => Bool -> proxy n -> Term (bv a) -> Term (bv w)
+  ( SupportedPrim (bv a),
+    SupportedPrim (bv w),
+    KnownNat a,
+    KnownNat n,
+    KnownNat w,
+    BVExtend (bv a) n (bv w)
+  ) =>
+  Bool ->
+  proxy n ->
+  Term (bv a) ->
+  Term (bv w)
 bvextendTerm signed _ v = internTerm $ UBVExtendTerm signed (typeRep @n) v
 {-# INLINE bvextendTerm #-}
 
 bvsignExtendTerm ::
   forall bv a n w proxy.
-    ( SupportedPrim (bv a),
-      SupportedPrim (bv w),
-      KnownNat a,
-      KnownNat n,
-      KnownNat w,
-      BVExtend (bv a) n (bv w)
-    ) => proxy n -> Term (bv a) -> Term (bv w)
+  ( SupportedPrim (bv a),
+    SupportedPrim (bv w),
+    KnownNat a,
+    KnownNat n,
+    KnownNat w,
+    BVExtend (bv a) n (bv w)
+  ) =>
+  proxy n ->
+  Term (bv a) ->
+  Term (bv w)
 bvsignExtendTerm _ v = internTerm $ UBVExtendTerm True (typeRep @n) v
 {-# INLINE bvsignExtendTerm #-}
 
 bvzeroExtendTerm ::
   forall bv a n w proxy.
-    ( SupportedPrim (bv a),
-      SupportedPrim (bv w),
-      KnownNat a,
-      KnownNat n,
-      KnownNat w,
-      BVExtend (bv a) n (bv w)
-    ) => proxy n -> Term (bv a) -> Term (bv w)
+  ( SupportedPrim (bv a),
+    SupportedPrim (bv w),
+    KnownNat a,
+    KnownNat n,
+    KnownNat w,
+    BVExtend (bv a) n (bv w)
+  ) =>
+  proxy n ->
+  Term (bv a) ->
+  Term (bv w)
 bvzeroExtendTerm _ v = internTerm $ UBVExtendTerm False (typeRep @n) v
 {-# INLINE bvzeroExtendTerm #-}
 

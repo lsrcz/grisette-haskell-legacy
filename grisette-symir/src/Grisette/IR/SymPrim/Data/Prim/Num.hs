@@ -1,6 +1,3 @@
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -90,7 +87,7 @@ doPevalUMinusNumTerm (AddNumTerm _ l (UMinusNumTerm _ r)) = Just $ pevalAddNumTe
 doPevalUMinusNumTerm (TimesNumTerm _ (NumConcTerm l) r) = Just $ pevalTimesNumTerm (concTerm $ - l) r
 doPevalUMinusNumTerm (TimesNumTerm _ (UMinusNumTerm _ _ :: Term a) (_ :: Term a)) = error "Should not happen"
 doPevalUMinusNumTerm (TimesNumTerm _ (_ :: Term a) (UMinusNumTerm _ (_ :: Term a))) = error "Should not happen"
-doPevalUMinusNumTerm (AddNumTerm _ (_ :: Term a) ConcTerm {}) = error "Should not happen" -- Just $ minusi (concTerm $ -r) l
+doPevalUMinusNumTerm (AddNumTerm _ (_ :: Term a) ConcTerm {}) = error "Should not happen"
 doPevalUMinusNumTerm _ = Nothing
 
 -- times
@@ -110,7 +107,7 @@ doPevalTimesNumTerm l@(ConcTerm _ a) b = case (a, b) of
   (l1, TimesNumTerm _ (NumConcTerm j) k) -> Just $ pevalTimesNumTerm (concTerm $ l1 * j) k
   (l1, AddNumTerm _ (NumConcTerm j) k) -> Just $ pevalAddNumTerm (concTerm $ l1 * j) (pevalTimesNumTerm (concTerm l1) k)
   (l1, UMinusNumTerm _ j) -> Just (pevalTimesNumTerm (concTerm $ - l1) j)
-  (_, TimesNumTerm _ (_ :: Term a) ConcTerm {}) -> error "Should not happen" -- Just $ addi (concTerm $ l + k) j
+  (_, TimesNumTerm _ (_ :: Term a) ConcTerm {}) -> error "Should not happen"
   (_, AddNumTerm _ (_ :: Term a) ConcTerm {}) -> error "Should not happen"
   _ -> doPevalTimesNumTermNoConc l b
 doPevalTimesNumTerm a r@(ConcTerm _ _) = doPevalTimesNumTerm r a
@@ -122,8 +119,8 @@ doPevalTimesNumTermNoConc i (TimesNumTerm _ j@ConcTerm {} k) = Just $ pevalTimes
 doPevalTimesNumTermNoConc (UMinusNumTerm _ i) j = Just $ pevalUMinusNumTerm $ pevalTimesNumTerm i j
 doPevalTimesNumTermNoConc i (UMinusNumTerm _ j) = Just $ pevalUMinusNumTerm $ pevalTimesNumTerm i j
 doPevalTimesNumTermNoConc i j@ConcTerm {} = Just $ pevalTimesNumTerm j i
-doPevalTimesNumTermNoConc (TimesNumTerm _ (_ :: Term a) ConcTerm {}) _ = error "Should not happen" -- Just $ addi j $ addi i k
-doPevalTimesNumTermNoConc _ (TimesNumTerm _ (_ :: Term a) ConcTerm {}) = error "Should not happen" -- Just $ addi k $ addi i j
+doPevalTimesNumTermNoConc (TimesNumTerm _ (_ :: Term a) ConcTerm {}) _ = error "Should not happen"
+doPevalTimesNumTermNoConc _ (TimesNumTerm _ (_ :: Term a) ConcTerm {}) = error "Should not happen"
 doPevalTimesNumTermNoConc _ _ = Nothing
 
 -- abs
@@ -136,7 +133,6 @@ doPevalAbsNumTerm (UMinusNumTerm _ v) = Just $ pevalAbsNumTerm v
 doPevalAbsNumTerm t@(AbsNumTerm _ (_ :: Term a)) = Just t
 doPevalAbsNumTerm (TimesNumTerm _ (Dyn (l :: Term Integer)) r) =
   Just $ pevalTimesNumTerm (pevalAbsNumTerm $ unsafeCoerce l :: Term a) $ pevalAbsNumTerm (unsafeCoerce r)
--- nonConstantHandler _ (AddNumTerm (_ :: Term a) ConcTerm {}) = error "Should not happen" -- Just $ minusi (concTerm $ -r) l
 doPevalAbsNumTerm _ = Nothing
 
 -- signum
@@ -145,12 +141,9 @@ pevalSignumNumTerm = unaryUnfoldOnce doPevalSignumNumTerm signumNumTerm
 
 doPevalSignumNumTerm :: forall a. (Num a, SupportedPrim a) => Term a -> Maybe (Term a)
 doPevalSignumNumTerm (ConcTerm _ a) = Just $ concTerm $ signum a
--- doPevalSignumNumTerm (UMinusNumTerm v) = Just $ pevalUMinusNumTerm $ signumNum v
 doPevalSignumNumTerm (UMinusNumTerm _ (Dyn (v :: Term Integer))) = Just $ pevalUMinusNumTerm $ pevalSignumNumTerm $ unsafeCoerce v
--- doPevalSignumNumTerm (TimesNumTerm l r) = Just $ pevalTimesNumTerm (signumNum l) $ signumNum r
 doPevalSignumNumTerm (TimesNumTerm _ (Dyn (l :: Term Integer)) r) =
   Just $ pevalTimesNumTerm (pevalSignumNumTerm $ unsafeCoerce l :: Term a) $ pevalSignumNumTerm (unsafeCoerce r)
--- doPevalSignumNumTerm (AddNumTerm (_ :: Term a) ConcTerm {}) = error "Should not happen" -- Just $ minusi (concTerm $ -r) l
 doPevalSignumNumTerm _ = Nothing
 
 -- lt
@@ -159,15 +152,19 @@ pevalLtNumTerm = binaryUnfoldOnce doPevalLtNumTerm ltNumTerm
 
 doPevalLtNumTerm :: forall a. (Num a, Ord a, SupportedPrim a) => Term a -> Term a -> Maybe (Term Bool)
 doPevalLtNumTerm (ConcTerm _ a) (ConcTerm _ b) = Just $ concTerm $ a < b
-doPevalLtNumTerm (ConcTerm _ l) (AddNumTerm _ (ConcTerm _ (Dyn (j :: Integer))) k) = Just $ pevalLtNumTerm (concTerm $ unsafeCoerce l - j) (unsafeCoerce k)
-doPevalLtNumTerm (AddNumTerm _ (ConcTerm _ (Dyn (i :: Integer))) j) (ConcTerm _ k) = Just $ pevalLtNumTerm (unsafeCoerce j) (concTerm $ unsafeCoerce k - i)
-doPevalLtNumTerm (AddNumTerm _ (ConcTerm _ (Dyn (j :: Integer))) k) l = Just $ pevalLtNumTerm (concTerm j) (pevalMinusNumTerm (unsafeCoerce l) (unsafeCoerce k))
-doPevalLtNumTerm j (AddNumTerm _ (ConcTerm _ (Dyn (k :: Integer))) l) = Just $ pevalLtNumTerm (concTerm $ - k) (pevalMinusNumTerm (unsafeCoerce l) (unsafeCoerce j))
+doPevalLtNumTerm (ConcTerm _ l) (AddNumTerm _ (ConcTerm _ (Dyn (j :: Integer))) k) =
+  Just $ pevalLtNumTerm (concTerm $ unsafeCoerce l - j) (unsafeCoerce k)
+doPevalLtNumTerm (AddNumTerm _ (ConcTerm _ (Dyn (i :: Integer))) j) (ConcTerm _ k) =
+  Just $ pevalLtNumTerm (unsafeCoerce j) (concTerm $ unsafeCoerce k - i)
+doPevalLtNumTerm (AddNumTerm _ (ConcTerm _ (Dyn (j :: Integer))) k) l =
+  Just $ pevalLtNumTerm (concTerm j) (pevalMinusNumTerm (unsafeCoerce l) (unsafeCoerce k))
+doPevalLtNumTerm j (AddNumTerm _ (ConcTerm _ (Dyn (k :: Integer))) l) =
+  Just $ pevalLtNumTerm (concTerm $ - k) (pevalMinusNumTerm (unsafeCoerce l) (unsafeCoerce j))
 doPevalLtNumTerm l (ConcTerm _ r) =
-    case eqT @a @Integer of
-      Just Refl ->
-        Just $ pevalLtNumTerm (concTerm $ - r) (pevalUMinusNumTerm l)
-      _ -> Nothing
+  case eqT @a @Integer of
+    Just Refl ->
+      Just $ pevalLtNumTerm (concTerm $ - r) (pevalUMinusNumTerm l)
+    _ -> Nothing
 doPevalLtNumTerm _ _ = Nothing
 
 -- le
@@ -176,15 +173,19 @@ pevalLeNumTerm = binaryUnfoldOnce doPevalLeNumTerm leNumTerm
 
 doPevalLeNumTerm :: forall a. (Num a, Ord a, SupportedPrim a) => Term a -> Term a -> Maybe (Term Bool)
 doPevalLeNumTerm (ConcTerm _ a) (ConcTerm _ b) = Just $ concTerm $ a <= b
-doPevalLeNumTerm (ConcTerm _ l) (AddNumTerm _ (ConcTerm _ (Dyn (j :: Integer))) k) = Just $ pevalLeNumTerm (concTerm $ unsafeCoerce l - j) (unsafeCoerce k)
-doPevalLeNumTerm (AddNumTerm _ (ConcTerm _ (Dyn (i :: Integer))) j) (ConcTerm _ k) = Just $ pevalLeNumTerm (unsafeCoerce j) (concTerm $ unsafeCoerce k - i)
-doPevalLeNumTerm (AddNumTerm _ (ConcTerm _ (Dyn (j :: Integer))) k) l = Just $ pevalLeNumTerm (concTerm j) (pevalMinusNumTerm (unsafeCoerce l) (unsafeCoerce k))
-doPevalLeNumTerm j (AddNumTerm _ (ConcTerm _ (Dyn (k :: Integer))) l) = Just $ pevalLeNumTerm (concTerm $ - k) (pevalMinusNumTerm (unsafeCoerce l) (unsafeCoerce j))
+doPevalLeNumTerm (ConcTerm _ l) (AddNumTerm _ (ConcTerm _ (Dyn (j :: Integer))) k) =
+  Just $ pevalLeNumTerm (concTerm $ unsafeCoerce l - j) (unsafeCoerce k)
+doPevalLeNumTerm (AddNumTerm _ (ConcTerm _ (Dyn (i :: Integer))) j) (ConcTerm _ k) =
+  Just $ pevalLeNumTerm (unsafeCoerce j) (concTerm $ unsafeCoerce k - i)
+doPevalLeNumTerm (AddNumTerm _ (ConcTerm _ (Dyn (j :: Integer))) k) l =
+  Just $ pevalLeNumTerm (concTerm j) (pevalMinusNumTerm (unsafeCoerce l) (unsafeCoerce k))
+doPevalLeNumTerm j (AddNumTerm _ (ConcTerm _ (Dyn (k :: Integer))) l) =
+  Just $ pevalLeNumTerm (concTerm $ - k) (pevalMinusNumTerm (unsafeCoerce l) (unsafeCoerce j))
 doPevalLeNumTerm l (ConcTerm _ r) =
-    case eqT @a @Integer of
-      Just Refl ->
-        Just $ pevalLeNumTerm (concTerm $ - r) (pevalUMinusNumTerm l)
-      _ -> Nothing
+  case eqT @a @Integer of
+    Just Refl ->
+      Just $ pevalLeNumTerm (concTerm $ - r) (pevalUMinusNumTerm l)
+    _ -> Nothing
 doPevalLeNumTerm _ _ = Nothing
 
 pevalGtNumTerm :: (Num a, Ord a, SupportedPrim a) => Term a -> Term a -> Term Bool

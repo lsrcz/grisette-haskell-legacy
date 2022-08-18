@@ -62,7 +62,16 @@ class
   pformatUnary :: tag -> Term arg -> String
 
 class
-  (SupportedPrim arg1, SupportedPrim arg2, SupportedPrim t, Lift tag, NFData tag, Show tag, Typeable tag, Eq tag, Hashable tag) =>
+  ( SupportedPrim arg1,
+    SupportedPrim arg2,
+    SupportedPrim t,
+    Lift tag,
+    NFData tag,
+    Show tag,
+    Typeable tag,
+    Eq tag,
+    Hashable tag
+  ) =>
   BinaryOp tag arg1 arg2 t
     | tag arg1 arg2 -> t
   where

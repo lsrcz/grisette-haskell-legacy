@@ -5,8 +5,8 @@
 
 module Grisette.IR.SymPrim.Data.Prim.ModelValue where
 
-import Type.Reflection
 import Data.Hashable
+import Type.Reflection
 
 data ModelValue where
   ModelValue :: forall v. (Show v, Eq v, Hashable v) => TypeRep v -> v -> ModelValue

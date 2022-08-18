@@ -1,9 +1,9 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE GADTs #-}
 
 module Grisette.IR.SymPrim.Data.Prim.Model
   ( Model (..),
@@ -22,22 +22,22 @@ where
 import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet as S
 import Data.Hashable
-import Type.Reflection
+import Data.Proxy
 import GHC.Generics
 import Grisette.Core.Data.MemoUtils
-import Grisette.IR.SymPrim.Data.Prim.Bool
-import Grisette.IR.SymPrim.Data.Prim.Num
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
-import Grisette.IR.SymPrim.Data.Prim.ModelValue
-import Unsafe.Coerce
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm.SomeTerm
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
-import Data.Proxy
-import Grisette.IR.SymPrim.Data.Prim.Bits
 import Grisette.IR.SymPrim.Data.Prim.BV
-import Grisette.IR.SymPrim.Data.Prim.TabularFunc
+import Grisette.IR.SymPrim.Data.Prim.Bits
+import Grisette.IR.SymPrim.Data.Prim.Bool
 import Grisette.IR.SymPrim.Data.Prim.GeneralFunc
 import Grisette.IR.SymPrim.Data.Prim.Integer
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.SomeTerm
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
+import Grisette.IR.SymPrim.Data.Prim.ModelValue
+import Grisette.IR.SymPrim.Data.Prim.Num
+import Grisette.IR.SymPrim.Data.Prim.TabularFunc
+import Type.Reflection
+import Unsafe.Coerce
 
 newtype Model = Model (M.HashMap TermSymbol ModelValue) deriving (Show, Eq, Generic, Hashable)
 
@@ -153,11 +153,20 @@ evaluateSomeTerm fillDefault (Model ma) = gomemo
       goBinary pevalModIntegerTerm arg1 arg2
     goUnary :: (SupportedPrim a, SupportedPrim b) => (Term a -> Term b) -> Term a -> SomeTerm
     goUnary f a = SomeTerm $ f (gotyped a)
-    goBinary :: (SupportedPrim a, SupportedPrim b, SupportedPrim c) =>
-      (Term a -> Term b -> Term c) -> Term a -> Term b -> SomeTerm
+    goBinary ::
+      (SupportedPrim a, SupportedPrim b, SupportedPrim c) =>
+      (Term a -> Term b -> Term c) ->
+      Term a ->
+      Term b ->
+      SomeTerm
     goBinary f a b = SomeTerm $ f (gotyped a) (gotyped b)
-    goTernary :: (SupportedPrim a, SupportedPrim b, SupportedPrim c, SupportedPrim d) =>
-      (Term a -> Term b -> Term c -> Term d) -> Term a -> Term b -> Term c -> SomeTerm
+    goTernary ::
+      (SupportedPrim a, SupportedPrim b, SupportedPrim c, SupportedPrim d) =>
+      (Term a -> Term b -> Term c -> Term d) ->
+      Term a ->
+      Term b ->
+      Term c ->
+      SomeTerm
     goTernary f a b c = SomeTerm $ f (gotyped a) (gotyped b) (gotyped c)
 
 evaluateTerm :: forall a. (SupportedPrim a) => Bool -> Model -> Term a -> Term a

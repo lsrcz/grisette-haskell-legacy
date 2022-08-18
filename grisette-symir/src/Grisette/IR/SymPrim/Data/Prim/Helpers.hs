@@ -1,6 +1,4 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE DefaultSignatures #-}
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -15,20 +13,20 @@ module Grisette.IR.SymPrim.Data.Prim.Helpers
     pattern UnsafeBinaryTermPatt,
     pattern Unsafe1t21BinaryTermPatt,
     pattern Unsafe1u2t32TernaryTermPatt,
-      )
+  )
 where
 
 import Data.Typeable
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
-import Unsafe.Coerce
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
+import Unsafe.Coerce
 
 unsafeUnaryTermView :: forall a b tag. (Typeable tag) => Term a -> Maybe (tag, Term b)
 unsafeUnaryTermView (UnaryTerm _ (tag :: tagt) t1) =
   case cast tag of
     Just t -> Just (t, unsafeCoerce t1)
     Nothing -> Nothing
-  -- (,) <$> cast tag <*> castTerm t1
+-- (,) <$> cast tag <*> castTerm t1
 unsafeUnaryTermView _ = Nothing
 
 pattern UnsafeUnaryTermPatt :: forall a b tag. (Typeable tag) => tag -> Term b -> Term a
@@ -47,7 +45,7 @@ unsafeBinaryTermView (BinaryTerm _ (tag :: tagt) t1 t2) =
   case cast tag of
     Just t -> Just (t, unsafeCoerce t1, unsafeCoerce t2)
     Nothing -> Nothing
-  -- (,) <$> cast tag <*> castTerm t1
+-- (,) <$> cast tag <*> castTerm t1
 unsafeBinaryTermView _ = Nothing
 
 pattern UnsafeBinaryTermPatt :: forall a b c tag. (Typeable tag) => tag -> Term b -> Term c -> Term a
@@ -58,7 +56,7 @@ unsafe1t21BinaryTermView (BinaryTerm _ (tag :: tagt) t1 t2) =
   case (cast tag, cast t1) of
     (Just tg, Just t1') -> Just (tg, t1', unsafeCoerce t2)
     _ -> Nothing
-  -- (,) <$> cast tag <*> castTerm t1
+-- (,) <$> cast tag <*> castTerm t1
 unsafe1t21BinaryTermView _ = Nothing
 
 pattern Unsafe1t21BinaryTermPatt :: forall a b tag. (Typeable tag, Typeable b) => tag -> Term b -> Term b -> Term a
@@ -93,8 +91,6 @@ pattern Unsafe1u2t32TernaryTermPatt ::
   Term a
 pattern Unsafe1u2t32TernaryTermPatt tag a b c <-
   (unsafe1u2t32TernaryTermView @a @b @c @tag -> Just (tag, a, b, c))
-
-
 
 ternaryTermView ::
   forall a b c d tag.

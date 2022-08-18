@@ -7,18 +7,18 @@
 module Grisette.IR.SymPrim.Data.Prim.GeneralFuncSubst (generalFuncSubst) where
 
 import Grisette.Core.Data.MemoUtils
-import Type.Reflection
-import Unsafe.Coerce
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm.SomeTerm
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
-import Grisette.IR.SymPrim.Data.Prim.Bool
-import Grisette.IR.SymPrim.Data.Prim.Num
-import Grisette.IR.SymPrim.Data.Prim.Bits
 import Grisette.IR.SymPrim.Data.Prim.BV
-import Grisette.IR.SymPrim.Data.Prim.TabularFunc
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
+import Grisette.IR.SymPrim.Data.Prim.Bits
+import Grisette.IR.SymPrim.Data.Prim.Bool
 import Grisette.IR.SymPrim.Data.Prim.GeneralFunc
 import Grisette.IR.SymPrim.Data.Prim.Integer
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.SomeTerm
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
+import Grisette.IR.SymPrim.Data.Prim.Num
+import Grisette.IR.SymPrim.Data.Prim.TabularFunc
+import Type.Reflection
+import Unsafe.Coerce
 
 generalFuncSubst :: forall a b. (SupportedPrim a, SupportedPrim b) => TermSymbol -> Term a -> Term b -> Term b
 generalFuncSubst sym@(TermSymbol tc _) term input = case eqTypeRep tc (typeRep @a) of

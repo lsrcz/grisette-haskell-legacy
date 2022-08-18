@@ -1,14 +1,14 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Grisette.IR.SymPrim.Data.Prim.InternedTerm.SomeTerm (SomeTerm (..)) where
 
 import Data.Hashable
+import Data.Typeable
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import {-# SOURCE #-} Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
-import Data.Typeable
 
 data SomeTerm where
   SomeTerm :: forall a. (SupportedPrim a) => Term a -> SomeTerm

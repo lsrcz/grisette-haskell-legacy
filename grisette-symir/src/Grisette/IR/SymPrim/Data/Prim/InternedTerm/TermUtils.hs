@@ -1,8 +1,8 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE GADTs #-}
 
 module Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
   ( identity,
@@ -243,7 +243,8 @@ pformat (ShiftBitsTerm _ arg n) = "(shift " ++ pformat arg ++ " " ++ show n ++ "
 pformat (RotateBitsTerm _ arg n) = "(rotate " ++ pformat arg ++ " " ++ show n ++ ")"
 pformat (BVConcatTerm _ arg1 arg2) = "(bvconcat " ++ pformat arg1 ++ " " ++ pformat arg2 ++ ")"
 pformat (BVSelectTerm _ ix w arg) = "(bvselect " ++ show ix ++ " " ++ show w ++ " " ++ pformat arg ++ ")"
-pformat (BVExtendTerm _ signed n arg) = (if signed then "(bvsext " else "(bvzext") ++ show n ++ " " ++ pformat arg ++ ")"
+pformat (BVExtendTerm _ signed n arg) =
+  (if signed then "(bvsext " else "(bvzext") ++ show n ++ " " ++ pformat arg ++ ")"
 pformat (TabularFuncApplyTerm _ func arg) = "(apply " ++ pformat func ++ " " ++ pformat arg ++ ")"
 pformat (GeneralFuncApplyTerm _ func arg) = "(apply " ++ pformat func ++ " " ++ pformat arg ++ ")"
 pformat (DivIntegerTerm _ arg1 arg2) = "(div " ++ pformat arg1 ++ " " ++ pformat arg2 ++ ")"
@@ -294,8 +295,13 @@ termsSize terms = S.size $ execState (traverse go terms) S.empty
         else do
           add t
           go arg
-    goBinary :: forall a b c. (SupportedPrim a, SupportedPrim b) =>
-      Term a -> Term b -> Term c -> State (S.HashSet SomeTerm) ()
+    goBinary ::
+      forall a b c.
+      (SupportedPrim a, SupportedPrim b) =>
+      Term a ->
+      Term b ->
+      Term c ->
+      State (S.HashSet SomeTerm) ()
     goBinary t arg1 arg2 = do
       b <- exists t
       if b
@@ -304,8 +310,14 @@ termsSize terms = S.size $ execState (traverse go terms) S.empty
           add t
           go arg1
           go arg2
-    goTernary :: forall a b c d. (SupportedPrim a, SupportedPrim b, SupportedPrim c) =>
-      Term a -> Term b -> Term c -> Term d -> State (S.HashSet SomeTerm) ()
+    goTernary ::
+      forall a b c d.
+      (SupportedPrim a, SupportedPrim b, SupportedPrim c) =>
+      Term a ->
+      Term b ->
+      Term c ->
+      Term d ->
+      State (S.HashSet SomeTerm) ()
     goTernary t arg1 arg2 arg3 = do
       b <- exists t
       if b

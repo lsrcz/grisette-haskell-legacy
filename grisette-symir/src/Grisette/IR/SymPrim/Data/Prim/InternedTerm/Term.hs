@@ -1,6 +1,9 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs #-}
@@ -11,9 +14,6 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE DeriveLift #-}
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric #-}
 
 module Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
   ( SupportedPrim (..),
@@ -37,9 +37,12 @@ import Data.Hashable
 import Data.Interned
 import Data.Kind
 import Data.Typeable (Proxy (..), cast)
+import GHC.Generics
 import GHC.TypeNats
 import Grisette.Core.Data.Class.BitVector
+import Grisette.Core.Data.Class.Function
 import Grisette.IR.SymPrim.Data.BV
+import {-# SOURCE #-} Grisette.IR.SymPrim.Data.Prim.GeneralFuncSubst
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Caches
 import {-# SOURCE #-} Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 import {-# SOURCE #-} Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
@@ -49,9 +52,6 @@ import {-# SOURCE #-} Grisette.IR.SymPrim.Data.TabularFunc
 import Language.Haskell.TH.Syntax
 import Language.Haskell.TH.Syntax.Compat
 import Type.Reflection
-import Grisette.Core.Data.Class.Function
-import GHC.Generics
-import {-# SOURCE #-} Grisette.IR.SymPrim.Data.Prim.GeneralFuncSubst
 
 class (Lift t, Typeable t, Hashable t, Eq t, Show t, NFData t) => SupportedPrim t where
   type PrimConstraint t :: Constraint
@@ -82,7 +82,16 @@ class
   pformatUnary :: tag -> Term arg -> String
 
 class
-  (SupportedPrim arg1, SupportedPrim arg2, SupportedPrim t, Lift tag, NFData tag, Show tag, Typeable tag, Eq tag, Hashable tag) =>
+  ( SupportedPrim arg1,
+    SupportedPrim arg2,
+    SupportedPrim t,
+    Lift tag,
+    NFData tag,
+    Show tag,
+    Typeable tag,
+    Eq tag,
+    Hashable tag
+  ) =>
   BinaryOp tag arg1 arg2 t
     | tag arg1 arg2 -> t
   where
@@ -330,7 +339,10 @@ instance Show (Term ty) where
   show (OrTerm i arg1 arg2) = "Or{id=" ++ show i ++ ", arg1=" ++ show arg1 ++ ", arg2=" ++ show arg2 ++ "}"
   show (AndTerm i arg1 arg2) = "And{id=" ++ show i ++ ", arg1=" ++ show arg1 ++ ", arg2=" ++ show arg2 ++ "}"
   show (EqvTerm i arg1 arg2) = "Eqv{id=" ++ show i ++ ", arg1=" ++ show arg1 ++ ", arg2=" ++ show arg2 ++ "}"
-  show (ITETerm i cond l r) = "ITE{id=" ++ show i ++ ", cond=" ++ show cond ++ ", then=" ++ show l ++ ", else=" ++ show r ++ "}"
+  show (ITETerm i cond l r) =
+    "ITE{id=" ++ show i ++ ", cond=" ++ show cond ++ ", then=" ++ show l ++ ", else="
+      ++ show r
+      ++ "}"
   show (AddNumTerm i arg1 arg2) = "AddNum{id=" ++ show i ++ ", arg1=" ++ show arg1 ++ ", arg2=" ++ show arg2 ++ "}"
   show (UMinusNumTerm i arg) = "UMinusNum{id=" ++ show i ++ ", arg=" ++ show arg ++ "}"
   show (TimesNumTerm i arg1 arg2) = "TimesNum{id=" ++ show i ++ ", arg1=" ++ show arg1 ++ ", arg2=" ++ show arg2 ++ "}"
@@ -345,12 +357,18 @@ instance Show (Term ty) where
   show (ShiftBitsTerm i arg n) = "ShiftBits{id=" ++ show i ++ ", arg=" ++ show arg ++ ", n=" ++ show n ++ "}"
   show (RotateBitsTerm i arg n) = "RotateBits{id=" ++ show i ++ ", arg=" ++ show arg ++ ", n=" ++ show n ++ "}"
   show (BVConcatTerm i arg1 arg2) = "BVConcat{id=" ++ show i ++ ", arg1=" ++ show arg1 ++ ", arg2=" ++ show arg2 ++ "}"
-  show (BVSelectTerm i ix w arg) = "BVSelect{id=" ++ show i ++ ", ix=" ++ show ix ++ ", w=" ++ show w ++ ", arg=" ++ show arg ++ "}"
-  show (BVExtendTerm i signed n arg) = "BVExtend{id=" ++ show i ++ ", signed=" ++ show signed ++ ", n=" ++ show n ++ ", arg=" ++ show arg ++ "}"
-  show (TabularFuncApplyTerm i func arg) = "TabularFuncApply{id=" ++ show i ++ ", func=" ++ show func ++ ", arg=" ++ show arg ++ "}"
-  show (GeneralFuncApplyTerm i func arg) = "GeneralFuncApply{id=" ++ show i ++ ", func=" ++ show func ++ ", arg=" ++ show arg ++ "}"
-  show (DivIntegerTerm i arg1 arg2) = "DivInteger{id=" ++ show i ++ ", arg1=" ++ show arg1 ++ ", arg2=" ++ show arg2 ++ "}"
-  show (ModIntegerTerm i arg1 arg2) = "ModInteger{id=" ++ show i ++ ", arg1=" ++ show arg1 ++ ", arg2=" ++ show arg2 ++ "}"
+  show (BVSelectTerm i ix w arg) =
+    "BVSelect{id=" ++ show i ++ ", ix=" ++ show ix ++ ", w=" ++ show w ++ ", arg=" ++ show arg ++ "}"
+  show (BVExtendTerm i signed n arg) =
+    "BVExtend{id=" ++ show i ++ ", signed=" ++ show signed ++ ", n=" ++ show n ++ ", arg=" ++ show arg ++ "}"
+  show (TabularFuncApplyTerm i func arg) =
+    "TabularFuncApply{id=" ++ show i ++ ", func=" ++ show func ++ ", arg=" ++ show arg ++ "}"
+  show (GeneralFuncApplyTerm i func arg) =
+    "GeneralFuncApply{id=" ++ show i ++ ", func=" ++ show func ++ ", arg=" ++ show arg ++ "}"
+  show (DivIntegerTerm i arg1 arg2) =
+    "DivInteger{id=" ++ show i ++ ", arg1=" ++ show arg1 ++ ", arg2=" ++ show arg2 ++ "}"
+  show (ModIntegerTerm i arg1 arg2) =
+    "ModInteger{id=" ++ show i ++ ", arg1=" ++ show arg1 ++ ", arg2=" ++ show arg2 ++ "}"
 
 instance (SupportedPrim t) => Eq (Term t) where
   (==) = (==) `on` identity
@@ -525,7 +543,11 @@ instance (SupportedPrim t) => Interned (Term t) where
   describe ((UBinaryTerm (tag :: tagt) (tm1 :: Term arg1) (tm2 :: Term arg2)) :: UTerm t) =
     DBinaryTerm @tagt @arg1 @arg2 @t (typeRep, tag) (typeRep, identity tm1) (typeRep, identity tm2)
   describe ((UTernaryTerm (tag :: tagt) (tm1 :: Term arg1) (tm2 :: Term arg2) (tm3 :: Term arg3)) :: UTerm t) =
-    DTernaryTerm @tagt @arg1 @arg2 @arg3 @t (typeRep, tag) (typeRep, identity tm1) (typeRep, identity tm2) (typeRep, identity tm3)
+    DTernaryTerm @tagt @arg1 @arg2 @arg3 @t
+      (typeRep, tag)
+      (typeRep, identity tm1)
+      (typeRep, identity tm2)
+      (typeRep, identity tm3)
   describe (UNotTerm arg) = DNotTerm (identity arg)
   describe (UOrTerm arg1 arg2) = DOrTerm (identity arg1) (identity arg2)
   describe (UAndTerm arg1 arg2) = DAndTerm (identity arg1) (identity arg2)
@@ -620,7 +642,9 @@ instance (SupportedPrim t) => Eq (Description (Term t)) where
     eqTypeRepBool lrep1 rrep1 && eqTypeRepBool lrep2 rrep2 && li1 == ri1 && li2 == ri2
   DBVSelectTerm lix li == DBVSelectTerm rix ri =
     eqTypeRepBool lix rix && eqTypedId li ri
-  DBVExtendTerm lIsSigned ln li == DBVExtendTerm rIsSigned rn ri = lIsSigned == rIsSigned && eqTypeRepBool ln rn && eqTypedId li ri
+  DBVExtendTerm lIsSigned ln li == DBVExtendTerm rIsSigned rn ri =
+    lIsSigned == rIsSigned && eqTypeRepBool ln rn
+      && eqTypedId li ri
   DTabularFuncApplyTerm lf li == DTabularFuncApplyTerm rf ri = eqTypedId lf rf && eqTypedId li ri
   DGeneralFuncApplyTerm lf li == DGeneralFuncApplyTerm rf ri = eqTypedId lf rf && eqTypedId li ri
   DDivIntegerTerm li1 li2 == DDivIntegerTerm ri1 ri2 = li1 == ri1 && li2 == ri2
@@ -663,7 +687,9 @@ instance (SupportedPrim t) => Hashable (Description (Term t)) where
   hashWithSalt s (DBVConcatTerm rep1 rep2 id1 id2) =
     s `hashWithSalt` (23 :: Int) `hashWithSalt` rep1 `hashWithSalt` rep2 `hashWithSalt` id1 `hashWithSalt` id2
   hashWithSalt s (DBVSelectTerm ix id1) = s `hashWithSalt` (24 :: Int) `hashWithSalt` ix `hashWithSalt` id1
-  hashWithSalt s (DBVExtendTerm signed n id1) = s `hashWithSalt` (25 :: Int) `hashWithSalt` signed `hashWithSalt` n `hashWithSalt` id1
+  hashWithSalt s (DBVExtendTerm signed n id1) =
+    s `hashWithSalt` (25 :: Int) `hashWithSalt` signed `hashWithSalt` n
+      `hashWithSalt` id1
   hashWithSalt s (DTabularFuncApplyTerm id1 id2) = s `hashWithSalt` (26 :: Int) `hashWithSalt` id1 `hashWithSalt` id2
   hashWithSalt s (DGeneralFuncApplyTerm id1 id2) = s `hashWithSalt` (27 :: Int) `hashWithSalt` id1 `hashWithSalt` id2
   hashWithSalt s (DDivIntegerTerm id1 id2) = s `hashWithSalt` (28 :: Int) `hashWithSalt` id1 `hashWithSalt` id2

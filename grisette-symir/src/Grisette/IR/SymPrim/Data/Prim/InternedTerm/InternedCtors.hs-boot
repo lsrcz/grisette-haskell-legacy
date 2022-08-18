@@ -76,8 +76,17 @@ concTerm :: (SupportedPrim t, Typeable t, Hashable t, Eq t, Show t) => t -> Term
 symbTerm :: forall t. (SupportedPrim t, Typeable t) => Symbol -> Term t
 ssymbTerm :: (SupportedPrim t, Typeable t) => String -> Term t
 isymbTerm :: (SupportedPrim t, Typeable t) => String -> Int -> Term t
-sinfosymbTerm :: (SupportedPrim t, Typeable t, Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) => String -> a -> Term t
-iinfosymbTerm :: (SupportedPrim t, Typeable t, Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) => String -> Int -> a -> Term t
+sinfosymbTerm ::
+  (SupportedPrim t, Typeable t, Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) =>
+  String ->
+  a ->
+  Term t
+iinfosymbTerm ::
+  (SupportedPrim t, Typeable t, Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) =>
+  String ->
+  Int ->
+  a ->
+  Term t
 notTerm :: Term Bool -> Term Bool
 orTerm :: Term Bool -> Term Bool -> Term Bool
 andTerm :: Term Bool -> Term Bool -> Term Bool
