@@ -3,16 +3,16 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Grisette.IR.SymPrim.Data.Prim.TabularFunc
+module Grisette.IR.SymPrim.Data.Prim.PartialEval.TabularFunc
   ( pevalTabularFuncApplyTerm,
   )
 where
 
 import Grisette.Core.Data.Class.Function
-import Grisette.IR.SymPrim.Data.Prim.Bool
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
-import Grisette.IR.SymPrim.Data.Prim.PartialEval
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Bool
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.PartialEval
 import Grisette.IR.SymPrim.Data.TabularFunc
 
 pevalTabularFuncApplyTerm :: (SupportedPrim a, SupportedPrim b) => Term (a =-> b) -> Term a -> Term b

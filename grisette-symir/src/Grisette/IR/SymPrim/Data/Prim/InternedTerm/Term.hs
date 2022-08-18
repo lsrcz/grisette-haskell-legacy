@@ -42,8 +42,8 @@ import GHC.TypeNats
 import Grisette.Core.Data.Class.BitVector
 import Grisette.Core.Data.Class.Function
 import Grisette.IR.SymPrim.Data.BV
-import {-# SOURCE #-} Grisette.IR.SymPrim.Data.Prim.GeneralFuncSubst
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Caches
+import {-# SOURCE #-} Grisette.IR.SymPrim.Data.Prim.InternedTerm.GeneralFuncSubst
 import {-# SOURCE #-} Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 import {-# SOURCE #-} Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
 import Grisette.IR.SymPrim.Data.Prim.ModelValue

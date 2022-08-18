@@ -8,7 +8,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Grisette.IR.SymPrim.Data.Prim.BV
+module Grisette.IR.SymPrim.Data.Prim.PartialEval.BV
   ( pevalBVConcatTerm,
     pevalBVSelectTerm,
     pevalBVExtendTerm,
@@ -21,7 +21,7 @@ import GHC.TypeNats
 import Grisette.Core.Data.Class.BitVector
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
-import Grisette.IR.SymPrim.Data.Prim.Unfold
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Unfold
 
 -- select
 pevalBVSelectTerm ::

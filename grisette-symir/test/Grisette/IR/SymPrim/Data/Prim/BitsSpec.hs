@@ -1,13 +1,12 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
 
 module Grisette.IR.SymPrim.Data.Prim.BitsSpec where
 
 import Grisette.IR.SymPrim.Data.BV
-import Grisette.IR.SymPrim.Data.Prim.Bits
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Bits
 import Test.Hspec
 
 spec :: Spec

@@ -1,9 +1,10 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+
 module Grisette.IR.SymPrim.Data.Prim.IntegerSpec where
 
-import Grisette.IR.SymPrim.Data.Prim.Integer
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Integer
 import Test.Hspec
 import Test.Hspec.QuickCheck
 

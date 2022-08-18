@@ -1,10 +1,11 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
+
 module Grisette.IR.SymPrim.Data.TabularFuncSpec where
 
-import Test.Hspec
-import Grisette.IR.SymPrim.Data.TabularFunc
 import Grisette.Core.Data.Class.Function
+import Grisette.IR.SymPrim.Data.TabularFunc
+import Test.Hspec
 
 spec :: Spec
 spec = do

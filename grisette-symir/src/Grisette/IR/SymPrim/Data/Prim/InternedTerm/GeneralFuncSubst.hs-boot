@@ -1,6 +1,6 @@
 {-# LANGUAGE RankNTypes #-}
 
-module Grisette.IR.SymPrim.Data.Prim.GeneralFuncSubst (generalFuncSubst) where
+module Grisette.IR.SymPrim.Data.Prim.InternedTerm.GeneralFuncSubst (generalFuncSubst) where
 
 import {-# SOURCE #-} Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 

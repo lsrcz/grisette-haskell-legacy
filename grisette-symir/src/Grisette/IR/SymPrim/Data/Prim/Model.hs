@@ -25,17 +25,17 @@ import Data.Hashable
 import Data.Proxy
 import GHC.Generics
 import Grisette.Core.Data.MemoUtils
-import Grisette.IR.SymPrim.Data.Prim.BV
-import Grisette.IR.SymPrim.Data.Prim.Bits
-import Grisette.IR.SymPrim.Data.Prim.Bool
-import Grisette.IR.SymPrim.Data.Prim.GeneralFunc
-import Grisette.IR.SymPrim.Data.Prim.Integer
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.SomeTerm
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.ModelValue
-import Grisette.IR.SymPrim.Data.Prim.Num
-import Grisette.IR.SymPrim.Data.Prim.TabularFunc
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.BV
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Bits
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Bool
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.GeneralFunc
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Integer
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Num
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.TabularFunc
 import Type.Reflection
 import Unsafe.Coerce
 

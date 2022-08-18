@@ -6,7 +6,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module Grisette.IR.SymPrim.Data.Prim.Bits
+module Grisette.IR.SymPrim.Data.Prim.PartialEval.Bits
   ( pattern BitsConcTerm,
     pevalAndBitsTerm,
     pevalOrBitsTerm,
@@ -21,7 +21,7 @@ import Data.Bits
 import Data.Typeable
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
-import Grisette.IR.SymPrim.Data.Prim.Unfold
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Unfold
 
 bitsConcTermView :: (Bits b, Typeable b) => Term a -> Maybe b
 bitsConcTermView (ConcTerm _ b) = cast b

@@ -7,7 +7,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module Grisette.IR.SymPrim.Data.Prim.Num
+module Grisette.IR.SymPrim.Data.Prim.PartialEval.Num
   ( pattern NumConcTerm,
     pattern NumOrdConcTerm,
     pevalAddNumTerm,
@@ -26,7 +26,7 @@ where
 import Data.Typeable
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
-import Grisette.IR.SymPrim.Data.Prim.Unfold
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Unfold
 import Grisette.IR.SymPrim.Data.Prim.Utils
 import Unsafe.Coerce
 

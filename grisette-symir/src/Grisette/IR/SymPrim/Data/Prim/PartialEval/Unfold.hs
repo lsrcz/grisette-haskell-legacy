@@ -2,7 +2,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 
-module Grisette.IR.SymPrim.Data.Prim.Unfold
+module Grisette.IR.SymPrim.Data.Prim.PartialEval.Unfold
   ( unaryUnfoldOnce,
     binaryUnfoldOnce,
   )
@@ -10,9 +10,9 @@ where
 
 import Control.Monad.Except
 import Data.Typeable
-import Grisette.IR.SymPrim.Data.Prim.Bool
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
-import Grisette.IR.SymPrim.Data.Prim.PartialEval
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Bool
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.PartialEval
 
 unaryPartialUnfoldOnce ::
   forall a b.

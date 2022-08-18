@@ -27,15 +27,15 @@ import Grisette.Core.Data.Class.ToCon
 import Grisette.Core.Data.Class.ToSym
 import Grisette.IR.SymPrim.Control.Monad.UnionM
 import Grisette.IR.SymPrim.Data.BV
-import Grisette.IR.SymPrim.Data.Prim.BV
-import Grisette.IR.SymPrim.Data.Prim.Bits
-import Grisette.IR.SymPrim.Data.Prim.Bool
-import Grisette.IR.SymPrim.Data.Prim.Integer
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import qualified Grisette.IR.SymPrim.Data.Prim.Model as Model
-import Grisette.IR.SymPrim.Data.Prim.Num
-import Grisette.IR.SymPrim.Data.Prim.TabularFunc
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.BV
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Bits
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Bool
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Integer
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Num
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.TabularFunc
 import Grisette.IR.SymPrim.Data.SymPrim
 import Grisette.IR.SymPrim.Data.TabularFunc
 import Test.Hspec

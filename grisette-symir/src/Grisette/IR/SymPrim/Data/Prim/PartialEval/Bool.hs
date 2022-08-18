@@ -9,7 +9,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 
-module Grisette.IR.SymPrim.Data.Prim.Bool
+module Grisette.IR.SymPrim.Data.Prim.PartialEval.Bool
   ( trueTerm,
     falseTerm,
     pattern BoolConcTerm,

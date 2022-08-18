@@ -3,17 +3,17 @@
 
 module Grisette.IR.SymPrim.Data.Prim.ModelSpec where
 
-import Type.Reflection
 import Data.HashMap.Strict as M
 import qualified Data.HashSet as S
 import Grisette.IR.SymPrim.Data.BV
-import Grisette.IR.SymPrim.Data.Prim.Bool
-import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
+import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.Model as Model
 import Grisette.IR.SymPrim.Data.Prim.ModelValue
-import Grisette.IR.SymPrim.Data.Prim.Num
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Bool
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Num
 import Test.Hspec
+import Type.Reflection
 
 spec :: Spec
 spec = do

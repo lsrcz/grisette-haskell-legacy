@@ -1,4 +1,4 @@
-module Grisette.IR.SymPrim.Data.Prim.Integer
+module Grisette.IR.SymPrim.Data.Prim.PartialEval.Integer
   ( pevalDivIntegerTerm,
     pevalModIntegerTerm,
   )
@@ -6,7 +6,7 @@ where
 
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
-import Grisette.IR.SymPrim.Data.Prim.Unfold
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Unfold
 
 -- div
 pevalDivIntegerTerm :: Term Integer -> Term Integer -> Term Integer

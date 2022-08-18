@@ -3,12 +3,12 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Grisette.IR.SymPrim.Data.Prim.GeneralFunc (pevalGeneralFuncApplyTerm) where
+module Grisette.IR.SymPrim.Data.Prim.PartialEval.GeneralFunc (pevalGeneralFuncApplyTerm) where
 
 import Grisette.Core.Data.Class.Function
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
-import Grisette.IR.SymPrim.Data.Prim.PartialEval
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.PartialEval
 
 pevalGeneralFuncApplyTerm :: (SupportedPrim a, SupportedPrim b) => Term (a --> b) -> Term a -> Term b
 pevalGeneralFuncApplyTerm = totalize2 doPevalGeneralFuncApplyTerm generalFuncApplyTerm
