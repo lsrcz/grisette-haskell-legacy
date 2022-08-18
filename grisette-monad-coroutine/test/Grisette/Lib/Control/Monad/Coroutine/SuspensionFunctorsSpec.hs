@@ -1,4 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+
 module Grisette.Lib.Control.Monad.Coroutine.SuspensionFunctorsSpec where
 
 import Test.Hspec

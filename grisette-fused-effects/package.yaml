@@ -44,5 +44,4 @@ tests:
     dependencies:
       - grisette-core
       - grisette-fused-effects
-      - hspec-junit-formatter
 

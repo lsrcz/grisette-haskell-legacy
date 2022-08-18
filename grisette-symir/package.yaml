@@ -50,4 +50,3 @@ tests:
     main: Main.hs
     dependencies:
       - grisette-symir
-      - hspec-junit-formatter

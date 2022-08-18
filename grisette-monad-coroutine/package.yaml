@@ -44,5 +44,4 @@ tests:
     dependencies:
       - grisette-core
       - grisette-monad-coroutine
-      - hspec-junit-formatter
 

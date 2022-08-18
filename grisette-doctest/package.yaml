@@ -31,6 +31,7 @@ dependencies:
 - sbv >= 8.11
 - th-compat >= 0.1.2
 - hspec == 2.*
+- hspec-junit-formatter >= 1.0.0.0
 
 flags: {
   fast: {

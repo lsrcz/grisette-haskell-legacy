@@ -44,6 +44,5 @@ library:
 #     dependencies:
 #       - grisette-core
 #       - grisette-megaparsec
-#       - hspec-junit-formatter
 # 
 # 
