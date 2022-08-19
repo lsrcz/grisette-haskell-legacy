@@ -18,7 +18,7 @@
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2018-01-01.yaml
 resolver:
-  url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/19/6.yaml
+  url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/19/19.yaml
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -59,7 +59,6 @@ packages:
 # extra-deps: []
 extra-deps:
   - typerep-map-0.5.0.0@sha256:34f1ba9b268a6d52e26ae460011a5571e8099b50a3f4a7c8db25dd8efe3be8ee,4667
-  - Unique-0.4.7.9@sha256:a7e154cf6d05169777a1e54aadab24fb3a6eae3ee167e5e77d7ba96d182436c7,2064
   - doctest-0.20.0@sha256:fd56edde124a92d42c42c74333f0ae74532329d15a6c63d578cbb51f4e7cfd34,7121
 
 # Override default flag values for local packages and extra-deps

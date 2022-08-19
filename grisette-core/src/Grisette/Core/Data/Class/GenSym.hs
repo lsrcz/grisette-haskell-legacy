@@ -192,7 +192,6 @@ instance (Applicative m, Monad m) => Applicative (GenSymFreshT m) where
     return (f a, idx'')
 
 instance (Monad m) => Monad (GenSymFreshT m) where
-  return a = GenSymFreshT $ \_ idx -> return (a, idx)
   (GenSymFreshT s) >>= f = GenSymFreshT $ \ident idx -> do
     (a, idx') <- s ident idx
     runGenSymFreshT' (f a) ident idx'

@@ -74,13 +74,13 @@ library
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
-    , base >4.14 && <5
+      base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -144,13 +144,13 @@ executable bonsai-letpoly-nomemo-unordered
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
-    , base >4.14 && <5
+      base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -215,13 +215,13 @@ executable bonsai-letpoly-unordered
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
-    , base >4.14 && <5
+      base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -286,13 +286,13 @@ executable bonsai-nanoscala-nomemo-unordered
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
-    , base >4.14 && <5
+      base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -357,13 +357,13 @@ executable bonsai-nanoscala-unordered
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
-    , base >4.14 && <5
+      base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -428,13 +428,13 @@ executable bonsai-stlc-nomemo-unordered
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
-    , base >4.14 && <5
+      base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -499,13 +499,13 @@ executable bonsai-stlc-unordered
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
-    , base >4.14 && <5
+      base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -577,13 +577,13 @@ executable cosette-optimized-merge-unordered
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
-    , base >4.14 && <5
+      base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -655,13 +655,13 @@ executable cosette-unordered
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
-    , base >4.14 && <5
+      base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -732,13 +732,13 @@ executable ferrite-unordered
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
-    , base >4.14 && <5
+      base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -802,13 +802,13 @@ executable fluidics-unordered
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
-    , base >4.14 && <5
+      base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -877,13 +877,13 @@ executable ifcl-unordered
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
-    , base >4.14 && <5
+      base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -947,13 +947,13 @@ executable regex-delim-nomemo-unordered
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
-    , base >4.14 && <5
+      base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -1017,13 +1017,13 @@ executable regex-delim-unordered
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
-    , base >4.14 && <5
+      base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -1087,13 +1087,13 @@ executable regex-nomemo-unordered
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
-    , base >4.14 && <5
+      base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0
@@ -1157,13 +1157,13 @@ executable regex-unordered
       TypeOperators
   ghc-options: -Wall -ferror-spans
   build-depends:
-      Unique >=0.4.7
-    , base >4.14 && <5
+      base >4.14 && <5
     , bytestring >=0.10.12
     , clock >=0.7.1
     , containers >=0.2.11
     , deepseq >=1.4.4
     , either >=5
+    , extra >=1.7.7
     , formatting >=6.3.1
     , generic-deriving >=1.14.1
     , grisette ==0.1.0.0

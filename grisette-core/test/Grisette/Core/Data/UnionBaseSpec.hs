@@ -2,6 +2,8 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+
 module Grisette.Core.Data.UnionBaseSpec where
 
 import GHC.Generics

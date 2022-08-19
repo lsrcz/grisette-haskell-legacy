@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase #-}
@@ -112,8 +113,10 @@ instance (SymBoolOp bool, Mergeable bool e) => Mergeable1 bool (CBMCEither e) wh
         )
         ( \case
             False -> SimpleStrategy $
-              \cond (CBMCEither (Left l)) (CBMCEither (Left r)) -> CBMCEither $ Left $ m cond l r
-            True -> wrapStrategy ms (CBMCEither . Right) (\(CBMCEither (Right x)) -> x)
+              \cond (CBMCEither le) (CBMCEither re) -> case (le, re) of
+                (Left l, Left r) -> CBMCEither $ Left $ m cond l r
+                _ -> error "impossible"
+            True -> wrapStrategy ms (CBMCEither . Right) (\case (CBMCEither (Right x)) -> x; _ -> error "impossible")
         )
     NoStrategy ->
       SortedStrategy
@@ -123,7 +126,7 @@ instance (SymBoolOp bool, Mergeable bool e) => Mergeable1 bool (CBMCEither e) wh
         )
         ( \case
             False -> NoStrategy
-            True -> wrapStrategy ms (CBMCEither . Right) (\(CBMCEither (Right x)) -> x)
+            True -> wrapStrategy ms (CBMCEither . Right) (\case (CBMCEither (Right x)) -> x; _ -> error "impossible")
         )
     SortedStrategy idx sub ->
       SortedStrategy
@@ -132,8 +135,8 @@ instance (SymBoolOp bool, Mergeable bool e) => Mergeable1 bool (CBMCEither e) wh
             Right _ -> R
         )
         ( \case
-            L i -> wrapStrategy (sub i) (CBMCEither . Left) (\(CBMCEither (Left x)) -> x)
-            R -> wrapStrategy ms (CBMCEither . Right) (\(CBMCEither (Right x)) -> x)
+            L i -> wrapStrategy (sub i) (CBMCEither . Left) (\case (CBMCEither (Left x)) -> x; _ -> error "impossible")
+            R -> wrapStrategy ms (CBMCEither . Right) (\case (CBMCEither (Right x)) -> x; _ -> error "impossible")
         )
 
 cbmcEither :: forall a c b. (a -> c) -> (b -> c) -> CBMCEither a b -> c

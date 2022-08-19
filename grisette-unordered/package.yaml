@@ -31,7 +31,6 @@ dependencies:
 - loch-th >= 0.2.2
 - th-compat >= 0.1.2
 - hspec == 2.*
-- Unique >= 0.4.7
 - clock >= 0.7.1
 - formatting >= 6.3.1
 - text >= 1.2.4.1
@@ -43,6 +42,7 @@ dependencies:
 - th-lift-instances >= 0.1.16
 - megaparsec >= 8
 - parser-combinators >= 1
+- extra >= 1.7.7
 
 default-extensions:
 - BangPatterns

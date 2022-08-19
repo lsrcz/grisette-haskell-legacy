@@ -2,7 +2,7 @@
 
 module Instructions where
 
-import Data.List.Unique
+import Data.List.Extra
 import GHC.Generics
 import Grisette
 import Value
@@ -83,6 +83,9 @@ instance GenSymSimple InstructionSpec Instruction where
   genSymSimpleFresh Call1BIns = Call1B <$> genSymSimpleFresh ()
   genSymSimpleFresh Return1BIns = Return1B <$> genSymSimpleFresh ()
   genSymSimpleFresh Return1ABIns = Return1AB <$> genSymSimpleFresh ()
+
+sortUniq :: Ord a => [a] -> [a]
+sortUniq = sort . nubOrd
 
 instance GenSym SymBool [InstructionSpec] Instruction where
   genSymFresh spec =

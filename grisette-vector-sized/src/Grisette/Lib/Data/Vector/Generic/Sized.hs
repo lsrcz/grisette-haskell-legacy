@@ -1,5 +1,5 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE PolyKinds #-}
@@ -11,6 +11,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 module Grisette.Lib.Data.Vector.Generic.Sized where
 
@@ -21,7 +22,11 @@ import qualified Data.Vector.Generic.Sized as VSized
 import GHC.TypeNats
 import Grisette.Core
 import Unsafe.Coerce
+
+#if MIN_VERSION_base(4,16,0)
+#else
 import GHC.Natural
+#endif
 
 newtype NatRepr (n::Nat) = NatRepr Natural
 

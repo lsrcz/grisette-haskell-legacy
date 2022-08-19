@@ -43,5 +43,4 @@ tests:
     main: Main.hs
     dependencies:
       - grisette-backend-direct
-      - hspec-junit-formatter
       - QuickCheck

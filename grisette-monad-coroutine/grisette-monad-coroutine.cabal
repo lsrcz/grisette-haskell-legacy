@@ -65,7 +65,6 @@ test-suite spec
     , grisette-core
     , grisette-monad-coroutine
     , hspec ==2.*
-    , hspec-junit-formatter
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
     , transformers >=0.5.6.2

@@ -46,6 +46,5 @@ tests:
       - grisette-core
       - grisette-vector-sized
       - unordered-containers >= 0.2.11
-      - hspec-junit-formatter
 
 

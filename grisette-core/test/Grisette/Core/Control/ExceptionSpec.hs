@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+
 module Grisette.Core.Control.ExceptionSpec where
 
 import qualified Data.HashSet as S

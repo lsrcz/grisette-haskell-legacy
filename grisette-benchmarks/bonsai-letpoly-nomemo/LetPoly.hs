@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 module LetPoly (letPolySyntax, execLetPoly, LetPolyTree, ConcLetPolyTree) where
 

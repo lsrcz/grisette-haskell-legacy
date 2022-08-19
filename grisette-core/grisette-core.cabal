@@ -66,6 +66,7 @@ library
       Grisette.TestUtils.Evaluate
       Grisette.TestUtils.ExtractSymbolics
       Grisette.TestUtils.Mergeable
+      Grisette.TestUtils.Runner
       Grisette.TestUtils.SBool
       Grisette.TestUtils.SEq
       Grisette.TestUtils.SOrd
@@ -84,6 +85,7 @@ library
     , hashable >=1.3
     , hashtables >=1.2.3.4
     , hspec ==2.*
+    , hspec-junit-formatter >=1.0.0.0
     , loch-th >=0.2.2
     , mtl >=2.2.2
     , template-haskell >=2.16
@@ -133,7 +135,7 @@ test-suite spec
     , hashable >=1.3
     , hashtables >=1.2.3.4
     , hspec ==2.*
-    , hspec-junit-formatter
+    , hspec-junit-formatter >=1.0.0.0
     , loch-th >=0.2.2
     , mtl >=2.2.2
     , template-haskell >=2.16
