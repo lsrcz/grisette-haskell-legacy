@@ -6,20 +6,20 @@
 module Grisette.Core.Data.Class.EvaluateSpec where
 
 import Control.Monad.Except
+import Control.Monad.Identity
+import Control.Monad.Trans.Maybe
 import qualified Control.Monad.Writer.Lazy as WriterLazy
 import qualified Control.Monad.Writer.Strict as WriterStrict
-import Control.Monad.Trans.Maybe
 import qualified Data.ByteString as B
 import Data.Functor.Sum
 import qualified Data.HashMap.Strict as M
-import Grisette.Core.Data.Class.Evaluate
-import Test.Hspec
-import Test.Hspec.QuickCheck
-import Grisette.TestUtils.SBool
-import Grisette.TestUtils.Evaluate
-import Control.Monad.Identity
 import Data.Int
 import Data.Word
+import Grisette.Core.Data.Class.Evaluate
+import Grisette.TestUtils.Evaluate
+import Grisette.TestUtils.SBool
+import Test.Hspec
+import Test.Hspec.QuickCheck
 
 spec :: Spec
 spec = do
@@ -271,7 +271,8 @@ spec = do
         evaluate False model (InR (Just $ SSBool "b") :: Sum Maybe Maybe SBool) `shouldBe` InR (Just $ SSBool "b")
         evaluate True model (InR (Just $ SSBool "b") :: Sum Maybe Maybe SBool) `shouldBe` InR (Just $ CBool False)
     describe "Evaluate for WriterT" $ do
-      prop "Evaluate for concrete Lazy WriterT should work"
+      prop
+        "Evaluate for concrete Lazy WriterT should work"
         (\(x :: Either Integer (Integer, Integer)) -> concreteEvaluateOkProp (WriterLazy.WriterT x))
       it "Evaluate for general Lazy WriteT should work" $ do
         let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
@@ -286,9 +287,10 @@ spec = do
 
         evaluate False model (WriterLazy.WriterT $ Right (SSBool "a", SSBool "b") :: WriterLazy.WriterT SBool (Either SBool) SBool)
           `shouldBe` WriterLazy.WriterT (Right (CBool True, SSBool "b"))
-        evaluate True model (WriterLazy.WriterT $ Right (SSBool "a", SSBool "b")  :: WriterLazy.WriterT SBool (Either SBool) SBool)
+        evaluate True model (WriterLazy.WriterT $ Right (SSBool "a", SSBool "b") :: WriterLazy.WriterT SBool (Either SBool) SBool)
           `shouldBe` WriterLazy.WriterT (Right (CBool True, CBool False))
-      prop "Evaluate for concrete Strict WriterT should work"
+      prop
+        "Evaluate for concrete Strict WriterT should work"
         (\(x :: Either Integer (Integer, Integer)) -> concreteEvaluateOkProp (WriterStrict.WriterT x))
       it "Evaluate for general Strict WriteT should work" $ do
         let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool
@@ -303,7 +305,7 @@ spec = do
 
         evaluate False model (WriterStrict.WriterT $ Right (SSBool "a", SSBool "b") :: WriterStrict.WriterT SBool (Either SBool) SBool)
           `shouldBe` WriterStrict.WriterT (Right (CBool True, SSBool "b"))
-        evaluate True model (WriterStrict.WriterT $ Right (SSBool "a", SSBool "b")  :: WriterStrict.WriterT SBool (Either SBool) SBool)
+        evaluate True model (WriterStrict.WriterT $ Right (SSBool "a", SSBool "b") :: WriterStrict.WriterT SBool (Either SBool) SBool)
           `shouldBe` WriterStrict.WriterT (Right (CBool True, CBool False))
     describe "Evaluate for Identity" $ do
       prop "Evaluate for concrete Identity should work" $
@@ -315,7 +317,8 @@ spec = do
         evaluate False model (Identity $ SSBool "b") `shouldBe` Identity (SSBool "b")
         evaluate True model (Identity $ SSBool "b") `shouldBe` Identity (CBool False)
     describe "Evaluate for IdentityT" $ do
-      prop "Evaluate for concrete IdentityT should work"
+      prop
+        "Evaluate for concrete IdentityT should work"
         (\(x :: Either Integer Integer) -> concreteEvaluateOkProp $ IdentityT x)
       it "Evaluate for general IdentityT should work" $ do
         let model = M.fromList [(SSymbol "a", True)] :: M.HashMap Symbol Bool

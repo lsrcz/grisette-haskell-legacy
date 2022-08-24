@@ -1,17 +1,19 @@
 module Grisette.Lib.Control.Carrier.Throw.EitherSpec where
 
-import Control.Carrier.Throw.Either
 import Control.Carrier.Lift
-import Grisette.Lib.Control.Carrier.Throw.Either
-import Grisette.Lib.Control.Carrier.Lift ()
+import Control.Carrier.Throw.Either
 import Grisette.Core
+import Grisette.Lib.Control.Carrier.Lift ()
+import Grisette.Lib.Control.Carrier.Throw.Common
+import Grisette.Lib.Control.Carrier.Throw.Either
+import Grisette.Lib.Control.Monad
 import Grisette.TestUtils.SBool
 import Test.Hspec
-import Grisette.Lib.Control.Carrier.Throw.Common
-import Grisette.Lib.Control.Monad
 
 type M a = ThrowC Int (LiftC (UnionMBase SBool)) a
+
 type R = M Int
+
 type RB = M SBool
 
 spec :: Spec

@@ -1,11 +1,11 @@
 module Bonsai.MatchSyntaxNoMemo where
 
 import Bonsai.BonsaiTree
+import Bonsai.SyntaxSpec
 import qualified Data.ByteString as B
 import qualified Data.HashSet as S
 import GHC.TypeLits
 import Grisette
-import Bonsai.SyntaxSpec
 
 matchSyntax ::
   (KnownNat n, 1 <= n) =>

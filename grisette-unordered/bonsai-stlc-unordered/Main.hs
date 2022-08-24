@@ -7,9 +7,9 @@ import Bonsai.BonsaiTree
 import Control.DeepSeq
 import Control.Monad.Except
 import Grisette
+import Grisette.Unordered.UUnionM
 import STLC
 import Utils.Timing
-import Grisette.Unordered.UUnionM
 
 f8 :: UUnionM STLCTree
 f8 = genSym (8 :: Int) "h"

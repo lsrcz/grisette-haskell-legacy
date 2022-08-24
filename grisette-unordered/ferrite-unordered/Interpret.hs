@@ -3,8 +3,8 @@ module Interpret where
 import Control.Monad.State.Strict
 import Fs
 import Grisette
-import Lang
 import Grisette.Unordered.UUnionM
+import Lang
 
 interpretOps :: (FileSystem conc fs, Mergeable SymBool fs) => [UUnionM InodeOp] -> fs -> UUnionM fs
 interpretOps [] fs = mrgReturn fs
@@ -15,16 +15,18 @@ interpretOps (x : xs) fs = do
 
 interpretConc :: forall conc fs. (FileSystem conc fs, Mergeable SymBool fs) => [SysCall] -> conc -> Maybe conc
 interpretConc s fs =
-  (case interpretOps (crack fs s) (toSym fs) :: UUnionM fs of
-    SingleU x -> Just x
-    _ -> Nothing) >>= toCon
+  ( case interpretOps (crack fs s) (toSym fs) :: UUnionM fs of
+      SingleU x -> Just x
+      _ -> Nothing
+  )
+    >>= toCon
 
 zoomy :: GenSymFresh a -> StateT [SymBool] GenSymFresh a
 zoomy f = StateT $ \s -> (,s) <$> f {-do
-  (inner, l) <- get
-  (a, newInner) <- lift $ runStateT s inner
-  put (newInner, l)
-  return a-}
+                                    (inner, l) <- get
+                                    (a, newInner) <- lift $ runStateT s inner
+                                    put (newInner, l)
+                                    return a-}
 
 nonDet :: StateT [SymBool] GenSymFresh SymBool
 nonDet = do
@@ -38,7 +40,7 @@ interpretOrderOps ::
   [UUnionM InodeOp] ->
   [UUnionM Integer] ->
   UUnionM fs ->
-  StateT [SymBool] GenSymFresh  (UUnionM fs)
+  StateT [SymBool] GenSymFresh (UUnionM fs)
 interpretOrderOps _ [] fs = return fs
 interpretOrderOps l (x : xs) fs = do
   let fs1 = do
@@ -71,7 +73,9 @@ reorderOk fs iops = go
        in go1 x ls
             &&~ ( (x >~ l)
                     `implies` ( ((\xv lv -> conc (reorder fs xv lv)) #~ opx #~ opl)
-                                  &&~ (\xv lv -> conc (reorder fs xv lv)) #~ opl #~ opx
+                                  &&~ (\xv lv -> conc (reorder fs xv lv))
+                                  #~ opl
+                                  #~ opx
                               )
                 )
 

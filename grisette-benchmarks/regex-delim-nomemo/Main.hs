@@ -11,8 +11,8 @@ import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C
 import Data.Proxy
 import Grisette
-import Utils.Timing
 import Regex
+import Utils.Timing
 
 data Thread m a = Done | Resume a (m (Thread m a))
 
@@ -69,9 +69,12 @@ emptyPatt str idx =
 
 plusPatt :: PattCoroReset -> SymBool -> PattCoroReset
 plusPatt patt greedy str idx =
-  delimitCoro . pipe (patt str idx) $ lift >=> \i -> mrgIf greedy
-    (when (i /= idx) (callCoro (plusPatt patt (conc True) str i)) >> yield (mrgReturn i))
-    (yield (mrgReturn i) >> when (i /= idx) (callCoro (plusPatt patt (conc False) str i)))
+  delimitCoro . pipe (patt str idx) $
+    lift >=> \i ->
+      mrgIf
+        greedy
+        (when (i /= idx) (callCoro (plusPatt patt (conc True) str i)) >> yield (mrgReturn i))
+        (yield (mrgReturn i) >> when (i /= idx) (callCoro (plusPatt patt (conc False) str i)))
 
 data RegexDelimNomemo
 
@@ -84,9 +87,11 @@ instance RegexSynth RegexDelimNomemo where
     PlusPatt subp greedy -> plusPatt (toCoroU tag subp) greedy
     EmptyPatt -> emptyPatt
   {-# INLINE toCoro #-}
-  
-  matchFirstWithStart _ patt str startPos = MaybeT $ mrgEvalContT (patt str startPos) >>=
-    foldThread id (mrgReturn Nothing) (const . mrgFmap Just)
+
+  matchFirstWithStart _ patt str startPos =
+    MaybeT $
+      mrgEvalContT (patt str startPos)
+        >>= foldThread id (mrgReturn Nothing) (const . mrgFmap Just)
   {-# INLINE matchFirstWithStart #-}
 
 main :: IO ()

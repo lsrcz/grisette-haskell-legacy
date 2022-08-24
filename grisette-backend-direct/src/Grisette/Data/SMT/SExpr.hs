@@ -48,7 +48,7 @@ space = " "
 {-# INLINE list #-}
 list :: [SExpr] -> SExpr
 list [] = List [] "()"
-list l@(hd:sub) =
+list l@(hd : sub) =
   List l $
     "("
       <> foldl' (\acc v -> acc <> space <> sexprByteStringBuilder v) (sexprByteStringBuilder hd) sub

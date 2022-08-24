@@ -4,8 +4,8 @@ import Control.Monad.Except
 import Grisette.Core.Control.Monad.UnionMBase
 import Grisette.Core.Data.Class.SimpleMergeable
 import Grisette.Lib.Data.Traversable
-import Test.Hspec
 import Grisette.TestUtils.SBool
+import Test.Hspec
 
 spec :: Spec
 spec = do

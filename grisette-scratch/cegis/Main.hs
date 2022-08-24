@@ -1,12 +1,13 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+
 module Main where
 
-import Grisette
 import Control.Monad.Except
 import Data.Bits
+import Grisette
 
 data X = X
 
@@ -21,9 +22,9 @@ yTranslation :: Either VerificationConditions Integer -> UnionM (Either Verifica
 yTranslation (Left AssumptionViolation) = return $ Left AssumptionViolation
 yTranslation (Left AssertionViolation) = return $ Left AssertionViolation
 yTranslation (Right i) = runExceptT $ do
-    symFailIfNot AssumptionViolation (conc $ i >= 2)
-    symFailIfNot AssertionViolation (conc $ odd i) :: ExceptT VerificationConditions UnionM ()
-  
+  symFailIfNot AssumptionViolation (conc $ i >= 2)
+  symFailIfNot AssertionViolation (conc $ odd i) :: ExceptT VerificationConditions UnionM ()
+
 input :: SymWordN 4
 input = ssymb "x"
 
@@ -37,8 +38,11 @@ oddi :: SymWordN 4 -> Sym Bool
 oddi = nots . eveni
 
 m :: UnionM Integer
-m = mrgIf (ssymb "a") (mrgIf (ssymb "b") (mrgReturn 5) (mrgReturn 6))
-                        (mrgIf (ssymb "c") (mrgReturn 3) (mrgReturn 4))
+m =
+  mrgIf
+    (ssymb "a")
+    (mrgIf (ssymb "b") (mrgReturn 5) (mrgReturn 6))
+    (mrgIf (ssymb "c") (mrgReturn 3) (mrgReturn 4))
 
 m1 :: ExceptT VerificationConditions UnionM ()
 m1 = do
@@ -48,10 +52,10 @@ m1 = do
 
 v :: ExceptT VerificationConditions UnionM ()
 v = do
-  symFailIfNot AssumptionViolation (eveni input) 
-  symFailIfNot AssertionViolation (oddi $ input + input2) 
+  symFailIfNot AssumptionViolation (eveni input)
+  symFailIfNot AssertionViolation (oddi $ input + input2)
 
-main :: IO()
+main :: IO ()
 main = do
   Right (cexs, mo) <- cegisFallable (UnboundedReasoning z3) input xTranslation $ runExceptT v
   print (cexs, evaluate False mo input2)

@@ -3,8 +3,8 @@ module Evaluator where
 import Data.Bifunctor
 import qualified Data.ByteString as B
 import Grisette
-import Table
 import Grisette.Unordered.UUnionM
+import Table
 
 xproduct :: Table -> Table -> Name -> Table
 xproduct a@(Table _ _ ca) b@(Table _ _ cb) nm =
@@ -111,7 +111,7 @@ addingNullRows content1 content12 schemaSize1 schemaSize2 = do
   mrgReturn $ unionAllRaw content12 ((\(ele, mult) -> (ele ++ nullCols, mult)) <$> er)
   where
     nullCols :: [UUnionM (Maybe SymInteger)]
-    nullCols = [mrgReturn Nothing | _ <- [0 .. schemaSize2 -1]]
+    nullCols = [mrgReturn Nothing | _ <- [0 .. schemaSize2 - 1]]
     diffKeys :: UUnionM RawTable
     diffKeys = do
       d1 <- dedup content1
@@ -123,8 +123,8 @@ addingNullRows content1 content12 schemaSize1 schemaSize2 = do
     extraRows = do
       dk <- diffKeys
       mrgReturn $
-        projection [0 .. schemaSize1 -1] $
-          equiJoin content1 dk [(x, x) | x <- [0 .. schemaSize1 -1]] schemaSize1
+        projection [0 .. schemaSize1 - 1] $
+          equiJoin content1 dk [(x, x) | x <- [0 .. schemaSize1 - 1]] schemaSize1
 
 projection :: [Int] -> RawTable -> RawTable
 projection indices = fmap (first projSingle)

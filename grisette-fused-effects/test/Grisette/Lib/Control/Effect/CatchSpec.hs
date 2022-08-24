@@ -16,4 +16,3 @@ spec = do
     it "mrgCatchError should work" $ do
       let e1 = throwError (1 :: Int) `mrgCatchError` (\x -> return $ x + 1) :: ErrorC Int (LiftC (UnionMBase SBool)) Int
       runM (runError e1) `shouldBe` mrgReturn (Right 2)
-

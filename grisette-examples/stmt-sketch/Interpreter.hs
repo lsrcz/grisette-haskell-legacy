@@ -1,4 +1,5 @@
 {-# LANGUAGE TemplateHaskell #-}
+
 module Interpreter where
 
 import Control.Monad.Except

@@ -9,10 +9,12 @@ import Control.Monad.Except
 import Grisette
 -- import Bonsai.Match
 -- import Bonsai.Pattern
-import STLC
+
 -- import Bonsai.SyntaxSpec
-import Utils.Timing
+
 import Grisette.Unordered.UUnionM
+import STLC
+import Utils.Timing
 
 f8 :: UUnionM STLCTree
 f8 = genSym (8 :: Int) "h"

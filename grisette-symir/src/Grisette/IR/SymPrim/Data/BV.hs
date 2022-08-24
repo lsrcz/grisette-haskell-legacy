@@ -112,7 +112,7 @@ instance (KnownNat n, 1 <= n) => Num (WordN n) where
   fromInteger !x
     | x == 0 = WordN 0
     | x > 0 = WordN (x .&. unWordN (maxWordN (Proxy :: Proxy n)))
-    | otherwise = - fromInteger (- x)
+    | otherwise = -fromInteger (-x)
 
 minusOneIntN :: forall proxy n. KnownNat n => proxy n -> IntN n
 minusOneIntN _ = IntN (1 `shiftL` fromIntegral (natVal (Proxy :: Proxy n)) - 1)

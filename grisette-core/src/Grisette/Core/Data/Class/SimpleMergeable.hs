@@ -1,14 +1,14 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Grisette.Core.Data.Class.SimpleMergeable
   ( SimpleMergeable (..),
@@ -30,21 +30,21 @@ where
 
 import Control.Monad.Except
 import Control.Monad.Identity
+import qualified Control.Monad.RWS.Lazy as RWSLazy
+import qualified Control.Monad.RWS.Strict as RWSStrict
 import Control.Monad.Reader
 import qualified Control.Monad.State.Lazy as StateLazy
 import qualified Control.Monad.State.Strict as StateStrict
+import Control.Monad.Trans.Cont
 import Control.Monad.Trans.Maybe
 import qualified Control.Monad.Writer.Lazy as WriterLazy
 import qualified Control.Monad.Writer.Strict as WriterStrict
+import Data.Kind
 import GHC.Generics
 import Generics.Deriving
 import Grisette.Core.Data.Class.Bool
-import Grisette.Core.Data.Class.Mergeable
-import Control.Monad.Trans.Cont
-import qualified Control.Monad.RWS.Lazy as RWSLazy
-import qualified Control.Monad.RWS.Strict as RWSStrict
-import Data.Kind
 import Grisette.Core.Data.Class.Function
+import Grisette.Core.Data.Class.Mergeable
 
 -- $setup
 -- >>> import Grisette.Core
@@ -137,7 +137,7 @@ class (SimpleMergeable1 bool u, Mergeable1 bool u, SymBoolOp bool) => UnionLike 
   mrgIfWithStrategy :: MergingStrategy bool a -> bool -> u a -> u a -> u a
   mrgIfWithStrategy s cond l r = mergeWithStrategy s $ unionIf cond l r
   {-# INLINE mrgIfWithStrategy #-}
-  
+
   mrgSingleWithStrategy :: MergingStrategy bool a -> a -> u a
   mrgSingleWithStrategy s = mergeWithStrategy s . single
   {-# INLINE mrgSingleWithStrategy #-}
@@ -613,7 +613,6 @@ pattern IfU c t f <-
 -- UAny (If a (Single b) (Single c))
 -- >>> getSingle $ (unionIf (ssymb "a") (return $ ssymb "b") (return $ ssymb "c") :: UnionM SymBool)
 -- (ite a b c)
-
 getSingle :: forall bool u a. (SimpleMergeable bool a, UnionLike bool u, UnionPrjOp bool u) => u a -> a
 getSingle u = case merge u of
   SingleU x -> x

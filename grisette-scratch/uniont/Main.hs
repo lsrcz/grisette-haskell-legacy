@@ -1,21 +1,22 @@
-{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RankNTypes #-}
+
 module Main where
-import Grisette
-import Grisette.Internal.Core
 
 import Control.Monad
-import Data.Functor.Classes
 import Control.Monad.IO.Class
 import Control.Monad.Trans
 -- import Data.IORef
 import Data.Functor
+import Data.Functor.Classes
+import Grisette
+import Grisette.Internal.Core
 
 data UnionBaseM bool m a
   = UTSingle a
   | UTIf bool (m (UnionBaseM bool m a, UnionBaseM bool m a))
 
-newtype UnionBaseMT bool m a = UnionBaseMT { runUnionBaseMT :: m (UnionBaseM bool m a)}
+newtype UnionBaseMT bool m a = UnionBaseMT {runUnionBaseMT :: m (UnionBaseM bool m a)}
 
 runUnionBaseMTAll :: (SymBoolOp bool, Monad m) => UnionBaseMT bool m a -> m (UnionBase bool a)
 runUnionBaseMTAll (UnionBaseMT v) = do
@@ -28,7 +29,6 @@ runUnionBaseMTAll (UnionBaseMT v) = do
       l1 <- go l
       r1 <- go r
       return $ ifWithLeftMost False cond l1 r1
-
 
 ifMT :: (SymBoolOp bool, Monad m) => bool -> UnionBaseMT bool m a -> UnionBaseMT bool m a -> UnionBaseMT bool m a
 ifMT cond (UnionBaseMT l) (UnionBaseMT r) = UnionBaseMT $ do
@@ -43,20 +43,27 @@ bind x f = UnionBaseMT $ do
     UTSingle a -> runUnionBaseMT $ f a
     UTIf bool mas -> do
       (asl, asr) <- mas
-      return $ UTIf bool (do
-        l1 <- runUnionBaseMT $ bind (UnionBaseMT $ return asl) f
-        r1 <- runUnionBaseMT $ bind (UnionBaseMT $ return asr) f
-        return (l1, r1))
+      return $
+        UTIf
+          bool
+          ( do
+              l1 <- runUnionBaseMT $ bind (UnionBaseMT $ return asl) f
+              r1 <- runUnionBaseMT $ bind (UnionBaseMT $ return asr) f
+              return (l1, r1)
+          )
 
 instance (Functor m) => Functor (UnionBaseM bool m) where
   fmap f (UTSingle x) = UTSingle $ f x
   fmap f (UTIf cond mlr) = UTIf cond $ (\(a, b) -> (f <$> a, f <$> b)) <$> mlr
 
 instance (Functor m) => Functor (UnionBaseMT bool m) where
-  fmap f x = UnionBaseMT $ runUnionBaseMT x <&> (\case
-    UTSingle a -> UTSingle $ f a
-    UTIf cond mlr -> UTIf cond $ (\(a, b) -> (f <$> a, f <$> b)) <$> mlr
-    )
+  fmap f x =
+    UnionBaseMT $
+      runUnionBaseMT x
+        <&> ( \case
+                UTSingle a -> UTSingle $ f a
+                UTIf cond mlr -> UTIf cond $ (\(a, b) -> (f <$> a, f <$> b)) <$> mlr
+            )
 
 instance (SymBoolOp bool, Monad m) => Applicative (UnionBaseMT bool m) where
   pure x = UnionBaseMT $ pure $ UTSingle x
@@ -81,41 +88,20 @@ instance (Show1 m, Show a, Show bool) => Show (UnionBaseM bool m a) where
 instance (Show1 m, Show a, Show bool) => Show (UnionBaseMT bool m a) where
   showsPrec i (UnionBaseMT x) = showsPrec1 i x
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-newtype UnionBaseT2 bool m a =
-  UnionBaseT2 { runUnionBaseT2 :: (m (Either a (bool, UnionBaseT2 bool m a, UnionBaseT2 bool m a))) }
+newtype UnionBaseT2 bool m a = UnionBaseT2 {runUnionBaseT2 :: (m (Either a (bool, UnionBaseT2 bool m a, UnionBaseT2 bool m a)))}
 
 instance (Show1 m, Show a, Show bool) => Show (UnionBaseT2 bool m a) where
   showsPrec i (UnionBaseT2 x) = showsPrec1 i x
 
 instance Functor m => Functor (UnionBaseT2 bool m) where
-  fmap f (UnionBaseT2 m) = UnionBaseT2 $ fmap (\case
-     Left v1 -> Left $ f v1
-     Right (cond, l, r) -> Right (cond, fmap f l, fmap f r)
-    ) m
+  fmap f (UnionBaseT2 m) =
+    UnionBaseT2 $
+      fmap
+        ( \case
+            Left v1 -> Left $ f v1
+            Right (cond, l, r) -> Right (cond, fmap f l, fmap f r)
+        )
+        m
 
 instance Applicative m => Applicative (UnionBaseT2 bool m) where
   pure x = UnionBaseT2 $ pure $ Left x
@@ -136,9 +122,8 @@ instance Monad m => Monad (UnionBaseT2 bool m) where
         l1 <- runUnionBaseT2 $ f1 >>= f
         l2 <- runUnionBaseT2 $ f2 >>= f
         return $ Right (cond, (UnionBaseT2 $ return l1), (UnionBaseT2 $ return l2))
-        
 
-newtype UnionBaseT bool m a = UnionBaseT { runUnionBaseT :: m (UnionBase bool a) }
+newtype UnionBaseT bool m a = UnionBaseT {runUnionBaseT :: m (UnionBase bool a)}
 
 instance (Show1 m, Show a, Show bool) => Show (UnionBaseT bool m a) where
   showsPrec i (UnionBaseT x) = showsPrec1 i x
@@ -185,10 +170,10 @@ instance (SymBoolOp bool, MonadIO m) => MonadIO (UnionBaseT bool m) where
     (Single (If SSBool a (If SSBool b (If SSBool c (Single 0) (Single 1)) (Single 1)) (If SSBool c (Single 0) (Single 1)))))
   (If SSBool c
     (If SSBool c
-      (Single (If SSBool a (If SSBool b (If SSBool c (Single 0) (Single 1)) (Single 0)) (Single 0))) 
+      (Single (If SSBool a (If SSBool b (If SSBool c (Single 0) (Single 1)) (Single 0)) (Single 0)))
       (Single (If SSBool a (If SSBool b (If SSBool c (Single 0) (Single 1)) (Single 0)) (Single 1))))
-    (If SSBool c 
-      (Single (If SSBool a (If SSBool b (If SSBool c (Single 0) (Single 1)) (Single 1)) (Single 0))) 
+    (If SSBool c
+      (Single (If SSBool a (If SSBool b (If SSBool c (Single 0) (Single 1)) (Single 1)) (Single 0)))
       (Single (If SSBool a (If SSBool b (If SSBool c (Single 0) (Single 1)) (Single 1)) (Single 1)))))-}
 -- >>> runUnionBaseT $ (v (SSBool "a") >=> (v (SSBool "b") >=> v (SSBool "c"))) 0
 {-If SSBool c
@@ -206,7 +191,6 @@ v :: SBool -> Int -> UnionBaseT SBool (UnionBase SBool) Int
 v s 0 = UnionBaseT $ Single $ ifWithLeftMost False s (return 0) (return 1)
 v s 1 = UnionBaseT $ ifWithLeftMost False s (return $ Single 0) (return $ Single 1)
 
-
 -- >>> runUnionBaseT2 $ ((v2 (SSBool "a") >=> v2 (SSBool "b") ) >=> v2 (SSBool "c")) 0
 -- If SSBool b (If SSBool c (Single (Right (SSBool a,Single (Right (SSBool b,Single (Right (SSBool c,Single (Left 0),Single (Left 1))),Single (Left 0))),Single (Right (SSBool c,Single (Left 0),Single (Left 1)))))) (Single (Right (SSBool a,Single (Right (SSBool b,Single (Right (SSBool c,Single (Left 0),Single (Left 1))),Single (Left 1))),Single (Right (SSBool c,Single (Left 0),Single (Left 1))))))) (If SSBool c (If SSBool c (Single (Right (SSBool a,Single (Right (SSBool b,Single (Right (SSBool c,Single (Left 0),Single (Left 1))),Single (Left 0))),Single (Left 0)))) (Single (Right (SSBool a,Single (Right (SSBool b,Single (Right (SSBool c,Single (Left 0),Single (Left 1))),Single (Left 0))),Single (Left 1))))) (If SSBool c (Single (Right (SSBool a,Single (Right (SSBool b,Single (Right (SSBool c,Single (Left 0),Single (Left 1))),Single (Left 1))),Single (Left 0)))) (Single (Right (SSBool a,Single (Right (SSBool b,Single (Right (SSBool c,Single (Left 0),Single (Left 1))),Single (Left 1))),Single (Left 1))))))
 -- >>> runUnionBaseT2 $ (v2 (SSBool "a") >=> (v2 (SSBool "b") >=> v2 (SSBool "c"))) 0
@@ -215,14 +199,12 @@ v2 :: SBool -> Int -> UnionBaseT2 SBool (UnionBase SBool) Int
 v2 s 0 = UnionBaseT2 $ Single $ Right (s, (return 0), (return 1))
 v2 s 1 = UnionBaseT2 $ ifWithLeftMost False s (return $ Left 0) (return $ Left 1)
 
-
 t :: UnionBaseT SBool IO Int
 t = ifT (SSBool "a") (do
   liftIO $ print "a"
   return 1) (do
   liftIO $ print "b"
   return 1)
-
 
 test1 :: UnionBaseT SBool IO Int
 test1 = do
@@ -244,12 +226,10 @@ test2M = do
   r <- liftIO (newIORef 0)
   ifMT (SSBool "a") (next r) (next r) >> (ifMT (SSBool "b") (next r) (next r) >> ifMT (SSBool "c") (next r) (next r))
 
-
 next :: MonadIO m => IORef Int -> m Int
 next r = liftIO $ do  x <- readIORef r
                       writeIORef r (x+1)
                       return x
-
 
 -- >>> runUnionBaseMTAll $ ((v3 (SSBool "a") >=> v3 (SSBool "b") ) >=> v3 (SSBool "c")) 0
 -- If SSBool b (If SSBool c (Single (If SSBool a (If SSBool b (If SSBool c (Single 0) (Single 1)) (Single 0)) (If SSBool c (Single 0) (Single 1)))) (Single (If SSBool a (If SSBool b (If SSBool c (Single 0) (Single 1)) (Single 1)) (If SSBool c (Single 0) (Single 1))))) (If SSBool c (If SSBool c (Single (If SSBool a (If SSBool b (If SSBool c (Single 0) (Single 1)) (Single 0)) (Single 0))) (Single (If SSBool a (If SSBool b (If SSBool c (Single 0) (Single 1)) (Single 1)) (Single 0)))) (If SSBool c (Single (If SSBool a (If SSBool b (If SSBool c (Single 0) (Single 1)) (Single 0)) (Single 1))) (Single (If SSBool a (If SSBool b (If SSBool c (Single 0) (Single 1)) (Single 1)) (Single 1)))))

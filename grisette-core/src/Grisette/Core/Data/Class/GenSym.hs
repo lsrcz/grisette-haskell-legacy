@@ -11,7 +11,6 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TupleSections #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
@@ -680,9 +679,9 @@ instance
       gl v1
         | v1 <= 0 = return []
         | otherwise = do
-          l <- genSymSimpleFresh ()
-          r <- gl (v1 - 1)
-          return $ l : r
+            l <- genSymSimpleFresh ()
+            r <- gl (v1 - 1)
+            return $ l : r
 
 -- | Specification for list generation.
 --
@@ -714,9 +713,9 @@ instance
       gl currLen
         | currLen <= 0 = return []
         | otherwise = do
-          l <- genSymSimpleFresh subSpec
-          r <- gl (currLen - 1)
-          return $ l : r
+            l <- genSymSimpleFresh subSpec
+            r <- gl (currLen - 1)
+            return $ l : r
 
 instance
   (SymBoolOp bool, GenSymSimple () bool, GenSymSimple a a, Mergeable bool a) =>
@@ -760,9 +759,9 @@ instance
       gl currLen
         | currLen <= 0 = return []
         | otherwise = do
-          l <- genSymSimpleFresh subSpec
-          r <- gl (currLen - 1)
-          return $ l : r
+            l <- genSymSimpleFresh subSpec
+            r <- gl (currLen - 1)
+            return $ l : r
 
 -- ()
 instance (SymBoolOp bool, GenSymSimple () bool) => GenSym bool () ()

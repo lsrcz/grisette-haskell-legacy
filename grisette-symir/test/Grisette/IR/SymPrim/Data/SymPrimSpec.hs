@@ -183,7 +183,8 @@ spec = do
         (conc i :: Sym Integer) <~ conc j `shouldBe` (conc (i < j) :: SymBool)
         (conc i :: Sym Integer) >=~ conc j `shouldBe` (conc (i >= j) :: SymBool)
         (conc i :: Sym Integer) >~ conc j `shouldBe` (conc (i > j) :: SymBool)
-        (conc i :: Sym Integer) `symCompare` conc j
+        (conc i :: Sym Integer)
+          `symCompare` conc j
           `shouldBe` (i `symCompare` j :: UnionM Ordering)
       it "SOrd should work on symbolic" $ do
         let a :: Sym Integer = ssymb "a"
@@ -239,13 +240,15 @@ spec = do
         (conc iu :: Sym (WordN 4)) <~ conc ju `shouldBe` (conc (normalizeu i < normalizeu j) :: SymBool)
         (conc iu :: Sym (WordN 4)) >=~ conc ju `shouldBe` (conc (normalizeu i >= normalizeu j) :: SymBool)
         (conc iu :: Sym (WordN 4)) >~ conc ju `shouldBe` (conc (normalizeu i > normalizeu j) :: SymBool)
-        (conc iu :: Sym (WordN 4)) `symCompare` conc ju
+        (conc iu :: Sym (WordN 4))
+          `symCompare` conc ju
           `shouldBe` (normalizeu i `symCompare` normalizeu j :: UnionM Ordering)
         (conc is :: Sym (IntN 4)) <=~ conc js `shouldBe` (conc (normalizes i <= normalizes j) :: SymBool)
         (conc is :: Sym (IntN 4)) <~ conc js `shouldBe` (conc (normalizes i < normalizes j) :: SymBool)
         (conc is :: Sym (IntN 4)) >=~ conc js `shouldBe` (conc (normalizes i >= normalizes j) :: SymBool)
         (conc is :: Sym (IntN 4)) >~ conc js `shouldBe` (conc (normalizes i > normalizes j) :: SymBool)
-        (conc is :: Sym (IntN 4)) `symCompare` conc js
+        (conc is :: Sym (IntN 4))
+          `symCompare` conc js
           `shouldBe` (normalizes i `symCompare` normalizes j :: UnionM Ordering)
       it "SOrd should work on symbolic" $ do
         au <=~ bu `shouldBe` Sym (pevalLeNumTerm aut but)
@@ -347,7 +350,8 @@ spec = do
         toCon (conc 255 :: SymWordN 8) `shouldBe` Just (255 :: Word8)
   describe "TabularFunc" $ do
     it "apply" $ do
-      (ssymb "a" :: Integer =~> Integer) # ssymb "b"
+      (ssymb "a" :: Integer =~> Integer)
+        # ssymb "b"
         `shouldBe` Sym (pevalTabularFuncApplyTerm (ssymbTerm "a" :: Term (Integer =-> Integer)) (ssymbTerm "b"))
   describe "Symbolic size" $ do
     it "symSize" $ do
@@ -355,7 +359,7 @@ spec = do
       symSize (conc 1 :: Sym Integer) `shouldBe` 1
       symSize (conc 1 + ssymb "a" :: Sym Integer) `shouldBe` 3
       symSize (ssymb "a" + ssymb "a" :: Sym Integer) `shouldBe` 2
-      symSize (- (ssymb "a") :: Sym Integer) `shouldBe` 2
+      symSize (-(ssymb "a") :: Sym Integer) `shouldBe` 2
       symSize (ites (ssymb "a" :: Sym Bool) (ssymb "b") (ssymb "c") :: Sym Integer) `shouldBe` 4
     it "symsSize" $ do
       symsSize [ssymb "a" :: Sym Integer, ssymb "a" + ssymb "a"] `shouldBe` 2

@@ -79,12 +79,12 @@ pevalUMinusNumTerm :: (Num a, SupportedPrim a) => Term a -> Term a
 pevalUMinusNumTerm = unaryUnfoldOnce doPevalUMinusNumTerm uminusNumTerm
 
 doPevalUMinusNumTerm :: forall a. (Num a, SupportedPrim a) => Term a -> Maybe (Term a)
-doPevalUMinusNumTerm (ConcTerm _ a) = Just $ concTerm $ - a
+doPevalUMinusNumTerm (ConcTerm _ a) = Just $ concTerm $ -a
 doPevalUMinusNumTerm (UMinusNumTerm _ v) = Just v
-doPevalUMinusNumTerm (AddNumTerm _ (NumConcTerm l) r) = Just $ pevalMinusNumTerm (concTerm $ - l) r
+doPevalUMinusNumTerm (AddNumTerm _ (NumConcTerm l) r) = Just $ pevalMinusNumTerm (concTerm $ -l) r
 doPevalUMinusNumTerm (AddNumTerm _ (UMinusNumTerm _ l) r) = Just $ pevalAddNumTerm l (pevalUMinusNumTerm r)
 doPevalUMinusNumTerm (AddNumTerm _ l (UMinusNumTerm _ r)) = Just $ pevalAddNumTerm (pevalUMinusNumTerm l) r
-doPevalUMinusNumTerm (TimesNumTerm _ (NumConcTerm l) r) = Just $ pevalTimesNumTerm (concTerm $ - l) r
+doPevalUMinusNumTerm (TimesNumTerm _ (NumConcTerm l) r) = Just $ pevalTimesNumTerm (concTerm $ -l) r
 doPevalUMinusNumTerm (TimesNumTerm _ (UMinusNumTerm _ _ :: Term a) (_ :: Term a)) = error "Should not happen"
 doPevalUMinusNumTerm (TimesNumTerm _ (_ :: Term a) (UMinusNumTerm _ (_ :: Term a))) = error "Should not happen"
 doPevalUMinusNumTerm (AddNumTerm _ (_ :: Term a) ConcTerm {}) = error "Should not happen"
@@ -106,7 +106,7 @@ doPevalTimesNumTerm l@(ConcTerm _ a) b = case (a, b) of
   (-1, k) -> Just $ pevalUMinusNumTerm k
   (l1, TimesNumTerm _ (NumConcTerm j) k) -> Just $ pevalTimesNumTerm (concTerm $ l1 * j) k
   (l1, AddNumTerm _ (NumConcTerm j) k) -> Just $ pevalAddNumTerm (concTerm $ l1 * j) (pevalTimesNumTerm (concTerm l1) k)
-  (l1, UMinusNumTerm _ j) -> Just (pevalTimesNumTerm (concTerm $ - l1) j)
+  (l1, UMinusNumTerm _ j) -> Just (pevalTimesNumTerm (concTerm $ -l1) j)
   (_, TimesNumTerm _ (_ :: Term a) ConcTerm {}) -> error "Should not happen"
   (_, AddNumTerm _ (_ :: Term a) ConcTerm {}) -> error "Should not happen"
   _ -> doPevalTimesNumTermNoConc l b
@@ -159,11 +159,11 @@ doPevalLtNumTerm (AddNumTerm _ (ConcTerm _ (Dyn (i :: Integer))) j) (ConcTerm _ 
 doPevalLtNumTerm (AddNumTerm _ (ConcTerm _ (Dyn (j :: Integer))) k) l =
   Just $ pevalLtNumTerm (concTerm j) (pevalMinusNumTerm (unsafeCoerce l) (unsafeCoerce k))
 doPevalLtNumTerm j (AddNumTerm _ (ConcTerm _ (Dyn (k :: Integer))) l) =
-  Just $ pevalLtNumTerm (concTerm $ - k) (pevalMinusNumTerm (unsafeCoerce l) (unsafeCoerce j))
+  Just $ pevalLtNumTerm (concTerm $ -k) (pevalMinusNumTerm (unsafeCoerce l) (unsafeCoerce j))
 doPevalLtNumTerm l (ConcTerm _ r) =
   case eqT @a @Integer of
     Just Refl ->
-      Just $ pevalLtNumTerm (concTerm $ - r) (pevalUMinusNumTerm l)
+      Just $ pevalLtNumTerm (concTerm $ -r) (pevalUMinusNumTerm l)
     _ -> Nothing
 doPevalLtNumTerm _ _ = Nothing
 
@@ -180,11 +180,11 @@ doPevalLeNumTerm (AddNumTerm _ (ConcTerm _ (Dyn (i :: Integer))) j) (ConcTerm _ 
 doPevalLeNumTerm (AddNumTerm _ (ConcTerm _ (Dyn (j :: Integer))) k) l =
   Just $ pevalLeNumTerm (concTerm j) (pevalMinusNumTerm (unsafeCoerce l) (unsafeCoerce k))
 doPevalLeNumTerm j (AddNumTerm _ (ConcTerm _ (Dyn (k :: Integer))) l) =
-  Just $ pevalLeNumTerm (concTerm $ - k) (pevalMinusNumTerm (unsafeCoerce l) (unsafeCoerce j))
+  Just $ pevalLeNumTerm (concTerm $ -k) (pevalMinusNumTerm (unsafeCoerce l) (unsafeCoerce j))
 doPevalLeNumTerm l (ConcTerm _ r) =
   case eqT @a @Integer of
     Just Refl ->
-      Just $ pevalLeNumTerm (concTerm $ - r) (pevalUMinusNumTerm l)
+      Just $ pevalLeNumTerm (concTerm $ -r) (pevalUMinusNumTerm l)
     _ -> Nothing
 doPevalLeNumTerm _ _ = Nothing
 

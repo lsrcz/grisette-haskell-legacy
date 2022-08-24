@@ -1,8 +1,8 @@
 module Fs where
 
 import Grisette
-import Lang
 import Grisette.Unordered.UUnionM
+import Lang
 
 class (ToSym conc symb, ToCon symb conc, Evaluate Model symb) => FileSystem conc symb | conc -> symb, symb -> conc where
   crack :: conc -> [SysCall] -> [UUnionM InodeOp]

@@ -1,18 +1,19 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Regex where
-import GHC.Generics
-import Grisette
-import Data.Hashable
-import qualified Data.ByteString as B
-import qualified Data.ByteString.Char8 as C
+
+import Control.DeepSeq
 import Control.Monad
 import Control.Monad.Trans.Maybe
-import Control.DeepSeq
-import Utils.Timing
+import qualified Data.ByteString as B
+import qualified Data.ByteString.Char8 as C
+import Data.Hashable
 import Data.Maybe
-import Text.Regex.PCRE
+import GHC.Generics
+import Grisette
 import Grisette.Unordered.UUnionM
+import Text.Regex.PCRE
+import Utils.Timing
 
 -- The regex patterns. In the paper it is call Regex.
 -- PrimPatt 'a'        --> a
@@ -83,8 +84,11 @@ class RegexSynth tag where
   toCoro :: proxy tag -> Patt -> PattCoroType tag
   matchFirstWithStart :: proxy tag -> PattCoroType tag -> B.ByteString -> Int -> MaybeT UUnionM Int
 
-toCoroU :: (RegexSynth tag, SimpleMergeable (Sym Bool) (PattCoroType tag)) =>
-  proxy tag -> UUnionM Patt -> PattCoroType tag
+toCoroU ::
+  (RegexSynth tag, SimpleMergeable (Sym Bool) (PattCoroType tag)) =>
+  proxy tag ->
+  UUnionM Patt ->
+  PattCoroType tag
 toCoroU tag u = getSingle $ mrgFmap (toCoro tag) u
 {-# INLINE toCoroU #-}
 
@@ -114,8 +118,14 @@ synthesisRegexCompiled tag config patt coro reg strs =
           Right mo -> return $ Just $ evaluateToCon mo patt
 {-# INLINE synthesisRegexCompiled #-}
 
-synthesisRegex :: (RegexSynth tag, SimpleMergeable (Sym Bool) (PattCoroType tag)) =>
-  proxy tag -> GrisetteSMTConfig b -> UUnionM Patt -> B.ByteString -> [B.ByteString] -> IO (Maybe ConcPatt)
+synthesisRegex ::
+  (RegexSynth tag, SimpleMergeable (Sym Bool) (PattCoroType tag)) =>
+  proxy tag ->
+  GrisetteSMTConfig b ->
+  UUnionM Patt ->
+  B.ByteString ->
+  [B.ByteString] ->
+  IO (Maybe ConcPatt)
 synthesisRegex tag config patt = synthesisRegexCompiled tag config patt (toCoroU tag patt)
 {-# INLINE synthesisRegex #-}
 

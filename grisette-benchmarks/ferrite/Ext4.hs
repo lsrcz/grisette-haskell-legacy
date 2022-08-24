@@ -76,7 +76,7 @@ data Ext4FsCrackState = Ext4FsCrackState
     lengths :: M.HashMap Fd Integer,
     blockLengths :: M.HashMap Fd Integer
   }
-  deriving (Show, Eq) --, Generic, Mergeable SymBool)
+  deriving (Show, Eq) -- , Generic, Mergeable SymBool)
 
 -- $(makeUnionMWrapper "u" ''Ext4FsCrackState)
 

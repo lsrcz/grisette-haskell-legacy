@@ -9,9 +9,9 @@ module Grisette.Core.Data.Class.Error
 where
 
 import Control.Monad.Except
+import Grisette.Core.Control.Monad.Union
 import Grisette.Core.Data.Class.Bool
 import Grisette.Core.Data.Class.Mergeable
-import Grisette.Core.Control.Monad.Union
 import Grisette.Core.Data.Class.SimpleMergeable
 
 -- | This class indicates error type @to@ can always represent the error type @from@.

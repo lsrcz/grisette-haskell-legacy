@@ -13,11 +13,11 @@ module Grisette.Lib.Data.Foldable
 where
 
 import Control.Monad
-import {-# SOURCE #-} Grisette.Lib.Control.Monad
 import Grisette.Core.Control.Monad.Union
 import Grisette.Core.Data.Class.Bool
 import Grisette.Core.Data.Class.Mergeable
 import Grisette.Core.Data.Class.SimpleMergeable
+import {-# SOURCE #-} Grisette.Lib.Control.Monad
 
 -- | 'foldlM' with 'Mergeable' knowledge propagation.
 mrgFoldlM :: (MonadUnion bool m, Mergeable bool b, Foldable t) => (b -> a -> m b) -> b -> t a -> m b

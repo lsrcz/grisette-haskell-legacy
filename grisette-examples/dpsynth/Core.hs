@@ -35,9 +35,9 @@ import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet as S
 import Data.Hashable
 import Data.List hiding (inits)
+import Data.Maybe
 import GHC.Generics
 import Grisette
-import Data.Maybe
 
 data ConProgram val = ConProgram
   { cinits :: [val],
@@ -53,7 +53,7 @@ instance Show val => Show (ConProgram val) where
       [ "def f("
           ++ intercalate
             ", "
-            ((\x -> let nm = chr $ ord 'a' + x in nm : " = [" ++ [nm] ++ "1, ..., " ++ [nm] ++ "n]") <$> [0 .. a -1])
+            ((\x -> let nm = chr $ ord 'a' + x in nm : " = [" ++ [nm] ++ "1, ..., " ++ [nm] ++ "n]") <$> [0 .. a - 1])
           ++ "):"
       ]
         ++ fmap (\(n, _) -> "  p" ++ show n ++ " = array()") (zip [1 :: Int ..] i)
@@ -135,22 +135,25 @@ data AST val
   deriving (Show, Generic, Eq, Hashable)
 
 instance Mergeable SymBool val => Mergeable SymBool (AST val) where
-  mergingStrategy = SortedStrategy (\case
-    Arg {} -> 0 :: Int
-    Const {} -> 1
-    Unary {} -> 2
-    Binary {} -> 3
-    NoMrg {} -> 4
-    ) (\case
-      0 -> SimpleStrategy $ \cond (Arg l) (Arg r) -> Arg $ mrgIf cond l r
-      1 -> SimpleStrategy $ \cond (Const l) (Const r) -> Const $ mrgIf cond l r
-      2 -> SimpleStrategy $ \cond (Unary lf l) (Unary rf r) ->
-        Unary (mrgIf cond lf rf) (mrgIf cond l r)
-      3 -> SimpleStrategy $ \cond (Binary lf ll lr) (Binary rf rl rr) ->
-        Binary (mrgIf cond lf rf) (mrgIf cond ll rl) (mrgIf cond lr rr)
-      4 -> NoStrategy
-      _ -> undefined
-    )
+  mergingStrategy =
+    SortedStrategy
+      ( \case
+          Arg {} -> 0 :: Int
+          Const {} -> 1
+          Unary {} -> 2
+          Binary {} -> 3
+          NoMrg {} -> 4
+      )
+      ( \case
+          0 -> SimpleStrategy $ \cond (Arg l) (Arg r) -> Arg $ mrgIf cond l r
+          1 -> SimpleStrategy $ \cond (Const l) (Const r) -> Const $ mrgIf cond l r
+          2 -> SimpleStrategy $ \cond (Unary lf l) (Unary rf r) ->
+            Unary (mrgIf cond lf rf) (mrgIf cond l r)
+          3 -> SimpleStrategy $ \cond (Binary lf ll lr) (Binary rf rl rr) ->
+            Binary (mrgIf cond lf rf) (mrgIf cond ll rl) (mrgIf cond lr rr)
+          4 -> NoStrategy
+          _ -> undefined
+      )
 
 deriving via
   (Default (AST val))
@@ -200,20 +203,20 @@ instance Mergeable SymBool sval => GenSym SymBool (CombASTSpec sval) (AST sval) 
       uGen u
         | u <= 0 = argGen
         | otherwise = do
-          uf <- choose currUnaries
-          l <- uGen (u - 1)
-          return $ uUnary uf l
+            uf <- choose currUnaries
+            l <- uGen (u - 1)
+            return $ uUnary uf l
       sp n = [(n - x, x) | x <- [0 .. n `div` 2]]
       go :: Int -> Int -> m (UnionM (AST sval))
       go u b
         | b <= 0 = uGen u
         | b == 1 = do
-          bf <- choose currBinaries
-          l <- uGen u
-          r <- uGen u
-          return $ uBinary bf l r
-        {-  
-        | b == 3 = do
+            bf <- choose currBinaries
+            l <- uGen u
+            r <- uGen u
+            return $ uBinary bf l r
+        {-
+        \| b == 3 = do
           ll1 <- uGen u
           ll2l <- uGen u
           bfll2 <- choose currBinaries
@@ -245,8 +248,8 @@ instance Mergeable SymBool sval => GenSym SymBool (CombASTSpec sval) (AST sval) 
         return $ uBinary bft l r
         -}
         | otherwise = do
-          x <- traverse (uncurry $ golr u) $ sp (b - 1)
-          chooseU x
+            x <- traverse (uncurry $ golr u) $ sp (b - 1)
+            chooseU x
       golr u b1 b2 = do
         bf <- choose currBinaries
         l <- go u b1
@@ -279,9 +282,9 @@ instance (ToSym cval sval, Mergeable SymBool sval) => GenSymSimple (CombProgramS
       initGen :: m (UnionM sval)
       initGen = choose $ toSym <$> initsSpec spec
       updateGen :: m (UnionM (AST sval))
-      updateGen = genSymFresh (CombASTSpec (updatesSpec spec) [0..slots spec + inputNumSpec spec - 1])
+      updateGen = genSymFresh (CombASTSpec (updatesSpec spec) [0 .. slots spec + inputNumSpec spec - 1])
       terminateGen :: m (UnionM (AST sval))
-      terminateGen = genSymFresh (CombASTSpec (terminateSpec spec) [0..slots spec - 1])
+      terminateGen = genSymFresh (CombASTSpec (terminateSpec spec) [0 .. slots spec - 1])
       initsGen :: m [UnionM sval]
       initsGen = traverse (const initGen) [1 .. slots spec]
       updatesGen :: m [UnionM (AST sval)]
@@ -293,9 +296,10 @@ data ExtProgramSpec cval sval = ExtProgramSpec
     extsOpt :: B.ByteString,
     extsSlots :: Int,
     extsInputNum :: Int
-    }
+  }
 
 instance (ToSym cval sval, Mergeable SymBool sval) => GenSym SymBool (ExtProgramSpec cval sval) (Program sval)
+
 instance (ToSym cval sval, Mergeable SymBool sval) => GenSymSimple (ExtProgramSpec cval sval) (Program sval) where
   genSymSimpleFresh ::
     forall m.
@@ -306,7 +310,7 @@ instance (ToSym cval sval, Mergeable SymBool sval) => GenSymSimple (ExtProgramSp
   genSymSimpleFresh spec = do
     i <- initsGen
     o <- optsGen
-    t <- terGen [0..extsSlots spec - 1]
+    t <- terGen [0 .. extsSlots spec - 1]
     return $ Program i o t (extsInputNum spec)
     where
       initGen :: m (UnionM sval)
@@ -316,35 +320,34 @@ instance (ToSym cval sval, Mergeable SymBool sval) => GenSymSimple (ExtProgramSp
       extGen :: Int -> m (UnionM (AST sval))
       extGen i = genSymFresh (CombASTSpec (extsSpec spec) [0, i])
       extsGen :: m [UnionM (AST sval)]
-      extsGen = traverse extGen [1..extsSlots spec]
+      extsGen = traverse extGen [1 .. extsSlots spec]
 
       allSelects :: [a] -> [[a]]
       allSelects [] = [[]]
-      allSelects (x:xs) = concat [[x:y, y] | y <- allSelects xs]
+      allSelects (x : xs) = concat [[x : y, y] | y <- allSelects xs]
       buildOpt :: [AST sval] -> AST sval
       buildOpt [] = undefined
       buildOpt [a] = a
-      buildOpt (x:xs) = Binary (mrgReturn $ extsOpt spec) (mrgReturn x) $ mrgReturn (buildOpt xs)
+      buildOpt (x : xs) = Binary (mrgReturn $ extsOpt spec) (mrgReturn x) $ mrgReturn (buildOpt xs)
       optGen :: m (UnionM (AST sval))
       optGen = do
         exts <- extsGen
         let m = filter (not . null) $ allSelects $ NoMrg <$> exts
         let j = buildOpt <$> m
         choose j
-        {-
-        ev <- traverse (\x -> chooseU [x, uConst $ toSym $ extsOptDefaultVal spec]) exts
-        case ev of
-          [] -> undefined
-          umb : umbs -> return $ foldl (uBinary (mrgReturn $ extsOpt spec)) umb umbs
-          -}
+      {-
+      ev <- traverse (\x -> chooseU [x, uConst $ toSym $ extsOptDefaultVal spec]) exts
+      case ev of
+        [] -> undefined
+        umb : umbs -> return $ foldl (uBinary (mrgReturn $ extsOpt spec)) umb umbs
+        -}
       optsGen :: m [UnionM (AST sval)]
       optsGen = traverse (const optGen) [1 .. extsSlots spec]
 
       terGen :: [Int] -> m (UnionM (AST sval))
       terGen [i] = return $ uArg $ mrgReturn i
-      terGen (x:xs) = uBinary (mrgReturn $ extsOpt spec) (uArg $ mrgReturn x) <$> terGen xs
+      terGen (x : xs) = uBinary (mrgReturn $ extsOpt spec) (uArg $ mrgReturn x) <$> terGen xs
       terGen _ = undefined
-
 
 interpretIntAST ::
   (Mergeable SymBool val, Eq val, Hashable val) =>
@@ -404,10 +407,13 @@ synth config u b cexs inputs inputSpace spec sketch = do
   m <- cegisFallable' config inputs return $ runExceptT $ do
     symAssume $ inputSpace inputs
     -- symAssume $ wellFormedProgram sketch
-    mrgTraverse_ (\x -> do
-      let corr = spec x
-      res <- interpretSketch u b sketch x
-      symAssert $ corr ==~ res) (inputs : cexs)
+    mrgTraverse_
+      ( \x -> do
+          let corr = spec x
+          res <- interpretSketch u b sketch x
+          symAssert $ corr ==~ res
+      )
+      (inputs : cexs)
   case m of
     Left _ -> return Nothing
     Right (r, mo) -> return $ Just (r, evaluateToCon mo sketch)
@@ -441,7 +447,10 @@ synth1 ::
     SEq SymBool val,
     ToSym cval val,
     ToCon val cval,
-    Evaluate Model val, Show val, Eq val, Hashable val
+    Evaluate Model val,
+    Show val,
+    Eq val,
+    Hashable val
   ) =>
   GrisetteSMTConfig n ->
   UnaryFuncMap val ->

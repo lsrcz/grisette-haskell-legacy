@@ -35,7 +35,7 @@ intN8eqint8 (IntN v) i
   | v < 0 = expectationFailure "Bad IntN"
   | v <= 127 = v `shouldBe` fromIntegral i
   | v == 128 = i `shouldBe` -128
-  | otherwise = 256 - v `shouldBe` fromIntegral (- i)
+  | otherwise = 256 - v `shouldBe` fromIntegral (-i)
 
 intUnaryConform :: (IntN 8 -> IntN 8) -> (Int8 -> Int8) -> Int8 -> Expectation
 intUnaryConform f g x = intN8eqint8 (f (fromIntegral x)) (g x)

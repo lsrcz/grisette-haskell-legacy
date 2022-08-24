@@ -1,9 +1,9 @@
-{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 module Grisette.Core.Data.Class.MergeableSpec where
 
@@ -11,6 +11,7 @@ import Control.Monad.Cont
 import Control.Monad.Except
 import Control.Monad.Identity
 import qualified Control.Monad.RWS.Lazy as RWSTLazy
+import qualified Control.Monad.RWS.Strict as RWSTStrict
 import Control.Monad.Reader
 import qualified Control.Monad.State.Lazy as StateLazy
 import qualified Control.Monad.State.Strict as StateStrict
@@ -29,7 +30,6 @@ import Grisette.TestUtils.Mergeable
 import Grisette.TestUtils.SBool
 import Test.Hspec
 import Test.Hspec.QuickCheck
-import qualified Control.Monad.RWS.Strict as RWSTStrict
 
 spec :: Spec
 spec = do

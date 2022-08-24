@@ -25,5 +25,3 @@ mrgCensor ::
   m a ->
   m a
 mrgCensor f = merge . censor f
-
-

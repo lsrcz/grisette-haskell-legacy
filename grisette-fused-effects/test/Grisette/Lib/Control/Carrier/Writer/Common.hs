@@ -25,7 +25,7 @@ wm ::
   a ->
   Sum Int ->
   a ->
-  m a 
+  m a
 wm cond s1 x1 s2 x2 = ms cond (w s1 x1) (w s2 x2)
   where
     SimpleStrategy ms = mergingStrategy :: MergingStrategy bool (m a)
@@ -86,4 +86,3 @@ wu' ::
   a ->
   m a
 wu' cond s1 x1 s2 x2 = unionIf cond (w s1 x1) (w s2 x2)
-

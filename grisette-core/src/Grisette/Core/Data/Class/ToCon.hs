@@ -13,17 +13,17 @@ module Grisette.Core.Data.Class.ToCon
 where
 
 import Control.Monad.Except
+import Control.Monad.Identity
+import Control.Monad.Trans.Maybe
 import qualified Control.Monad.Writer.Lazy as WriterLazy
 import qualified Control.Monad.Writer.Strict as WriterStrict
-import Control.Monad.Trans.Maybe
 import qualified Data.ByteString as B
 import Data.Functor.Sum
+import Data.Int
+import Data.Word
 import GHC.Generics
 import Generics.Deriving
 import Generics.Deriving.Instances ()
-import Control.Monad.Identity
-import Data.Int
-import Data.Word
 
 -- $setup
 -- >>> import Grisette.Core
@@ -78,20 +78,20 @@ instance (ToCon' a1 a2, ToCon' b1 b2) => ToCon' (a1 :*: b1) (a2 :*: b2) where
 instance ToCon type type where \
   toCon = Just
 
-CONCRETE_TOCON(Bool)
-CONCRETE_TOCON(Integer)
-CONCRETE_TOCON(Char)
-CONCRETE_TOCON(Int)
-CONCRETE_TOCON(Int8)
-CONCRETE_TOCON(Int16)
-CONCRETE_TOCON(Int32)
-CONCRETE_TOCON(Int64)
-CONCRETE_TOCON(Word)
-CONCRETE_TOCON(Word8)
-CONCRETE_TOCON(Word16)
-CONCRETE_TOCON(Word32)
-CONCRETE_TOCON(Word64)
-CONCRETE_TOCON(B.ByteString)
+CONCRETE_TOCON (Bool)
+CONCRETE_TOCON (Integer)
+CONCRETE_TOCON (Char)
+CONCRETE_TOCON (Int)
+CONCRETE_TOCON (Int8)
+CONCRETE_TOCON (Int16)
+CONCRETE_TOCON (Int32)
+CONCRETE_TOCON (Int64)
+CONCRETE_TOCON (Word)
+CONCRETE_TOCON (Word8)
+CONCRETE_TOCON (Word16)
+CONCRETE_TOCON (Word32)
+CONCRETE_TOCON (Word64)
+CONCRETE_TOCON (B.ByteString)
 
 -- Unit
 instance ToCon () () where

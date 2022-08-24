@@ -1,10 +1,10 @@
 module Indistinguishable where
 
 import Grisette
+import Grisette.Unordered.UUnionM
 import Instructions
 import Machine
 import Value
-import Grisette.Unordered.UUnionM
 
 indistinguishablePCValue :: PCValue -> PCValue -> SymBool
 indistinguishablePCValue (PCValue lint llabel) (PCValue rint rlabel) =
@@ -17,7 +17,8 @@ indistinguishableMemValue _ _ = conc False
 
 indistinguishableInstruction :: Instruction -> Instruction -> SymBool
 indistinguishableInstruction l r =
-  l ==~ r
+  l
+    ==~ r
     ||~ ( case (l, r) of
             (Push v1, Push v2) -> indistinguishablePCValue v1 v2
             _ -> conc False

@@ -33,14 +33,30 @@ genCond p = evalState (genCond' p) (0 :: Int)
 
 genProg :: Int -> Int -> Gen a -> Gen (ProgNoCond a)
 genProg f1 f2 gen = sized $ \n ->
-  if n == 0 then TerminalNoCond <$> gen else frequency [(f1, do
-    l <- resize (n - 1) $ genProg f1 f2 gen
-    r <- resize (n - 1) $ genProg f1 f2 gen
-    return $ IfNoCond l r), (f2, TerminalNoCond <$> gen)]
+  if n == 0
+    then TerminalNoCond <$> gen
+    else
+      frequency
+        [ ( f1,
+            do
+              l <- resize (n - 1) $ genProg f1 f2 gen
+              r <- resize (n - 1) $ genProg f1 f2 gen
+              return $ IfNoCond l r
+          ),
+          (f2, TerminalNoCond <$> gen)
+        ]
 
 genProgBad :: Int -> Int -> Gen (ProgNoCond Int)
 genProgBad f1 f2 = sized $ \n ->
-  if n == 0 then TerminalNoCond <$> choose (n-10,n) else frequency [(f1, do
-    l <- resize (n - 1) $ genProgBad f1 f2
-    r <- resize (n - 1) $ genProgBad f1 f2
-    return $ IfNoCond l r), (f2, TerminalNoCond <$> choose (n-10,n))]
+  if n == 0
+    then TerminalNoCond <$> choose (n - 10, n)
+    else
+      frequency
+        [ ( f1,
+            do
+              l <- resize (n - 1) $ genProgBad f1 f2
+              r <- resize (n - 1) $ genProgBad f1 f2
+              return $ IfNoCond l r
+          ),
+          (f2, TerminalNoCond <$> choose (n - 10, n))
+        ]

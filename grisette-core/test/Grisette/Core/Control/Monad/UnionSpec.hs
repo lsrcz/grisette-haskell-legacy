@@ -5,16 +5,16 @@ module Grisette.Core.Control.Monad.UnionSpec where
 import Control.Monad.Except
 import Control.Monad.Identity
 import Control.Monad.Reader
+import Control.Monad.Trans.Maybe
 import qualified Control.Monad.Trans.State.Lazy as StateLazy
 import qualified Control.Monad.Trans.State.Strict as StateStrict
-import Control.Monad.Trans.Maybe
 import qualified Control.Monad.Trans.Writer.Lazy as WriterLazy
 import qualified Control.Monad.Trans.Writer.Strict as WriterStrict
 import Grisette.Core.Control.Monad.UnionMBase
 import Grisette.Core.Data.Class.SimpleMergeable
 import Grisette.Lib.Control.Monad
-import Test.Hspec
 import Grisette.TestUtils.SBool
+import Test.Hspec
 
 spec :: Spec
 spec = do
@@ -58,7 +58,7 @@ spec = do
           ( mrgSingle $ Right $ ITE (SSBool "a") (SSBool "b") (SSBool "c") ::
               UnionMBase SBool (Either SBool SBool)
           )
-  
+
   describe "MonadUnion for StateT lazy" $ do
     it "merge should work" $ do
       let s :: StateLazy.StateT SBool (UnionMBase SBool) SBool =
@@ -202,5 +202,6 @@ spec = do
       runIdentityT s `shouldBe` mrgSingle (ITE (SSBool "a") (SSBool "b") (SSBool "c"))
   describe ">>=~" $ do
     it ">>=~ should work" $ do
-      unionIf (SSBool "a") (single $ -1) (single 1) >>=~ (\x -> return $ x * x)
+      unionIf (SSBool "a") (single $ -1) (single 1)
+        >>=~ (\x -> return $ x * x)
         `shouldBe` (mrgSingle 1 :: UnionMBase SBool Integer)

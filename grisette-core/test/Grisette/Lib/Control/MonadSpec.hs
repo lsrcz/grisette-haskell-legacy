@@ -1,13 +1,13 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+
 module Grisette.Lib.Control.MonadSpec where
 
-
-import Grisette.Lib.Control.Monad
+import Control.Monad.Trans.Maybe
 import Grisette.Core.Control.Monad.UnionMBase
 import Grisette.Core.Data.Class.SimpleMergeable
-import Test.Hspec
+import Grisette.Lib.Control.Monad
 import Grisette.TestUtils.SBool
-import Control.Monad.Trans.Maybe
+import Test.Hspec
 
 spec :: Spec
 spec = do

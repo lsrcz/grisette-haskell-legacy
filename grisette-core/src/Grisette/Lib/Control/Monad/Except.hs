@@ -5,10 +5,10 @@ module Grisette.Lib.Control.Monad.Except
 where
 
 import Control.Monad.Except
+import Grisette.Core.Control.Monad.Union
 import Grisette.Core.Data.Class.Bool
 import Grisette.Core.Data.Class.Mergeable
 import Grisette.Core.Data.Class.SimpleMergeable
-import Grisette.Core.Control.Monad.Union
 
 -- | 'throwError' with 'Mergeable' knowledge propagation.
 mrgThrowError :: (SymBoolOp bool, MonadError e m, MonadUnion bool m, Mergeable bool a) => e -> m a

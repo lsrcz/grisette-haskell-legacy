@@ -65,18 +65,18 @@ algo0 :: Algo
 algo0 fuel l
   | fuel < 0 = mrgThrowError AssertionError
   | otherwise = do
-    c <- genSymSimpleFresh ()
-    mrgIf
-      c
-      ( do
-          i <- genSymSimpleFresh ()
-          j <- genSymSimpleFresh ()
-          r <- swap l i j
-          lift . tell $ Trace $ mrgReturn [(i, j)]
-          algo0 (fuel - 1) r
-      )
-      ( mrgReturn l
-      )
+      c <- genSymSimpleFresh ()
+      mrgIf
+        c
+        ( do
+            i <- genSymSimpleFresh ()
+            j <- genSymSimpleFresh ()
+            r <- swap l i j
+            lift . tell $ Trace $ mrgReturn [(i, j)]
+            algo0 (fuel - 1) r
+        )
+        ( mrgReturn l
+        )
 
 algo1 :: Algo
 algo1 fuel = go fuel 0
@@ -84,16 +84,16 @@ algo1 fuel = go fuel 0
     go fuel1 i l
       | fuel1 < 0 = mrgReturn l
       | otherwise = do
-        c <- genSymSimpleFresh ()
-        mrgIf
-          c
-          ( do
-              j <- genSymSimpleFresh ()
-              r <- swap l (conc i) j
-              lift . tell $ Trace $ mrgReturn [(conc i, j)]
-              go (fuel1 - 1) (i + 1) r
-          )
-          (mrgReturn l)
+          c <- genSymSimpleFresh ()
+          mrgIf
+            c
+            ( do
+                j <- genSymSimpleFresh ()
+                r <- swap l (conc i) j
+                lift . tell $ Trace $ mrgReturn [(conc i, j)]
+                go (fuel1 - 1) (i + 1) r
+            )
+            (mrgReturn l)
 
 data Marble = Red | White | Blue
   deriving (Generic, Show, Eq)
@@ -177,7 +177,7 @@ runDutchFlag' config algo len maxModelCnt initMarbles = do
 
 main :: IO ()
 main = do
-  let config = UnboundedReasoning z3 --{verbose=True}
+  let config = UnboundedReasoning z3 -- {verbose=True}
   runDutchFlag config algo0 3 [Blue, White, Red, White, Red, White, Blue] >>= print . take 3
   runDutchFlag config algo1 7 [Blue, White, Red, White, Red, White, Blue] >>= print . take 3
   runDutchFlag' config algo0 3 3 [Blue, White, Red, White, Red, White, Blue] >>= print

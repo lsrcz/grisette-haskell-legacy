@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -8,7 +9,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE DeriveLift #-}
 
 module Grisette.Core.Control.Monad.CBMCExcept
   ( CBMCEither (..),
@@ -21,6 +21,7 @@ module Grisette.Core.Control.Monad.CBMCExcept
 where
 
 import Control.Applicative
+import Control.DeepSeq
 import Control.Monad
 import qualified Control.Monad.Except as OrigExcept
 import qualified Control.Monad.Fail as Fail
@@ -29,6 +30,7 @@ import Control.Monad.Trans
 import Control.Monad.Zip
 import Data.Functor.Classes
 import Data.Functor.Contravariant
+import Data.Hashable
 import GHC.Generics
 import Grisette.Core.Data.Class.Bool
 import Grisette.Core.Data.Class.Evaluate
@@ -39,10 +41,8 @@ import Grisette.Core.Data.Class.SOrd
 import Grisette.Core.Data.Class.SimpleMergeable
 import Grisette.Core.Data.Class.ToCon
 import Grisette.Core.Data.Class.ToSym
-import Unsafe.Coerce
-import Data.Hashable
-import Control.DeepSeq
 import Language.Haskell.TH.Syntax (Lift)
+import Unsafe.Coerce
 
 newtype CBMCEither a b = CBMCEither {runCBMCEither :: Either a b}
   deriving newtype (Eq, Eq1, Ord, Ord1, Read, Read1, Show, Show1, Functor, Applicative, Monad, Hashable, NFData)

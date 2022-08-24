@@ -53,9 +53,9 @@ import Data.Functor.Classes
 import Data.Functor.Sum
 import Data.Int
 import Data.Kind
+import qualified Data.Monoid as Monoid
 import Data.Typeable
 import Data.Word
-import qualified Data.Monoid as Monoid
 import Generics.Deriving
 import Grisette.Core.Data.Class.Bool
 import Unsafe.Coerce
@@ -721,19 +721,29 @@ instance
   (SymBoolOp bool, Mergeable1 bool l, Mergeable1 bool r, Mergeable bool x) =>
   Mergeable bool (Sum l r x)
   where
-  mergingStrategy = SortedStrategy (\case
-    InL _ -> False
-    InR _ -> True) (\case
-      False -> wrapStrategy mergingStrategy1 InL (\case (InL v) -> v; _ -> error "impossible")
-      True -> wrapStrategy mergingStrategy1 InR (\case (InR v) -> v; _ -> error "impossible"))
+  mergingStrategy =
+    SortedStrategy
+      ( \case
+          InL _ -> False
+          InR _ -> True
+      )
+      ( \case
+          False -> wrapStrategy mergingStrategy1 InL (\case (InL v) -> v; _ -> error "impossible")
+          True -> wrapStrategy mergingStrategy1 InR (\case (InR v) -> v; _ -> error "impossible")
+      )
   {-# INLINE mergingStrategy #-}
 
 instance (SymBoolOp bool, Mergeable1 bool l, Mergeable1 bool r) => Mergeable1 bool (Sum l r) where
-  liftMergingStrategy m = SortedStrategy (\case
-    InL _ -> False
-    InR _ -> True) (\case
-      False -> wrapStrategy (liftMergingStrategy m) InL (\case (InL v) -> v; _ -> error "impossible")
-      True -> wrapStrategy (liftMergingStrategy m) InR (\case (InR v) -> v; _ -> error "impossible"))
+  liftMergingStrategy m =
+    SortedStrategy
+      ( \case
+          InL _ -> False
+          InR _ -> True
+      )
+      ( \case
+          False -> wrapStrategy (liftMergingStrategy m) InL (\case (InL v) -> v; _ -> error "impossible")
+          True -> wrapStrategy (liftMergingStrategy m) InR (\case (InR v) -> v; _ -> error "impossible")
+      )
   {-# INLINE liftMergingStrategy #-}
 
 -- Ordering
@@ -818,11 +828,13 @@ instance
 
 instance
   (SymBoolOp bool, Mergeable bool s, Mergeable bool w, Mergeable1 bool m) =>
-  Mergeable1 bool (RWSLazy.RWST r w s m) where
+  Mergeable1 bool (RWSLazy.RWST r w s m)
+  where
   liftMergingStrategy m =
     wrapStrategy
       (liftMergingStrategy (liftMergingStrategy (liftMergingStrategy (liftMergingStrategy3 m mergingStrategy mergingStrategy))))
-      RWSLazy.RWST (\(RWSLazy.RWST rws) -> rws)
+      RWSLazy.RWST
+      (\(RWSLazy.RWST rws) -> rws)
   {-# INLINE liftMergingStrategy #-}
 
 instance
@@ -834,16 +846,19 @@ instance
 
 instance
   (SymBoolOp bool, Mergeable bool s, Mergeable bool w, Mergeable1 bool m) =>
-  Mergeable1 bool (RWSStrict.RWST r w s m) where
+  Mergeable1 bool (RWSStrict.RWST r w s m)
+  where
   liftMergingStrategy m =
     wrapStrategy
       (liftMergingStrategy (liftMergingStrategy (liftMergingStrategy (liftMergingStrategy3 m mergingStrategy mergingStrategy))))
-      RWSStrict.RWST (\(RWSStrict.RWST rws) -> rws)
+      RWSStrict.RWST
+      (\(RWSStrict.RWST rws) -> rws)
   {-# INLINE liftMergingStrategy #-}
 
-
 -- Data.Monoid module
-deriving via (Default (Monoid.Sum a))
-  instance (Mergeable bool a) => Mergeable bool (Monoid.Sum a)
+deriving via
+  (Default (Monoid.Sum a))
+  instance
+    (Mergeable bool a) => Mergeable bool (Monoid.Sum a)
 
 deriving via (Default1 Monoid.Sum) instance Mergeable1 bool Monoid.Sum

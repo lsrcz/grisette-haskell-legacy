@@ -15,17 +15,17 @@ module Grisette.Core.Data.Class.SOrd
 where
 
 import Control.Monad.Except
+import Control.Monad.Identity
+import Control.Monad.Trans.Maybe
 import qualified Control.Monad.Writer.Lazy as WriterLazy
 import qualified Control.Monad.Writer.Strict as WriterStrict
-import Control.Monad.Trans.Maybe
 import qualified Data.ByteString as B
 import Data.Functor.Sum
+import Data.Int
+import Data.Word
 import Generics.Deriving
 import Grisette.Core.Data.Class.Bool
 import Grisette.Core.Data.Class.PrimWrapper
-import Control.Monad.Identity
-import Data.Int
-import Data.Word
 import Grisette.Core.Data.Class.SimpleMergeable
 
 -- | Auxiliary class for 'SOrd' instance derivation
@@ -157,20 +157,20 @@ instance (SymBoolOp bool) => SOrd bool type where \
   l >~ r = conc $ l > r; \
   symCompare l r = mrgSingle $ compare l r
 
-CONCRETE_SORD(Bool)
-CONCRETE_SORD(Integer)
-CONCRETE_SORD(Char)
-CONCRETE_SORD(Int)
-CONCRETE_SORD(Int8)
-CONCRETE_SORD(Int16)
-CONCRETE_SORD(Int32)
-CONCRETE_SORD(Int64)
-CONCRETE_SORD(Word)
-CONCRETE_SORD(Word8)
-CONCRETE_SORD(Word16)
-CONCRETE_SORD(Word32)
-CONCRETE_SORD(Word64)
-CONCRETE_SORD(B.ByteString)
+CONCRETE_SORD (Bool)
+CONCRETE_SORD (Integer)
+CONCRETE_SORD (Char)
+CONCRETE_SORD (Int)
+CONCRETE_SORD (Int8)
+CONCRETE_SORD (Int16)
+CONCRETE_SORD (Int32)
+CONCRETE_SORD (Int64)
+CONCRETE_SORD (Word)
+CONCRETE_SORD (Word8)
+CONCRETE_SORD (Word16)
+CONCRETE_SORD (Word32)
+CONCRETE_SORD (Word64)
+CONCRETE_SORD (B.ByteString)
 
 symCompareSingleList :: (SymBoolOp bool, SOrd bool a) => Bool -> Bool -> [a] -> [a] -> bool
 symCompareSingleList isLess isStrict = go

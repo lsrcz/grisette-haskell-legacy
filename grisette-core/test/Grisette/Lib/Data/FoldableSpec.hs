@@ -6,8 +6,8 @@ import Grisette.Core.Control.Monad.UnionMBase
 import Grisette.Core.Data.Class.SimpleMergeable
 import Grisette.Lib.Control.Monad
 import Grisette.Lib.Data.Foldable
-import Test.Hspec
 import Grisette.TestUtils.SBool
+import Test.Hspec
 
 spec :: Spec
 spec = do

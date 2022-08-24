@@ -1,4 +1,5 @@
 module Grisette.Lib.Control.Effect.Fresh where
+
 import Control.Effect.Fresh
 import Grisette.Core
 

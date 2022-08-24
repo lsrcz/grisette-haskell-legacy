@@ -108,7 +108,8 @@ isValidName err sym =
     foldl
       ( \acc v ->
           acc
-            ||~ Just sym ==~ (conc <$> terminalToBV letPolySyntax v)
+            ||~ Just sym
+            ==~ (conc <$> terminalToBV letPolySyntax v)
       )
       (conc False)
       ["a", "b", "c", "d", "e"]
@@ -223,10 +224,10 @@ getRefEnv i (RefEnv l) = go l
     go ((x, t) : xs)
       | i < x = go xs
       | i == x = do
-        t1 <- lift t
-        case t1 of
-          Nothing -> throwError BonsaiExecError
-          Just v -> mrgReturn v
+          t1 <- lift t
+          case t1 of
+            Nothing -> throwError BonsaiExecError
+            Just v -> mrgReturn v
       | otherwise = throwError BonsaiExecError
 
 instance Mergeable SymBool RefEnv where

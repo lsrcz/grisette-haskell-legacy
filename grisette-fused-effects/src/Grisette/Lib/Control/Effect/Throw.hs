@@ -8,4 +8,3 @@ mrgThrowError = merge . throwError
 
 mrgLiftEither :: (Has (Throw e) sig m, SymBoolOp bool, UnionLike bool m, Mergeable bool a) => Either e a -> m a
 mrgLiftEither = merge . liftEither
-

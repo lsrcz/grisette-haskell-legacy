@@ -3,8 +3,8 @@ module Evaluator where
 import Data.Bifunctor
 import qualified Data.ByteString as B
 import Grisette
-import Table
 import Grisette.Unordered.UUnionM
+import Table
 
 xproduct :: Table -> Table -> Name -> Table
 xproduct a@(Table _ _ ca) b@(Table _ _ cb) nm = Table nm (schemaJoin a b) (xproductRaw ca cb)
@@ -61,16 +61,16 @@ filter0 = filter (\(_, n) -> n /= 0)
 dedup :: RawTable -> RawTable
 dedup [] = []
 dedup ((ele, mult) : xs) =
-  (ele, mrgIte (mult ==~ 0 :: SymBool) 0 1) :
-    dedup ((\(ele1, m) -> (ele1, mrgIte (mult /=~ 0 &&~ ele ==~ ele1 :: SymBool) 0 m)) <$> xs)
+  (ele, mrgIte (mult ==~ 0 :: SymBool) 0 1)
+    : dedup ((\(ele1, m) -> (ele1, mrgIte (mult /=~ 0 &&~ ele ==~ ele1 :: SymBool) 0 m)) <$> xs)
 
 dedupAccum :: RawTable -> RawTable
 dedupAccum [] = []
 dedupAccum l@((ele, _) : xs) =
   (ele, sum $ snd <$> yl) : ntl
   where
-    yl = filter0 $ (\(ele1, m) -> (ele1, mrgIte (ele ==~ ele1:: SymBool) m 0)) <$> l
-    ntl = dedupAccum $ filter0 $ (\(ele1, m) -> (ele1, mrgIte (ele ==~ ele1:: SymBool) 0 m)) <$> xs
+    yl = filter0 $ (\(ele1, m) -> (ele1, mrgIte (ele ==~ ele1 :: SymBool) m 0)) <$> l
+    ntl = dedupAccum $ filter0 $ (\(ele1, m) -> (ele1, mrgIte (ele ==~ ele1 :: SymBool) 0 m)) <$> xs
 
 tableDiff :: RawTable -> RawTable -> RawTable
 tableDiff tbl1 tbl2 = filter0 $ cal <$> t1
@@ -90,19 +90,18 @@ addingNullRows content1 content12 schemaSize1 schemaSize2 =
   unionAllRaw content12 ((\(ele, mult) -> (ele ++ nullCols, mult)) <$> extraRows)
   where
     nullCols :: [UUnionM (Maybe SymInteger)]
-    nullCols = [mrgReturn Nothing | _ <- [0 .. schemaSize2 -1]]
+    nullCols = [mrgReturn Nothing | _ <- [0 .. schemaSize2 - 1]]
     diffKeys :: RawTable
     diffKeys =
-      let
-        d1 = dedup content1
-        pl2 = projection [0 .. schemaSize1 - 1] content12
-        d12 = dedup pl2
-        td = tableDiff d1 d12
-        in dedup td
+      let d1 = dedup content1
+          pl2 = projection [0 .. schemaSize1 - 1] content12
+          d12 = dedup pl2
+          td = tableDiff d1 d12
+       in dedup td
     extraRows :: RawTable
     extraRows =
-      projection [0 .. schemaSize1 -1] $
-        equiJoin content1 diffKeys [(x, x) | x <- [0 .. schemaSize1 -1]] schemaSize1
+      projection [0 .. schemaSize1 - 1] $
+        equiJoin content1 diffKeys [(x, x) | x <- [0 .. schemaSize1 - 1]] schemaSize1
 
 projection :: [Int] -> RawTable -> RawTable
 projection indices = fmap (first projSingle)

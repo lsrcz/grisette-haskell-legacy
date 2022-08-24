@@ -1,13 +1,14 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
+
 module Grisette.Lib.Control.Monad.Coroutine.SuspensionFunctors where
 
+import Control.Monad.Coroutine
 import Control.Monad.Coroutine.SuspensionFunctors
 import Grisette.Core
-import Control.Monad.Coroutine
-import Grisette.Lib.Control.Monad.Coroutine
 import Grisette.Lib.Control.Monad
+import Grisette.Lib.Control.Monad.Coroutine
 
 instance (SymBoolOp bool, Mergeable bool x, Mergeable bool y) => Mergeable bool (Yield x y) where
   mergingStrategy = product2Strategy Yield (\(Yield x y) -> (x, y)) mergingStrategy mergingStrategy

@@ -6,21 +6,21 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 
 module FreeT where
 
 import Control.Monad.Trans.Free
-import Data.Functor.Sum
-import GHC.Generics hiding ((:+:))
-import Grisette
 import Data.Functor.Classes
+import Data.Functor.Sum
 import qualified Data.Monoid
 import qualified Data.Semigroup
+import GHC.Generics hiding ((:+:))
+import Grisette
 
 type FreeU f a = FreeT f UnionM a
 
@@ -126,20 +126,30 @@ algNondet (Or l r) = do
     r'' <- r'
     mrgReturn $ l'' ++ r''
 
-algR1 :: forall bool g a. (SymBoolOp bool, Functor g, Mergeable1 bool g, Mergeable bool a) =>
-  g (UnionMBase bool (FreeT g (UnionMBase bool) a)) -> UnionMBase bool (FreeT g (UnionMBase bool) a)
+algR1 ::
+  forall bool g a.
+  (SymBoolOp bool, Functor g, Mergeable1 bool g, Mergeable bool a) =>
+  g (UnionMBase bool (FreeT g (UnionMBase bool) a)) ->
+  UnionMBase bool (FreeT g (UnionMBase bool) a)
 algR1 g = mrgReturn $ wrap $ getSingle <$> g
 
-algR :: forall bool g a. (SymBoolOp bool, Functor g, Mergeable1 bool g, Mergeable bool a) =>
-  g (UnionMBase bool (FreeT g (UnionMBase bool) a)) -> UnionMBase bool (FreeT g (UnionMBase bool) a)
+algR ::
+  forall bool g a.
+  (SymBoolOp bool, Functor g, Mergeable1 bool g, Mergeable bool a) =>
+  g (UnionMBase bool (FreeT g (UnionMBase bool) a)) ->
+  UnionMBase bool (FreeT g (UnionMBase bool) a)
 algR t = mrgReturn m
   where
-  v :: g (FreeT g (UnionMBase bool) a)
-  v = FreeT . (\x -> do
-    l <- x
-    runFreeT l) <$> t
-  m :: FreeT g (UnionMBase bool) a
-  m = FreeT . mrgReturn . Free $ v
+    v :: g (FreeT g (UnionMBase bool) a)
+    v =
+      FreeT
+        . ( \x -> do
+              l <- x
+              runFreeT l
+          )
+        <$> t
+    m :: FreeT g (UnionMBase bool) a
+    m = FreeT . mrgReturn . Free $ v
 
 (\+/) ::
   (f (UnionMBase bool b) -> UnionMBase bool b) ->
@@ -188,7 +198,6 @@ genWriter ::
   FreeT g (UnionMBase bool) (w, a)
 genWriter x = mrgReturn (mempty, x)
 
-
 handleWriter ::
   (SymBoolOp bool, Functor g, Mergeable1 bool g, Mergeable bool a, Mergeable bool w, Monoid w) =>
   FreeT (Writer w :+: g) (UnionMBase bool) a ->
@@ -222,7 +231,6 @@ program2 = FreeT $ mrgReturn $ Free $ (InL $ Or (mrgReturn 3) (mrgReturn 2))
 -- "FreeT (UMrg (Single (Free (InL (Or (FreeT (UMrg (Single (Free (InL (Or (FreeT (UMrg (Single (Pure 4)))) (FreeT (UMrg (If a (Single (Pure 3)) (Single (Pure 5))))))))))) (FreeT (UMrg (Single (Free (InL (Or (FreeT (UMrg (If (! a) (Single (Pure 3)) (Single (Pure 5))))) (FreeT (UMrg (Single (Pure 4)))))))))))))))"
 -- >>> show $ merge $ getSingle $ handleNondet $ mrgIf (ssymb "a") program3 program4
 -- "FreeT (UMrg (If a (Single (Pure [4,3,5,4])) (If (! a) (Single (Pure [4,5,3,4])) (Single (Pure [4,5,5,4])))))"
-
 program3 :: FreeT (Nondet :+: Void) UnionM Int
 program3 = merge $ do
   a <- program

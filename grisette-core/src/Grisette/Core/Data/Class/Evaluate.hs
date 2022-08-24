@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -5,7 +6,6 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE CPP #-}
 
 module Grisette.Core.Data.Class.Evaluate
   ( Evaluate (..),
@@ -14,18 +14,18 @@ module Grisette.Core.Data.Class.Evaluate
 where
 
 import Control.Monad.Except
+import Control.Monad.Identity
+import Control.Monad.Trans.Maybe
 import qualified Control.Monad.Writer.Lazy as WriterLazy
 import qualified Control.Monad.Writer.Strict as WriterStrict
-import Control.Monad.Trans.Maybe
 import qualified Data.ByteString as B
 import Data.Functor.Sum
+import Data.Int
 import Data.Maybe
+import Data.Word
 import Generics.Deriving
 import Generics.Deriving.Instances ()
 import Grisette.Core.Data.Class.ToCon
-import Control.Monad.Identity
-import Data.Int
-import Data.Word
 
 -- $setup
 -- >>> import Grisette.Core
@@ -83,20 +83,20 @@ evaluateToCon model a = fromJust $ toCon $ evaluate True model a
 instance Evaluate model type where \
   evaluate _ _ = id
 
-CONCRETE_EVALUATE(Bool)
-CONCRETE_EVALUATE(Integer)
-CONCRETE_EVALUATE(Char)
-CONCRETE_EVALUATE(Int)
-CONCRETE_EVALUATE(Int8)
-CONCRETE_EVALUATE(Int16)
-CONCRETE_EVALUATE(Int32)
-CONCRETE_EVALUATE(Int64)
-CONCRETE_EVALUATE(Word)
-CONCRETE_EVALUATE(Word8)
-CONCRETE_EVALUATE(Word16)
-CONCRETE_EVALUATE(Word32)
-CONCRETE_EVALUATE(Word64)
-CONCRETE_EVALUATE(B.ByteString)
+CONCRETE_EVALUATE (Bool)
+CONCRETE_EVALUATE (Integer)
+CONCRETE_EVALUATE (Char)
+CONCRETE_EVALUATE (Int)
+CONCRETE_EVALUATE (Int8)
+CONCRETE_EVALUATE (Int16)
+CONCRETE_EVALUATE (Int32)
+CONCRETE_EVALUATE (Int64)
+CONCRETE_EVALUATE (Word)
+CONCRETE_EVALUATE (Word8)
+CONCRETE_EVALUATE (Word16)
+CONCRETE_EVALUATE (Word32)
+CONCRETE_EVALUATE (Word64)
+CONCRETE_EVALUATE (B.ByteString)
 
 -- ()
 instance Evaluate model () where

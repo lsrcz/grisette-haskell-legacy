@@ -10,8 +10,8 @@ import GHC.Generics
 import Grisette.Core.Data.Class.Bool
 import Grisette.Core.Data.Class.Mergeable
 import Grisette.Core.Data.UnionBase
-import Test.Hspec
 import Grisette.TestUtils.SBool
+import Test.Hspec
 
 data TripleSum a b c = TS1 a | TS2 b | TS3 c deriving (Show, Eq, Generic)
 

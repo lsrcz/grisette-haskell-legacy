@@ -61,6 +61,7 @@ denoteFilter (FilterBinOp FBinEq v1 v2) indexMap =
   [||\e -> $$(denoteValue v1 indexMap) e ==~ $$(denoteValue v2 indexMap) e||]
 denoteFilter (FilterBinOp FBinNEq v1 v2) indexMap =
   [||\e -> $$(denoteValue v1 indexMap) e /=~ $$(denoteValue v2 indexMap) e||]
+
 -- denoteFilter f _ = fail $ "I don't know how to handle the sql filter " ++ show f
 
 denoteValue ::

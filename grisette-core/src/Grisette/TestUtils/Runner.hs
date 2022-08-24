@@ -25,11 +25,13 @@ runGrisetteTests name spec = do
         junitConfig = setJUnitConfigOutputName "test_results.xml" $
           setJUnitConfigOutputDirectory (path <> "/" <> name) $ defaultJUnitConfig (fromString name)
         hspecConfig = configWithJUnit junitConfig defaultConfig
-
       summary@(Summary e f) <- hspecWithResult hspecConfig spec
-#else
-      summary@(Summary e f) <- runJUnitSpec spec (path, name) defaultConfig
-#endif
       _ <- putStrLn $ "Total " ++ show e ++ " examples, failed " ++ show f ++ " examples."
       evaluateSummary summary
     _ -> hspec spec
+#else
+      summary@(Summary e f) <- runJUnitSpec spec (path, name) defaultConfig
+      _ <- putStrLn $ "Total " ++ show e ++ " examples, failed " ++ show f ++ " examples."
+      evaluateSummary summary
+    _ -> hspec spec
+#endif

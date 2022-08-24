@@ -1,12 +1,13 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
+
 module DataStructures where
 
 import Data.List (intercalate)
+import Data.Proxy
 import Generics.Deriving
 import Grisette
 import Language.Haskell.TH.Syntax (Lift)
-import Data.Proxy
 
 data ConcExpr
   = IntConstantExpr Integer
@@ -44,7 +45,8 @@ data SymbExpr
       Mergeable SymBool,
       Evaluate Model,
       ToSym ConcExpr
-    ) via (Default SymbExpr)
+    )
+    via (Default SymbExpr)
 
 newtype Identifier = Identifier Integer
   deriving (Eq, Generic)
@@ -63,7 +65,8 @@ newtype SIdentifier = SIdentifier SymInteger
       SimpleMergeable SymBool,
       Evaluate Model,
       ToSym Identifier
-    ) via (Default SIdentifier)
+    )
+    via (Default SIdentifier)
 
 $(makeUnionMWrapper "u" ''SymbExpr)
 $(makeUnionMWrapper "u" ''SIdentifier)
@@ -128,7 +131,8 @@ data SymbStmt
       Mergeable SymBool,
       Evaluate Model,
       ToSym Stmt
-    ) via (Default SymbStmt)
+    )
+    via (Default SymbStmt)
 
 newtype Program = Program [Stmt]
   deriving (Eq, Generic)
@@ -146,13 +150,16 @@ newtype SymbProgram = SymbProgram [SymbStmt]
       Mergeable SymBool,
       Evaluate Model,
       ToSym Program
-    ) via (Default SymbProgram)
+    )
+    via (Default SymbProgram)
 
 instance Show Stmt where
   show (AssertStmt e) = "assert " ++ show e
   show (AssignStmt i e) = show i ++ " = " ++ show e
   show (IfStmt cond l r) =
-    "if (" ++ show cond ++ ") {\n"
+    "if ("
+      ++ show cond
+      ++ ") {\n"
       ++ unlines (showStmtIdent 1 <$> l)
       ++ "} else {\n"
       ++ unlines (showStmtIdent 1 <$> r)

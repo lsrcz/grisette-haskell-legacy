@@ -4,20 +4,20 @@
 module Grisette.Core.Data.Class.ToConSpec where
 
 import Control.Monad.Except
+import Control.Monad.Identity
+import Control.Monad.Trans.Maybe
 import qualified Control.Monad.Writer.Lazy as WriterLazy
 import qualified Control.Monad.Writer.Strict as WriterStrict
-import Control.Monad.Trans.Maybe
 import qualified Data.ByteString.Char8 as C
 import Data.Foldable
 import Data.Functor.Sum
-import Grisette.Core.Data.Class.ToCon
-import Test.Hspec
-import Test.Hspec.QuickCheck
-import Grisette.TestUtils.SBool
-import Grisette.TestUtils.ToCon
-import Control.Monad.Identity
 import Data.Int
 import Data.Word
+import Grisette.Core.Data.Class.ToCon
+import Grisette.TestUtils.SBool
+import Grisette.TestUtils.ToCon
+import Test.Hspec
+import Test.Hspec.QuickCheck
 
 spec :: Spec
 spec = do
@@ -185,49 +185,49 @@ spec = do
           Left x -> InL x
           Right x -> InR x
       it "ToCon for generic Sum should work" $ do
-        toCon (InL (Just (CBool True)) :: Sum Maybe (Either SBool) SBool) `shouldBe`
-          (Just (InL (Just True)) :: Maybe (Sum Maybe (Either Bool) Bool))
-        toCon (InL (Just (SSBool "a")) :: Sum Maybe (Either SBool) SBool) `shouldBe`
-          (Nothing :: Maybe (Sum Maybe (Either Bool) Bool))
-        toCon (InR (Left (CBool True)) :: Sum Maybe (Either SBool) SBool) `shouldBe`
-          (Just (InR (Left True)) :: Maybe (Sum Maybe (Either Bool) Bool))
-        toCon (InR (Right (CBool True)) :: Sum Maybe (Either SBool) SBool) `shouldBe`
-          (Just (InR (Right True)) :: Maybe (Sum Maybe (Either Bool) Bool))
-        toCon (InR (Left (SSBool "a")) :: Sum Maybe (Either SBool) SBool) `shouldBe`
-          (Nothing :: Maybe (Sum Maybe (Either Bool) Bool))
-        toCon (InR (Right (SSBool "a")) :: Sum Maybe (Either SBool) SBool) `shouldBe`
-          (Nothing :: Maybe (Sum Maybe (Either Bool) Bool))
+        toCon (InL (Just (CBool True)) :: Sum Maybe (Either SBool) SBool)
+          `shouldBe` (Just (InL (Just True)) :: Maybe (Sum Maybe (Either Bool) Bool))
+        toCon (InL (Just (SSBool "a")) :: Sum Maybe (Either SBool) SBool)
+          `shouldBe` (Nothing :: Maybe (Sum Maybe (Either Bool) Bool))
+        toCon (InR (Left (CBool True)) :: Sum Maybe (Either SBool) SBool)
+          `shouldBe` (Just (InR (Left True)) :: Maybe (Sum Maybe (Either Bool) Bool))
+        toCon (InR (Right (CBool True)) :: Sum Maybe (Either SBool) SBool)
+          `shouldBe` (Just (InR (Right True)) :: Maybe (Sum Maybe (Either Bool) Bool))
+        toCon (InR (Left (SSBool "a")) :: Sum Maybe (Either SBool) SBool)
+          `shouldBe` (Nothing :: Maybe (Sum Maybe (Either Bool) Bool))
+        toCon (InR (Right (SSBool "a")) :: Sum Maybe (Either SBool) SBool)
+          `shouldBe` (Nothing :: Maybe (Sum Maybe (Either Bool) Bool))
     describe "ToCon for WriterT" $ do
       prop "ToCon for concrete Lazy WriterT should always be identical to Just" $
         \(v :: Either Integer (Integer, Integer)) -> toConForConcreteOkProp $ WriterLazy.WriterT v
       prop "ToCon for concrete Strict WriterT should always be identical to Just" $
         \(v :: Either Integer (Integer, Integer)) -> toConForConcreteOkProp $ WriterStrict.WriterT v
       it "ToCon for generic Lazy WriterT should work" $ do
-        toCon (WriterLazy.WriterT $ Left $ CBool True :: WriterLazy.WriterT SBool (Either SBool) SBool) `shouldBe`
-          Just (WriterLazy.WriterT $ Left $ True :: WriterLazy.WriterT Bool (Either Bool) Bool)
-        toCon (WriterLazy.WriterT $ Left $ SSBool "a" :: WriterLazy.WriterT SBool (Either SBool) SBool) `shouldBe`
-          (Nothing :: Maybe (WriterLazy.WriterT Bool (Either Bool) Bool))
-        toCon (WriterLazy.WriterT $ Right $ (CBool True, CBool True) :: WriterLazy.WriterT SBool (Either SBool) SBool) `shouldBe`
-          Just (WriterLazy.WriterT $ Right $ (True, True) :: WriterLazy.WriterT Bool (Either Bool) Bool)
-        toCon (WriterLazy.WriterT $ Right $ (SSBool "a", CBool True) :: WriterLazy.WriterT SBool (Either SBool) SBool) `shouldBe`
-          (Nothing :: Maybe (WriterLazy.WriterT Bool (Either Bool) Bool))
-        toCon (WriterLazy.WriterT $ Right $ (CBool True, SSBool "a") :: WriterLazy.WriterT SBool (Either SBool) SBool) `shouldBe`
-          (Nothing :: Maybe (WriterLazy.WriterT Bool (Either Bool) Bool))
-        toCon (WriterLazy.WriterT $ Right $ (SSBool "a", SSBool "b") :: WriterLazy.WriterT SBool (Either SBool) SBool) `shouldBe`
-          (Nothing :: Maybe (WriterLazy.WriterT Bool (Either Bool) Bool))
+        toCon (WriterLazy.WriterT $ Left $ CBool True :: WriterLazy.WriterT SBool (Either SBool) SBool)
+          `shouldBe` Just (WriterLazy.WriterT $ Left $ True :: WriterLazy.WriterT Bool (Either Bool) Bool)
+        toCon (WriterLazy.WriterT $ Left $ SSBool "a" :: WriterLazy.WriterT SBool (Either SBool) SBool)
+          `shouldBe` (Nothing :: Maybe (WriterLazy.WriterT Bool (Either Bool) Bool))
+        toCon (WriterLazy.WriterT $ Right $ (CBool True, CBool True) :: WriterLazy.WriterT SBool (Either SBool) SBool)
+          `shouldBe` Just (WriterLazy.WriterT $ Right $ (True, True) :: WriterLazy.WriterT Bool (Either Bool) Bool)
+        toCon (WriterLazy.WriterT $ Right $ (SSBool "a", CBool True) :: WriterLazy.WriterT SBool (Either SBool) SBool)
+          `shouldBe` (Nothing :: Maybe (WriterLazy.WriterT Bool (Either Bool) Bool))
+        toCon (WriterLazy.WriterT $ Right $ (CBool True, SSBool "a") :: WriterLazy.WriterT SBool (Either SBool) SBool)
+          `shouldBe` (Nothing :: Maybe (WriterLazy.WriterT Bool (Either Bool) Bool))
+        toCon (WriterLazy.WriterT $ Right $ (SSBool "a", SSBool "b") :: WriterLazy.WriterT SBool (Either SBool) SBool)
+          `shouldBe` (Nothing :: Maybe (WriterLazy.WriterT Bool (Either Bool) Bool))
       it "ToCon for generic Strict WriterT should work" $ do
-        toCon (WriterStrict.WriterT $ Left $ CBool True :: WriterStrict.WriterT SBool (Either SBool) SBool) `shouldBe`
-          Just (WriterStrict.WriterT $ Left $ True :: WriterStrict.WriterT Bool (Either Bool) Bool)
-        toCon (WriterStrict.WriterT $ Left $ SSBool "a" :: WriterStrict.WriterT SBool (Either SBool) SBool) `shouldBe`
-          (Nothing :: Maybe (WriterStrict.WriterT Bool (Either Bool) Bool))
-        toCon (WriterStrict.WriterT $ Right $ (CBool True, CBool True) :: WriterStrict.WriterT SBool (Either SBool) SBool) `shouldBe`
-          Just (WriterStrict.WriterT $ Right $ (True, True) :: WriterStrict.WriterT Bool (Either Bool) Bool)
-        toCon (WriterStrict.WriterT $ Right $ (SSBool "a", CBool True) :: WriterStrict.WriterT SBool (Either SBool) SBool) `shouldBe`
-          (Nothing :: Maybe (WriterStrict.WriterT Bool (Either Bool) Bool))
-        toCon (WriterStrict.WriterT $ Right $ (CBool True, SSBool "a") :: WriterStrict.WriterT SBool (Either SBool) SBool) `shouldBe`
-          (Nothing :: Maybe (WriterStrict.WriterT Bool (Either Bool) Bool))
-        toCon (WriterStrict.WriterT $ Right $ (SSBool "a", SSBool "b") :: WriterStrict.WriterT SBool (Either SBool) SBool) `shouldBe`
-          (Nothing :: Maybe (WriterStrict.WriterT Bool (Either Bool) Bool))
+        toCon (WriterStrict.WriterT $ Left $ CBool True :: WriterStrict.WriterT SBool (Either SBool) SBool)
+          `shouldBe` Just (WriterStrict.WriterT $ Left $ True :: WriterStrict.WriterT Bool (Either Bool) Bool)
+        toCon (WriterStrict.WriterT $ Left $ SSBool "a" :: WriterStrict.WriterT SBool (Either SBool) SBool)
+          `shouldBe` (Nothing :: Maybe (WriterStrict.WriterT Bool (Either Bool) Bool))
+        toCon (WriterStrict.WriterT $ Right $ (CBool True, CBool True) :: WriterStrict.WriterT SBool (Either SBool) SBool)
+          `shouldBe` Just (WriterStrict.WriterT $ Right $ (True, True) :: WriterStrict.WriterT Bool (Either Bool) Bool)
+        toCon (WriterStrict.WriterT $ Right $ (SSBool "a", CBool True) :: WriterStrict.WriterT SBool (Either SBool) SBool)
+          `shouldBe` (Nothing :: Maybe (WriterStrict.WriterT Bool (Either Bool) Bool))
+        toCon (WriterStrict.WriterT $ Right $ (CBool True, SSBool "a") :: WriterStrict.WriterT SBool (Either SBool) SBool)
+          `shouldBe` (Nothing :: Maybe (WriterStrict.WriterT Bool (Either Bool) Bool))
+        toCon (WriterStrict.WriterT $ Right $ (SSBool "a", SSBool "b") :: WriterStrict.WriterT SBool (Either SBool) SBool)
+          `shouldBe` (Nothing :: Maybe (WriterStrict.WriterT Bool (Either Bool) Bool))
     describe "ToCon for Identity" $ do
       prop "ToCon for concrete Identity should always be identical to Just" $
         \(v :: Integer) -> toConForConcreteOkProp $ Identity v

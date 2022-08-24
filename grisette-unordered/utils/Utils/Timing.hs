@@ -8,8 +8,12 @@ import Formatting.Internal
 import System.Clock
 
 fmt :: Integer -> Builder
-fmt diff = bprint (fixed 6 % " s") (fromIntegral diff /
-  (fromIntegral (10 ^ (9 :: Integer) :: Integer) :: Double))
+fmt diff =
+  bprint
+    (fixed 6 % " s")
+    ( fromIntegral diff
+        / (fromIntegral (10 ^ (9 :: Integer) :: Integer) :: Double)
+    )
 
 timeSpecs :: Format r (TimeSpec -> TimeSpec -> r)
 timeSpecs = Format (\g x y -> g (fmt0 x y))

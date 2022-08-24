@@ -3,13 +3,13 @@
 
 module Grisette.Lib.Control.Monad.Coroutine.SuspensionFunctorsSpec where
 
-import Test.Hspec
 import Control.Monad.Coroutine.SuspensionFunctors
-import Grisette.Lib.Control.Monad.Coroutine.SuspensionFunctors ()
 import Grisette.Core.Data.Class.Mergeable
-import Grisette.TestUtils.SBool
-import Test.Hspec.QuickCheck
+import Grisette.Lib.Control.Monad.Coroutine.SuspensionFunctors ()
 import Grisette.TestUtils.Mergeable
+import Grisette.TestUtils.SBool
+import Test.Hspec
+import Test.Hspec.QuickCheck
 
 spec :: Spec
 spec = do

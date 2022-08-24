@@ -5,14 +5,14 @@
 
 module Bonsai.BonsaiTree where
 
+import Bonsai.SyntaxSpec
 import Control.DeepSeq
 import qualified Data.ByteString as B
 import Data.Hashable
 import Data.Maybe
-import Generics.Deriving
 import GHC.TypeNats
+import Generics.Deriving
 import Grisette
-import Bonsai.SyntaxSpec
 import Grisette.Unordered.UUnionM
 
 data ConcBonsaiTree leaf
@@ -33,9 +33,11 @@ deriving via (Default (BonsaiTree leaf)) instance (Mergeable SymBool leaf, Evalu
 
 deriving via (Default (ConcBonsaiTree cleaf)) instance (ToCon leaf cleaf) => ToCon (BonsaiTree leaf) (ConcBonsaiTree cleaf)
 
-deriving via (Default (BonsaiTree leaf)) instance
-  (Mergeable SymBool leaf, ToSym cleaf leaf) =>
-  ToSym (ConcBonsaiTree cleaf) (BonsaiTree leaf)
+deriving via
+  (Default (BonsaiTree leaf))
+  instance
+    (Mergeable SymBool leaf, ToSym cleaf leaf) =>
+    ToSym (ConcBonsaiTree cleaf) (BonsaiTree leaf)
 
 $(makeUnionMWrapper "u" ''BonsaiTree)
 

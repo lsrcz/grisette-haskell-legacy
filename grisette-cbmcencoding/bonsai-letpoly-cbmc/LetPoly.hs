@@ -5,18 +5,18 @@
 module LetPoly (letPolySyntax, execLetPoly, LetPolyTree, ConcLetPolyTree) where
 
 import Bonsai.BonsaiTree
-import Control.DeepSeq
-import Control.Monad.Except
-import qualified Data.ByteString as B
-import Data.Maybe
 import Bonsai.Env
-import GHC.Generics
-import Grisette
 import Bonsai.Match
 import Bonsai.MatchSyntax
 import Bonsai.Pattern
 import Bonsai.SyntaxSpec
+import Control.DeepSeq
+import Control.Monad.Except
+import qualified Data.ByteString as B
 import Data.Hashable
+import Data.Maybe
+import GHC.Generics
+import Grisette
 
 type LetPolyWidth = 19
 
@@ -108,7 +108,8 @@ isValidName err sym =
     foldl
       ( \acc v ->
           acc
-            ||~ Just sym ==~ (conc <$> terminalToBV letPolySyntax v)
+            ||~ Just sym
+            ==~ (conc <$> terminalToBV letPolySyntax v)
       )
       (conc False)
       ["a", "b", "c", "d", "e"]
@@ -223,10 +224,10 @@ getRefEnv i (RefEnv l) = go l
     go ((x, t) : xs)
       | i < x = go xs
       | i == x = do
-        t1 <- lift t
-        case t1 of
-          Nothing -> throwError BonsaiExecError
-          Just v -> mrgReturn v
+          t1 <- lift t
+          case t1 of
+            Nothing -> throwError BonsaiExecError
+            Just v -> mrgReturn v
       | otherwise = throwError BonsaiExecError
 
 instance Mergeable SymBool RefEnv where

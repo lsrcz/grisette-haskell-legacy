@@ -1,24 +1,26 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
+
 module Grisette.TestUtils.SBool where
-import Grisette.Core.Data.Class.Bool
-import Grisette.Core.Data.Class.PrimWrapper
+
+import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet as S
-import Grisette.Core.Data.Class.ExtractSymbolics
 import Data.Hashable
+import Data.String
+import Data.Typeable
+import Grisette.Core.Data.Class.Bool
+import Grisette.Core.Data.Class.Evaluate
+import Grisette.Core.Data.Class.ExtractSymbolics
+import Grisette.Core.Data.Class.GenSym
+import Grisette.Core.Data.Class.Mergeable
+import Grisette.Core.Data.Class.PrimWrapper
 import Grisette.Core.Data.Class.SOrd
 import Grisette.Core.Data.Class.SimpleMergeable
-import Grisette.Core.Data.Class.Mergeable
-import Grisette.Core.Data.Class.Evaluate
-import qualified Data.HashMap.Strict as M
 import Grisette.Core.Data.Class.ToCon
 import Grisette.Core.Data.Class.ToSym
-import Grisette.Core.Data.Class.GenSym
-import Data.Typeable
-import Data.String
 import Grisette.Lib.Control.Monad
 
 data SBool where
@@ -61,7 +63,7 @@ instance Eq SBool where
   Equal l1 r1 == Equal l2 r2 = l1 == l2 && r1 == r2
   ITE c1 l1 r1 == ITE c2 l2 r2 = c1 == c2 && l1 == l2 && r1 == r2
   _ == _ = False
-  
+
 instance Mergeable SBool SBool where
   mergingStrategy = SimpleStrategy ites
 
@@ -86,8 +88,11 @@ instance Evaluate (M.HashMap Symbol Bool) SBool where
   evaluate fillDefault model (And l r) = evaluate fillDefault model l &&~ evaluate fillDefault model r
   evaluate fillDefault model (Not v) = nots (evaluate fillDefault model v)
   evaluate fillDefault model (Equal l r) = evaluate fillDefault model l ==~ evaluate fillDefault model r
-  evaluate fillDefault model (ITE c l r) = ites (evaluate fillDefault model c)
-    (evaluate fillDefault model l) (evaluate fillDefault model r)
+  evaluate fillDefault model (ITE c l r) =
+    ites
+      (evaluate fillDefault model c)
+      (evaluate fillDefault model l)
+      (evaluate fillDefault model r)
 
 instance SEq SBool SBool where
   (CBool l) ==~ (CBool r) = CBool (l == r)
@@ -95,7 +100,7 @@ instance SEq SBool SBool where
   (CBool False) ==~ r = nots r
   l ==~ (CBool True) = l
   l ==~ (CBool False) = nots l
-  l ==~ r 
+  l ==~ r
     | l == r = CBool True
     | otherwise = Equal l r
 
@@ -105,7 +110,8 @@ instance SOrd SBool SBool where
   l >=~ r = l ||~ nots r
   l >~ r = l &&~ nots r
   symCompare l r =
-    mrgIf (nots l &&~ r)
+    mrgIf
+      (nots l &&~ r)
       (mrgReturn LT)
       (mrgIf (l ==~ r) (mrgReturn EQ) (mrgReturn GT))
 
@@ -139,7 +145,7 @@ instance LogicalOp SBool where
   l &&~ r = And l r
   nots (CBool x) = CBool (not x)
   nots v = Not v
-  
+
 instance SymBoolOp SBool
 
 data Symbol where
@@ -147,7 +153,8 @@ data Symbol where
   ISSymbol :: (Typeable a, Show a, Eq a, Hashable a) => String -> a -> Symbol
   ISymbol :: String -> Int -> Symbol
   IISymbol :: (Typeable a, Show a, Eq a, Hashable a) => String -> Int -> a -> Symbol
-  -- deriving (Generic, Show, Eq, Hashable)
+
+-- deriving (Generic, Show, Eq, Hashable)
 
 instance Show Symbol where
   show (SSymbol s) = "SSymbol " ++ s
@@ -157,7 +164,7 @@ instance Show Symbol where
 
 instance Eq Symbol where
   SSymbol s1 == SSymbol s2 = s1 == s2
-  ISSymbol s1 (info1 :: info1) == ISSymbol s2 (info2 :: info2) = 
+  ISSymbol s1 (info1 :: info1) == ISSymbol s2 (info2 :: info2) =
     case eqT @info1 @info2 of
       Just Refl -> s1 == s2 && info1 == info2
       _ -> False
@@ -201,7 +208,7 @@ instance ToSym Bool SBool where
 instance ToSym SBool SBool where
   toSym = id
 
-instance GenSym SBool () SBool where
+instance GenSym SBool () SBool
 
 instance GenSymSimple () SBool where
   genSymSimpleFresh _ = do
@@ -211,8 +218,7 @@ instance GenSymSimple () SBool where
       GenSymIdent s -> return $ ISBool s i
       GenSymIdentWithInfo s info -> return $ IISBool s i info
 
-instance GenSym SBool SBool SBool where
+instance GenSym SBool SBool SBool
 
 instance GenSymSimple SBool SBool where
   genSymSimpleFresh _ = genSymSimpleFresh ()
-

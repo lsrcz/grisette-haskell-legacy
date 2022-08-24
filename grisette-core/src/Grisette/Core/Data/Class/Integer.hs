@@ -12,11 +12,11 @@ where
 
 import Control.Exception
 import Control.Monad.Except
+import Grisette.Core.Control.Monad.Union
 import Grisette.Core.Data.Class.Bool
 import Grisette.Core.Data.Class.Error
 import Grisette.Core.Data.Class.PrimWrapper
 import Grisette.Core.Data.Class.SOrd
-import Grisette.Core.Control.Monad.Union
 
 -- $setup
 -- >>> import Grisette.Core
@@ -29,6 +29,7 @@ class SignedDivMod bool a where
   -- >>> divs (ssymb "a") (ssymb "b") :: ExceptT AssertionError UnionM SymInteger
   -- ExceptT (UMrg (If (= b 0I) (Single (Left AssertionError)) (Single (Right (div a b)))))
   divs :: (MonadError e uf, MonadUnion bool uf, TransformError ArithException e) => a -> a -> uf a
+
   mods :: (MonadError e uf, MonadUnion bool uf, TransformError ArithException e) => a -> a -> uf a
 
 -- | Safe unsigned 'div' and 'mod' with monadic error handling in multi-path execution.

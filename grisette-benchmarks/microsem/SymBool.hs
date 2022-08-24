@@ -1,7 +1,8 @@
 module SymBool where
-import GHC.Generics
-import Data.Hashable
+
 import qualified Data.HashSet as S
+import Data.Hashable
+import GHC.Generics
 
 data SymBool
   = Sym String
@@ -36,22 +37,16 @@ ites (Con False) _ r = r
 ites c (Con True) r = ors c r
 ites c (Con False) r = ands (nots c) r
 ites c l (Con True) = ors (nots c) l
-ites c l (Con False) = ands c l 
+ites c l (Con False) = ands c l
 ites c l r = IteBool c l r
 
 allSubSymBools :: [SymBool] -> S.HashSet SymBool
 allSubSymBools [] = S.empty
-allSubSymBools (v:vs) = go v (allSubSymBools vs)
+allSubSymBools (v : vs) = go v (allSubSymBools vs)
   where
-    go x@Sym{} s = S.insert x s
-    go x@Con{} s = S.insert x s
+    go x@Sym {} s = S.insert x s
+    go x@Con {} s = S.insert x s
     go x@(Or l r) s = go l (go r (S.insert x s))
     go x@(And l r) s = go l (go r (S.insert x s))
     go x@(Not n) s = go n (S.insert x s)
     go x@(IteBool c l r) s = go c (go l (go r (S.insert x s)))
-
-
-
-
-
-

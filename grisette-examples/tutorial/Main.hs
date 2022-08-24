@@ -1,12 +1,12 @@
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Main where
 
 import Control.Monad.Except
+import Data.Proxy
 import GHC.Generics
 import Grisette
-import Data.Proxy
 
 -- Symbolic primitives
 symbBool :: Sym Bool
@@ -157,7 +157,8 @@ data Expr
       Evaluate Model,
       ToSym ConcExpr,
       SEq SymBool
-    ) via (Default Expr)
+    )
+    via (Default Expr)
 
 $(makeUnionMWrapper "u" ''Expr)
 
@@ -191,7 +192,8 @@ mergedSymbExpr2 =
 
 mergedSymbExpr3 :: UnionM Expr
 mergedSymbExpr3 =
-  mrgIf "cond1"
+  mrgIf
+    "cond1"
     (uAdd (uConst "b1") (uConst "c1"))
     (uAdd (uConst "b2") (uConst "c2"))
 

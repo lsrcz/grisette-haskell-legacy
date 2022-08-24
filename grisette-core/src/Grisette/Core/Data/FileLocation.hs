@@ -1,23 +1,28 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveLift #-}
-{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE TemplateHaskell #-}
 
-module Grisette.Core.Data.FileLocation (
-    FileLocation (..),
+module Grisette.Core.Data.FileLocation
+  ( FileLocation (..),
     nameWithLoc,
     slocsymb,
     ilocsymb,
-) where
+  )
+where
 
+import Control.DeepSeq
+import Data.Hashable
 import Debug.Trace.LocationTH (__LOCATION__)
 import GHC.Generics
-import Control.DeepSeq
 import Grisette.Core.Data.Class.GenSym
 import Grisette.Core.Data.Class.PrimWrapper
 import Language.Haskell.TH.Syntax
 import Language.Haskell.TH.Syntax.Compat
-import Data.Hashable
+
+-- $setup
+-- >>> import Grisette.Core
+-- >>> import Grisette.IR.SymPrim
 
 -- File location type.
 data FileLocation = FileLocation {locPath :: String, locLineno :: Int, locSpan :: (Int, Int)}
@@ -28,13 +33,11 @@ instance Show FileLocation where
 
 parseFileLocation :: String -> FileLocation
 parseFileLocation str =
-  let
-    r = reverse str
-    (s2, r1) = break (=='-') r
-    (s1, r2) = break (==':') $ tail r1
-    (l, p) = break (==':') $ tail r2
-  in
-    FileLocation (reverse $ tail p) (read $ reverse l) (read $ reverse s1, read $ reverse s2)
+  let r = reverse str
+      (s2, r1) = break (== '-') r
+      (s1, r2) = break (== ':') $ tail r1
+      (l, p) = break (== ':') $ tail r2
+   in FileLocation (reverse $ tail p) (read $ reverse l) (read $ reverse s1, read $ reverse s2)
 
 -- | Identifier with the current location as extra information.
 --
@@ -43,22 +46,22 @@ parseFileLocation str =
 --
 -- The uniqueness is ensured for the call to 'nameWithLoc' at different location.
 nameWithLoc :: String -> SpliceQ GenSymIdent
-nameWithLoc s = [|| nameWithInfo s (parseFileLocation $$(liftSplice $ unsafeTExpCoerce __LOCATION__)) ||]
+nameWithLoc s = [||nameWithInfo s (parseFileLocation $$(liftSplice $ unsafeTExpCoerce __LOCATION__))||]
 
 -- | Generate simply-named symbolic variables. The file location will be attached to identifier.
 --
--- $$(slocsymb "a") :: SymBool
--- a:<interactive>:7:4-15
+-- >>> $$(slocsymb "a") :: SymBool
+-- a:<interactive>:...
 --
 -- The uniqueness is ensured for the call to 'slocsymb' at different location.
 slocsymb :: (PrimWrapper s c) => String -> SpliceQ s
-slocsymb nm = [|| sinfosymb nm (parseFileLocation $$(liftSplice $ unsafeTExpCoerce __LOCATION__)) ||]
+slocsymb nm = [||sinfosymb nm (parseFileLocation $$(liftSplice $ unsafeTExpCoerce __LOCATION__))||]
 
 -- | Generate indexed symbolic variables. The file location will be attached to identifier.
 --
--- $$(ilocsymb 1 "a") :: SymBool
--- a@1:<interactive>:10:4-17
+-- >>> $$(ilocsymb "a" 1) :: SymBool
+-- a@1:<interactive>:...
 --
 -- The uniqueness is ensured for the call to 'ilocsymb' at different location.
 ilocsymb :: (PrimWrapper s c) => String -> Int -> SpliceQ s
-ilocsymb nm idx = [|| iinfosymb nm idx (parseFileLocation $$(liftSplice $ unsafeTExpCoerce __LOCATION__)) ||]
+ilocsymb nm idx = [||iinfosymb nm idx (parseFileLocation $$(liftSplice $ unsafeTExpCoerce __LOCATION__))||]

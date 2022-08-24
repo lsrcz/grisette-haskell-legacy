@@ -16,14 +16,14 @@ import Data.Bifunctor
 import qualified Data.ByteString as B
 import Data.Foldable
 import Data.Functor.Sum
-import Generics.Deriving
-import Grisette.Core.Data.Class.Bool
-import Test.Hspec
-import Test.Hspec.QuickCheck
-import Grisette.TestUtils.SBool
-import Grisette.TestUtils.SEq
 import Data.Int
 import Data.Word
+import Generics.Deriving
+import Grisette.Core.Data.Class.Bool
+import Grisette.TestUtils.SBool
+import Grisette.TestUtils.SEq
+import Test.Hspec
+import Test.Hspec.QuickCheck
 
 data A = A1 | A2 SBool | A3 SBool SBool
   deriving (Generic, Show, Eq)
@@ -272,21 +272,27 @@ spec = do
         )
       it "SEq for general Lazy WriterT should work" $ do
         (WriterLazy.WriterT (Left $ SSBool "a") :: WriterLazy.WriterT SBool (Either SBool) SBool)
-          ==~ WriterLazy.WriterT (Left $ SSBool "b") `shouldBe` Equal (SSBool "a") (SSBool "b")
+          ==~ WriterLazy.WriterT (Left $ SSBool "b")
+          `shouldBe` Equal (SSBool "a") (SSBool "b")
         (WriterLazy.WriterT (Left $ SSBool "a") :: WriterLazy.WriterT SBool (Either SBool) SBool)
-          ==~ WriterLazy.WriterT (Right (SSBool "b", SSBool "c")) `shouldBe` CBool False
+          ==~ WriterLazy.WriterT (Right (SSBool "b", SSBool "c"))
+          `shouldBe` CBool False
         (WriterLazy.WriterT (Right (SSBool "b", SSBool "c")) :: WriterLazy.WriterT SBool (Either SBool) SBool)
-          ==~ WriterLazy.WriterT (Left $ SSBool "a") `shouldBe` CBool False
+          ==~ WriterLazy.WriterT (Left $ SSBool "a")
+          `shouldBe` CBool False
         (WriterLazy.WriterT (Right (SSBool "a", SSBool "b")) :: WriterLazy.WriterT SBool (Either SBool) SBool)
           ==~ WriterLazy.WriterT (Right (SSBool "c", SSBool "d"))
           `shouldBe` And (Equal (SSBool "a") (SSBool "c")) (Equal (SSBool "b") (SSBool "d"))
       it "SEq for general Strict WriterT should work" $ do
         (WriterStrict.WriterT (Left $ SSBool "a") :: WriterStrict.WriterT SBool (Either SBool) SBool)
-          ==~ WriterStrict.WriterT (Left $ SSBool "b") `shouldBe` Equal (SSBool "a") (SSBool "b")
+          ==~ WriterStrict.WriterT (Left $ SSBool "b")
+          `shouldBe` Equal (SSBool "a") (SSBool "b")
         (WriterStrict.WriterT (Left $ SSBool "a") :: WriterStrict.WriterT SBool (Either SBool) SBool)
-          ==~ WriterStrict.WriterT (Right (SSBool "b", SSBool "c")) `shouldBe` CBool False
+          ==~ WriterStrict.WriterT (Right (SSBool "b", SSBool "c"))
+          `shouldBe` CBool False
         (WriterStrict.WriterT (Right (SSBool "b", SSBool "c")) :: WriterStrict.WriterT SBool (Either SBool) SBool)
-          ==~ WriterStrict.WriterT (Left $ SSBool "a") `shouldBe` CBool False
+          ==~ WriterStrict.WriterT (Left $ SSBool "a")
+          `shouldBe` CBool False
         (WriterStrict.WriterT (Right (SSBool "a", SSBool "b")) :: WriterStrict.WriterT SBool (Either SBool) SBool)
           ==~ WriterStrict.WriterT (Right (SSBool "c", SSBool "d"))
           `shouldBe` And (Equal (SSBool "a") (SSBool "c")) (Equal (SSBool "b") (SSBool "d"))

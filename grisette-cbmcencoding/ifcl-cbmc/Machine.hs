@@ -9,7 +9,8 @@ import Instructions
 import Value
 import Prelude hiding (pred)
 
-data Errors = EvalError deriving (Show, Eq, Generic)
+data Errors = EvalError
+  deriving (Show, Eq, Generic)
   deriving (Mergeable SymBool) via (Default Errors)
 
 instance TransformError ArrayException Errors where
@@ -147,7 +148,7 @@ read i (Machine _ _ m) = do
 write :: SymInteger -> PCValue -> Machine -> CBMCExceptT Errors UnionM Machine
 write i v (Machine p s m) = do
   mv <- lift m
-  --mrgIf ((fromIntegral . length <$> m) <~ mrgReturn i) (throwError EvalError) $ do
+  -- mrgIf ((fromIntegral . length <$> m) <~ mrgReturn i) (throwError EvalError) $ do
   newMem <- replace mv i $ mrgReturn v
   return $! Machine p s (mrgReturn newMem)
 

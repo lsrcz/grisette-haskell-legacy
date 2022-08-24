@@ -21,9 +21,9 @@ module Grisette.Core.BuiltinUnionMWrappers
 where
 
 import Data.Functor.Sum
-import Grisette.Core.TH
 import Grisette.Core.Control.Exception
 import Grisette.Core.Data.Class.SimpleMergeable
+import Grisette.Core.TH
 
 $(makeUnionMWrapper "u" ''Bool)
 $(makeUnionMWrapper' ["uunit"] ''())

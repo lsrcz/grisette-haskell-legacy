@@ -59,7 +59,7 @@ testCegis config shouldSuccess a bs = do
 
 spec :: Spec
 spec = do
-  let unboundedConfig = UnboundedReasoning SBV.z3 --{SBV.verbose=True}
+  let unboundedConfig = UnboundedReasoning SBV.z3 -- {SBV.verbose=True}
   describe "Boolean" $ do
     describe "Basic" $ do
       it "testCegis should work" $ do

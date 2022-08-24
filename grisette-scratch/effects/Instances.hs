@@ -7,39 +7,49 @@
 
 module Instances where
 
+import qualified Control.Carrier.Error.Church as EC
 import Control.Carrier.Error.Either
 import Control.Carrier.Lift
 import Control.Carrier.State.Strict
-import qualified Control.Carrier.Error.Church as EC
 import Grisette
 
-instance (SymBoolOp bool, UnionLike bool m) =>
-  Mergeable bool (EC.ErrorC e m a) where
-    mergingStrategy = SimpleStrategy $ \cond (EC.ErrorC l) (EC.ErrorC r) ->
-      EC.ErrorC $ \ef af -> unionIf cond (l ef af) (r ef af)
+instance
+  (SymBoolOp bool, UnionLike bool m) =>
+  Mergeable bool (EC.ErrorC e m a)
+  where
+  mergingStrategy = SimpleStrategy $ \cond (EC.ErrorC l) (EC.ErrorC r) ->
+    EC.ErrorC $ \ef af -> unionIf cond (l ef af) (r ef af)
 
-instance (SymBoolOp bool, UnionLike bool m) =>
-  Mergeable1 bool (EC.ErrorC e m) where
-    liftMergingStrategy _ = SimpleStrategy $ \cond (EC.ErrorC l) (EC.ErrorC r) ->
-      EC.ErrorC $ \ef af -> unionIf cond (l ef af) (r ef af)
+instance
+  (SymBoolOp bool, UnionLike bool m) =>
+  Mergeable1 bool (EC.ErrorC e m)
+  where
+  liftMergingStrategy _ = SimpleStrategy $ \cond (EC.ErrorC l) (EC.ErrorC r) ->
+    EC.ErrorC $ \ef af -> unionIf cond (l ef af) (r ef af)
 
-instance (SymBoolOp bool, UnionLike bool m) =>
-  SimpleMergeable bool (EC.ErrorC e m a) where
+instance
+  (SymBoolOp bool, UnionLike bool m) =>
+  SimpleMergeable bool (EC.ErrorC e m a)
+  where
   mrgIte bool (EC.ErrorC l) (EC.ErrorC r) = EC.ErrorC $ \ef af ->
     unionIf bool (l ef af) (r ef af)
 
-instance (SymBoolOp bool, UnionLike bool m) =>
-  SimpleMergeable1 bool (EC.ErrorC e m) where
+instance
+  (SymBoolOp bool, UnionLike bool m) =>
+  SimpleMergeable1 bool (EC.ErrorC e m)
+  where
   liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
 
-instance (SymBoolOp bool, UnionLike bool m) =>
-  UnionLike bool (EC.ErrorC e m) where
-    mergeWithStrategy _ = id
-    mrgIfWithStrategy _ cond (EC.ErrorC l) (EC.ErrorC r) = EC.ErrorC $
-      \ef af -> unionIf cond (l ef af) (r ef af)
-    single a = EC.ErrorC $ \_ leaf -> leaf a
-    unionIf cond (EC.ErrorC l) (EC.ErrorC r) =
-      EC.ErrorC $ \ef af -> unionIf cond (l ef af) (r ef af)
+instance
+  (SymBoolOp bool, UnionLike bool m) =>
+  UnionLike bool (EC.ErrorC e m)
+  where
+  mergeWithStrategy _ = id
+  mrgIfWithStrategy _ cond (EC.ErrorC l) (EC.ErrorC r) = EC.ErrorC $
+    \ef af -> unionIf cond (l ef af) (r ef af)
+  single a = EC.ErrorC $ \_ leaf -> leaf a
+  unionIf cond (EC.ErrorC l) (EC.ErrorC r) =
+    EC.ErrorC $ \ef af -> unionIf cond (l ef af) (r ef af)
 
 instance
   (SymBoolOp bool, Mergeable1 bool m, Mergeable bool e, Mergeable bool a) =>

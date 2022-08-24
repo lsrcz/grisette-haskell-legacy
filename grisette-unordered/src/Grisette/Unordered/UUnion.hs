@@ -7,16 +7,16 @@
 module Grisette.Unordered.UUnion where
 
 import Control.DeepSeq
+import Data.Bifunctor
 import Data.Functor.Classes
+import Data.Hashable
 import qualified Data.Map.Strict as M
 import GHC.Generics
 import Grisette.Core.Data.Class.Bool
 import Grisette.Core.Data.Class.Mergeable
+import Grisette.Core.Data.Class.PrimWrapper
 import Grisette.Core.Data.Class.SimpleMergeable
 import Language.Haskell.TH.Syntax
-import Grisette.Core.Data.Class.PrimWrapper
-import Data.Bifunctor
-import Data.Hashable
 
 newtype UUnionBase b a = UUnionBase [(b, a)]
   deriving (Generic, Eq, Lift, Generic1)
@@ -87,9 +87,7 @@ instance (Hashable b, Hashable a) => Hashable (UUnionBase b a) where
   s `hashWithSalt` (UUnionBase l) = s `hashWithSalt` l
 
 instance SymBoolOp bool => UnionPrjOp bool (UUnionBase bool) where
-  singleView (UUnionBase [(_,a)]) = Just a
+  singleView (UUnionBase [(_, a)]) = Just a
   singleView _ = Nothing
   ifView _ = undefined
   leftMost _ = undefined
-
-  

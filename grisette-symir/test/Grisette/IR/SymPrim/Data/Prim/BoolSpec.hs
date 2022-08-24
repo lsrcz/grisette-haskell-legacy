@@ -707,11 +707,13 @@ spec = do
           `shouldBe` pevalITETerm (ssymbTerm "a") (pevalNotTerm $ ssymbTerm "b") (ssymbTerm "c")
   describe "Imply" $ do
     it "pevalImplyTerm should work" $ do
-      ssymbTerm "a" `pevalImplyTerm` ssymbTerm "b"
+      ssymbTerm "a"
+        `pevalImplyTerm` ssymbTerm "b"
         `shouldBe` pevalOrTerm (pevalNotTerm $ ssymbTerm "a") (ssymbTerm "b")
   describe "Xor" $ do
     it "pevalXorTerm should work" $ do
-      ssymbTerm "a" `pevalXorTerm` ssymbTerm "b"
+      ssymbTerm "a"
+        `pevalXorTerm` ssymbTerm "b"
         `shouldBe` pevalOrTerm
           (pevalAndTerm (pevalNotTerm $ ssymbTerm "a") (ssymbTerm "b"))
           (pevalAndTerm (ssymbTerm "a") (pevalNotTerm $ ssymbTerm "b"))

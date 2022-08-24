@@ -1,9 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Ops where
-import Grisette
+
 import Core
 import qualified Data.HashMap.Strict as M
+import Grisette
 
 availableUnary :: (SupportedPrim a, Num (Sym a)) => UnaryFuncMap (Sym a)
 availableUnary =

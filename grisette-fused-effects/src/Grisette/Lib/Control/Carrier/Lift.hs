@@ -2,9 +2,11 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
+
 module Grisette.Lib.Control.Carrier.Lift where
-import Grisette.Core
+
 import Control.Carrier.Lift
+import Grisette.Core
 
 instance (UnionLike bool m, Mergeable bool a) => Mergeable bool (LiftC m a) where
   mergingStrategy = wrapStrategy mergingStrategy1 LiftC (\(LiftC m) -> m)

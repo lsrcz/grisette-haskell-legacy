@@ -110,7 +110,7 @@ addingNullRows content1 content12 schemaSize1 schemaSize2 = do
   mrgReturn $ unionAllRaw content12 ((\(ele, mult) -> (ele ++ nullCols, mult)) <$> er)
   where
     nullCols :: [UnionM (Maybe SymInteger)]
-    nullCols = [mrgReturn Nothing | _ <- [0 .. schemaSize2 -1]]
+    nullCols = [mrgReturn Nothing | _ <- [0 .. schemaSize2 - 1]]
     diffKeys :: UnionM RawTable
     diffKeys = do
       d1 <- dedup content1
@@ -122,8 +122,8 @@ addingNullRows content1 content12 schemaSize1 schemaSize2 = do
     extraRows = do
       dk <- diffKeys
       mrgReturn $
-        projection [0 .. schemaSize1 -1] $
-          equiJoin content1 dk [(x, x) | x <- [0 .. schemaSize1 -1]] schemaSize1
+        projection [0 .. schemaSize1 - 1] $
+          equiJoin content1 dk [(x, x) | x <- [0 .. schemaSize1 - 1]] schemaSize1
 
 projection :: [Int] -> RawTable -> RawTable
 projection indices = fmap (first projSingle)

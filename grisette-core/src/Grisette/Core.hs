@@ -2,12 +2,15 @@
 
 module Grisette.Core
   ( -- * Note for the examples
+
     --
+
     -- | This module does not contain actual implementation for symbolic primitive types, and
     -- the examples in this module cannot be executed solely with @grisette-core@ package.
     -- They rely on the implementation in @grisette-symprim@ package.
 
     -- * Symbolic Operators
+
     -- | #symop#
     SEq (..),
     SOrd (..),
@@ -57,7 +60,6 @@ module Grisette.Core
     buildStrategyList,
     resolveStrategy,
     resolveStrategy',
-
     -- withMergeable,
     SimpleMergeable (..),
     SimpleMergeable1 (..),
@@ -81,36 +83,37 @@ module Grisette.Core
     (>>=~),
     -}
 
-{-
-    -- * Wrapped Monadic Combinators with Mergeable Knowledge Propagaion
-    mrgFoldM,
-    (>>~),
-    mrgMzero,
-    mrgMplus,
-    mrgFmap,
+    {-
+        -- * Wrapped Monadic Combinators with Mergeable Knowledge Propagaion
+        mrgFoldM,
+        (>>~),
+        mrgMzero,
+        mrgMplus,
+        mrgFmap,
 
-    mrgFoldlM,
-    mrgFoldrM,
-    mrgTraverse_,
-    mrgFor_,
-    mrgMapM_,
-    mrgForM_,
-    mrgSequence_,
-    mrgMsum,
+        mrgFoldlM,
+        mrgFoldrM,
+        mrgTraverse_,
+        mrgFor_,
+        mrgMapM_,
+        mrgForM_,
+        mrgSequence_,
+        mrgMsum,
 
-    mrgTraverse,
-    mrgSequenceA,
-    mrgFor,
-    mrgMapM,
-    mrgForM,
-    mrgSequence,
+        mrgTraverse,
+        mrgSequenceA,
+        mrgFor,
+        mrgMapM,
+        mrgForM,
+        mrgSequence,
 
-    mrgLift,
-    mrgThrowError,
-    mrgCatchError,
-    -}
-    
+        mrgLift,
+        mrgThrowError,
+        mrgCatchError,
+        -}
+
     -- * Standard Errors
+
     -- | #errors#
     AssertionError (..),
     VerificationConditions (..),
@@ -120,15 +123,14 @@ module Grisette.Core
     symAssume,
     symFailIfNot,
     symThrowTransformableError,
-
-
     CBMCEither (..),
-    CBMCExceptT(..),
+    CBMCExceptT (..),
     cbmcExcept,
     mapCBMCExceptT,
     withCBMCExceptT,
 
     -- * Symbolic Generation
+
     -- ** Symbolic Generation Context
     GenSymIndex (..),
     GenSymIdent,
@@ -162,8 +164,8 @@ module Grisette.Core
     chooseU,
 
     -- ** Useful specifications
-    EnumGenBound(..),
-    EnumGenUpperBound(..),
+    EnumGenBound (..),
+    EnumGenUpperBound (..),
     ListSpec (..),
     SimpleListSpec (..),
 
@@ -204,32 +206,32 @@ module Grisette.Core
     uAssumptionViolation,
 
     -- * Type Class Derivation
-    Default(..),
-    Default1(..),
+    Default (..),
+    Default1 (..),
   )
 where
 
-import Generics.Deriving (Default(..), Default1(..))
+import Generics.Deriving (Default (..), Default1 (..))
+import Grisette.Core.BuiltinUnionMWrappers
 import Grisette.Core.Control.Exception
+import Grisette.Core.Control.Monad.CBMCExcept
+import Grisette.Core.Control.Monad.Union
 import Grisette.Core.Control.Monad.UnionMBase
+import Grisette.Core.Data.Class.BitVector
 import Grisette.Core.Data.Class.Bool
 import Grisette.Core.Data.Class.Error
+import Grisette.Core.Data.Class.Evaluate
 import Grisette.Core.Data.Class.ExtractSymbolics
 import Grisette.Core.Data.Class.Function
+import Grisette.Core.Data.Class.GenSym
 import Grisette.Core.Data.Class.Integer
 import Grisette.Core.Data.Class.Mergeable
 import Grisette.Core.Data.Class.PrimWrapper
 import Grisette.Core.Data.Class.SOrd
 import Grisette.Core.Data.Class.SimpleMergeable
-import Grisette.Core.Data.Class.Evaluate
-import Grisette.Core.Data.Class.GenSym
+import Grisette.Core.Data.Class.Solver
 import Grisette.Core.Data.Class.ToCon
 import Grisette.Core.Data.Class.ToSym
 import Grisette.Core.Data.FileLocation
 import Grisette.Core.Data.MemoUtils
 import Grisette.Core.TH
-import Grisette.Core.BuiltinUnionMWrappers
-import Grisette.Core.Data.Class.BitVector
-import Grisette.Core.Data.Class.Solver
-import Grisette.Core.Control.Monad.Union
-import Grisette.Core.Control.Monad.CBMCExcept

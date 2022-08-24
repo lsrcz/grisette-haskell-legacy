@@ -87,7 +87,6 @@ q1 =
   t1 [tid1, name, rid, tid2, type]
   |]
 
-
 q1r :: Query
 q1r =
   [cosette|

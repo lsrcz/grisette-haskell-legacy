@@ -5,18 +5,18 @@
 module STLC (stlcSyntax, STLCTree, ConcSTLCTree, execStlc) where
 
 import Bonsai.BonsaiTree
-import Control.DeepSeq
-import Control.Monad.Except
-import qualified Data.ByteString as B
-import Data.Maybe
 import Bonsai.Env
-import GHC.Generics
-import Grisette
 import Bonsai.Match
 import Bonsai.MatchSyntaxNoMemo
 import Bonsai.Pattern
 import Bonsai.SyntaxSpec
+import Control.DeepSeq
+import Control.Monad.Except
+import qualified Data.ByteString as B
 import Data.Hashable
+import Data.Maybe
+import GHC.Generics
+import Grisette
 
 -- import Debug.Trace
 
@@ -81,38 +81,38 @@ typer' tree env =
       stlcLiteral "hd" ==> mrgReturn (mrgReturn (arrowTy listOfIntTy intTy)),
       stlcLiteral "tl" ==> mrgReturn (mrgReturn (arrowTy listOfIntTy listOfIntTy)),
       stlcLiteral "+" ==> mrgReturn (mrgReturn (arrowTy intTy (arrowTy intTy intTy))),
-      ((stlcLiteral "lambda" *= (placeHolder *= placeHolder)) *= placeHolder)
-        ==> ( \nm ty expr -> do
-                n <- lift nm
-                _ <- symFailIfNot BonsaiTypeError (isAvailableNameNode n)
-                let BonsaiLeaf sym = n -- will never call fail because we have partial evaluation
-                res <- typer' #~ expr # envAdd env sym ty
-                mrgReturn $ mrgReturn $ arrowTyU ty res
-            ),
-      (stlcLiteral "call" *= (placeHolder *= placeHolder))
-        ==> ( \func arg -> do
-                tres <- typer' #~ func # env
-                tresv <- lift tres
-                case tresv of
-                  BonsaiNode _ body -> do
-                    bres <- lift body
-                    case bres of
-                      BonsaiNode funcArgTy funcResTy -> do
-                        argTy <- typer' #~ arg # env
-                        _ <- symFailIfNot BonsaiTypeError (argTy ==~ funcArgTy)
-                        mrgReturn funcResTy
-                      _ -> throwError BonsaiTypeError
+      ((stlcLiteral "lambda" *= (placeHolder *= placeHolder)) *= placeHolder) ==>
+        ( \nm ty expr -> do
+            n <- lift nm
+            _ <- symFailIfNot BonsaiTypeError (isAvailableNameNode n)
+            let BonsaiLeaf sym = n -- will never call fail because we have partial evaluation
+            res <- typer' #~ expr # envAdd env sym ty
+            mrgReturn $ mrgReturn $ arrowTyU ty res
+        ),
+      (stlcLiteral "call" *= (placeHolder *= placeHolder)) ==>
+        ( \func arg -> do
+            tres <- typer' #~ func # env
+            tresv <- lift tres
+            case tresv of
+              BonsaiNode _ body -> do
+                bres <- lift body
+                case bres of
+                  BonsaiNode funcArgTy funcResTy -> do
+                    argTy <- typer' #~ arg # env
+                    _ <- symFailIfNot BonsaiTypeError (argTy ==~ funcArgTy)
+                    mrgReturn funcResTy
                   _ -> throwError BonsaiTypeError
-            ),
-      placeHolder
-        ==> ( \v -> do
-                s <- lift v
-                case s of
-                  BonsaiLeaf sym -> do
-                    _ <- envResolveU BonsaiTypeError env sym
-                    mrgReturn . mrgReturn $ intTy
-                  _ -> throwError BonsaiTypeError
-            )
+              _ -> throwError BonsaiTypeError
+        ),
+      placeHolder ==>
+        ( \v -> do
+            s <- lift v
+            case s of
+              BonsaiLeaf sym -> do
+                _ <- envResolveU BonsaiTypeError env sym
+                mrgReturn . mrgReturn $ intTy
+              _ -> throwError BonsaiTypeError
+        )
     ]
     tree
 
@@ -182,7 +182,7 @@ applyBuiltin (STLCPartiallyAppliedBuiltin v arg1) arg2 =
 applyBuiltin _ _ = throwError BonsaiExecError
 
 interpreter' :: STLCTree -> Env 14 STLCValue -> Int -> ExceptT BonsaiError UnionM (UnionM STLCValue)
-interpreter' tree env reccount = 
+interpreter' tree env reccount =
   if reccount >= 2
     then throwError BonsaiRecursionError
     else
@@ -194,31 +194,31 @@ interpreter' tree env reccount =
           stlcLiteral "tl" ==> mrgReturn (uSTLCBuiltin (conc (fromJust (terminalToBV stlcSyntax "tl")))),
           stlcLiteral "cons" ==> mrgReturn (uSTLCBuiltin (conc (fromJust (terminalToBV stlcSyntax "cons")))),
           stlcLiteral "+" ==> mrgReturn (uSTLCBuiltin (conc (fromJust (terminalToBV stlcSyntax "+")))),
-          ((stlcLiteral "lambda" *= (placeHolder *= placeHolder)) *= placeHolder)
-            ==> ( \nm _ expr -> do
-                    l <- lift nm
-                    symFailIfNot BonsaiExecError (isAvailableNameNode l)
-                    let BonsaiLeaf sym = l
-                    mrgReturn (uSTLCLambda sym expr env)
-                ),
-          (stlcLiteral "call" *= (placeHolder *= placeHolder))
-            ==> ( \func arg -> do
-                    argv <- interpreter' #~ arg # env # reccount
-                    funcv <- interpreter' #~ func # env # reccount
-                    funcvv <- lift funcv
-                    case funcvv of
-                      f@STLCBuiltin {} -> applyBuiltin f argv
-                      f@STLCPartiallyAppliedBuiltin {} -> applyBuiltin f argv
-                      STLCLambda nm expr env1 -> interpreter' #~ expr # envAdd env1 nm argv # (reccount + 1)
-                      _ -> throwError BonsaiExecError
-                ),
-          placeHolder
-            ==> ( \v -> do
-                    s <- lift v
-                    case s of
-                      BonsaiLeaf sym -> envResolveU BonsaiExecError env sym
-                      _ -> throwError BonsaiExecError
-                )
+          ((stlcLiteral "lambda" *= (placeHolder *= placeHolder)) *= placeHolder) ==>
+            ( \nm _ expr -> do
+                l <- lift nm
+                symFailIfNot BonsaiExecError (isAvailableNameNode l)
+                let BonsaiLeaf sym = l
+                mrgReturn (uSTLCLambda sym expr env)
+            ),
+          (stlcLiteral "call" *= (placeHolder *= placeHolder)) ==>
+            ( \func arg -> do
+                argv <- interpreter' #~ arg # env # reccount
+                funcv <- interpreter' #~ func # env # reccount
+                funcvv <- lift funcv
+                case funcvv of
+                  f@STLCBuiltin {} -> applyBuiltin f argv
+                  f@STLCPartiallyAppliedBuiltin {} -> applyBuiltin f argv
+                  STLCLambda nm expr env1 -> interpreter' #~ expr # envAdd env1 nm argv # (reccount + 1)
+                  _ -> throwError BonsaiExecError
+            ),
+          placeHolder ==>
+            ( \v -> do
+                s <- lift v
+                case s of
+                  BonsaiLeaf sym -> envResolveU BonsaiExecError env sym
+                  _ -> throwError BonsaiExecError
+            )
         ]
         tree
 

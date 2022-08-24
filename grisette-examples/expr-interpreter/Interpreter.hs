@@ -1,4 +1,5 @@
 {-# LANGUAGE TemplateHaskell #-}
+
 module Interpreter where
 
 import Control.Monad.Except
@@ -62,13 +63,13 @@ instance GenSym (Sym Bool) ExprSpec OpsExpr where
 instance GenSym (Sym Bool) ExprSpec Expr where
   genSymFresh e@(ExprSpec d l) =
     if d <= 0
-        then do
-          lit <- genSymFresh l
-          return $ mrgFmap Lit lit
-        else do
-          lit <- genSymFresh l
-          ops <- genSymFresh e
-          chooseU [Lit <$> lit, Ops <$> ops]
+      then do
+        lit <- genSymFresh l
+        return $ mrgFmap Lit lit
+      else do
+        lit <- genSymFresh l
+        ops <- genSymFresh e
+        chooseU [Lit <$> lit, Ops <$> ops]
 
 data Stmt
   = DefineStmt SymInteger (UnionM Expr)

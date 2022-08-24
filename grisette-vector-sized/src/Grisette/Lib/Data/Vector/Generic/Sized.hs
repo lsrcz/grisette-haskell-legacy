@@ -1,17 +1,17 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
-{-# OPTIONS_GHC -Wno-orphans #-}
+{-# LANGUAGE TypeOperators #-}
 {-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Grisette.Lib.Data.Vector.Generic.Sized where
 
@@ -28,7 +28,7 @@ import Unsafe.Coerce
 import GHC.Natural
 #endif
 
-newtype NatRepr (n::Nat) = NatRepr Natural
+newtype NatRepr (n :: Nat) = NatRepr Natural
 
 knownNat :: forall n. KnownNat n => NatRepr n
 knownNat = NatRepr (natVal (Proxy @n))
@@ -57,8 +57,8 @@ unsafeAxiom = unsafeCoerce (Refl @a)
 {-# NOINLINE unsafeAxiom #-} -- Note [Mark unsafe axioms as NOINLINE]
 
 data IsZeroNat n where
-  ZeroNat    :: IsZeroNat 0
-  NonZeroNat :: IsZeroNat (n+1)
+  ZeroNat :: IsZeroNat 0
+  NonZeroNat :: IsZeroNat (n + 1)
 
 isZeroNat :: NatRepr n -> IsZeroNat n
 isZeroNat (NatRepr 0) = unsafeCoerce ZeroNat
@@ -68,7 +68,7 @@ isZeroNat (NatRepr _) = unsafeCoerce NonZeroNat
 isZeroOrGT1 :: NatRepr n -> Either (n :~: 0) (LeqProof 1 n)
 isZeroOrGT1 n =
   case isZeroNat n of
-    ZeroNat    -> Left Refl
+    ZeroNat -> Left Refl
     NonZeroNat -> Right $ unsafeLeqProof
 
 instance
@@ -156,22 +156,30 @@ instance
   where
   extractSymbolics = VSized.foldl' (\acc v -> acc <> extractSymbolics v) mempty
 
-instance (KnownNat m, SEq bool t, SymBoolOp bool, VGeneric.Vector v t) =>
-  SEq bool (VSized.Vector v m t) where
+instance
+  (KnownNat m, SEq bool t, SymBoolOp bool, VGeneric.Vector v t) =>
+  SEq bool (VSized.Vector v m t)
+  where
   a ==~ b = VSized.toList a ==~ VSized.toList b
 
-instance (KnownNat m, SOrd bool t, SymBoolOp bool, VGeneric.Vector v t) =>
-  SOrd bool (VSized.Vector v m t) where
+instance
+  (KnownNat m, SOrd bool t, SymBoolOp bool, VGeneric.Vector v t) =>
+  SOrd bool (VSized.Vector v m t)
+  where
   a <=~ b = VSized.toList a <=~ VSized.toList b
   a <~ b = VSized.toList a <~ VSized.toList b
   a >=~ b = VSized.toList a >=~ VSized.toList b
   a >~ b = VSized.toList a >~ VSized.toList b
   symCompare a b = symCompare (VSized.toList a) (VSized.toList b)
 
-instance (KnownNat m, ToCon a b, VGeneric.Vector v a, VGeneric.Vector v b) =>
-  ToCon (VSized.Vector v m a) (VSized.Vector v m b) where
+instance
+  (KnownNat m, ToCon a b, VGeneric.Vector v a, VGeneric.Vector v b) =>
+  ToCon (VSized.Vector v m a) (VSized.Vector v m b)
+  where
   toCon v = VSized.forM v toCon
 
-instance (KnownNat m, ToSym a b, VGeneric.Vector v a, VGeneric.Vector v b) =>
-  ToSym (VSized.Vector v m a) (VSized.Vector v m b) where
-  toSym = VSized.map toSym 
+instance
+  (KnownNat m, ToSym a b, VGeneric.Vector v a, VGeneric.Vector v b) =>
+  ToSym (VSized.Vector v m a) (VSized.Vector v m b)
+  where
+  toSym = VSized.map toSym

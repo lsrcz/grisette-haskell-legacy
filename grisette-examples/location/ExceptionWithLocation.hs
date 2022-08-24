@@ -11,10 +11,10 @@ import Language.Haskell.TH
 
 data Exception raw = ExceptionWithLocation raw B.ByteString deriving (Show, Generic)
 
-deriving
-  via (Default (Exception raw))
+deriving via
+  (Default (Exception raw))
   instance
-  (SymBoolOp bool, Mergeable bool raw) => Mergeable bool (Exception raw)
+    (SymBoolOp bool, Mergeable bool raw) => Mergeable bool (Exception raw)
 
 exceptWithLocation :: Q Exp
 exceptWithLocation = [|\e -> ExceptionWithLocation e (B.fromString $__LOCATION__)|]

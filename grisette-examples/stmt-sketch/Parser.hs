@@ -7,6 +7,7 @@ import Control.Monad.Combinators.Expr as E
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C
 import Data.Proxy
+import Data.String
 import Data.Void
 import DataStructures
 import Grisette
@@ -16,7 +17,6 @@ import Language.Haskell.TH.Quote
 import Text.Megaparsec
 import Text.Megaparsec.Byte
 import qualified Text.Megaparsec.Byte.Lexer as L
-import Data.String
 
 type Parser = ParsecT Void B.ByteString GenSymFresh
 
@@ -75,8 +75,16 @@ binary nm f = E.InfixL (f <$ symbol nm)
 opHoleOperator :: Operator Parser (UnionM SymbExpr)
 opHoleOperator = E.InfixL $ do
   _ <- symbol "??op"
-  simpleChoose (Proxy :: Proxy SymBool) [uSAddExpr, uSSubExpr, uSMulExpr, uSLtExpr,
-    uSEqExpr, uSAndExpr, uSOrExpr]
+  simpleChoose
+    (Proxy :: Proxy SymBool)
+    [ uSAddExpr,
+      uSSubExpr,
+      uSMulExpr,
+      uSLtExpr,
+      uSEqExpr,
+      uSAndExpr,
+      uSOrExpr
+    ]
 
 addOp :: Parser (UnionM SymbExpr -> UnionM SymbExpr -> UnionM SymbExpr)
 addOp = symbol "+" >> return uSAddExpr
@@ -106,8 +114,9 @@ oplst =
 
 opBetterHole :: Operator Parser (UnionM SymbExpr)
 opBetterHole = E.InfixL $ do
-  ops <- between (symbol "??{") (symbol "}") $
-    sepBy (choice [addOp, subOp, mulOp, ltOp, eqOp, andOp, orOp]) (symbol ",")
+  ops <-
+    between (symbol "??{") (symbol "}") $
+      sepBy (choice [addOp, subOp, mulOp, ltOp, eqOp, andOp, orOp]) (symbol ",")
   simpleChoose (Proxy :: Proxy SymBool) ops
 
 -- hole op is handled separately

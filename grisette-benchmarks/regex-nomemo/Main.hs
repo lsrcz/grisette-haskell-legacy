@@ -12,16 +12,18 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Char8 as C
 import Data.Proxy
 import Grisette
+import Regex
 import Transducer
 import Utils.Timing
-import Regex
 
 type PattCoro = B.ByteString -> Int -> Coroutine (Yield (UnionM Int)) UnionM ()
 
 primPatt :: Char -> PattCoro
 primPatt pattc str idx =
   when (B.length str > idx && C.index str idx == pattc) $
-    yield $ mrgReturn $ idx + 1
+    yield $
+      mrgReturn $
+        idx + 1
 
 seqPatt :: PattCoro -> PattCoro -> PattCoro
 seqPatt patt1 patt2 str idx =

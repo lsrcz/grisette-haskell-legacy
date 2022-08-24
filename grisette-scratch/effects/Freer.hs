@@ -1,8 +1,10 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE DataKinds #-}
+
 module Freer where
+
 import Control.Monad.Freer
 import Grisette
 
@@ -24,5 +26,3 @@ eif :: (SymBoolOp bool, LastMember (UnionMBase bool) effs) => bool -> Eff effs s
 eif b l r = do
   br <- sendM $ mrgIf b (return False) (return True)
   if br then l else r
-
-

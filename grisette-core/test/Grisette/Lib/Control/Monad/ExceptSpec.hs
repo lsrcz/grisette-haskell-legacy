@@ -1,11 +1,11 @@
 module Grisette.Lib.Control.Monad.ExceptSpec where
 
 import Control.Monad.Trans.Except
-import Grisette.Lib.Control.Monad.Except
 import Grisette.Core.Control.Monad.UnionMBase
 import Grisette.Core.Data.Class.SimpleMergeable
-import Test.Hspec
+import Grisette.Lib.Control.Monad.Except
 import Grisette.TestUtils.SBool
+import Test.Hspec
 
 spec :: Spec
 spec = do
@@ -18,4 +18,4 @@ spec = do
           ExceptT SBool (UnionMBase SBool) SBool
       )
         `mrgCatchError` return
-          `shouldBe` mrgSingle (ITE (SSBool "a") (SSBool "b") (SSBool "c"))
+        `shouldBe` mrgSingle (ITE (SSBool "a") (SSBool "b") (SSBool "c"))

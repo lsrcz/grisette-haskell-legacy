@@ -22,4 +22,3 @@ mrgModifyLazy f = mrgGet >>= mrgPut . f
 
 mrgState :: (Has (State s) sig m, SymBoolOp bool, UnionLike bool m, Mergeable bool a) => (s -> (s, a)) -> m a
 mrgState = merge . state
-

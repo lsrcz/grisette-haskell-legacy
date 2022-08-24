@@ -31,6 +31,7 @@ import Data.Hashable
 import Data.IORef
 import Data.String
 import GHC.IO hiding (evaluate)
+import Grisette.Core.Control.Monad.CBMCExcept
 import Grisette.Core.Control.Monad.Union
 import Grisette.Core.Data.Class.Bool
 import Grisette.Core.Data.Class.Evaluate
@@ -45,10 +46,8 @@ import Grisette.Core.Data.Class.Solver
 import Grisette.Core.Data.Class.ToCon
 import Grisette.Core.Data.Class.ToSym
 import Grisette.Core.Data.UnionBase
-import Grisette.Core.Control.Monad.CBMCExcept
 import Language.Haskell.TH.Syntax
 import Language.Haskell.TH.Syntax.Compat (unTypeSplice)
-
 
 -- $setup
 -- >>> import Grisette.Core
@@ -188,7 +187,7 @@ instance SymBoolOp bool => UnionLike bool (UnionMBase bool) where
       x@(Right r) -> (x, r)
       Left _ -> (Right r, r)
         where
-          !r = UMrg s $ fullReconstruct s u --m >>= mrgSingle
+          !r = UMrg s $ fullReconstruct s u -- m >>= mrgSingle
   {-# NOINLINE mergeWithStrategy #-}
   mrgIfWithStrategy s (Conc c) l r = if c then mergeWithStrategy s l else mergeWithStrategy s r
   mrgIfWithStrategy s cond l r =
@@ -341,6 +340,7 @@ instance
   f # a = do
     f1 <- f
     mrgSingle $ f1 # a
+
 instance (SymBoolOp bool, IsString a, Mergeable bool a) => IsString (UnionMBase bool a) where
   fromString = mrgSingle . fromString
 
@@ -378,6 +378,7 @@ instance
       go (If _ _ _ t f) = mrgIf <$> genSymSimpleFresh () <*> go t <*> go f
 
 -- Concrete Key HashMaps
+
 -- | Tag for concrete types.
 -- Useful for specifying the merge strategy for some parametrized types where we should have different
 -- merge strategy for symbolic and concrete ones.

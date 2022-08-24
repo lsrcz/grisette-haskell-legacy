@@ -1,8 +1,8 @@
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE ConstraintKinds #-}
 
 module Grisette.Core.Control.Monad.Union
   ( MonadUnion,
@@ -17,4 +17,3 @@ import Grisette.Core.Data.Class.SimpleMergeable
 
 -- | Class for monads that support union-like operations and 'Mergeable' knowledge propagation.
 type MonadUnion bool u = (UnionLike bool u, Monad u)
-

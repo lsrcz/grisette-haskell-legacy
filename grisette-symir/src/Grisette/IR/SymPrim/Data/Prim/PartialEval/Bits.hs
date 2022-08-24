@@ -98,7 +98,7 @@ doPevalShiftBitsTerm _ a
   | case bitSizeMaybe (zeroBits :: a) of
       Just b -> a >= b
       Nothing -> False =
-    Just $ concTerm zeroBits
+      Just $ concTerm zeroBits
 doPevalShiftBitsTerm (ShiftBitsTerm _ x n) n1
   | (n >= 0 && n1 >= 0) || (n <= 0 && n1 <= 0) = Just $ shiftBitsTerm x (n + n1)
 doPevalShiftBitsTerm _ _ = Nothing
@@ -114,10 +114,10 @@ doPevalRotateBitsTerm x a
   | case bsize of
       Just s -> s /= 0 && (a >= s || a < 0)
       Nothing -> False = do
-    cbsize <- bsize
-    if a >= cbsize
-      then Just $ pevalRotateBitsTerm x (a - cbsize)
-      else Just $ pevalRotateBitsTerm x (a + cbsize)
+      cbsize <- bsize
+      if a >= cbsize
+        then Just $ pevalRotateBitsTerm x (a - cbsize)
+        else Just $ pevalRotateBitsTerm x (a + cbsize)
   where
     bsize = bitSizeMaybe (zeroBits :: a)
 doPevalRotateBitsTerm (RotateBitsTerm _ x n) n1 = Just $ rotateBitsTerm x (n + n1)

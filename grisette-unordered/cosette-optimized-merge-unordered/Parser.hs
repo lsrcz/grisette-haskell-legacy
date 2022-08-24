@@ -66,8 +66,12 @@ wholeStringQuery = do
 query :: Parser Query
 query =
   space
-    >> ( try namedQuery <|> try joinQuery <|> try asQuery <|> try selectQuery
-           <|> try leftOuterJoinQuery <|> try leftOuterJoin2Query
+    >> ( try namedQuery
+           <|> try joinQuery
+           <|> try asQuery
+           <|> try selectQuery
+           <|> try leftOuterJoinQuery
+           <|> try leftOuterJoin2Query
            <|> subQuery
        )
 

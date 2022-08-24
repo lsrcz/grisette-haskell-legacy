@@ -12,18 +12,18 @@ import qualified Data.HashMap.Strict as M
 import qualified Data.HashSet as S
 import Grisette.Core.Control.Monad.UnionMBase
 import Grisette.Core.Data.Class.Bool
+import Grisette.Core.Data.Class.Evaluate
 import Grisette.Core.Data.Class.ExtractSymbolics
 import Grisette.Core.Data.Class.Function
+import Grisette.Core.Data.Class.GenSym
 import Grisette.Core.Data.Class.PrimWrapper
 import Grisette.Core.Data.Class.SOrd
 import Grisette.Core.Data.Class.SimpleMergeable
-import Grisette.Core.Data.Class.Evaluate
-import Grisette.Core.Data.Class.GenSym
 import Grisette.Core.Data.Class.ToCon
 import Grisette.Core.Data.Class.ToSym
 import Grisette.Core.Data.UnionBase
-import Test.Hspec
 import Grisette.TestUtils.SBool
+import Test.Hspec
 
 spec :: Spec
 spec = do
@@ -214,13 +214,15 @@ spec = do
     it "SOrd with Single/Single" $ do
       (mrgSingle $ SSBool "a" :: UnionMBase SBool SBool) <=~ mrgSingle (SSBool "b")
         `shouldBe` (SSBool "a" <=~ SSBool "b" :: SBool)
-      (mrgSingle $ SSBool "a" :: UnionMBase SBool SBool) <~ mrgSingle (SSBool "b")
+      (mrgSingle $ SSBool "a" :: UnionMBase SBool SBool)
+        <~ mrgSingle (SSBool "b")
         `shouldBe` (SSBool "a" <~ SSBool "b" :: SBool)
       (mrgSingle $ SSBool "a" :: UnionMBase SBool SBool) >=~ mrgSingle (SSBool "b")
         `shouldBe` (SSBool "a" >=~ SSBool "b" :: SBool)
       (mrgSingle $ SSBool "a" :: UnionMBase SBool SBool) >~ mrgSingle (SSBool "b")
         `shouldBe` (SSBool "a" >~ SSBool "b" :: SBool)
-      (mrgSingle $ SSBool "a" :: UnionMBase SBool SBool) `symCompare` mrgSingle (SSBool "b")
+      (mrgSingle $ SSBool "a" :: UnionMBase SBool SBool)
+        `symCompare` mrgSingle (SSBool "b")
         `shouldBe` (SSBool "a" `symCompare` SSBool "b" :: UnionMBase SBool Ordering)
     let g1 :: UnionMBase SBool (Either SBool SBool) =
           mrgIf (SSBool "a") (mrgSingle $ Left $ SSBool "b") (mrgSingle $ Right $ SSBool "c")
@@ -229,56 +231,64 @@ spec = do
     it "SOrd with If/Single" $ do
       g1 <=~ mrgSingle (Left $ SSBool "d")
         `shouldBe` ITE (SSBool "a") (SSBool "b" <=~ SSBool "d") (CBool False)
-      g1 <~ mrgSingle (Left $ SSBool "d")
+      g1
+        <~ mrgSingle (Left $ SSBool "d")
         `shouldBe` ITE (SSBool "a") (SSBool "b" <~ SSBool "d") (CBool False)
       g1 >=~ mrgSingle (Left $ SSBool "d")
         `shouldBe` ITE (SSBool "a") (SSBool "b" >=~ SSBool "d") (CBool True)
       g1 >~ mrgSingle (Left $ SSBool "d")
         `shouldBe` ITE (SSBool "a") (SSBool "b" >~ SSBool "d") (CBool True)
 
-      g1 `symCompare` mrgSingle (Left $ SSBool "d")
+      g1
+        `symCompare` mrgSingle (Left $ SSBool "d")
         `shouldBe` ( mrgIf (SSBool "a") (SSBool "b" `symCompare` SSBool "d") (mrgSingle GT) ::
                        UnionMBase SBool Ordering
                    )
 
       g1 <=~ mrgSingle (Right $ SSBool "d")
         `shouldBe` ITE (SSBool "a") (CBool True) (SSBool "c" <=~ SSBool "d")
-      g1 <~ mrgSingle (Right $ SSBool "d")
+      g1
+        <~ mrgSingle (Right $ SSBool "d")
         `shouldBe` ITE (SSBool "a") (CBool True) (SSBool "c" <~ SSBool "d")
       g1 >=~ mrgSingle (Right $ SSBool "d")
         `shouldBe` ITE (SSBool "a") (CBool False) (SSBool "c" >=~ SSBool "d")
       g1 >~ mrgSingle (Right $ SSBool "d")
         `shouldBe` ITE (SSBool "a") (CBool False) (SSBool "c" >~ SSBool "d")
 
-      g1 `symCompare` mrgSingle (Right $ SSBool "d")
+      g1
+        `symCompare` mrgSingle (Right $ SSBool "d")
         `shouldBe` ( mrgIf (SSBool "a") (mrgSingle LT) (SSBool "c" `symCompare` SSBool "d") ::
                        UnionMBase SBool Ordering
                    )
     it "SOrd with Single/If" $ do
       mrgSingle (Left $ SSBool "d") <=~ g1
         `shouldBe` ITE (SSBool "a") (SSBool "d" <=~ SSBool "b") (CBool True)
-      mrgSingle (Left $ SSBool "d") <~ g1
+      mrgSingle (Left $ SSBool "d")
+        <~ g1
         `shouldBe` ITE (SSBool "a") (SSBool "d" <~ SSBool "b") (CBool True)
       mrgSingle (Left $ SSBool "d") >=~ g1
         `shouldBe` ITE (SSBool "a") (SSBool "d" >=~ SSBool "b") (CBool False)
       mrgSingle (Left $ SSBool "d") >~ g1
         `shouldBe` ITE (SSBool "a") (SSBool "d" >~ SSBool "b") (CBool False)
 
-      mrgSingle (Left $ SSBool "d") `symCompare` g1
+      mrgSingle (Left $ SSBool "d")
+        `symCompare` g1
         `shouldBe` ( mrgIf (SSBool "a") (SSBool "d" `symCompare` SSBool "b") (mrgSingle LT) ::
                        UnionMBase SBool Ordering
                    )
 
       mrgSingle (Right $ SSBool "d") <=~ g1
         `shouldBe` ITE (SSBool "a") (CBool False) (SSBool "d" <=~ SSBool "c")
-      mrgSingle (Right $ SSBool "d") <~ g1
+      mrgSingle (Right $ SSBool "d")
+        <~ g1
         `shouldBe` ITE (SSBool "a") (CBool False) (SSBool "d" <~ SSBool "c")
       mrgSingle (Right $ SSBool "d") >=~ g1
         `shouldBe` ITE (SSBool "a") (CBool True) (SSBool "d" >=~ SSBool "c")
       mrgSingle (Right $ SSBool "d") >~ g1
         `shouldBe` ITE (SSBool "a") (CBool True) (SSBool "d" >~ SSBool "c")
 
-      mrgSingle (Right $ SSBool "d") `symCompare` g1
+      mrgSingle (Right $ SSBool "d")
+        `symCompare` g1
         `shouldBe` ( mrgIf (SSBool "a") (mrgSingle GT) (SSBool "d" `symCompare` SSBool "c") ::
                        UnionMBase SBool Ordering
                    )
@@ -288,7 +298,8 @@ spec = do
           (SSBool "a")
           (ITE (SSBool "d") (SSBool "b" <=~ SSBool "e") (CBool True))
           (ITE (SSBool "d") (CBool False) (SSBool "c" <=~ SSBool "f"))
-      g1 <~ g2
+      g1
+        <~ g2
         `shouldBe` ITE
           (SSBool "a")
           (ITE (SSBool "d") (SSBool "b" <~ SSBool "e") (CBool True))
@@ -303,7 +314,8 @@ spec = do
           (SSBool "a")
           (ITE (SSBool "d") (SSBool "b" >~ SSBool "e") (CBool False))
           (ITE (SSBool "d") (CBool True) (SSBool "c" >~ SSBool "f"))
-      g1 `symCompare` g2
+      g1
+        `symCompare` g2
         `shouldBe` ( mrgIf
                        (SSBool "a")
                        (mrgIf (SSBool "d") (SSBool "b" `symCompare` SSBool "e") (mrgSingle LT))
@@ -408,7 +420,8 @@ spec = do
     it "nots for UnionMBase should work" $ do
       nots l `shouldBe` mrgIf (Not $ SSBool "a") (mrgSingle False) (mrgSingle True)
     it "xors for UnionMBase should work" $ do
-      l `xors` r
+      l
+        `xors` r
         `shouldBe` ( mrgIf
                        (ITE (SSBool "a") (SSBool "b") (Not $ SSBool "b"))
                        (mrgSingle False)
@@ -416,7 +429,8 @@ spec = do
                        UnionMBase SBool Bool
                    )
     it "implies for UnionMBase should work" $ do
-      l `implies` r
+      l
+        `implies` r
         `shouldBe` ( mrgIf
                        (And (Not $ SSBool "a") (SSBool "b"))
                        (mrgSingle False)

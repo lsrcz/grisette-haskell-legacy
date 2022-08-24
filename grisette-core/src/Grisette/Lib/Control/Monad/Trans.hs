@@ -7,9 +7,9 @@ module Grisette.Lib.Control.Monad.Trans
 where
 
 import Control.Monad.Trans
+import Grisette.Core.Control.Monad.Union
 import Grisette.Core.Data.Class.Mergeable
 import Grisette.Core.Data.Class.SimpleMergeable
-import Grisette.Core.Control.Monad.Union
 
 -- | 'lift' with 'Mergeable' knowledge propagation.
 mrgLift ::

@@ -3,6 +3,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE QuantifiedConstraints #-}
@@ -12,7 +13,6 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE LambdaCase #-}
 
 module Grisette.Backend.SBV.Data.SMT.Lowering
   ( lowerSinglePrim,
@@ -161,7 +161,9 @@ lowerSinglePrimImpl' ResolvedConfig {} (ConcTerm _ v) =
     _ -> translateTypeError (R.typeRep @a)
 lowerSinglePrimImpl' _ t@SymbTerm {} =
   error $
-    "The symbolic term should have already been lowered " ++ show t ++ " to SMT with collectedPrims.\n"
+    "The symbolic term should have already been lowered "
+      ++ show t
+      ++ " to SMT with collectedPrims.\n"
       ++ "We don't support adding new symbolics after collectedPrims with SBV backend"
 lowerSinglePrimImpl' _ (UnaryTerm _ op (_ :: Term x)) = errorMsg
   where
@@ -490,7 +492,9 @@ translateTypeError ta =
 translateUnaryError :: HasCallStack => String -> R.TypeRep a -> R.TypeRep b -> c
 translateUnaryError op ta tb =
   error $
-    "Don't know how to translate the op " ++ show op ++ " :: "
+    "Don't know how to translate the op "
+      ++ show op
+      ++ " :: "
       ++ show ta
       ++ " -> "
       ++ show tb
@@ -499,7 +503,9 @@ translateUnaryError op ta tb =
 translateBinaryError :: HasCallStack => String -> R.TypeRep a -> R.TypeRep b -> R.TypeRep c -> d
 translateBinaryError op ta tb tc =
   error $
-    "Don't know how to translate the op " ++ show op ++ " :: "
+    "Don't know how to translate the op "
+      ++ show op
+      ++ " :: "
       ++ show ta
       ++ " -> "
       ++ show tb
@@ -510,7 +516,9 @@ translateBinaryError op ta tb tc =
 translateTernaryError :: HasCallStack => String -> R.TypeRep a -> R.TypeRep b -> R.TypeRep c -> R.TypeRep d -> e
 translateTernaryError op ta tb tc td =
   error $
-    "Don't know how to translate the op " ++ show op ++ " :: "
+    "Don't know how to translate the op "
+      ++ show op
+      ++ " :: "
       ++ show ta
       ++ " -> "
       ++ show tb

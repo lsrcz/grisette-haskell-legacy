@@ -4,8 +4,8 @@ import Control.Carrier.Lift
 import Control.Carrier.State.Church
 import Grisette.Core
 import Grisette.Lib.Control.Carrier.Lift ()
-import Grisette.Lib.Control.Carrier.State.Common
 import Grisette.Lib.Control.Carrier.State.Church
+import Grisette.Lib.Control.Carrier.State.Common
 import Grisette.Lib.Control.Monad
 import Grisette.TestUtils.SBool
 import Test.Hspec
@@ -56,4 +56,3 @@ spec = do
       let s1' = su' (SSBool "c") (+ 2) (const $ SSBool "a") (* 2) (const $ SSBool "b") :: R
       runM (mrgEvalState 0 s1') `shouldBe` mrgIf (SSBool "c") (return $ SSBool "a") (return $ SSBool "b")
       runM (mrgEvalState 2 s1') `shouldBe` mrgIf (SSBool "c") (return $ SSBool "a") (return $ SSBool "b")
-    

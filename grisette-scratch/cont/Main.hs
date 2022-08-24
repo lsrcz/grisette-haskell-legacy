@@ -24,6 +24,7 @@ f1 x = mrgIf "b" (mrgReturn x) (mrgReturn $ x + 1)
 
 -- | >>> runContT (mrgIf (ssymb "a") (return 1) (return 1) >>= return) (\x -> mrgReturn x) :: UnionM Integer
 -- UMrg (Single 1)
+
 {-
 mrgResetT ::
   ( Monad m,

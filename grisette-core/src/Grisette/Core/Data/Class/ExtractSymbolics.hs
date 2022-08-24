@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -5,7 +6,6 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE CPP #-}
 
 module Grisette.Core.Data.Class.ExtractSymbolics
   ( ExtractSymbolics (..),
@@ -13,15 +13,15 @@ module Grisette.Core.Data.Class.ExtractSymbolics
 where
 
 import Control.Monad.Except
+import Control.Monad.Identity
+import Control.Monad.Trans.Maybe
 import qualified Control.Monad.Writer.Lazy as WriterLazy
 import qualified Control.Monad.Writer.Strict as WriterStrict
-import Control.Monad.Trans.Maybe
 import qualified Data.ByteString as B
 import Data.Functor.Sum
-import Generics.Deriving
-import Control.Monad.Identity
 import Data.Int
 import Data.Word
+import Generics.Deriving
 
 -- $setup
 -- >>> import Grisette.Core
@@ -31,12 +31,12 @@ import Data.Word
 -- >>> import Data.List (sort)
 
 -- | Extracts all the symbolic variables that are transitively contained in the given value.
---  
+--
 -- >>> extractSymbolics ("a" :: SymBool) :: HashSet TermSymbol
 -- fromList [a :: Bool]
--- 
+--
 -- >>> :{
---   sort $ 
+--   sort $
 --     HashSet.toList $
 --       extractSymbolics (mrgIf "a" (mrgReturn ["b"]) (mrgReturn ["c", "d"]) :: UnionM [SymBool]) :: [TermSymbol]
 -- :}
@@ -78,20 +78,20 @@ instance
 instance (Monoid symbolSet) => ExtractSymbolics symbolSet type where \
   extractSymbolics _ = mempty
 
-CONCRETE_EXTRACT_SYMBOLICS(Bool)
-CONCRETE_EXTRACT_SYMBOLICS(Integer)
-CONCRETE_EXTRACT_SYMBOLICS(Char)
-CONCRETE_EXTRACT_SYMBOLICS(Int)
-CONCRETE_EXTRACT_SYMBOLICS(Int8)
-CONCRETE_EXTRACT_SYMBOLICS(Int16)
-CONCRETE_EXTRACT_SYMBOLICS(Int32)
-CONCRETE_EXTRACT_SYMBOLICS(Int64)
-CONCRETE_EXTRACT_SYMBOLICS(Word)
-CONCRETE_EXTRACT_SYMBOLICS(Word8)
-CONCRETE_EXTRACT_SYMBOLICS(Word16)
-CONCRETE_EXTRACT_SYMBOLICS(Word32)
-CONCRETE_EXTRACT_SYMBOLICS(Word64)
-CONCRETE_EXTRACT_SYMBOLICS(B.ByteString)
+CONCRETE_EXTRACT_SYMBOLICS (Bool)
+CONCRETE_EXTRACT_SYMBOLICS (Integer)
+CONCRETE_EXTRACT_SYMBOLICS (Char)
+CONCRETE_EXTRACT_SYMBOLICS (Int)
+CONCRETE_EXTRACT_SYMBOLICS (Int8)
+CONCRETE_EXTRACT_SYMBOLICS (Int16)
+CONCRETE_EXTRACT_SYMBOLICS (Int32)
+CONCRETE_EXTRACT_SYMBOLICS (Int64)
+CONCRETE_EXTRACT_SYMBOLICS (Word)
+CONCRETE_EXTRACT_SYMBOLICS (Word8)
+CONCRETE_EXTRACT_SYMBOLICS (Word16)
+CONCRETE_EXTRACT_SYMBOLICS (Word32)
+CONCRETE_EXTRACT_SYMBOLICS (Word64)
+CONCRETE_EXTRACT_SYMBOLICS (B.ByteString)
 
 -- ()
 instance (Monoid symbolSet) => ExtractSymbolics symbolSet () where
@@ -151,12 +151,14 @@ deriving via
 -- WriterT
 instance
   (Monoid symbolSet, ExtractSymbolics symbolSet (m (a, s))) =>
-    ExtractSymbolics symbolSet (WriterLazy.WriterT s m a) where
+  ExtractSymbolics symbolSet (WriterLazy.WriterT s m a)
+  where
   extractSymbolics (WriterLazy.WriterT f) = extractSymbolics f
 
 instance
   (Monoid symbolSet, ExtractSymbolics symbolSet (m (a, s))) =>
-    ExtractSymbolics symbolSet (WriterStrict.WriterT s m a) where
+  ExtractSymbolics symbolSet (WriterStrict.WriterT s m a)
+  where
   extractSymbolics (WriterStrict.WriterT f) = extractSymbolics f
 
 -- Identity

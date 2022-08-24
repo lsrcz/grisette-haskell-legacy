@@ -1,46 +1,52 @@
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UndecidableInstances #-}
+
 module Grisette.Unordered.UUnionM where
-import Grisette.Unordered.UUnion
-import Data.IORef
-import Grisette.Core.Data.Class.Mergeable
+
 import Control.DeepSeq
-import Language.Haskell.TH.Syntax
-import Language.Haskell.TH.Syntax.Compat
-import GHC.IO hiding (evaluate)
-import Data.Functor.Classes
-import Grisette.Core.Data.Class.SimpleMergeable
-import Grisette.Core.Data.Class.Bool
-import Data.Bifunctor
-import Grisette.Core.Data.Class.PrimWrapper
-import Grisette.Core.Control.Monad.Union
-import Grisette.Core.Data.Class.SOrd
-import Grisette.Core.Data.Class.ToSym
 import Control.Monad.Identity
-import Grisette.Core.Data.Class.ToCon
+import Data.Bifunctor
+import Data.Functor.Classes
+import Data.Hashable
+import Data.IORef
+import Data.String
+import GHC.IO hiding (evaluate)
+import Grisette.Core.Control.Monad.Union
+import Grisette.Core.Data.Class.Bool
 import Grisette.Core.Data.Class.Evaluate
 import Grisette.Core.Data.Class.ExtractSymbolics
-import Data.Hashable
 import Grisette.Core.Data.Class.Function
-import Data.String
 import Grisette.Core.Data.Class.GenSym
-import Grisette.IR.SymPrim
+import Grisette.Core.Data.Class.Mergeable
+import Grisette.Core.Data.Class.PrimWrapper
+import Grisette.Core.Data.Class.SOrd
+import Grisette.Core.Data.Class.SimpleMergeable
 import Grisette.Core.Data.Class.Solver
+import Grisette.Core.Data.Class.ToCon
+import Grisette.Core.Data.Class.ToSym
+import Grisette.IR.SymPrim
+import Grisette.Unordered.UUnion
+import Language.Haskell.TH.Syntax
+import Language.Haskell.TH.Syntax.Compat
 
 data UUnionMBase bool a where
-  UUAny :: IORef (Either (UUnionBase bool a) (UUnionMBase bool a)) ->
-    UUnionBase bool a -> UUnionMBase bool a
-  UUMrg :: MergingStrategy bool a -> 
-    UUnionBase bool a -> UUnionMBase bool a
+  UUAny ::
+    IORef (Either (UUnionBase bool a) (UUnionMBase bool a)) ->
+    UUnionBase bool a ->
+    UUnionMBase bool a
+  UUMrg ::
+    MergingStrategy bool a ->
+    UUnionBase bool a ->
+    UUnionMBase bool a
 
 instance (NFData bool, NFData a) => NFData (UUnionMBase bool a) where
   rnf = rnf1
@@ -60,7 +66,6 @@ instance (Lift bool, Lift a) => Lift (UUnionMBase bool a) where
 freshUUAny :: UUnionBase bool a -> UUnionMBase bool a
 freshUUAny v = UUAny (unsafeDupablePerformIO $ newIORef $ Left v) v
 {-# NOINLINE freshUUAny #-}
-
 
 instance (Show a, Show bool) => (Show (UUnionMBase bool a)) where
   showsPrec = showsPrec1
@@ -98,10 +103,10 @@ bindUnion (UUnionBase l1) f = go $ fmap (second f) l1
     ins :: (bool, UUnionMBase bool b) -> UUnionMBase bool b
     ins (b, UUAny _ (UUnionBase l)) = freshUUAny $ UUnionBase $ fmap (first (b &&~)) l
     ins (b, UUMrg s (UUnionBase l)) = UUMrg s $ UUnionBase $ fmap (first (b &&~)) l
-    go :: [(bool,UUnionMBase bool b)] -> UUnionMBase bool b
+    go :: [(bool, UUnionMBase bool b)] -> UUnionMBase bool b
     go v = case foldl cc (Nothing, UUnionBase []) $ fmap ins v of
       (Just s, r) -> mergeWithStrategy s $ freshUUAny r
-      (_ ,r) -> freshUUAny r
+      (_, r) -> freshUUAny r
 
 instance (SymBoolOp bool) => Monad (UUnionMBase bool) where
   a >>= f = bindUnion (underlyingUnion a) f
@@ -125,7 +130,7 @@ instance SymBoolOp bool => UnionLike bool (UUnionMBase bool) where
       x@(Right r) -> (x, r)
       Left _ -> (Right r, r)
         where
-          !r = UUMrg s $ fullReconstructUnordered s u --m >>= mrgSingle
+          !r = UUMrg s $ fullReconstructUnordered s u -- m >>= mrgSingle
   {-# NOINLINE mergeWithStrategy #-}
   mrgIfWithStrategy s (Conc c) l r = if c then mergeWithStrategy s l else mergeWithStrategy s r
   mrgIfWithStrategy s cond l r =
@@ -145,10 +150,9 @@ liftToMonadUnion :: (SymBoolOp bool, Mergeable bool a, MonadUnion bool u) => UUn
 liftToMonadUnion u = go (underlyingUnion u)
   where
     go (UUnionBase l) = go1 l
-    go1 [(_,l)] = mrgSingle l
-    go1 ((b1,a1):l) = mrgIf b1 (mrgSingle a1) $ go1 l
+    go1 [(_, l)] = mrgSingle l
+    go1 ((b1, a1) : l) = mrgIf b1 (mrgSingle a1) $ go1 l
     go1 _ = undefined
-
 
 instance (SymBoolOp bool, SOrd bool a) => SOrd bool (UUnionMBase bool a) where
   x <=~ y = getSingle $ do
@@ -193,8 +197,9 @@ instance (SymBoolOp bool, Mergeable bool a, Evaluate model a, Evaluate model boo
       go :: UUnionBase bool a -> UUnionMBase bool a
       go (UUnionBase l) = merge $ freshUUAny $ UUnionBase $ go1 l
       go1 [] = []
-      go1 ((b,a):l) = let cond = evaluate fillDefault model b in
-        if cond == conc False then go1 l else (cond, evaluate fillDefault model a) : go1 l
+      go1 ((b, a) : l) =
+        let cond = evaluate fillDefault model b
+         in if cond == conc False then go1 l else (cond, evaluate fillDefault model a) : go1 l
 
 instance
   (Monoid symbolSet, SymBoolOp bool, ExtractSymbolics symbolSet a, ExtractSymbolics symbolSet bool) =>
@@ -204,7 +209,7 @@ instance
     where
       go (UUnionBase l) = go1 l
       go1 [] = mempty
-      go1 ((b,a):l) = extractSymbolics b <> extractSymbolics a <> go1 l
+      go1 ((b, a) : l) = extractSymbolics b <> extractSymbolics a <> go1 l
 
 instance (Hashable bool, Hashable a) => Hashable (UUnionMBase bool a) where
   s `hashWithSalt` (UUAny _ u) = s `hashWithSalt` (0 :: Int) `hashWithSalt` u
@@ -287,10 +292,9 @@ instance
   genSymFresh spec = go (underlyingUnion $ merge spec)
     where
       go (UUnionBase l) = go1 l
-      go1 [(_,x)] = genSymFresh x
-      go1 ((_,x1):xs) = mrgIf <$> genSymSimpleFresh () <*> genSymFresh x1 <*> go1 xs
+      go1 [(_, x)] = genSymFresh x
+      go1 ((_, x1) : xs) = mrgIf <$> genSymSimpleFresh () <*> genSymFresh x1 <*> go1 xs
       go1 _ = undefined
-
 
 type UUnionM = UUnionMBase SymBool
 

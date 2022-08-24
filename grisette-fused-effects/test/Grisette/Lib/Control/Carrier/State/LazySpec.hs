@@ -58,4 +58,3 @@ spec = do
       let s1' = su' (SSBool "c") (+ 2) (const $ SSBool "a") (* 2) (const $ SSBool "b") :: R
       runM (mrgEvalState 0 s1') `shouldBe` mrgIf (SSBool "c") (return $ SSBool "a") (return $ SSBool "b")
       runM (mrgEvalState 2 s1') `shouldBe` mrgIf (SSBool "c") (return $ SSBool "a") (return $ SSBool "b")
-    

@@ -1,7 +1,7 @@
 module Ordered where
 
-import SymBool
 import Prog
+import SymBool
 
 data Ordered a = Single a | ITE SymBool a (Ordered a) deriving (Show)
 
@@ -12,16 +12,16 @@ reorder v = go
     go r@(ITE c l1 r1)
       | v == l1 = r
       | otherwise = case go r1 of
-            Single a | a == v -> ITE (nots c) a (Single l1)
-            ITE sb a or' | a == v -> ITE (ands (nots c) sb) a (ITE c l1 or')
-            gr -> ITE c l1 gr
+          Single a | a == v -> ITE (nots c) a (Single l1)
+          ITE sb a or' | a == v -> ITE (ands (nots c) sb) a (ITE c l1 or')
+          gr -> ITE c l1 gr
 {-# INLINE reorder #-}
 
 mrgIfOrderedNaive :: (Eq a) => SymBool -> Ordered a -> Ordered a -> Ordered a
 mrgIfOrderedNaive cond l@(Single a) r = case reorder a r of
   Single b | a == b -> l
   ITE c1 b rr | a == b -> ITE (ors cond c1) a rr
-  _ -> ITE cond a r 
+  _ -> ITE cond a r
 mrgIfOrderedNaive cond (ITE c a ll) r = case reorder a r of
   Single b | a == b -> ITE (ites cond c (Con True)) a ll
   ITE c1 b rr | a == b -> ITE (ites cond c c1) a $ mrgIfOrderedNaive cond ll rr
@@ -29,7 +29,7 @@ mrgIfOrderedNaive cond (ITE c a ll) r = case reorder a r of
 {-# INLINE mrgIfOrderedNaive #-}
 
 allSymBoolOrdered :: Ordered a -> [SymBool]
-allSymBoolOrdered (ITE c _ r) = c:allSymBoolOrdered r
+allSymBoolOrdered (ITE c _ r) = c : allSymBoolOrdered r
 allSymBoolOrdered _ = []
 
 interpretProgOrderedNaive :: Eq a => Prog a -> Ordered a
@@ -66,4 +66,3 @@ benchmarkNaive = length . allSubSymBools . allSymBoolOrdered . interpretProgOrde
 
 benchmarkSorted :: Ord a => Prog a -> Int
 benchmarkSorted = length . allSubSymBools . allSymBoolOrdered . interpretProgOrderedSorted
-

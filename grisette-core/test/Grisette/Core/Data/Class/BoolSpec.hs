@@ -1,12 +1,13 @@
 module Grisette.Core.Data.Class.BoolSpec where
 
-import Test.Hspec
 import Grisette.Core.Data.Class.Bool
+import Test.Hspec
 
 data CustomAndBool
   = CASBool String
   | CAAnd CustomAndBool CustomAndBool
-  | CANot CustomAndBool deriving (Show, Eq)
+  | CANot CustomAndBool
+  deriving (Show, Eq)
 
 instance LogicalOp CustomAndBool where
   nots (CANot x) = x
@@ -16,7 +17,8 @@ instance LogicalOp CustomAndBool where
 data CustomOrBool
   = COSBool String
   | COOr CustomOrBool CustomOrBool
-  | CONot CustomOrBool deriving (Show, Eq)
+  | CONot CustomOrBool
+  deriving (Show, Eq)
 
 instance LogicalOp CustomOrBool where
   nots (CONot x) = x
@@ -34,6 +36,7 @@ spec = do
         nots (COSBool "a") `shouldBe` CONot (COSBool "a")
         COSBool "a" &&~ COSBool "b" `shouldBe` CONot (COOr (CONot $ COSBool "a") (CONot $ COSBool "b"))
         COSBool "a" ||~ COSBool "b" `shouldBe` COOr (COSBool "a") (COSBool "b")
-        COSBool "a" `xors` COSBool "b" `shouldBe`
-          COOr (CONot (COOr (CONot (COSBool "a")) (COSBool "b"))) (CONot (COOr (COSBool "a") (CONot (COSBool "b"))))
+        COSBool "a"
+          `xors` COSBool "b"
+          `shouldBe` COOr (CONot (COOr (CONot (COSBool "a")) (COSBool "b"))) (CONot (COOr (COSBool "a") (CONot (COSBool "b"))))
         COSBool "a" `implies` COSBool "b" `shouldBe` COOr (CONot (COSBool "a")) (COSBool "b")

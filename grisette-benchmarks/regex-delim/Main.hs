@@ -12,8 +12,8 @@ import qualified Data.ByteString.Char8 as C
 import Data.Function (fix)
 import Data.Proxy
 import Grisette
-import Utils.Timing
 import Regex
+import Utils.Timing
 
 data Thread m a = Done | Resume a (m (Thread m a))
 
@@ -91,9 +91,11 @@ instance RegexSynth RegexDelim where
     EmptyPatt -> emptyPatt
   {-# INLINE toCoro #-}
 
-  matchFirstWithStart _ patt str startPos = MaybeT $ mrgEvalContT (patt str startPos) >>=
-    foldThread id (mrgReturn Nothing) (const . mrgFmap Just)
+  matchFirstWithStart _ patt str startPos =
+    MaybeT $
+      mrgEvalContT (patt str startPos)
+        >>= foldThread id (mrgReturn Nothing) (const . mrgFmap Just)
   {-# INLINE matchFirstWithStart #-}
-  
+
 main :: IO ()
 main = timeItAll "Overall" $ regexMain (Proxy @RegexDelim)

@@ -8,11 +8,11 @@ module Grisette.Core.Data.Class.PrimWrapper
   )
 where
 
-import Data.Typeable
-import Language.Haskell.TH.Syntax
 import Control.DeepSeq
 import Data.Hashable
 import Data.String
+import Data.Typeable
+import Language.Haskell.TH.Syntax
 
 -- $setup
 -- >>> import Grisette.Core
@@ -26,6 +26,7 @@ class IsString t => PrimWrapper t c | t -> c where
   -- >>> conc True :: SymBool
   -- true
   conc :: c -> t
+
   -- | Extract the concrete value from a symbolic value.
   --
   -- >>> concView (conc True :: SymBool)
@@ -34,16 +35,19 @@ class IsString t => PrimWrapper t c | t -> c where
   -- >>> concView (ssymb "a" :: SymBool)
   -- Nothing
   concView :: t -> Maybe c
+
   -- | Generate simply-named symbolic variables.
   --
   -- >>> ssymb "a" :: SymBool
   -- a
   ssymb :: String -> t
+
   -- | Generate indexed symbolic variables.
   --
   -- >>> isymb "a" 1 :: SymBool
   -- a@1
   isymb :: String -> Int -> t
+
   sinfosymb :: (Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) => String -> a -> t
   iinfosymb :: (Typeable a, Ord a, Lift a, NFData a, Show a, Hashable a) => String -> Int -> a -> t
 

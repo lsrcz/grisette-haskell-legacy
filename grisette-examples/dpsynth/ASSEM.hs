@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module ASSEM where
+
 import Core
 
 assem :: ConProgram Integer

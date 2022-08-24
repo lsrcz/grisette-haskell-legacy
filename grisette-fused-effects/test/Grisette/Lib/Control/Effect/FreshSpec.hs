@@ -5,10 +5,10 @@ import Control.Carrier.Lift
 import Grisette.Core
 import Grisette.Lib.Control.Carrier.Fresh.Strict ()
 import Grisette.Lib.Control.Carrier.Lift ()
-import Grisette.Lib.Control.Monad
 import Grisette.Lib.Control.Effect.Fresh
-import Test.Hspec
+import Grisette.Lib.Control.Monad
 import Grisette.TestUtils.SBool
+import Test.Hspec
 
 spec :: Spec
 spec = do

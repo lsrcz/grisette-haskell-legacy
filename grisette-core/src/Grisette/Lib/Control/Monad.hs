@@ -16,10 +16,10 @@ module Grisette.Lib.Control.Monad
 where
 
 import Control.Monad
+import Grisette.Core.Control.Monad.Union
 import Grisette.Core.Data.Class.Bool
 import Grisette.Core.Data.Class.Mergeable
 import Grisette.Core.Data.Class.SimpleMergeable
-import Grisette.Core.Control.Monad.Union
 import Grisette.Lib.Data.Foldable
 
 -- | 'return' with 'Mergeable' knowledge propagation.
@@ -68,4 +68,3 @@ mrgMplus a b = merge $ mplus a b
 mrgFmap :: (MonadUnion bool f, Mergeable bool b, Functor f) => (a -> b) -> f a -> f b
 mrgFmap f a = merge $ fmap f a
 {-# INLINE mrgFmap #-}
-

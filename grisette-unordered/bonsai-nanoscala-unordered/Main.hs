@@ -6,9 +6,9 @@ import Bonsai.BonsaiTree
 import Control.DeepSeq
 import Control.Monad.Except
 import Grisette
+import Grisette.Unordered.UUnionM
 import NanoScala
 import Utils.Timing
-import Grisette.Unordered.UUnionM
 
 f10 :: UUnionM DotTree
 f10 = genSym (10 :: Int) "a"

@@ -1,6 +1,6 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE EmptyDataDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE CPP #-}
 
 module Syntax where
 
@@ -21,8 +21,8 @@ data Val
 
 data Query
   = QuerySelect [B.ByteString] Query Filter
-  -- | QuerySelectDistinct [B.ByteString] Query Filter
-  | QueryJoin Query Query
+  | -- | QuerySelectDistinct [B.ByteString] Query Filter
+    QueryJoin Query Query
   | QueryNamed B.ByteString
   | QueryTable Table
   | QueryRename Query B.ByteString
@@ -60,7 +60,7 @@ data Filter
   | FilterConj Filter Filter
   | FilterDisj Filter Filter
   | FilterNot Filter
-  -- | FilterExists Query
-  | FilterTrue
+  | -- | FilterExists Query
+    FilterTrue
   | FilterFalse
   deriving (Show, Lift)

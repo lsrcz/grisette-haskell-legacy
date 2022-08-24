@@ -37,7 +37,7 @@ instance GenSym SymBool GenEfsync SysCall
 
 instance GenSymSimple GenEfsync SysCall where
   genSymSimpleFresh (GenEfsync n) = do
-    fds <- choose [0 .. n -1]
+    fds <- choose [0 .. n - 1]
     b <- genSymSimpleFresh ()
     return $ Efsync fds b
 

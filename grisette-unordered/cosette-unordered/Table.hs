@@ -5,9 +5,9 @@ module Table where
 import qualified Data.ByteString as B
 import GHC.Generics
 import Grisette
+import Grisette.Unordered.UUnionM
 import Instances.TH.Lift ()
 import qualified Language.Haskell.TH.Syntax as THSyntax
-import Grisette.Unordered.UUnionM
 
 type Name = B.ByteString
 

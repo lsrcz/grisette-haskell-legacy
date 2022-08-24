@@ -8,10 +8,10 @@ import qualified Data.ByteString as B
 import Data.HashMap.Strict as M
 import Evaluator
 import Grisette
+import Grisette.Unordered.UUnionM
 import Language.Haskell.TH.Syntax.Compat
 import Syntax
 import Table
-import Grisette.Unordered.UUnionM
 
 moveQuotesOut :: [SpliceQ e] -> SpliceQ [e]
 moveQuotesOut [] = [||[]||]
@@ -66,6 +66,7 @@ denoteFilter (FilterBinOp FBinEq v1 v2) indexMap =
   [||\e -> $$(denoteValue v1 indexMap) e ==~ $$(denoteValue v2 indexMap) e||]
 denoteFilter (FilterBinOp FBinNEq v1 v2) indexMap =
   [||\e -> $$(denoteValue v1 indexMap) e /=~ $$(denoteValue v2 indexMap) e||]
+
 -- denoteFilter f _ = fail $ "I don't know how to handle the sql filter " ++ show f
 
 denoteValue ::

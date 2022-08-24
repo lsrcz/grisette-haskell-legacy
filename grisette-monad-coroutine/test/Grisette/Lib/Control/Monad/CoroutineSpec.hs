@@ -5,8 +5,8 @@ module Grisette.Lib.Control.Monad.CoroutineSpec where
 
 import Control.Monad.Coroutine hiding (merge)
 import Control.Monad.Coroutine.SuspensionFunctors
-import Grisette.Lib.Control.Monad
 import Grisette.Core
+import Grisette.Lib.Control.Monad
 import Grisette.Lib.Control.Monad.Coroutine.SuspensionFunctors ()
 import Grisette.TestUtils.SBool
 import Test.Hspec

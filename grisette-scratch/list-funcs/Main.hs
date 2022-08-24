@@ -2,6 +2,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
+
 module Main where
 
 import Grisette
@@ -12,11 +13,10 @@ symFilter1 f l = go l (mrgReturn [])
     go :: [a] -> u [a] -> u [a]
     go [] r = mrgFmap reverse r
     go (x : xs) r = do
-      res <- mrgReturnWithStrategy mergingStrategy1 $ mrgIf @bool @u @[a] (f x) (mrgFmap (x:) r) r
+      res <- mrgReturnWithStrategy mergingStrategy1 $ mrgIf @bool @u @[a] (f x) (mrgFmap (x :) r) r
       go xs res
 
-
-main :: IO()
+main :: IO ()
 main = do
   print $ (symFilter id [ssymb "a", ssymb "b", ssymb "c"] :: UnionM [SymBool])
   print $ do

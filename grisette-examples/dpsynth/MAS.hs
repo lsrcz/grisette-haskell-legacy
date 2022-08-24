@@ -55,8 +55,12 @@ masSynthedOptAlgo1 :: (Num a, Ord a, Show a) => [a] -> a
 masSynthedOptAlgo1 = go 0 0 0
   where
     go p1 p2 p3 [] = max p1 $ max p2 p3
-    go p1 p2 p3 (a : as) = go (max (p3 + a) (a - p1)) (max p1 (max p3 (max p2 a)))
-      (max (max (- a) 0) (max (p1 - a) (-p3))) as
+    go p1 p2 p3 (a : as) =
+      go
+        (max (p3 + a) (a - p1))
+        (max p1 (max p3 (max p2 a)))
+        (max (max (-a) 0) (max (p1 - a) (-p3)))
+        as
 
 masAlgo :: (Num a, Ord a) => [a] -> a
 masAlgo = go 0 0 0

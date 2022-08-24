@@ -14,7 +14,7 @@ main = do
   r2 <-
     synthesis
       (UnboundedReasoning z3)
-      doSynthesisTranslation 
+      doSynthesisTranslation
       ( getSketch
           "v1 = ??i;                   \
           \ v2 = ??i;                  \
@@ -31,7 +31,7 @@ main = do
   r3 <-
     synthesis
       (UnboundedReasoning z3)
-      doSynthesisTranslation 
+      doSynthesisTranslation
       ( getSketch
           "v1 = ??i;                   \
           \ v2 = ??i;                  \

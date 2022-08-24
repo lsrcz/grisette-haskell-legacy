@@ -164,5 +164,4 @@ spec = do
       toCon v2s `shouldBe` (Nothing :: Maybe (VSized.Vector V.Vector 2 Bool))
   describe "ToSym for Sized Vector" $ do
     it "ToSym for Sized Vector" $ do
-      toSym v2cc `shouldBe` v2c 
-
+      toSym v2cc `shouldBe` v2c

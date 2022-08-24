@@ -6,9 +6,9 @@ module Grisette.TestUtils.SOrd where
 import Grisette.Core.Control.Monad.UnionMBase
 import Grisette.Core.Data.Class.Bool
 import Grisette.Core.Data.Class.SOrd
+import Grisette.Lib.Control.Monad
 import Grisette.TestUtils.SBool
 import Test.Hspec
-import Grisette.Lib.Control.Monad
 
 concreteOrdOkProp :: (HasCallStack, SOrd SBool a, Ord a) => (a, a) -> Expectation
 concreteOrdOkProp (i, j) = do
@@ -32,7 +32,8 @@ symbolicProdOrdOkProp l r ll lr rl rr = do
   l <~ r `shouldBe` ((ll <~ rl) ||~ ((ll ==~ rl) &&~ (lr <~ rr)) :: SBool)
   l >=~ r `shouldBe` ((ll >~ rl) ||~ ((ll ==~ rl) &&~ (lr >=~ rr)) :: SBool)
   l >~ r `shouldBe` ((ll >~ rl) ||~ ((ll ==~ rl) &&~ (lr >~ rr)) :: SBool)
-  l `symCompare` r
+  l
+    `symCompare` r
     `shouldBe` ( ( do
                      lc <- symCompare ll rl
                      case lc of
@@ -62,20 +63,20 @@ symbolicSumOrdOkProp li ri lli lri rli rri = go li ri lli lri rli rri (0 :: Int)
     gor _ [] _ _ [] [] _ _ = return ()
     gor lv (rv : rs) llv lrv (rlv : rls) (rrv : rrs) ln rn
       | ln < rn = do
-        lv <=~ rv `shouldBe` CBool True
-        lv <~ rv `shouldBe` CBool True
-        lv >=~ rv `shouldBe` CBool False
-        lv >~ rv `shouldBe` CBool False
-        lv `symCompare` rv `shouldBe` (mrgReturn LT :: UnionMBase SBool Ordering)
-        gor lv rs llv lrv rls rrs ln (rn + 1)
+          lv <=~ rv `shouldBe` CBool True
+          lv <~ rv `shouldBe` CBool True
+          lv >=~ rv `shouldBe` CBool False
+          lv >~ rv `shouldBe` CBool False
+          lv `symCompare` rv `shouldBe` (mrgReturn LT :: UnionMBase SBool Ordering)
+          gor lv rs llv lrv rls rrs ln (rn + 1)
       | ln == rn = do
-        symbolicProdOrdOkProp lv rv llv lrv rlv rrv
-        gor lv rs llv lrv rls rrs ln (rn + 1)
+          symbolicProdOrdOkProp lv rv llv lrv rlv rrv
+          gor lv rs llv lrv rls rrs ln (rn + 1)
       | otherwise = do
-        lv <=~ rv `shouldBe` CBool False
-        lv <~ rv `shouldBe` CBool False
-        lv >=~ rv `shouldBe` CBool True
-        lv >~ rv `shouldBe` CBool True
-        lv `symCompare` rv `shouldBe` (mrgReturn GT :: UnionMBase SBool Ordering)
-        gor lv rs llv lrv rls rrs ln (rn + 1)
+          lv <=~ rv `shouldBe` CBool False
+          lv <~ rv `shouldBe` CBool False
+          lv >=~ rv `shouldBe` CBool True
+          lv >~ rv `shouldBe` CBool True
+          lv `symCompare` rv `shouldBe` (mrgReturn GT :: UnionMBase SBool Ordering)
+          gor lv rs llv lrv rls rrs ln (rn + 1)
     gor _ _ _ _ _ _ _ _ = False `shouldBe` True

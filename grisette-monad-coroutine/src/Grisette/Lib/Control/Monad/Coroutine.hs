@@ -78,10 +78,10 @@ mrgSuspend ::
   s (Coroutine s m x) ->
   Coroutine s m x
 mrgSuspend s =
-  Coroutine $
-    mergeWithStrategy
+  Coroutine
+    $ mergeWithStrategy
       coroEitherMergingStrategy
-      $ return (Left s)
+    $ return (Left s)
 {-# INLINEABLE mrgSuspend #-}
 
 mrgMapMonad ::
@@ -96,7 +96,8 @@ mrgMapMonad f (Coroutine r) =
         f r >>= \x ->
           mergeWithStrategy
             coroEitherMergingStrategy
-            $ return $ map' x
+            $ return
+            $ map' x
     }
   where
     map' :: Either (s (Coroutine s m x)) x -> Either (s (Coroutine s m' x)) x
@@ -172,7 +173,9 @@ mrgBounce f (Coroutine r) = Coroutine $ mergeWithStrategy coroEitherMergingStrat
 
 mrgPogoStick ::
   (MonadUnion bool m, Mergeable bool x) =>
-  (s (Coroutine s m x) -> Coroutine s m x) -> Coroutine s m x -> m x
+  (s (Coroutine s m x) -> Coroutine s m x) ->
+  Coroutine s m x ->
+  m x
 mrgPogoStick f (Coroutine r) = do
   r1 <- r
   case r1 of
@@ -181,7 +184,9 @@ mrgPogoStick f (Coroutine r) = do
 
 mrgPogoStickM ::
   (MonadUnion bool m, Mergeable bool x) =>
-  (s (Coroutine s m x) -> m (Coroutine s m x)) -> Coroutine s m x -> m x
+  (s (Coroutine s m x) -> m (Coroutine s m x)) ->
+  Coroutine s m x ->
+  m x
 mrgPogoStickM f (Coroutine r) = do
   r1 <- r
   case r1 of
@@ -192,7 +197,10 @@ mrgPogoStickM f (Coroutine r) = do
 
 mrgFoldRun ::
   (MonadUnion bool m, SymBoolOp bool, Mergeable bool x, Mergeable bool a) =>
-  (a -> s (Coroutine s m x) -> (a, Coroutine s m x)) -> a -> Coroutine s m x -> m (a, x)
+  (a -> s (Coroutine s m x) -> (a, Coroutine s m x)) ->
+  a ->
+  Coroutine s m x ->
+  m (a, x)
 mrgFoldRun f a (Coroutine r) = do
   r1 <- r
   case r1 of

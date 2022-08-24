@@ -1,12 +1,12 @@
-{-# OPTIONS_GHC -Wno-orphans #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeApplications #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Main where
 
-import GHC.Generics
 import Data.Proxy
+import GHC.Generics
 import Grisette
 
 data Coord = Coord SymInteger SymInteger
@@ -34,13 +34,13 @@ instance GenSym (Sym Bool) (Int, Coord) Move where
         m <- genSymFresh (v - 1, coord)
         choose [ExactCoord coord, MoveLeft m, MoveRight m]
 
-instance GenSym (Sym Bool) Int (Coord -> UnionM Move) where
+instance GenSym (Sym Bool) Int (Coord -> UnionM Move)
 
 instance GenSymSimple Int (Coord -> UnionM Move) where
   genSymSimpleFresh v =
     if v <= 0
       then do
-        return uExactCoord 
+        return uExactCoord
       else do
         m <- genSymSimpleFresh (v - 1)
         simpleChoose (Proxy @SymBool) [uExactCoord, uMoveLeft . m, uMoveRight . m]
@@ -55,7 +55,6 @@ extractArgFromUnionMBaseOfFunc l a = mrgFmap (\x -> x a) l
 instance
   (SymBoolOp bool, GenSymSimple () bool, GenSymSimple spec (a -> b), Mergeable bool b) =>
   GenSym bool (ListSpec spec) (a -> UnionMBase bool [b])
-  where
 
 instance
   (SymBoolOp bool, GenSymSimple () bool, GenSymSimple spec (a -> b), Mergeable bool b) =>

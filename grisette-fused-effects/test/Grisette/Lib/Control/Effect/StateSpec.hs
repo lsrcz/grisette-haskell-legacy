@@ -7,8 +7,8 @@ import Control.Carrier.State.Strict
 import Grisette.Core
 import Grisette.Lib.Control.Carrier.Lift ()
 import Grisette.Lib.Control.Carrier.State.Strict ()
-import Grisette.Lib.Control.Monad
 import Grisette.Lib.Control.Effect.State
+import Grisette.Lib.Control.Monad
 import Grisette.TestUtils.SBool
 import Test.Hspec
 

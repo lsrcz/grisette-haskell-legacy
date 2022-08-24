@@ -2,22 +2,22 @@
 
 module Grisette.Core.Control.ExceptionSpec where
 
+import Control.Exception hiding (evaluate)
+import Control.Monad.Except
 import qualified Data.HashSet as S
 import Grisette.Core.Control.Exception
 import Grisette.Core.Control.Monad.UnionMBase
 import Grisette.Core.Data.Class.Bool
+import Grisette.Core.Data.Class.Error
+import Grisette.Core.Data.Class.Evaluate
 import Grisette.Core.Data.Class.ExtractSymbolics
 import Grisette.Core.Data.Class.Mergeable
 import Grisette.Core.Data.Class.SOrd
 import Grisette.Core.Data.Class.SimpleMergeable
-import Grisette.Core.Data.Class.Error
-import Grisette.Core.Data.Class.Evaluate
 import Grisette.Core.Data.Class.ToCon
 import Grisette.Core.Data.Class.ToSym
-import Test.Hspec
 import Grisette.TestUtils.SBool
-import Control.Exception hiding (evaluate)
-import Control.Monad.Except
+import Test.Hspec
 
 spec :: Spec
 spec = do
@@ -105,4 +105,3 @@ spec = do
     it "symAssert should work" $ do
       (symAssert (SSBool "a") :: ExceptT VerificationConditions (UnionMBase SBool) ())
         `shouldBe` ExceptT (mrgIf (Not $ SSBool "a") (mrgSingle $ Left AssertionViolation) (mrgSingle $ Right ()))
-    

@@ -1,15 +1,15 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# OPTIONS_GHC -Wno-unused-top-binds #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeApplications #-}
+{-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 module Grisette.Tutorial.ComplexExprSynth.ComplexExprSynth
   ( Expr (..),
@@ -86,16 +86,16 @@ $(makeUnionMWrapper "u" ''SymValue)
 instance GenSym SymBool Integer SymExpr where
   genSymFresh depth
     | depth <= 0 = do
-      b1 <- genSymSimpleFresh ()
-      i1 <- genSymSimpleFresh ()
-      choose [SymBoolConst b1, SymIntegerConst i1]
+        b1 <- genSymSimpleFresh ()
+        i1 <- genSymSimpleFresh ()
+        choose [SymBoolConst b1, SymIntegerConst i1]
     | otherwise = do
-      b1 <- genSymSimpleFresh ()
-      i1 <- genSymSimpleFresh ()
-      v1 <- genSymFresh (depth - 1)
-      v2 <- genSymFresh (depth - 1)
-      v3 <- genSymFresh (depth - 1)
-      choose [SymBoolConst b1, SymIntegerConst i1, SymAdd v1 v2, SymAnd v1 v2, SymEqv v1 v2, SymITE v1 v2 v3]
+        b1 <- genSymSimpleFresh ()
+        i1 <- genSymSimpleFresh ()
+        v1 <- genSymFresh (depth - 1)
+        v2 <- genSymFresh (depth - 1)
+        v3 <- genSymFresh (depth - 1)
+        choose [SymBoolConst b1, SymIntegerConst i1, SymAdd v1 v2, SymAnd v1 v2, SymEqv v1 v2, SymITE v1 v2 v3]
 
 type Typer = SymExpr -> ExceptT Error UnionM Type
 

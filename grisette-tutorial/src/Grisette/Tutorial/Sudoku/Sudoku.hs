@@ -1,8 +1,8 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -166,11 +166,12 @@ instance GenSymSimple Board SymBoard where
       <$> traverse
         ( traverse
             ( \case
-                x | x <= 0 || x > 9 ->
-                  -- As Grisette is configurable with different symbolic primitive implementations,
-                  -- this @SymBool annotation is required for disambiguation.
-                  -- The '()' is the specification for the symbolic integers.
-                  genSymSimpleFresh ()
+                x
+                  | x <= 0 || x > 9 ->
+                      -- As Grisette is configurable with different symbolic primitive implementations,
+                      -- this @SymBool annotation is required for disambiguation.
+                      -- The '()' is the specification for the symbolic integers.
+                      genSymSimpleFresh ()
                 x ->
                   -- The 'conc' call wraps a concrete value into a symbolic value.
                   return $ conc x

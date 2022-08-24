@@ -3,10 +3,10 @@
 module Bonsai.Match (bonsaiMatchCustomError) where
 
 import Bonsai.BonsaiTree
+import Bonsai.Pattern
 import Control.Monad.Except
 import GHC.Generics
 import Grisette
-import Bonsai.Pattern
 import Grisette.Unordered.UUnionM
 
 data PrivateMatchError e

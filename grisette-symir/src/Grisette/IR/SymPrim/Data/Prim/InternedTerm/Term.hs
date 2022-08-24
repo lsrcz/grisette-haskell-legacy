@@ -319,17 +319,31 @@ instance Lift (Term t) where
 instance Show (Term ty) where
   show (ConcTerm i v) = "ConcTerm{id=" ++ show i ++ ", v=" ++ show v ++ "}"
   show (SymbTerm i name) =
-    "SymbTerm{id=" ++ show i ++ ", name=" ++ show name ++ ", type="
+    "SymbTerm{id="
+      ++ show i
+      ++ ", name="
+      ++ show name
+      ++ ", type="
       ++ show (typeRep @ty)
       ++ "}"
   show (UnaryTerm i tag arg) = "Unary{id=" ++ show i ++ ", tag=" ++ show tag ++ ", arg=" ++ show arg ++ "}"
   show (BinaryTerm i tag arg1 arg2) =
-    "Binary{id=" ++ show i ++ ", tag=" ++ show tag ++ ", arg1=" ++ show arg1
+    "Binary{id="
+      ++ show i
+      ++ ", tag="
+      ++ show tag
+      ++ ", arg1="
+      ++ show arg1
       ++ ", arg2="
       ++ show arg2
       ++ "}"
   show (TernaryTerm i tag arg1 arg2 arg3) =
-    "Ternary{id=" ++ show i ++ ", tag=" ++ show tag ++ ", arg1=" ++ show arg1
+    "Ternary{id="
+      ++ show i
+      ++ ", tag="
+      ++ show tag
+      ++ ", arg1="
+      ++ show arg1
       ++ ", arg2="
       ++ show arg2
       ++ ", arg3="
@@ -340,7 +354,13 @@ instance Show (Term ty) where
   show (AndTerm i arg1 arg2) = "And{id=" ++ show i ++ ", arg1=" ++ show arg1 ++ ", arg2=" ++ show arg2 ++ "}"
   show (EqvTerm i arg1 arg2) = "Eqv{id=" ++ show i ++ ", arg1=" ++ show arg1 ++ ", arg2=" ++ show arg2 ++ "}"
   show (ITETerm i cond l r) =
-    "ITE{id=" ++ show i ++ ", cond=" ++ show cond ++ ", then=" ++ show l ++ ", else="
+    "ITE{id="
+      ++ show i
+      ++ ", cond="
+      ++ show cond
+      ++ ", then="
+      ++ show l
+      ++ ", else="
       ++ show r
       ++ "}"
   show (AddNumTerm i arg1 arg2) = "AddNum{id=" ++ show i ++ ", arg1=" ++ show arg1 ++ ", arg2=" ++ show arg2 ++ "}"
@@ -643,7 +663,8 @@ instance (SupportedPrim t) => Eq (Description (Term t)) where
   DBVSelectTerm lix li == DBVSelectTerm rix ri =
     eqTypeRepBool lix rix && eqTypedId li ri
   DBVExtendTerm lIsSigned ln li == DBVExtendTerm rIsSigned rn ri =
-    lIsSigned == rIsSigned && eqTypeRepBool ln rn
+    lIsSigned == rIsSigned
+      && eqTypeRepBool ln rn
       && eqTypedId li ri
   DTabularFuncApplyTerm lf li == DTabularFuncApplyTerm rf ri = eqTypedId lf rf && eqTypedId li ri
   DGeneralFuncApplyTerm lf li == DGeneralFuncApplyTerm rf ri = eqTypedId lf rf && eqTypedId li ri
@@ -663,10 +684,15 @@ instance (SupportedPrim t) => Hashable (Description (Term t)) where
   hashWithSalt s (DOrTerm id1 id2) = s `hashWithSalt` (6 :: Int) `hashWithSalt` id1 `hashWithSalt` id2
   hashWithSalt s (DAndTerm id1 id2) = s `hashWithSalt` (7 :: Int) `hashWithSalt` id1 `hashWithSalt` id2
   hashWithSalt s (DEqvTerm rep id1 id2) =
-    s `hashWithSalt` (8 :: Int) `hashWithSalt` rep `hashWithSalt` id1
+    s
+      `hashWithSalt` (8 :: Int)
+      `hashWithSalt` rep
+      `hashWithSalt` id1
       `hashWithSalt` id2
   hashWithSalt s (DITETerm idc id1 id2) =
-    s `hashWithSalt` (9 :: Int) `hashWithSalt` idc
+    s
+      `hashWithSalt` (9 :: Int)
+      `hashWithSalt` idc
       `hashWithSalt` id1
       `hashWithSalt` id2
   hashWithSalt s (DAddNumTerm id1 id2) = s `hashWithSalt` (10 :: Int) `hashWithSalt` id1 `hashWithSalt` id2
@@ -688,7 +714,10 @@ instance (SupportedPrim t) => Hashable (Description (Term t)) where
     s `hashWithSalt` (23 :: Int) `hashWithSalt` rep1 `hashWithSalt` rep2 `hashWithSalt` id1 `hashWithSalt` id2
   hashWithSalt s (DBVSelectTerm ix id1) = s `hashWithSalt` (24 :: Int) `hashWithSalt` ix `hashWithSalt` id1
   hashWithSalt s (DBVExtendTerm signed n id1) =
-    s `hashWithSalt` (25 :: Int) `hashWithSalt` signed `hashWithSalt` n
+    s
+      `hashWithSalt` (25 :: Int)
+      `hashWithSalt` signed
+      `hashWithSalt` n
       `hashWithSalt` id1
   hashWithSalt s (DTabularFuncApplyTerm id1 id2) = s `hashWithSalt` (26 :: Int) `hashWithSalt` id1 `hashWithSalt` id2
   hashWithSalt s (DGeneralFuncApplyTerm id1 id2) = s `hashWithSalt` (27 :: Int) `hashWithSalt` id1 `hashWithSalt` id2
@@ -735,7 +764,7 @@ instance (KnownNat w, 1 <= w) => SupportedPrim (WordN w) where
 data FuncArg = FuncArg deriving (Show, Eq, Generic, Ord, Lift, Hashable, NFData)
 
 data (-->) a b where
-  GeneralFunc :: (SupportedPrim a, SupportedPrim b) => TypeRep a -> Symbol -> Term b -> (a --> b)
+  GeneralFunc :: (SupportedPrim a, SupportedPrim b) => TypeRep a -> Symbol -> Term b -> a --> b
 
 infixr 0 -->
 

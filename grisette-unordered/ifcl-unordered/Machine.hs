@@ -5,12 +5,13 @@ import Control.Exception
 import Control.Monad.Except
 import GHC.Generics
 import Grisette hiding (insert)
+import Grisette.Unordered.UUnionM
 import Instructions
 import Value
 import Prelude hiding (pred)
-import Grisette.Unordered.UUnionM
 
-data Errors = EvalError deriving (Show, Eq, Generic)
+data Errors = EvalError
+  deriving (Show, Eq, Generic)
   deriving (Mergeable SymBool) via (Default Errors)
 
 instance TransformError ArrayException Errors where
@@ -148,7 +149,7 @@ read i (Machine _ _ m) = do
 write :: SymInteger -> PCValue -> Machine -> ExceptT Errors UUnionM Machine
 write i v (Machine p s m) = do
   mv <- lift m
-  --mrgIf ((fromIntegral . length <$> m) <~ mrgReturn i) (throwError EvalError) $ do
+  -- mrgIf ((fromIntegral . length <$> m) <~ mrgReturn i) (throwError EvalError) $ do
   newMem <- replace mv i $ mrgReturn v
   return $! Machine p s (mrgReturn newMem)
 

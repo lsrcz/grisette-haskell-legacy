@@ -1,6 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
+
 module Verifier where
 
+import Control.DeepSeq
+import Control.Monad.Except
 import Control.Monad.State.Strict
 import Data.Maybe
 import Fs
@@ -8,8 +11,6 @@ import Grisette
 import Interpret
 import Litmus
 import Utils.Timing
-import Control.DeepSeq
-import Control.Monad.Except
 
 verifyTranslation :: Either AssertionError () -> SymBool
 verifyTranslation (Left _) = conc True
@@ -43,4 +44,4 @@ verify config (Litmus _ make setupProc prog allowCond) =
         r <- timeItAll "Lowering/Solving" $ solveFallable config verifyTranslation verifCond
         case r of
           Left _ -> return Nothing
-          Right mo -> return $ (case evaluate True mo verifFs of; SingleU v -> Just v; _ -> Nothing) >>= toCon
+          Right mo -> return $ (case evaluate True mo verifFs of SingleU v -> Just v; _ -> Nothing) >>= toCon

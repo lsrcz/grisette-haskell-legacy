@@ -48,16 +48,16 @@ instance Solver (GrisetteSMTConfig n) SymBool (S.HashSet TermSymbol) SBVC.CheckS
   solveFormula config (Sym t) = snd <$> solveTermWith config t
   solveFormulaMulti config n s@(Sym t)
     | n > 0 = SBV.runSMTWith (sbvConfig config) $ do
-      (newm, a) <- lowerSinglePrim config t
-      SBVC.query $ do
-        SBV.constrain a
-        r <- SBVC.checkSat
-        case r of
-          SBVC.Sat -> do
-            md <- SBVC.getModel
-            let model = parseModel config md newm
-            remainingModels n model newm
-          _ -> return []
+        (newm, a) <- lowerSinglePrim config t
+        SBVC.query $ do
+          SBV.constrain a
+          r <- SBVC.checkSat
+          case r of
+            SBVC.Sat -> do
+              md <- SBVC.getModel
+              let model = parseModel config md newm
+              remainingModels n model newm
+            _ -> return []
     | otherwise = return []
     where
       allSymbols = extractSymbolics s :: S.HashSet TermSymbol
@@ -80,12 +80,12 @@ instance Solver (GrisetteSMTConfig n) SymBool (S.HashSet TermSymbol) SBVC.CheckS
       remainingModels :: Int -> PM.Model -> SymBiMap -> Query [PM.Model]
       remainingModels n1 md origm
         | n1 > 1 = do
-          (newm, r) <- next md origm
-          case r of
-            Left _ -> return [md]
-            Right mo -> do
-              rmmd <- remainingModels (n1 - 1) mo newm
-              return $ md : rmmd
+            (newm, r) <- next md origm
+            case r of
+              Left _ -> return [md]
+              Right mo -> do
+                rmmd <- remainingModels (n1 - 1) mo newm
+                return $ md : rmmd
         | otherwise = return [md]
   solveFormulaAll = undefined
   cegisFormulas ::

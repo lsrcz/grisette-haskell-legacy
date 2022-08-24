@@ -9,10 +9,13 @@ where
 class Function f where
   -- | Argument type
   type Arg f
+
   -- | Return type
   type Ret f
+
   -- | Function application operator
   (#) :: f -> Arg f -> Ret f
+
   infixl 9 #
 
 instance Function (a -> b) where

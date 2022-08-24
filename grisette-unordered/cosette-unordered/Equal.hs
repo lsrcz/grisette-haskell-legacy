@@ -4,10 +4,10 @@ module Equal where
 
 import Denotation
 import Grisette
+import Grisette.Unordered.UUnionM
 import Language.Haskell.TH.Syntax.Compat
 import Syntax
 import Table
-import Grisette.Unordered.UUnionM
 
 getMultiplicity :: [UUnionM (Maybe SymInteger)] -> RawTable -> SymInteger
 getMultiplicity r = foldr (\(r1, p1) t -> mrgIte @SymBool (r1 ==~ r) p1 0 + t) 0

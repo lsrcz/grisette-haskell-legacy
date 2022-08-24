@@ -2,16 +2,18 @@ module Grisette.Lib.Control.Carrier.Error.EitherSpec where
 
 import Control.Carrier.Error.Either
 import Control.Carrier.Lift
+import Grisette.Core
+import Grisette.Lib.Control.Carrier.Error.Common
 import Grisette.Lib.Control.Carrier.Error.Either
 import Grisette.Lib.Control.Carrier.Lift ()
-import Grisette.Core
+import Grisette.Lib.Control.Monad
 import Grisette.TestUtils.SBool
 import Test.Hspec
-import Grisette.Lib.Control.Carrier.Error.Common
-import Grisette.Lib.Control.Monad
 
 type M a = ErrorC Int (LiftC (UnionMBase SBool)) a
+
 type R = M Int
+
 type RB = M SBool
 
 spec :: Spec

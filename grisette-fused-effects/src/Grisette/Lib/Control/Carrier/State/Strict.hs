@@ -50,4 +50,3 @@ mrgEvalState s = merge . fmap snd . runState s
 
 mrgExecState :: (SymBoolOp bool, Mergeable bool s, UnionLike bool m, Functor m) => s -> StateC s m a -> m s
 mrgExecState s = merge . fmap fst . runState s
-

@@ -2,6 +2,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 module Grisette.Core.Data.Class.Mergeable where
+
 import Data.Typeable
 
 data MergingStrategy bool a where

@@ -5,18 +5,18 @@
 module STLC (stlcSyntax, STLCTree, ConcSTLCTree, execStlc) where
 
 import Bonsai.BonsaiTree
-import Control.DeepSeq
-import Control.Monad.Except
-import qualified Data.ByteString as B
-import Data.Maybe
 import Bonsai.Env
-import GHC.Generics
-import Grisette
 import Bonsai.Match
 import Bonsai.MatchSyntaxNoMemo
 import Bonsai.Pattern
 import Bonsai.SyntaxSpec
+import Control.DeepSeq
+import Control.Monad.Except
+import qualified Data.ByteString as B
 import Data.Hashable
+import Data.Maybe
+import GHC.Generics
+import Grisette
 import Grisette.Unordered.UUnionM
 
 -- import Debug.Trace
@@ -183,7 +183,7 @@ applyBuiltin (STLCPartiallyAppliedBuiltin v arg1) arg2 =
 applyBuiltin _ _ = throwError BonsaiExecError
 
 interpreter' :: STLCTree -> Env 14 STLCValue -> Int -> ExceptT BonsaiError UUnionM (UUnionM STLCValue)
-interpreter' tree env reccount = 
+interpreter' tree env reccount =
   if reccount >= 2
     then throwError BonsaiRecursionError
     else

@@ -6,9 +6,9 @@ import Bonsai.BonsaiTree
 import Control.DeepSeq
 import Control.Monad.Except
 import Grisette
+import Grisette.Unordered.UUnionM
 import LetPoly
 import Utils.Timing
-import Grisette.Unordered.UUnionM
 
 f7 :: UUnionM LetPolyTree
 f7 = genSym (7 :: Int) "a"

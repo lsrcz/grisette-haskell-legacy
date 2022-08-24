@@ -1,5 +1,5 @@
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Grisette.Core.TH
   ( makeUnionMWrapper,
@@ -9,16 +9,16 @@ where
 
 import Control.Monad
 import Data.Bifunctor
+import Grisette.Core.Control.Monad.Union
 import Grisette.Core.Data.Class.Bool
 import Grisette.Core.Data.Class.Mergeable
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax
-import Grisette.Core.Control.Monad.Union
 
 -- | Generate constructor wrappers that wraps the result in a union-like monad with provided names.
 --
 -- > $(makeUnionMWrapper' ["uTuple2"] ''(,))
--- 
+--
 -- generates
 --
 -- > uTuple2 :: (SymBoolOp bool, Monad u, Mergeable bool t1, Mergeable bool t2, MonadUnion bool u) => t1 -> t2 -> u (t1, t2)
@@ -104,20 +104,18 @@ augmentFinalType unionTypeName boolTypeName (AppT (AppT (AppT MulArrowT _) var) 
   return $ second (AppT (AppT ArrowT var)) tl
 #endif
 augmentFinalType unionTypeName boolTypeName t = do
+  let boolType = VarT boolTypeName
+  let unionType = VarT unionTypeName
   symBoolOp <- [t|SymBoolOp|]
   monad <- [t|Monad|]
   mergeable <- [t|Mergeable|]
   monadUnion <- [t|MonadUnion|]
+#if MIN_VERSION_template_haskell(2,17,0)
   return
     ( ( [ 
-#if MIN_VERSION_template_haskell(2,17,0)
           KindedTV boolTypeName SpecifiedSpec StarT,
           KindedTV unionTypeName SpecifiedSpec (AppT (AppT ArrowT StarT) StarT)
-#elif MIN_VERSION_template_haskell(2,16,0)
-          KindedTV boolTypeName StarT,
-          KindedTV unionTypeName (AppT (AppT ArrowT StarT) StarT)
-#endif
-        ],
+      ],
         [ AppT symBoolOp boolType,
           AppT monad unionType,
           AppT (AppT mergeable boolType) t,
@@ -126,9 +124,21 @@ augmentFinalType unionTypeName boolTypeName t = do
       ),
       AppT unionType t
     )
-  where
-    boolType = VarT boolTypeName
-    unionType = VarT unionTypeName
+#elif MIN_VERSION_template_haskell(2,16,0)
+  return
+    ( ( [ 
+          KindedTV boolTypeName StarT,
+          KindedTV unionTypeName (AppT (AppT ArrowT StarT) StarT)
+      ],
+        [ AppT symBoolOp boolType,
+          AppT monad unionType,
+          AppT (AppT mergeable boolType) t,
+          AppT (AppT monadUnion boolType) unionType
+        ]
+      ),
+      AppT unionType t
+    )
+#endif
 
 augmentNormalCType :: Type -> Q Type
 augmentNormalCType (ForallT tybinders ctx ty1) = do

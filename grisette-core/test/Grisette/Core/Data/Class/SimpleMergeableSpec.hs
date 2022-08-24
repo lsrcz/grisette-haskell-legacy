@@ -1,29 +1,29 @@
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Grisette.Core.Data.Class.SimpleMergeableSpec where
 
+import Control.Monad.Cont
 import Control.Monad.Except
-import Control.Monad.Trans.Maybe
-import Grisette.Core.Control.Monad.UnionMBase
-import Grisette.Core.Data.Class.SimpleMergeable
-import Test.Hspec
-import Grisette.TestUtils.SBool
-import Grisette.Core.Data.Class.Bool
+import Control.Monad.Identity
+import qualified Control.Monad.RWS.Lazy as RWSTLazy
+import qualified Control.Monad.RWS.Strict as RWSTStrict
 import Control.Monad.Reader
 import qualified Control.Monad.State.Lazy as StateLazy
 import qualified Control.Monad.State.Strict as StateStrict
+import Control.Monad.Trans.Maybe
 import qualified Control.Monad.Writer.Lazy as WriterLazy
 import qualified Control.Monad.Writer.Strict as WriterStrict
-import Control.Monad.Identity
-import Control.Monad.Cont
-import qualified Control.Monad.RWS.Lazy as RWSTLazy
-import qualified Control.Monad.RWS.Strict as RWSTStrict
 import qualified Data.Monoid as Monoid
 import GHC.Generics
 import Generics.Deriving
+import Grisette.Core.Control.Monad.UnionMBase
+import Grisette.Core.Data.Class.Bool
 import Grisette.Core.Data.Class.Mergeable
+import Grisette.Core.Data.Class.SimpleMergeable
+import Grisette.TestUtils.SBool
+import Test.Hspec
 
 newtype AndMonoidSBool = AndMonoidSBool SBool
   deriving (Show, Generic, Eq)
@@ -34,7 +34,6 @@ instance Semigroup AndMonoidSBool where
 
 instance Monoid AndMonoidSBool where
   mempty = AndMonoidSBool $ CBool True
-
 
 spec :: Spec
 spec = do
@@ -190,10 +189,12 @@ spec = do
         let c2 :: ContT (SBool, Integer) (UnionMBase SBool) (SBool, Integer) = ContT $ \f -> f (SSBool "b", 3)
         let c3 = mrgIte (SSBool "c") c1 c2
         let c3u1 = mrgIf (SSBool "c") c1 c2
-        let r = mrgIf (SSBool "c")
-                  (mrgIf (SSBool "p") (mrgSingle (SSBool "a", 2)) (mrgSingle (Not $ SSBool "a", 3)))
-                  (mrgIf (SSBool "p") (mrgSingle (SSBool "b", 3)) (mrgSingle (Not $ SSBool "b", 4)))
-        let f = (\(a, x) -> mrgIf (SSBool "p") (mrgSingle (a, x)) (mrgSingle (nots a, x + 1))) 
+        let r =
+              mrgIf
+                (SSBool "c")
+                (mrgIf (SSBool "p") (mrgSingle (SSBool "a", 2)) (mrgSingle (Not $ SSBool "a", 3)))
+                (mrgIf (SSBool "p") (mrgSingle (SSBool "b", 3)) (mrgSingle (Not $ SSBool "b", 4)))
+        let f = (\(a, x) -> mrgIf (SSBool "p") (mrgSingle (a, x)) (mrgSingle (nots a, x + 1)))
         runContT c3 f `shouldBe` r
         runContT c3u1 f `shouldBe` r
     describe "SimpleMergeable for RWST" $ do

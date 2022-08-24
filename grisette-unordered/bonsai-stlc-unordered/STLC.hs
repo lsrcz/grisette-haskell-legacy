@@ -5,19 +5,19 @@
 module STLC (stlcSyntax, STLCTree, ConcSTLCTree, execStlc) where
 
 import Bonsai.BonsaiTree
-import Control.DeepSeq
-import Control.Monad.Except
-import qualified Data.ByteString as B
-import Data.Maybe
 import Bonsai.Env
-import GHC.Generics
-import Grisette
-import Grisette.Unordered.UUnionM
 import Bonsai.Match
 import Bonsai.MatchSyntax
 import Bonsai.Pattern
 import Bonsai.SyntaxSpec
+import Control.DeepSeq
+import Control.Monad.Except
+import qualified Data.ByteString as B
 import Data.Hashable
+import Data.Maybe
+import GHC.Generics
+import Grisette
+import Grisette.Unordered.UUnionM
 
 -- import Debug.Trace
 

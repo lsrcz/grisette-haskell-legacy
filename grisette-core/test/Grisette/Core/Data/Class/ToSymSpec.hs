@@ -1,25 +1,26 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
+
 module Grisette.Core.Data.Class.ToSymSpec where
 
 import Control.Monad.Except
-import Control.Monad.Trans.Maybe
-import qualified Data.ByteString.Char8 as C
-import Data.Foldable
-import Data.Functor.Sum
-import Grisette.Core.Data.Class.ToSym
-import Test.Hspec
-import Test.Hspec.QuickCheck
-import Grisette.TestUtils.SBool
-import Grisette.TestUtils.ToSym
+import Control.Monad.Identity
 import Control.Monad.Reader
 import qualified Control.Monad.State.Lazy as StateLazy
 import qualified Control.Monad.State.Strict as StateStrict
+import Control.Monad.Trans.Maybe
 import qualified Control.Monad.Writer.Lazy as WriterLazy
 import qualified Control.Monad.Writer.Strict as WriterStrict
-import Control.Monad.Identity
+import qualified Data.ByteString.Char8 as C
+import Data.Foldable
+import Data.Functor.Sum
 import Data.Int
 import Data.Word
+import Grisette.Core.Data.Class.ToSym
+import Grisette.TestUtils.SBool
+import Grisette.TestUtils.ToSym
+import Test.Hspec
+import Test.Hspec.QuickCheck
 
 spec :: Spec
 spec = do
@@ -160,50 +161,38 @@ spec = do
           `shouldBe` (InR $ Right $ CBool False :: Sum Maybe (Either SBool) SBool)
     describe "ToSym for functions" $ do
       prop "ToSym for general function should work" $ \(f :: [(Either Bool Bool, Either Bool Bool)], x :: Either Bool Bool) ->
-        let
-          func [] _ = Left False
-          func ((fk,fv):_) xv | fk == xv = fv
-          func (_:fs) xv = func fs xv
-         in
-        (toSym (func f x) :: Either SBool SBool) == toSym (func f) x
+        let func [] _ = Left False
+            func ((fk, fv) : _) xv | fk == xv = fv
+            func (_ : fs) xv = func fs xv
+         in (toSym (func f x) :: Either SBool SBool) == toSym (func f) x
     describe "ToSym for Lazy StateT" $ do
       prop "ToSym for general Lazy StateT should work" $ \(f :: [(Bool, Either Bool (Bool, Bool))], x :: Bool) ->
-        let
-          func [] _ = Left False
-          func ((fk,fv):_) xv | fk == xv = fv
-          func (_:fs) xv = func fs xv
-          st :: StateLazy.StateT Bool (Either Bool) Bool = StateLazy.StateT (func f)
-         in
-        (StateLazy.runStateT (toSym st) x :: Either SBool (SBool, Bool)) == toSym (func f) x
+        let func [] _ = Left False
+            func ((fk, fv) : _) xv | fk == xv = fv
+            func (_ : fs) xv = func fs xv
+            st :: StateLazy.StateT Bool (Either Bool) Bool = StateLazy.StateT (func f)
+         in (StateLazy.runStateT (toSym st) x :: Either SBool (SBool, Bool)) == toSym (func f) x
     describe "ToSym for Strict StateT" $ do
       prop "ToSym for general Strict StateT should work" $ \(f :: [(Bool, Either Bool (Bool, Bool))], x :: Bool) ->
-        let
-          func [] _ = Left False
-          func ((fk,fv):_) xv | fk == xv = fv
-          func (_:fs) xv = func fs xv
-          st :: StateStrict.StateT Bool (Either Bool) Bool = StateStrict.StateT (func f)
-         in
-        (StateStrict.runStateT (toSym st) x :: Either SBool (SBool, Bool)) == toSym (func f) x
+        let func [] _ = Left False
+            func ((fk, fv) : _) xv | fk == xv = fv
+            func (_ : fs) xv = func fs xv
+            st :: StateStrict.StateT Bool (Either Bool) Bool = StateStrict.StateT (func f)
+         in (StateStrict.runStateT (toSym st) x :: Either SBool (SBool, Bool)) == toSym (func f) x
     describe "ToSym for Lazy WriterT" $ do
       prop "ToSym for general Lazy WriterT should work" $ \(f :: Either Bool (Bool, Integer)) ->
-        let
-          w :: WriterLazy.WriterT Integer (Either Bool) Bool = WriterLazy.WriterT f
-         in
-        (WriterLazy.runWriterT (toSym w) :: Either SBool (SBool, Integer)) == toSym f 
+        let w :: WriterLazy.WriterT Integer (Either Bool) Bool = WriterLazy.WriterT f
+         in (WriterLazy.runWriterT (toSym w) :: Either SBool (SBool, Integer)) == toSym f
       prop "ToSym for general Strict WriterT should work" $ \(f :: Either Bool (Bool, Integer)) ->
-        let
-          w :: WriterStrict.WriterT Integer (Either Bool) Bool = WriterStrict.WriterT f
-         in
-        (WriterStrict.runWriterT (toSym w) :: Either SBool (SBool, Integer)) == toSym f 
+        let w :: WriterStrict.WriterT Integer (Either Bool) Bool = WriterStrict.WriterT f
+         in (WriterStrict.runWriterT (toSym w) :: Either SBool (SBool, Integer)) == toSym f
     describe "ToSym for ReaderT" $ do
       prop "ToSym for general ReaderT should work" $ \(f :: [(Bool, Either Bool Bool)], x :: Bool) ->
-        let
-          func [] _ = Left False
-          func ((fk,fv):_) xv | fk == xv = fv
-          func (_:fs) xv = func fs xv
-          st :: ReaderT Bool (Either Bool) Bool = ReaderT (func f)
-         in
-        (runReaderT (toSym st) x :: Either SBool SBool) == toSym (func f) x
+        let func [] _ = Left False
+            func ((fk, fv) : _) xv | fk == xv = fv
+            func (_ : fs) xv = func fs xv
+            st :: ReaderT Bool (Either Bool) Bool = ReaderT (func f)
+         in (runReaderT (toSym st) x :: Either SBool SBool) == toSym (func f) x
     describe "ToSym for Identity" $ do
       prop "ToSym for concrete Identity to concrete Identity should be id" $
         toSymForConcreteOkProp @(Identity Integer)

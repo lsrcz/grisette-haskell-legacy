@@ -3,15 +3,15 @@
 module NanoScala (DotTree, ConcDotTree, dotSyntax, execDot) where
 
 import Bonsai.BonsaiTree
-import Control.Monad.Except
-import qualified Data.ByteString as B
-import Data.Maybe
 import Bonsai.Env
-import Grisette
 import Bonsai.Match
 import Bonsai.MatchSyntaxNoMemo
 import Bonsai.Pattern
 import Bonsai.SyntaxSpec
+import Control.Monad.Except
+import qualified Data.ByteString as B
+import Data.Maybe
+import Grisette
 
 type DotBitWidth = 15
 
@@ -54,8 +54,8 @@ eval' :: DotTree -> Env DotBitWidth DotResult -> CBMCExceptT BonsaiError UnionM 
 eval' tree env =
   bonsaiMatchCustomError
     BonsaiExecError
-    [ dotLiteral "let" *= ((placeHolder *= (placeHolder *= placeHolder)) *= (placeHolder *= placeHolder))
-        ==> \nm _ _ value expr -> do
+    [ dotLiteral "let" *= ((placeHolder *= (placeHolder *= placeHolder)) *= (placeHolder *= placeHolder)) ==>
+        \nm _ _ value expr -> do
           v <- eval' #~ value # env
           env1 <- envAddTree BonsaiExecError env nm v
           eval' #~ expr # env1,
@@ -208,8 +208,8 @@ type' :: DotTree -> Env DotBitWidth DotResult -> CBMCExceptT BonsaiError UnionM 
 type' tree env =
   bonsaiMatchCustomError
     BonsaiTypeError
-    [ dotLiteral "let" *= ((placeHolder *= (placeHolder *= placeHolder)) *= (placeHolder *= placeHolder))
-        ==> \nm intype outtype value expr -> do
+    [ dotLiteral "let" *= ((placeHolder *= (placeHolder *= placeHolder)) *= (placeHolder *= placeHolder)) ==>
+        \nm intype outtype value expr -> do
           it <- reduceType 0 env True #~ intype
           it' <- type' #~ value # env
           subi <- subType 0 it' it

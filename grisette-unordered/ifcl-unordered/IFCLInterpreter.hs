@@ -2,11 +2,11 @@ module IFCLInterpreter where
 
 import Control.Monad.Except
 import Grisette
+import Grisette.Unordered.UUnionM
 import Instructions
 import Machine
 import Value
 import Prelude hiding (read)
-import Grisette.Unordered.UUnionM
 
 haltInst :: Machine -> Program -> ExceptT Errors UUnionM Machine
 haltInst m p = mrgReturn $ goto (PCValue (fromIntegral $ loc p) (label $ pc m)) m

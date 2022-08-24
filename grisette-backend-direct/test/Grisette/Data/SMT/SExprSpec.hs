@@ -31,10 +31,10 @@ spec = do
       sexprByteString (SExpr.setLogic QF_BV) `shouldBe` "(set-logic QF_BV)"
       sexprByteString (SExpr.setLogic ALL) `shouldBe` "(set-logic ALL)"
     it "define-fun correct" $ do
-      sexprByteString (SExpr.defineFun "x" [] boolSort $ SExpr.symbol "b") `shouldBe`
-        "(define-fun x () Bool b)"
-      sexprByteString (SExpr.defineFun "y" [("b", boolSort)] boolSort $ SExpr.not $ SExpr.symbol "b") `shouldBe`
-        "(define-fun y ((b Bool)) Bool (not b))"
+      sexprByteString (SExpr.defineFun "x" [] boolSort $ SExpr.symbol "b")
+        `shouldBe` "(define-fun x () Bool b)"
+      sexprByteString (SExpr.defineFun "y" [("b", boolSort)] boolSort $ SExpr.not $ SExpr.symbol "b")
+        `shouldBe` "(define-fun y ((b Bool)) Bool (not b))"
     it "check-sat correct" $ do
       sexprByteString checkSat `shouldBe` "(check-sat)"
     it "get-model correct" $ do

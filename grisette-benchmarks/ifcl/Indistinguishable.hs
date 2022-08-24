@@ -16,7 +16,8 @@ indistinguishableMemValue _ _ = conc False
 
 indistinguishableInstruction :: Instruction -> Instruction -> SymBool
 indistinguishableInstruction l r =
-  l ==~ r
+  l
+    ==~ r
     ||~ ( case (l, r) of
             (Push v1, Push v2) -> indistinguishablePCValue v1 v2
             _ -> conc False

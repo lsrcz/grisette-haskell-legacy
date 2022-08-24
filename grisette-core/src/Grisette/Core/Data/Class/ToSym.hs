@@ -12,19 +12,19 @@ module Grisette.Core.Data.Class.ToSym
   )
 where
 
+import Control.Monad.Identity
 import Control.Monad.Reader
 import qualified Control.Monad.State.Lazy as StateLazy
 import qualified Control.Monad.State.Strict as StateStrict
-import qualified Control.Monad.Writer.Lazy as WriterLazy
-import qualified Control.Monad.Writer.Strict as WriterStrict
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Maybe
+import qualified Control.Monad.Writer.Lazy as WriterLazy
+import qualified Control.Monad.Writer.Strict as WriterStrict
 import qualified Data.ByteString as B
 import Data.Functor.Sum
-import Generics.Deriving
-import Control.Monad.Identity
 import Data.Int
 import Data.Word
+import Generics.Deriving
 
 -- | Convert a concrete value to symbolic value.
 class ToSym a b where
@@ -63,20 +63,20 @@ instance (ToSym' a1 a2, ToSym' b1 b2) => ToSym' (a1 :*: b1) (a2 :*: b2) where
 instance ToSym type type where \
   toSym = id
 
-CONCRETE_TOSYM(Bool)
-CONCRETE_TOSYM(Integer)
-CONCRETE_TOSYM(Char)
-CONCRETE_TOSYM(Int)
-CONCRETE_TOSYM(Int8)
-CONCRETE_TOSYM(Int16)
-CONCRETE_TOSYM(Int32)
-CONCRETE_TOSYM(Int64)
-CONCRETE_TOSYM(Word)
-CONCRETE_TOSYM(Word8)
-CONCRETE_TOSYM(Word16)
-CONCRETE_TOSYM(Word32)
-CONCRETE_TOSYM(Word64)
-CONCRETE_TOSYM(B.ByteString)
+CONCRETE_TOSYM (Bool)
+CONCRETE_TOSYM (Integer)
+CONCRETE_TOSYM (Char)
+CONCRETE_TOSYM (Int)
+CONCRETE_TOSYM (Int8)
+CONCRETE_TOSYM (Int16)
+CONCRETE_TOSYM (Int32)
+CONCRETE_TOSYM (Int64)
+CONCRETE_TOSYM (Word)
+CONCRETE_TOSYM (Word8)
+CONCRETE_TOSYM (Word16)
+CONCRETE_TOSYM (Word32)
+CONCRETE_TOSYM (Word64)
+CONCRETE_TOSYM (B.ByteString)
 
 -- Unit
 instance ToSym () () where
@@ -114,22 +114,22 @@ deriving via
 deriving via
   (Default (a2, b2, c2, d2, e2, f2))
   instance
-  (ToSym a1 a2, ToSym b1 b2, ToSym c1 c2, ToSym d1 d2, ToSym e1 e2, ToSym f1 f2) =>
-  ToSym (a1, b1, c1, d1, e1, f1) (a2, b2, c2, d2, e2, f2)
+    (ToSym a1 a2, ToSym b1 b2, ToSym c1 c2, ToSym d1 d2, ToSym e1 e2, ToSym f1 f2) =>
+    ToSym (a1, b1, c1, d1, e1, f1) (a2, b2, c2, d2, e2, f2)
 
 -- (,,,,,,)
 deriving via
   (Default (a2, b2, c2, d2, e2, f2, g2))
   instance
-  (ToSym a1 a2, ToSym b1 b2, ToSym c1 c2, ToSym d1 d2, ToSym e1 e2, ToSym f1 f2, ToSym g1 g2) =>
-  ToSym (a1, b1, c1, d1, e1, f1, g1) (a2, b2, c2, d2, e2, f2, g2)
+    (ToSym a1 a2, ToSym b1 b2, ToSym c1 c2, ToSym d1 d2, ToSym e1 e2, ToSym f1 f2, ToSym g1 g2) =>
+    ToSym (a1, b1, c1, d1, e1, f1, g1) (a2, b2, c2, d2, e2, f2, g2)
 
 -- (,,,,,,,)
 deriving via
   (Default (a2, b2, c2, d2, e2, f2, g2, h2))
   instance
-  (ToSym a1 a2, ToSym b1 b2, ToSym c1 c2, ToSym d1 d2, ToSym e1 e2, ToSym f1 f2, ToSym g1 g2, ToSym h1 h2) =>
-  ToSym (a1, b1, c1, d1, e1, f1, g1, h1) (a2, b2, c2, d2, e2, f2, g2, h2)
+    (ToSym a1 a2, ToSym b1 b2, ToSym c1 c2, ToSym d1 d2, ToSym e1 e2, ToSym f1 f2, ToSym g1 g2, ToSym h1 h2) =>
+    ToSym (a1, b1, c1, d1, e1, f1, g1, h1) (a2, b2, c2, d2, e2, f2, g2, h2)
 
 -- function
 instance (ToSym a b) => ToSym (v -> a) (v -> b) where
@@ -170,7 +170,8 @@ instance (ToSym (s1 -> m1 a1) (s2 -> m2 a2)) => ToSym (ReaderT s1 m1 a1) (Reader
 -- Sum
 deriving via
   (Default (Sum f1 g1 a1))
-  instance (ToSym (f a) (f1 a1), ToSym (g a) (g1 a1)) => ToSym (Sum f g a) (Sum f1 g1 a1)
+  instance
+    (ToSym (f a) (f1 a1), ToSym (g a) (g1 a1)) => ToSym (Sum f g a) (Sum f1 g1 a1)
 
 -- Identity
 instance ToSym a b => ToSym (Identity a) (Identity b) where

@@ -46,14 +46,24 @@ instance
   unionIf cond (StateC l) (StateC r) =
     StateC $ \k s -> unionIf cond (l k s) (r k s)
 
-mrgRunState :: (SymBoolOp bool, UnionLike bool m, Mergeable bool b) =>
-  (s -> a -> m b) -> s -> StateC s m a -> m b
+mrgRunState ::
+  (SymBoolOp bool, UnionLike bool m, Mergeable bool b) =>
+  (s -> a -> m b) ->
+  s ->
+  StateC s m a ->
+  m b
 mrgRunState f s = merge . runState f s
 
-mrgEvalState :: (SymBoolOp bool, UnionLike bool m, Mergeable bool a) =>
-  s -> StateC s m a -> m a
+mrgEvalState ::
+  (SymBoolOp bool, UnionLike bool m, Mergeable bool a) =>
+  s ->
+  StateC s m a ->
+  m a
 mrgEvalState = runState (const mrgSingle)
 
-mrgExecState :: (SymBoolOp bool, UnionLike bool m, Mergeable bool s) =>
-  s -> StateC s m a -> m s
+mrgExecState ::
+  (SymBoolOp bool, UnionLike bool m, Mergeable bool s) =>
+  s ->
+  StateC s m a ->
+  m s
 mrgExecState = runState (const . mrgSingle)

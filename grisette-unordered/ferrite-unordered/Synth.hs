@@ -1,17 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
+
 module Synth where
 
+import Control.DeepSeq
+import Control.Monad.Except
 import Control.Monad.State.Strict
 import Data.Maybe
 import Fs
 import Grisette
+import Grisette.Unordered.UUnionM
 import Interpret
 import Lang
 import Litmus
 import Utils.Timing
-import Control.DeepSeq
-import Control.Monad.Except
-import Grisette.Unordered.UUnionM
 
 syncCost :: [SysCall] -> SymInteger
 syncCost (Efsync _ e : xs) = ites @SymBool e 1 0 + syncCost xs
@@ -40,7 +41,7 @@ synth config (Litmus fsBound make setupProc prog allowCond) =
         genSymSimple
           (SimpleListSpec (fromIntegral $ length prog1) (EnumGenUpperBound @Integer (fromIntegral $ length prog1)))
           "order"
-      --order = [0,1,2,4,5,3,6]
+      -- order = [0,1,2,4,5,3,6]
       (synthFs, crashes) = runGenSymFresh (runStateT (interpretOrderOps prog1 order (mrgReturn $ (toSym newfs :: fs))) []) "crash"
       allowed = allowCond (toSym newfs) #~ synthFs
 

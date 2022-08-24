@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -5,7 +6,6 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE CPP #-}
 
 module Grisette.Core.Data.Class.Bool
   ( SEq (..),
@@ -17,17 +17,17 @@ module Grisette.Core.Data.Class.Bool
 where
 
 import Control.Monad.Except
+import Control.Monad.Identity
+import Control.Monad.Trans.Maybe
 import qualified Control.Monad.Writer.Lazy as WriterLazy
 import qualified Control.Monad.Writer.Strict as WriterStrict
-import Control.Monad.Trans.Maybe
 import qualified Data.ByteString as B
 import Data.Functor.Sum
+import Data.Int
+import Data.Word
 import Generics.Deriving
 import Grisette.Core.Data.Class.PrimWrapper
 import {-# SOURCE #-} Grisette.Core.Data.Class.SimpleMergeable
-import Control.Monad.Identity
-import Data.Int
-import Data.Word
 
 -- | Auxiliary class for 'SEq' instance derivation
 class (SymBoolOp bool) => SEq' bool f where
@@ -82,7 +82,7 @@ instance (Generic a, SymBoolOp bool, SEq' bool (Rep a)) => SEq bool (Default a) 
   Default l ==~ Default r = from l ==~~ from r
   {-# INLINE (==~) #-}
 
--- | Logical operators for symbolic booleans. 
+-- | Logical operators for symbolic booleans.
 class LogicalOp b where
   (||~) :: b -> b -> b
   a ||~ b = nots $ nots a &&~ nots b
@@ -121,20 +121,20 @@ instance (SymBoolOp bool) => SEq bool type where \
   l ==~ r = conc $ l == r; \
   {-# INLINE (==~) #-}
 
-CONCRETE_SEQ(Bool)
-CONCRETE_SEQ(Integer)
-CONCRETE_SEQ(Char)
-CONCRETE_SEQ(Int)
-CONCRETE_SEQ(Int8)
-CONCRETE_SEQ(Int16)
-CONCRETE_SEQ(Int32)
-CONCRETE_SEQ(Int64)
-CONCRETE_SEQ(Word)
-CONCRETE_SEQ(Word8)
-CONCRETE_SEQ(Word16)
-CONCRETE_SEQ(Word32)
-CONCRETE_SEQ(Word64)
-CONCRETE_SEQ(B.ByteString)
+CONCRETE_SEQ (Bool)
+CONCRETE_SEQ (Integer)
+CONCRETE_SEQ (Char)
+CONCRETE_SEQ (Int)
+CONCRETE_SEQ (Int8)
+CONCRETE_SEQ (Int16)
+CONCRETE_SEQ (Int32)
+CONCRETE_SEQ (Int64)
+CONCRETE_SEQ (Word)
+CONCRETE_SEQ (Word8)
+CONCRETE_SEQ (Word16)
+CONCRETE_SEQ (Word32)
+CONCRETE_SEQ (Word64)
+CONCRETE_SEQ (B.ByteString)
 
 -- List
 deriving via (Default [a]) instance (SymBoolOp bool, SEq bool a) => SEq bool [a]

@@ -12,10 +12,10 @@ import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C
 import Data.Proxy
 import Grisette
+import Grisette.Unordered.UUnionM
+import Regex
 import Transducer
 import Utils.Timing
-import Regex
-import Grisette.Unordered.UUnionM
 
 -- The type for a pattern coroutine.
 -- The first argument is the string to match.
@@ -29,7 +29,9 @@ type PattCoro = B.ByteString -> Int -> Coroutine (Yield (UUnionM Int)) UUnionM (
 primPatt :: Char -> PattCoro
 primPatt pattc = htmemo2 $ \str idx ->
   when (B.length str > idx && C.index str idx == pattc) $
-    yield $ mrgReturn $ idx + 1
+    yield $
+      mrgReturn $
+        idx + 1
 
 seqPatt :: PattCoro -> PattCoro -> PattCoro
 seqPatt patt1 patt2 = htmemo2 $ \str idx ->
@@ -62,7 +64,7 @@ instance RegexSynth RegexFree where
     PrimPatt s -> primPatt s
     SeqPatt p1 p2 -> seqPatt (toCoroU tag p1) (toCoroU tag p2)
     AltPatt p1 p2 -> altPatt (toCoroU tag p1) (toCoroU tag p2)
-    PlusPatt subp greedy -> plusPatt (toCoroU tag subp) greedy 
+    PlusPatt subp greedy -> plusPatt (toCoroU tag subp) greedy
     EmptyPatt -> emptyPatt
   {-# INLINE toCoro #-}
 

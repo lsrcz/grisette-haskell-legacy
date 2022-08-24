@@ -75,14 +75,14 @@ module Grisette.Internal.IR.SymPrim
   )
 where
 
-import Grisette.IR.SymPrim.Data.Prim.PartialEval.Bool
-import Grisette.IR.SymPrim.Data.Prim.PartialEval.GeneralFunc
 import Grisette.IR.SymPrim.Data.Prim.Helpers
-import Grisette.IR.SymPrim.Data.Prim.PartialEval.Integer
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.InternedCtors
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.SomeTerm
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.Term
 import Grisette.IR.SymPrim.Data.Prim.InternedTerm.TermUtils
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Bool
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.GeneralFunc
+import Grisette.IR.SymPrim.Data.Prim.PartialEval.Integer
 import Grisette.IR.SymPrim.Data.Prim.PartialEval.Num
 import Grisette.IR.SymPrim.Data.Prim.PartialEval.PartialEval
 import Grisette.IR.SymPrim.Data.Prim.PartialEval.TabularFunc

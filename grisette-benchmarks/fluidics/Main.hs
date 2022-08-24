@@ -29,7 +29,8 @@ replaceNth pos val ls = go ls 0
       tl <- go xs (i + 1)
       mrgReturn (hd : tl)
 
-data ConcPoint = ConcPoint Integer Integer deriving (Show, Generic)
+data ConcPoint = ConcPoint Integer Integer
+  deriving (Show, Generic)
   deriving (ToCon Point) via (Default ConcPoint)
 
 data Point = Point SymInteger SymInteger
@@ -136,18 +137,18 @@ synthesizeProgram config i initst f = go 0 (mrgReturn initst)
     go num st
       | num == i = return Nothing
       | otherwise =
-        let newst = do
-              t1 <- st
-              ins <- lift (lst !! num)
-              merge $ execStateT (interpretInstruction ins) t1
-            cond = runExceptT $ newst >>= f
-         in do
-              print num
-              _ <- timeItAll "evaluate" $ cond `deepseq` return cond
-              r <- timeItAll "Lowering/Solving" $ solveFallable config synthTranslation cond
-              case r of
-                Left _ -> go (num + 1) newst
-                Right m -> return $ toCon $ evaluate True m $ take (num + 1) lst
+          let newst = do
+                t1 <- st
+                ins <- lift (lst !! num)
+                merge $ execStateT (interpretInstruction ins) t1
+              cond = runExceptT $ newst >>= f
+           in do
+                print num
+                _ <- timeItAll "evaluate" $ cond `deepseq` return cond
+                r <- timeItAll "Lowering/Solving" $ solveFallable config synthTranslation cond
+                case r of
+                  Left _ -> go (num + 1) newst
+                  Right m -> return $ toCon $ evaluate True m $ take (num + 1) lst
 
 initSt :: Grid
 initSt = unsafeSet (unsafeSet (makeGrid 5 5) 0 0 (uJust "a")) 0 2 (uJust "b")

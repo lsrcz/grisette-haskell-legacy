@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
+
 module Grisette.Core.Data.UnionBase
   ( UnionBase (..),
     ifWithLeftMost,
@@ -23,20 +24,28 @@ import Language.Haskell.TH.Syntax
 
 -- | The default union implementation.
 data UnionBase b a
-  = Single a              -- ^ A single value
-  | If                    -- ^ A if value
-      a                   -- ^ Cached leftmost value
-      !Bool               -- ^ Is merged invariant already maintained?
-      !b                  -- ^ If condition
-      (UnionBase b a)     -- ^ True branch
-      (UnionBase b a)     -- ^ False branch
+  = -- | A single value
+    Single a
+  | -- | A if value
+    If
+      a
+      -- ^ Cached leftmost value
+      !Bool
+      -- ^ Is merged invariant already maintained?
+      !b
+      -- ^ If condition
+      (UnionBase b a)
+      -- ^ True branch
+      (UnionBase b a)
+      -- ^ False branch
   deriving (Generic, Eq, Lift, Generic1)
 
 instance (Eq b) => Eq1 (UnionBase b) where
   liftEq e (Single a) (Single b) = e a b
   liftEq e (If l1 i1 c1 t1 f1) (If l2 i2 c2 t2 f2) =
     e l1 l2 && i1 == i2 && c1 == c2 && liftEq e t1 t2 && liftEq e f1 f2
-  liftEq _ _ _ = False 
+  liftEq _ _ _ = False
+
 instance (NFData b, NFData a) => NFData (UnionBase b a) where
   rnf = rnf1
 
@@ -81,7 +90,6 @@ instance (SymBoolOp bool, Mergeable bool a) => SimpleMergeable bool (UnionBase b
 
 instance (SymBoolOp bool) => SimpleMergeable1 bool (UnionBase bool) where
   liftMrgIte m = mrgIfWithStrategy (SimpleStrategy m)
-
 
 instance (SymBoolOp bool) => UnionLike bool (UnionBase bool) where
   mergeWithStrategy = fullReconstruct
@@ -144,10 +152,10 @@ ifWithStrategyInv _ (Conc v) t f
   | otherwise = f
 ifWithStrategyInv strategy cond (If _ True condTrue tt _) f
   | cond == condTrue = ifWithStrategyInv strategy cond tt f
-  -- {| nots cond == condTrue || cond == nots condTrue = ifWithStrategyInv strategy cond ft f
+-- {| nots cond == condTrue || cond == nots condTrue = ifWithStrategyInv strategy cond ft f
 ifWithStrategyInv strategy cond t (If _ True condFalse _ ff)
   | cond == condFalse = ifWithStrategyInv strategy cond t ff
-  -- {| nots cond == condTrue || cond == nots condTrue = ifWithStrategyInv strategy cond t tf -- buggy here condTrue
+-- {| nots cond == condTrue || cond == nots condTrue = ifWithStrategyInv strategy cond t tf -- buggy here condTrue
 ifWithStrategyInv (SimpleStrategy m) cond (Single l) (Single r) = Single $ m cond l r
 ifWithStrategyInv strategy@(SortedStrategy idxFun substrategy) cond ifTrue ifFalse = case (ifTrue, ifFalse) of
   (Single _, Single _) -> ssIf cond ifTrue ifFalse
@@ -190,10 +198,10 @@ ifWithStrategyInv strategy@(SortedStrategy idxFun substrategy) cond ifTrue ifFal
       | idxft == idxff = gsIf cond' ifTrue' ifFalse'
       | idxtt < idxft = ifWithLeftMost True (cond' &&~ condt) tt $ ifWithStrategyInv strategy cond' tf ifFalse'
       | idxtt == idxft =
-        let newCond = ites cond' condt condf
-            newIfTrue = ifWithStrategyInv (substrategy idxtt) cond' tt ft
-            newIfFalse = ifWithStrategyInv strategy cond' tf ff
-         in ifWithLeftMost True newCond newIfTrue newIfFalse
+          let newCond = ites cond' condt condf
+              newIfTrue = ifWithStrategyInv (substrategy idxtt) cond' tt ft
+              newIfFalse = ifWithStrategyInv strategy cond' tf ff
+           in ifWithLeftMost True newCond newIfTrue newIfFalse
       | otherwise = ifWithLeftMost True (nots cond' &&~ condf) ft $ ifWithStrategyInv strategy cond' ifTrue' ff
       where
         idxtt = idxFun $ leftMost tt

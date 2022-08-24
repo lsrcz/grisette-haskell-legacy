@@ -1,12 +1,12 @@
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE DerivingVia #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleContexts #-}
 
 module Grisette.Tutorial.ArithExprSynth.ArithExprSynth
   ( -- * Preface
@@ -67,8 +67,8 @@ module Grisette.Tutorial.ArithExprSynth.ArithExprSynth
   )
 where
 
-import GHC.Generics
 import Data.Proxy
+import GHC.Generics
 import Grisette
 
 -- | Concrete Expression type.
@@ -87,7 +87,7 @@ data Expr
 -- 'UnionM's are used to wrap the fields of 'SymExpr' to help merging efficiently.
 data SymExpr
   = -- | Symbolic integer literals.
-    -- The 'SymInteger' type allows us to have symbolic holes in our expressions. 
+    -- The 'SymInteger' type allows us to have symbolic holes in our expressions.
     --
     -- Note that we don't have to wrap 'SymInteger' in a 'UnionM' because 'SymInteger'
     -- (and other symbolic primitives)
@@ -96,10 +96,10 @@ data SymExpr
     -- Such types have the 'SimpleMergeable' instance,
     -- you can refer to the documentation for more details.
     SymLiteral SymInteger
-    -- | Symbolic Addition node. The fields are wrapped in 'UnionM' to help merging.
-  | SymAdd (UnionM SymExpr) (UnionM SymExpr)
-    -- | Symbolic Subtraction node. The fields are wrapped in 'UnionM' to help merging.
-  | SymSub (UnionM SymExpr) (UnionM SymExpr)
+  | -- | Symbolic Addition node. The fields are wrapped in 'UnionM' to help merging.
+    SymAdd (UnionM SymExpr) (UnionM SymExpr)
+  | -- | Symbolic Subtraction node. The fields are wrapped in 'UnionM' to help merging.
+    SymSub (UnionM SymExpr) (UnionM SymExpr)
   deriving (Show, Generic)
   deriving
     ( ToSym Expr,
@@ -174,7 +174,7 @@ instance GenSymSimple () Op where
 -- > interpret #~ r
 --
 -- is equivalent to
--- 
+--
 -- > getSingle $ mrgFmap interpret r
 interpret :: SymExpr -> SymInteger
 interpret (SymLiteral v) = v
