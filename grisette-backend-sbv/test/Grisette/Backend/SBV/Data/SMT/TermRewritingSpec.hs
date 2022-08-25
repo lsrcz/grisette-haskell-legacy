@@ -38,6 +38,17 @@ spec = do
     modifyMaxSize (const 10) $
       prop "Bool only random test" $ \(x :: BoolOnlySpec) -> do
         validateSpec unboundedConfig x
+    it "Regression nested ite with (ite a (ite b c d) e) with b is true" $ do
+      validateSpec @BoolOnlySpec unboundedConfig
+        (iteSpec
+          (symbSpec "yyy" :: BoolOnlySpec)
+          (iteSpec
+            (orSpec (notSpec (andSpec (symbSpec "dbool") (symbSpec "bbool"))) (symbSpec "bbool") :: BoolOnlySpec)
+            (symbSpec "zz")
+            (symbSpec "zzz")
+            )
+          (symbSpec "xxx" :: BoolOnlySpec)
+          )
   describe "LIA" $ do
     modifyMaxSize (const 10) $
       prop "LIA random test" $ \(x :: LIAWithBoolSpec) -> do

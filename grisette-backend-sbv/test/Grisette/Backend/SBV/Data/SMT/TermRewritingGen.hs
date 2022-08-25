@@ -127,13 +127,13 @@ constructTernarySpec' tag =
     (constructTernary tag)
     (partialEvalTernary tag)
 
-notSpec :: (TermRewritingSpec a Bool, TermRewritingSpec b Bool) => a -> b
+notSpec :: (TermRewritingSpec a Bool, TermRewritingSpec a Bool) => a -> a
 notSpec = constructUnarySpec notTerm pevalNotTerm
 
-andSpec :: (TermRewritingSpec a Bool, TermRewritingSpec b Bool, TermRewritingSpec c Bool) => a -> b -> c
+andSpec :: (TermRewritingSpec a Bool) => a -> a -> a
 andSpec = constructBinarySpec andTerm pevalAndTerm
 
-orSpec :: (TermRewritingSpec a Bool, TermRewritingSpec b Bool, TermRewritingSpec c Bool) => a -> b -> c
+orSpec :: (TermRewritingSpec a Bool) => a -> a -> a
 orSpec = constructBinarySpec orTerm pevalOrTerm
 
 eqvSpec :: (TermRewritingSpec a av, TermRewritingSpec b Bool) => a -> a -> b

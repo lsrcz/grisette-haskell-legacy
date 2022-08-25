@@ -384,11 +384,11 @@ pevalITEBasic cond (ITETerm _ tc tt tf) ifFalse -- later
   | cond == tc = Just $ pevalITETerm cond tt ifFalse
   | tt == ifFalse = Just $ pevalITETerm (pevalOrTerm (pevalNotTerm cond) tc) tt tf
   | tf == ifFalse = Just $ pevalITETerm (pevalAndTerm cond tc) tt tf
-  | pevalImpliesTerm cond (pevalNotTerm tc) = Just $ pevalITETerm cond tf ifFalse
 pevalITEBasic cond ifTrue (ITETerm _ fc ft ff) -- later
   | cond == fc = Just $ pevalITETerm cond ifTrue ff
   | ifTrue == ft = Just $ pevalITETerm (pevalOrTerm cond fc) ifTrue ff
   | ifTrue == ff = Just $ pevalITETerm (pevalOrTerm cond (pevalNotTerm fc)) ifTrue ft
+  | pevalImpliesTerm fc cond = Just $ pevalITETerm cond ifTrue ff
 pevalITEBasic _ _ _ = Nothing
 
 pevalITEBoolBasic :: Term Bool -> Term Bool -> Term Bool -> Maybe (Term Bool)
