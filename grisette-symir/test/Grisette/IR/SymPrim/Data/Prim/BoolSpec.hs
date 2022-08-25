@@ -410,18 +410,6 @@ spec = do
           (ssymbTerm "d")
           `shouldBe` pevalITETerm (ssymbTerm "a") (ssymbTerm "b") (ssymbTerm "d")
         pevalITETerm
-          (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-          ( pevalITETerm
-              (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 2))
-              (ssymbTerm "b" :: Term Integer)
-              (ssymbTerm "c")
-          )
-          (ssymbTerm "d")
-          `shouldBe` pevalITETerm
-            (pevalEqvTerm (ssymbTerm "a" :: Term Integer) (concTerm 1))
-            (ssymbTerm "c")
-            (ssymbTerm "d")
-        pevalITETerm
           (ssymbTerm "a")
           (pevalITETerm (ssymbTerm "b") (ssymbTerm "c" :: Term Integer) (ssymbTerm "d"))
           (ssymbTerm "c")
