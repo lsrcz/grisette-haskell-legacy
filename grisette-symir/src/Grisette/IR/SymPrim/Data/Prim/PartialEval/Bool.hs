@@ -117,8 +117,8 @@ pevalNotEqvTerm l r = pevalNotTerm $ pevalEqvTerm l r
 {-# INLINE pevalNotEqvTerm #-}
 
 pevalImpliesTerm :: Term Bool -> Term Bool -> Bool
-pevalImpliesTerm (ConcTerm _ True) _ = True
-pevalImpliesTerm _ (ConcTerm _ False) = True
+pevalImpliesTerm (ConcTerm _ False) _ = True
+pevalImpliesTerm _ (ConcTerm _ True) = True
 pevalImpliesTerm
   (EqvTerm _ (e1 :: Term a) (ec1@(ConcTerm _ _) :: Term b))
   (NotTerm _ (EqvTerm _ (Dyn (e2 :: Term a)) (Dyn (ec2@(ConcTerm _ _) :: Term b))))

@@ -49,6 +49,15 @@ spec = do
             )
           (symbSpec "xxx" :: BoolOnlySpec)
           )
+    it "Regression for pevalImpliesTerm _ false should be false" $ do
+      validateSpec @BoolOnlySpec
+        unboundedConfig
+        (iteSpec
+          (symbSpec "fbool" :: BoolOnlySpec)
+          (notSpec (orSpec (orSpec (notSpec (andSpec (symbSpec "gbool" :: BoolOnlySpec) (symbSpec "fbool" :: BoolOnlySpec))) (symbSpec "gbool" :: BoolOnlySpec))
+                           (orSpec (symbSpec "abool" :: BoolOnlySpec) (notSpec (andSpec (symbSpec "gbool" :: BoolOnlySpec) (symbSpec "bbool" :: BoolOnlySpec))))))
+          (symbSpec "xxx" :: BoolOnlySpec)
+          )
   describe "LIA" $ do
     modifyMaxSize (const 10) $
       prop "LIA random test" $ \(x :: LIAWithBoolSpec) -> do
