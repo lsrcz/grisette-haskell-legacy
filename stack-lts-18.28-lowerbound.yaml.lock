@@ -75,12 +75,12 @@ packages:
   original:
     hackage: transformers-0.5.6.2
 - completed:
-    hackage: typerep-map-0.3.3.0@sha256:20510efab770158414ac7828d1eca063d795bcc724ac634dd13bc7a50b476f42,4681
+    hackage: once-0.2@sha256:c45f7ee109c806fddcba2236415834e799befcabfd914f81374dc7cdc0f57005,1090
     pantry-tree:
-      size: 1487
-      sha256: 30d61ac00807c3229b7b6ee274853f0ec1e272503a1b210ce10aad3db19f443a
+      size: 405
+      sha256: e5ccf577d104ddc8d7a83423047c12bc5d550a7235b5653eacba32c97c2bc0ec
   original:
-    hackage: typerep-map-0.3.3.0
+    hackage: once-0.2
 - completed:
     hackage: sbv-8.11@sha256:f55902b77c31ec57ec2fd527e37ac736f9411868d37b3cf42fea58e06c2ba7fc,28997
     pantry-tree:

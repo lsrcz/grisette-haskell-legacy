@@ -68,7 +68,7 @@ extra-deps:
   - generic-deriving-1.14.1
   - mtl-2.2.2
   - transformers-0.5.6.2
-  - typerep-map-0.3.3.0
+  - once-0.2
   - sbv-8.11
   - bytestring-strict-builder-0.4.5.3
   - regex-base-0.94.0.0

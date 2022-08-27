@@ -49,11 +49,11 @@ library
     , loch-th >=0.2.2
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
+    , once >=0.2
     , sbv >=8.11
     , template-haskell >=2.16
     , th-compat >=0.1.2
     , transformers >=0.5.6.2
-    , typerep-map >=0.3.3
     , unordered-containers >=0.2.11
     , vector >=0.12.1.2
     , vector-sized >=1.4.1
@@ -93,11 +93,11 @@ test-suite spec
     , loch-th >=0.2.2
     , monad-coroutine >=0.9.0.4
     , mtl >=2.2.2
+    , once >=0.2
     , sbv >=8.11
     , template-haskell >=2.16
     , th-compat >=0.1.2
     , transformers >=0.5.6.2
-    , typerep-map >=0.3.3
     , unordered-containers >=0.2.11
     , vector >=0.12.1.2
     , vector-sized >=1.4.1
