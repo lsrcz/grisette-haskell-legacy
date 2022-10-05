@@ -139,6 +139,9 @@ executables:
     source-dirs: formula-optimization
     main: Main.hs
     dependencies: grisette-examples
+  sanity-check:
+    source-dirs: sanity-check
+    main: Main.hs
 
 
 
